@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Magic History</title>
+<style>
+:root {
+  --frame: #f2d3ce;
+  --card: #f9f4e8;
+  --ink: #211f1c;
+  --ink-soft: #7a7365;
+  --line: rgba(33,31,28,0.12);
+  --sage: #8fa878;
+  --gold: #d9a441;
+  --blue: #6f9bc7;
+  --pink: #e0949a;
+  --terracotta: #c9714f;
+  --sage-soft: #dbe4d2;
+  --gold-soft: #f3e2bf;
+  --blue-soft: #dbe7f0;
+  --pink-soft: #f7e0e1;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; height: 100%;
+  background: var(--frame);
+  color: var(--ink);
+  font-family: "PingFang SC", "Hiragino Sans GB", -apple-system, "Helvetica Neue", sans-serif;
+}
+.serif { font-family: "Big Caslon", "Iowan Old Style", Georgia, "Palatino Linotype", "Songti SC", serif; }
+
+.frame {
+  min-height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(14px, 3vw, 40px);
+}
+.card {
+  width: 100%; max-width: 1180px;
+  background: var(--card);
+  border-radius: 22px;
+  box-shadow: 0 30px 70px rgba(33,31,28,0.18), 0 2px 0 rgba(255,255,255,0.4) inset;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+/* Home 内容现在是真正的应用(地图+每日一史+功能区),让卡片按内容自然撑高、走整页滚动;
+   Subjects/Teacher's pack/About us 内容轻,继续用封顶高度+内部滚动的"悬浮卡片"观感 */
+.card.boxed { height: min(94vh, 900px); }
+
+/* ---- nav ---- */
+nav.topnav {
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 26px clamp(20px, 4vw, 52px) 0;
+  z-index: 30;
+}
+.wordmark { font-size: 13px; font-weight: 800; letter-spacing: 0.14em; }
+.wordmark .light { font-weight: 400; opacity: 0.65; }
+.navlinks { display: flex; gap: clamp(18px, 3vw, 34px); list-style: none; margin: 0; padding: 0; }
+.navlinks li { font-size: 13px; font-weight: 600; color: var(--ink-soft); cursor: pointer; position: relative; padding-bottom: 4px; transition: color .15s ease; }
+.navlinks li:hover { color: var(--ink); }
+.navlinks li.active { color: var(--ink); }
+.navlinks li.active::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: var(--ink); border-radius: 2px;
+}
+
+/* ---- view switching ---- */
+.view { display: none; flex: 1 1 auto; min-height: 0; position: relative; }
+.view.active { display: flex; flex-direction: column; }
+
+/* ---- 每个非首页视图顶部的"回首页"链接,深入地图/事件卡片后不用滚回顶部找导航 ---- */
+.back-link {
+  position: absolute; top: 64px; left: clamp(16px, 3vw, 40px); z-index: 25;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 700; color: #fff;
+  background: var(--ink); padding: 7px 14px 7px 11px; border-radius: 999px;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.08));
+  cursor: pointer; transition: opacity .15s ease, transform .15s ease;
+}
+.back-link:hover { opacity: 0.85; transform: translateX(-2px); }
+
+/* ---- hero (home) ---- */
+#view-home { align-items: stretch; justify-content: flex-start; }
+.hero-copy { text-align: center; padding: 8px 24px 4px; }
+.hero-copy h1 { font-size: clamp(28px, 4.6vw, 48px); font-weight: 500; margin: 6px 0 10px; letter-spacing: 0.02em; text-transform: uppercase; }
+.hero-copy p { font-size: 14px; color: var(--ink-soft); max-width: 480px; margin: 0 auto; line-height: 1.75; }
+.hero-cta {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 20px;
+  background: var(--ink); color: #fff; border: none; border-radius: 999px;
+  padding: 11px 24px; font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.hero-cta:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(33,31,28,0.22); }
+
+.today-pick {
+  width: 100%; max-width: 640px; margin: 22px auto 0; padding: 16px 20px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  cursor: pointer; transition: box-shadow .15s ease, transform .15s ease; text-align: left;
+}
+.today-pick:hover { box-shadow: 0 10px 24px rgba(33,31,28,0.10); transform: translateY(-1px); }
+.today-pick .tp-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 9px; }
+.today-pick .tp-top { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; flex-wrap: wrap; }
+.today-pick .tp-yr { font-weight: 800; font-size: 15px; color: var(--terracotta); font-variant-numeric: tabular-nums; }
+.today-pick .tp-city { font-weight: 700; font-size: 15px; }
+.today-pick .tp-cat { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+.today-pick .tp-trig { font-size: 13.5px; line-height: 1.65; color: var(--ink); }
+.today-pick .tp-trig .hl { background: #fff3bf; padding: 1px 4px; border-radius: 3px; font-weight: 700; }
+.today-pick .tp-cta { margin-top: 11px; font-size: 12px; font-weight: 700; color: var(--terracotta); }
+
+.home-map-wrap {
+  width: 100%; max-width: 1040px; height: min(66vh, 620px); flex-shrink: 0;
+  margin: 20px auto 0; border-radius: 18px; overflow: hidden;
+  box-shadow: var(--shadow-md, 0 6px 20px rgba(28,33,40,0.10)); border: 1px solid var(--line);
+}
+.home-map-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
+.home-map-caption { text-align: center; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); letter-spacing: 0.01em; margin: 10px 0 0; }
+
+.features {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+  padding: 30px clamp(20px, 4vw, 52px) 40px;
+}
+.feature { display: flex; flex-direction: column; gap: 10px; }
+.feature .ic {
+  width: 40px; height: 40px; border-radius: 50%; background: var(--ink); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+}
+.feature h3 { font-size: 14.5px; font-weight: 700; margin: 0; }
+.feature p { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; margin: 0; }
+
+/* ---- subjects view ---- */
+/* 内容本来就短,如果整块在很高的卡片里居中,会在顶部空出一大片,像没加载完——
+   改成靠上、留一段跟 back-link 呼应的固定间距,不再"沉"到正中间 */
+#view-subjects { align-items: center; justify-content: flex-start; padding-top: 90px; overflow-y: auto; }
+.subjects-wrap { text-align: center; max-width: 560px; margin: 0 auto; padding: 0 24px; }
+.subjects-wrap .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+.subjects-wrap h2 { font-size: clamp(24px, 4vw, 34px); font-weight: 500; margin: 8px 0 26px; }
+.subject-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+.subject-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 18px 6px; border-top: 1px solid var(--line); cursor: pointer;
+  transition: padding-left .18s ease, color .18s ease;
+}
+.subject-list li:last-child { border-bottom: 1px solid var(--line); }
+.subject-item:hover { padding-left: 12px; }
+.subject-item .name { font-size: 19px; font-weight: 600; }
+.subject-item .tag { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; }
+.subject-item .arrow { font-size: 16px; opacity: 0.4; transition: transform .18s ease, opacity .18s ease; }
+.subject-item:hover .arrow { opacity: 1; transform: translateX(3px); }
+
+/* ---- teacher's pack (placeholder) ---- */
+#view-teacher, #view-about { align-items: center; justify-content: flex-start; padding-top: 100px; }
+.stub { text-align: center; max-width: 460px; padding: 0 24px; }
+.stub .badge-lg {
+  width: 64px; height: 64px; border-radius: 50%; background: var(--gold-soft); color: var(--ink);
+  display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 18px;
+}
+.stub h2 { font-size: 24px; font-weight: 600; margin: 0 0 10px; }
+.stub p { font-size: 13.5px; color: var(--ink-soft); line-height: 1.7; margin: 0; }
+
+@media (max-width: 720px) {
+  .frame { padding: 0; }
+  .card { border-radius: 0; height: 100vh; max-width: none; }
+  .features { grid-template-columns: repeat(2, 1fr); padding: 24px 18px 32px; }
+  nav.topnav { flex-direction: column; gap: 10px; align-items: flex-start; padding: 16px 18px 0; }
+  .navlinks { flex-wrap: wrap; gap: 10px 16px; }
+  .navlinks li { font-size: 12.5px; }
+  .hero-copy { padding: 6px 18px 4px; }
+  .hero-copy p { font-size: 13px; }
+  .home-map-wrap { max-width: none; height: min(58vh, 480px); flex-shrink: 0; margin: 16px 18px 0; }
+  .today-pick { max-width: none; margin: 16px 18px 0; }
+  #view-subjects, #view-teacher, #view-about { padding-left: 0; padding-right: 0; }
+  .back-link { left: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="card">
+
+    <nav class="topnav">
+      <div class="wordmark">MAGIC<span class="light">HISTORY</span></div>
+      <ul class="navlinks">
+        <li data-view="home" class="active">Home</li>
+        <li data-nav-scroll="home-map-embed">Maps</li>
+        <li data-view="subjects">Subjects</li>
+        <li data-view="teacher">Teacher&rsquo;s pack</li>
+        <li data-view="about">About us</li>
+      </ul>
+    </nav>
+
+    <!-- ============ HOME ============ -->
+    <section class="view active" id="view-home">
+      <div class="hero-copy">
+        <h1 class="serif">Magic History</h1>
+        <p>历史不是要背的年表,是一张可以走进去的地图。悬浮、点开、跟着商队一路走——每一个地方都有它自己的故事。</p>
+        <button class="hero-cta" data-scroll="home-map-embed">Explore the map →</button>
+      </div>
+
+      <div class="today-pick" id="todayPick" style="display:none"></div>
+
+      <div class="home-map-wrap" id="home-map-embed">
+        <iframe src="Asia_视觉改进_试做版5.html" title="Interactive world history map" loading="lazy"></iframe>
+      </div>
+      <div class="home-map-caption">5 regions · 233 events · 104 pins · 6 trade routes</div>
+
+      <div class="features">
+        <div class="feature">
+          <div class="ic">🗺️</div>
+          <h3>Explorable maps</h3>
+          <p>点地块看颜色、点标点看故事,五大洲历史事件全在一张地图上。</p>
+        </div>
+        <div class="feature">
+          <div class="ic">🐫</div>
+          <h3>Trade routes</h3>
+          <p>丝路、三角贸易、哥伦布大交换——沿路走一遍,顺路的国家一起点亮。</p>
+        </div>
+        <div class="feature">
+          <div class="ic">📚</div>
+          <h3>AMSCO-sourced</h3>
+          <p>每一条历史事件都能查到教材原文页码,不是编的。</p>
+        </div>
+        <div class="feature">
+          <div class="ic">🧑‍🏫</div>
+          <h3>Teacher-ready</h3>
+          <p>课堂或考前冲刺都能直接用,后续还会加讲义与练习包。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SUBJECTS ============ -->
+    <section class="view" id="view-subjects">
+      <div class="back-link" data-goto="home">← Home</div>
+      <div class="subjects-wrap">
+        <div class="eyebrow">Choose a track</div>
+        <h2 class="serif">Subjects</h2>
+        <ul class="subject-list">
+          <li class="subject-item" data-subject="world">
+            <span class="name">World History</span>
+            <span class="tag" style="background:var(--gold-soft)">Live</span>
+            <span class="arrow">→</span>
+          </li>
+          <li class="subject-item" data-subject="euro">
+            <span class="name">Euro History</span>
+            <span class="tag" style="background:var(--sage-soft)">Coming soon</span>
+            <span class="arrow">→</span>
+          </li>
+          <li class="subject-item" data-subject="us">
+            <span class="name">US History</span>
+            <span class="tag" style="background:var(--pink-soft)">Coming soon</span>
+            <span class="arrow">→</span>
+          </li>
+          <li class="subject-item" data-subject="geo">
+            <span class="name">Human Geography</span>
+            <span class="tag" style="background:var(--blue-soft)">Coming soon</span>
+            <span class="arrow">→</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ TEACHER'S PACK ============ -->
+    <section class="view" id="view-teacher">
+      <div class="back-link" data-goto="home">← Home</div>
+      <div class="stub">
+        <div class="badge-lg">🧑‍🏫</div>
+        <h2 class="serif">Teacher&rsquo;s pack</h2>
+        <p>讲义、教师脚本、随堂练习正在整理中,之后会放在这里。</p>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT US ============ -->
+    <section class="view" id="view-about">
+      <div class="back-link" data-goto="home">← Home</div>
+      <div class="stub" style="max-width:560px">
+        <div class="badge-lg" style="background:var(--blue-soft)">✦</div>
+        <h2 class="serif">About us</h2>
+        <p>Magic History 由一线 AP 老师做给正在准备考试的学生——历史课上最难的从来不是"记不住",
+        而是找不到把地点、年份和因果串起来的方式。这张地图上的每一条事件都能查到 AMSCO 教材原文页码,
+        不是编的,也会一直按 CED 的考纲慢慢补全。</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  const views = document.querySelectorAll('.view');
+  const navItems = document.querySelectorAll('.navlinks li');
+  const card = document.querySelector('.card');
+
+  function showView(name) {
+    views.forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+    navItems.forEach(li => li.classList.toggle('active', li.dataset.view === name));
+    // Home 内容多,让卡片按内容自然撑高走整页滚动;其余轻量占位页维持封顶高度的悬浮卡片观感
+    card.classList.toggle('boxed', name !== 'home');
+  }
+
+  function goToHomeMap() {
+    showView('home');
+    navItems.forEach(li => li.classList.toggle('active', li.hasAttribute('data-nav-scroll')));
+    const target = document.getElementById('home-map-embed');
+    if (target) requestAnimationFrame(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
+
+  navItems.forEach(li => {
+    if (li.dataset.view) li.addEventListener('click', () => showView(li.dataset.view));
+    else if (li.hasAttribute('data-nav-scroll')) li.addEventListener('click', goToHomeMap);
+  });
+  document.querySelectorAll('[data-goto]').forEach(el =>
+    el.addEventListener('click', () => showView(el.dataset.goto)));
+  document.querySelectorAll('[data-scroll]').forEach(el =>
+    el.addEventListener('click', () => {
+      const target = document.getElementById(el.dataset.scroll);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+
+  document.querySelectorAll('.subject-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (item.dataset.subject === 'world') { goToHomeMap(); return; }
+      item.style.opacity = '0.5';
+      setTimeout(() => { item.style.opacity = '1'; }, 250);
+    });
+  });
+
+  // ---- Today's Pick:从内嵌地图的隐藏数据源里,按"今天是一年中第几天"确定性选一条事件 ----
+  // 同一天所有访客看到的一样,第二天自动换一条;不写"历史上的今天"是因为数据只精确到年/年份区间,没有月日
+  const todayPick = document.getElementById('todayPick');
+  const homeMapFrame = document.querySelector('#home-map-embed iframe');
+  const CAT_ICON = { GOV: '👑', ECN: '💰', CDI: '📜', SIO: '👥', TEC: '⚙' };
+
+  function dayOfYear(d) {
+    const start = new Date(d.getFullYear(), 0, 0);
+    return Math.floor((d - start) / 86400000);
+  }
+
+  function collectEntries(doc) {
+    const all = [];
+    doc.querySelectorAll('.panel').forEach(panel => {
+      const head = panel.querySelector('.panel-head');
+      if (!head) return;
+      const catFull = head.querySelector('.full') ? head.querySelector('.full').textContent.trim() : '';
+      const catColor = head.style.background || '#8b1a1a';
+      let catAbbr = '';
+      for (const node of head.childNodes) {
+        if (node.nodeType === 3 && node.textContent.trim()) { catAbbr = node.textContent.trim(); break; }
+      }
+      panel.querySelectorAll('.entry').forEach(entry => {
+        const numEl = entry.querySelector('.citynum');
+        const yrEl = entry.querySelector('.yr');
+        const cityEl = entry.querySelector('.city2');
+        const trigEl = entry.querySelector('.trig');
+        if (!numEl || !yrEl || !cityEl) return;
+        all.push({
+          num: numEl.textContent.trim(), yr: yrEl.textContent.trim(), city: cityEl.textContent.trim(),
+          catAbbr, catFull, catColor, trigHTML: trigEl ? trigEl.innerHTML : '',
+        });
+      });
+    });
+    return all;
+  }
+
+  function renderTodayPick() {
+    let doc;
+    try { doc = homeMapFrame.contentDocument; } catch (err) { return; }
+    if (!doc) return;
+    const all = collectEntries(doc);
+    if (!all.length) return;
+
+    const today = new Date();
+    const pick = all[dayOfYear(today) % all.length];
+    todayPick.innerHTML =
+      `<div class="tp-eyebrow">📅 ${today.getMonth() + 1}月${today.getDate()}日 · Today's Pick</div>`
+      + `<div class="tp-top"><span class="tp-yr">${pick.yr}</span><span class="tp-city">${pick.city}</span>`
+      + `<span class="tp-cat">${CAT_ICON[pick.catAbbr] || ''} ${pick.catFull}</span></div>`
+      + `<div class="tp-trig">${pick.trigHTML}</div>`
+      + `<div class="tp-cta">在地图上查看这一站 →</div>`;
+    todayPick.dataset.pinNum = pick.num;
+    todayPick.style.display = 'block';
+  }
+
+  // 不能靠"此刻 contentDocument.readyState 是不是 complete"来判断有没有加载完——
+  // iframe 用了 loading="lazy",脚本跑到这里时它可能还停在初始的 about:blank(那个空文档的 readyState 本来就是
+  // complete),会被误判成"已加载完"提前用空文档跑一次直接 return,真正导航到地图页面时触发的 load 事件反而没人在听
+  if (homeMapFrame) homeMapFrame.addEventListener('load', renderTodayPick);
+
+  // 点卡片:滚到地图 + 在地图里模拟"点那个地区→点那个标点",跟手动点一样弹出事件卡片和路线动画
+  todayPick.addEventListener('click', () => {
+    const num = todayPick.dataset.pinNum;
+    if (!num || !homeMapFrame) return;
+    document.getElementById('home-map-embed').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    let doc, win;
+    try { doc = homeMapFrame.contentDocument; win = homeMapFrame.contentWindow; } catch (err) { return; }
+    const pinGroup = Array.from(doc.querySelectorAll('.pin-group')).find(g => {
+      const t = g.querySelector('text'); return t && t.textContent.trim() === num;
+    });
+    if (!pinGroup) return;
+    const region = pinGroup.dataset.region;
+    const regionPath = doc.querySelector(`.region-path[data-region="${region}"]`);
+    if (regionPath) regionPath.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+    setTimeout(() => {
+      const circle = pinGroup.querySelector('circle');
+      if (circle) circle.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+    }, 450);
+  });
+})();
+</script>
+</body>
+</html>
