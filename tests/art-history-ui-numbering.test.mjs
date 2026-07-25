@@ -73,13 +73,41 @@ test('art map exposes a query-driven embedded presentation mode', async () => {
 
   assert.match(
     html,
+    /<body>\s*<script>\s*const isEmbedded = new URLSearchParams\(window\.location\.search\)\.get\('embed'\) === '1';\s*document\.body\.classList\.toggle\('is-embedded', isEmbedded\);\s*<\/script>/,
+  );
+  assert.match(
+    html,
     /new URLSearchParams\(window\.location\.search\)\.get\('embed'\) === '1'/,
   );
   assert.match(html, /document\.body\.classList\.toggle\('is-embedded', isEmbedded\)/);
+  const embeddedBodyCss = getCssDeclarations(html, 'body.is-embedded');
+  assert.match(embeddedBodyCss, /display:\s*flex/);
+  assert.match(embeddedBodyCss, /flex-direction:\s*column/);
+  assert.match(embeddedBodyCss, /height:\s*100vh/);
+  assert.match(embeddedBodyCss, /overflow:\s*hidden/);
   assert.match(getCssDeclarations(html, 'body.is-embedded .page-header'), /display:\s*none/);
+  const toolbarCss = getCssDeclarations(html, 'body.is-embedded .filter-toolbar');
+  assert.match(toolbarCss, /flex:\s*0 0 auto/);
+  assert.match(toolbarCss, /width:\s*100%/);
+  assert.match(toolbarCss, /max-width:\s*none/);
+  assert.match(toolbarCss, /margin:\s*0/);
+  assert.match(toolbarCss, /padding:\s*8px 12px/);
+  assert.match(toolbarCss, /border-bottom:\s*1px solid var\(--line\)/);
+  assert.match(toolbarCss, /background:\s*var\(--card\)/);
   const workspaceCss = getCssDeclarations(html, 'body.is-embedded .art-workspace');
+  assert.match(workspaceCss, /flex:\s*1 1 auto/);
   assert.match(workspaceCss, /width:\s*100%/);
   assert.match(workspaceCss, /max-width:\s*none/);
+  assert.match(workspaceCss, /height:\s*auto/);
+  assert.match(workspaceCss, /min-height:\s*0/);
+  assert.match(workspaceCss, /margin:\s*0/);
+  assert.match(workspaceCss, /border:\s*0/);
+  assert.match(workspaceCss, /border-radius:\s*0/);
+  assert.match(workspaceCss, /box-shadow:\s*none/);
+  assert.ok(
+    html.indexOf('body.is-embedded {') < html.indexOf('@media (max-width:520px)'),
+    'embedded rules must precede the responsive media query',
+  );
 });
 
 test('art map reuses World History typography and compact detail hierarchy', async () => {
