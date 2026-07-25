@@ -152,6 +152,6 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
 
 const invokedPath = process.argv[1] ? pathToFileURL(process.argv[1]).href : '';
 if (import.meta.url === invokedPath) {
-  const artworks = await loadAndValidate();
+  const artworks = await loadAndValidate(process.argv[2] ?? DEFAULT_HTML_PATH);
   console.log(`Validated ${artworks.length} AP Art History works`);
 }
