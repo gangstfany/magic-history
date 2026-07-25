@@ -73,7 +73,13 @@ test('detail images show the complete artwork without cover cropping', async () 
   const detailImageCss = getCssDeclarations(html, '.artwork-image-button img');
   assert.match(detailImageCss, /object-fit:\s*contain/);
   assert.doesNotMatch(detailImageCss, /object-fit:\s*cover/);
+  assert.match(detailImageCss, /(?:^|;)\s*height:\s*100%/);
+  assert.match(detailImageCss, /(?:^|;)\s*max-height:\s*100%/);
 
   const imageButtonCss = getCssDeclarations(html, '.artwork-image-button');
   assert.match(imageButtonCss, /background:\s*var\(--surface-sunken\)/);
+  assert.match(imageButtonCss, /box-sizing:\s*border-box/);
+  assert.match(imageButtonCss, /(?:^|;)\s*height:\s*300px/);
+  assert.match(imageButtonCss, /(?:^|;)\s*max-height:\s*300px/);
+  assert.match(imageButtonCss, /(?:^|;)\s*padding:\s*10px/);
 });
