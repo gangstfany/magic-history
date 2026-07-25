@@ -63,7 +63,28 @@ nav.topnav {
 }
 .wordmark { font-size: 13px; font-weight: 800; letter-spacing: 0.14em; }
 .wordmark .light { font-weight: 400; opacity: 0.65; }
+.nav-right { display: flex; align-items: center; gap: clamp(14px, 2.6vw, 28px); }
 .navlinks { display: flex; gap: clamp(18px, 3vw, 34px); list-style: none; margin: 0; padding: 0; }
+
+/* ---- 语言切换(中文 / EN):中文为当前版本,英文版做好前点 EN 只提示 ---- */
+.lang-switch { position: relative; display: flex; align-items: center; gap: 2px; }
+.lang-switch .lang {
+  font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink-soft);
+  background: none; border: none; padding: 4px 8px; border-radius: 7px; cursor: pointer;
+  transition: color .15s ease, background .15s ease;
+}
+.lang-switch .lang:hover { color: var(--ink); background: rgba(33,31,28,0.06); }
+.lang-switch .lang.active { color: var(--ink); background: rgba(33,31,28,0.07); }
+.lang-switch .lang:focus-visible { outline: 2px solid var(--terracotta); outline-offset: 2px; }
+.lang-switch .lang-sep { font-size: 11px; color: rgba(33,31,28,0.25); }
+.lang-hint {
+  position: absolute; top: calc(100% + 8px); right: 0; white-space: nowrap;
+  background: var(--ink); color: #fff; font-size: 11.5px; font-weight: 700;
+  padding: 6px 11px; border-radius: 8px; z-index: 40;
+  opacity: 0; transform: translateY(-3px); pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.lang-hint.show { opacity: 1; transform: translateY(0); }
 .navlinks li { font-size: 13px; font-weight: 600; color: var(--ink-soft); cursor: pointer; position: relative; padding-bottom: 4px; transition: color .15s ease; }
 .navlinks li:hover { color: var(--ink); }
 .navlinks li.active { color: var(--ink); }
@@ -238,6 +259,9 @@ nav.topnav {
   .features { grid-template-columns: repeat(2, 1fr); padding: 24px 18px 32px; }
   nav.topnav { flex-direction: column; gap: 10px; align-items: flex-start; padding: 16px 18px 0; }
   .navlinks { flex-wrap: wrap; gap: 10px 16px; }
+  /* 窄屏:导航链接和语言切换换行排,提示气泡改从左边冒出以免超出屏幕 */
+  .nav-right { flex-wrap: wrap; gap: 8px 14px; width: 100%; }
+  .lang-hint { right: auto; left: 0; }
   .navlinks li { font-size: 12.5px; }
   .hero-copy { padding: 6px 18px 4px; }
   .hero-copy p { font-size: 13px; }
@@ -254,13 +278,22 @@ nav.topnav {
 
     <nav class="topnav">
       <div class="wordmark">MAGIC<span class="light">HISTORY</span></div>
-      <ul class="navlinks">
-        <li data-view="home" class="active">Home</li>
-        <li data-nav-scroll="home-map-embed">Maps</li>
-        <li data-view="subjects">Subjects</li>
-        <li data-view="teacher">Teacher&rsquo;s pack</li>
-        <li data-view="about">About us</li>
-      </ul>
+      <div class="nav-right">
+        <ul class="navlinks">
+          <li data-view="home" class="active">Home</li>
+          <li data-nav-scroll="home-map-embed">Maps</li>
+          <li data-view="subjects">Subjects</li>
+          <li data-view="teacher">Teacher&rsquo;s pack</li>
+          <li data-view="about">About us</li>
+        </ul>
+        <!-- 语言切换:中文是当前版本;英文版还在做,点 EN 先提示"即将上线" -->
+        <div class="lang-switch">
+          <button type="button" class="lang active" data-lang="zh" aria-current="true">中文</button>
+          <span class="lang-sep" aria-hidden="true">/</span>
+          <button type="button" class="lang" data-lang="en">EN</button>
+          <div class="lang-hint" id="langHint" role="status">English version coming soon</div>
+        </div>
+      </div>
     </nav>
 
     <!-- ============ HOME ============ -->
@@ -298,8 +331,8 @@ nav.topnav {
             </div>
           </div>
           <!-- 右侧事件面板:点左边地图的数字标点,该站事件在这里完整显示 -->
-          <div id="home-events" class="home-events">
-            <div class="he-empty">👈 在左边地图上点一个数字标点，<br>这里会显示那一站的历史事件</div>
+          <div id="home-events" class="home-events" role="region" aria-label="历史事件" aria-live="polite">
+            <div class="he-empty">📍 点地图上的数字标点，<br>这里会显示那一站的历史事件</div>
           </div>
         </div>
       </div>
@@ -599,6 +632,18 @@ nav.topnav {
     }, 650);
   }
   subjPills.forEach(p => p.addEventListener('click', () => selectSubject(p.dataset.subj)));
+
+  // ---- 语言切换:中文是当前版本;英文版还没做好,点 EN 先给"即将上线"提示,不跳到坏页面 ----
+  const langHint = document.getElementById('langHint');
+  let langHintTimer = null;
+  document.querySelectorAll('.lang-switch .lang').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.lang === 'zh' || !langHint) return; // 已经是中文版,不用切
+      langHint.classList.add('show');
+      clearTimeout(langHintTimer);
+      langHintTimer = setTimeout(() => langHint.classList.remove('show'), 2200);
+    });
+  });
 
   // ---- a11y:导航项/学科项等本是 <div>/<li>+click,给键盘用户补上 Tab 聚焦与 Enter/Space 触发 ----
   document.querySelectorAll('.navlinks li, .subject-item, .today-pick, .feature-clickable, .back-link, .subj-pill')
