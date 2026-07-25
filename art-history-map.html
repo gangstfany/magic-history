@@ -4,15 +4,90 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AP 艺术史 · 古代地中海与埃及</title>
+  <style>
+    :root { color-scheme: light; --paper:#f4eddf; --card:#fffaf0; --ink:#302a24; --muted:#756b60; --line:#d6c6ad; --egypt:#b85d44; --greece:#597f8b; --rome:#c8943d; }
+    * { box-sizing: border-box; }
+    body { margin:0; min-width:0; color:var(--ink); background:var(--paper); font-family:ui-serif, Georgia, "Noto Serif SC", serif; }
+    .page-header { max-width:1180px; margin:auto; padding:28px 20px 14px; }
+    h1 { margin:0 0 6px; font-size:clamp(1.55rem,4vw,2.35rem); }
+    .subtitle { margin:0; color:var(--muted); }
+    .filter-toolbar { max-width:1180px; margin:0 auto 16px; padding:0 20px; display:flex; flex-wrap:wrap; gap:10px; align-items:end; }
+    .civilization-filters { display:flex; flex-wrap:wrap; gap:7px; }
+    .filter-label { display:grid; gap:4px; font-size:.82rem; color:var(--muted); }
+    button, select, input { font:inherit; }
+    .filter-pill, .clear-button { border:1px solid var(--line); border-radius:999px; padding:9px 14px; color:var(--ink); background:var(--card); cursor:pointer; }
+    .filter-pill[aria-pressed="true"] { color:#fff; background:#4d463e; border-color:#4d463e; }
+    select, input[type="search"] { min-height:40px; max-width:100%; border:1px solid var(--line); border-radius:10px; padding:7px 10px; color:var(--ink); background:var(--card); }
+    #searchInput { width:min(260px,100%); }
+    :focus-visible { outline:3px solid #28708a; outline-offset:3px; }
+    .art-workspace { width:calc(100% - 40px); max-width:1180px; height:min(620px,78vh); min-height:480px; margin:0 auto 28px; display:grid; grid-template-columns:minmax(0,2fr) minmax(275px,1fr); overflow:hidden; border:1px solid var(--line); border-radius:18px; background:var(--card); box-shadow:0 14px 36px rgba(74,57,38,.11); }
+    .map-panel { position:relative; min-width:0; overflow:hidden; background:#dce8e4; }
+    .map-svg { display:block; width:100%; height:100%; }
+    .land { fill:#eadfc8; stroke:#bda985; stroke-width:3; }
+    .water-label, .place-label { fill:#6f8586; font:italic 26px Georgia,serif; }
+    .place-label { fill:#82735f; font-size:20px; font-style:normal; }
+    .nile { fill:none; stroke:#72a4ad; stroke-width:12; stroke-linecap:round; }
+    .marker-layer { position:absolute; inset:0; pointer-events:none; }
+    .site-marker { position:absolute; transform:translate(-50%,-50%); width:34px; height:34px; display:grid; place-items:center; border:3px solid #fff; border-radius:50%; color:#fff; font:700 .75rem ui-sans-serif,system-ui; box-shadow:0 2px 8px rgba(40,30,20,.4); cursor:pointer; pointer-events:auto; }
+    .site-marker[data-civilization="egypt"] { background:var(--egypt); }
+    .site-marker[data-civilization="greece"] { background:var(--greece); }
+    .site-marker[data-civilization="rome"] { background:var(--rome); color:#2c2418; }
+    .site-marker[data-civilization="mixed"] { background:linear-gradient(135deg,var(--greece) 0 50%,var(--rome) 50% 100%); color:#fff; }
+    .detail-panel { min-width:0; overflow:auto; padding:22px; border-left:1px solid var(--line); background:#fffaf2; }
+    .result-count { margin:0 0 16px; font-weight:700; }
+    .instruction, .empty-state { min-height:200px; display:grid; align-content:center; gap:12px; }
+    .instruction h2, .empty-state h2 { margin:0; font-size:1.25rem; }
+    .instruction p, .empty-state p { margin:0; color:var(--muted); line-height:1.65; }
+    .legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; font: .86rem ui-sans-serif,system-ui; }
+    .legend span { display:inline-flex; align-items:center; gap:6px; }
+    .legend i { width:10px; height:10px; border-radius:50%; }
+    @media (max-width:520px) {
+      .page-header, .filter-toolbar { padding-left:12px; padding-right:12px; }
+      .filter-toolbar > * { max-width:100%; }
+      .filter-label:has(#searchInput) { width:100%; }
+      #searchInput { width:100%; }
+      .art-workspace { width:calc(100% - 24px); height:auto; min-height:0; grid-template-columns:1fr; grid-template-rows:minmax(330px,55vh) auto; }
+      .detail-panel { max-height:360px; border-left:0; border-top:1px solid var(--line); }
+    }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { scroll-behavior:auto!important; transition-duration:.01ms!important; animation-duration:.01ms!important; animation-iteration-count:1!important; } }
+  </style>
 </head>
 <body>
-  <header>
+  <header class="page-header">
     <h1>AP 艺术史 · 古代地中海与埃及</h1>
-    <div id="filterContainer" aria-label="作品筛选"></div>
+    <p class="subtitle">从地点出发，连接作品、文明与历史语境。</p>
   </header>
+  <div id="filterContainer" class="filter-toolbar" role="group" aria-label="作品筛选">
+    <div class="civilization-filters" role="group" aria-label="文明">
+      <button class="filter-pill" type="button" data-civilization="all" aria-pressed="true">全部</button>
+      <button class="filter-pill" type="button" data-civilization="egypt" aria-pressed="false">埃及</button>
+      <button class="filter-pill" type="button" data-civilization="greece" aria-pressed="false">希腊</button>
+      <button class="filter-pill" type="button" data-civilization="rome" aria-pressed="false">罗马</button>
+    </div>
+    <label class="filter-label">时期<select id="periodFilter"><option value="">全部时期</option></select></label>
+    <label class="filter-label">作品类型<select id="typeFilter"><option value="">全部类型</option></select></label>
+    <label class="filter-label">搜索<input id="searchInput" type="search" placeholder="标题、地点或关键词"></label>
+  </div>
   <main class="art-workspace">
-    <section id="mapPanel" aria-label="作品地图"></section>
-    <aside id="detailPanel" aria-live="polite" aria-label="作品详情"></aside>
+    <section id="mapPanel" class="map-panel" aria-label="古代地中海与尼罗河作品地点地图">
+      <svg class="map-svg" viewBox="0 0 1200 700" preserveAspectRatio="none" role="img" aria-label="意大利、希腊、爱琴海、小亚细亚与尼罗河流域示意地图">
+        <rect width="1200" height="700" fill="#d9e8e5"/>
+        <path class="land" d="M0 0H1200V126L1050 145 970 114 876 146 810 132 736 173 660 154 600 185 535 163 475 198 410 178 350 210 270 196 208 227 130 205 0 238Z"/>
+        <path class="land" d="M0 700V510L128 478 245 500 352 460 468 478 575 444 676 456 774 418 880 430 972 394 1080 410 1200 380V700Z"/>
+        <path class="land" d="M185 206L230 226 240 278 270 326 246 376 210 342 190 294 158 270Z"/>
+        <path class="land" d="M330 210L390 228 420 276 395 316 350 291 322 250Z"/>
+        <path class="land" d="M438 196L540 190 574 230 524 258 456 242Z"/>
+        <path class="nile" d="M690 700C680 620 702 560 690 500S700 390 670 330"/>
+        <path class="nile" d="M670 330L645 302M670 330L700 305"/>
+        <text class="water-label" x="430" y="395">Mediterranean Sea</text>
+        <text class="water-label" x="485" y="250">Aegean Sea</text>
+        <text class="place-label" x="154" y="188">ITALY</text><text class="place-label" x="350" y="184">GREECE</text>
+        <text class="place-label" x="585" y="178">ANATOLIA</text><text class="place-label" x="710" y="540">EGYPT</text>
+        <text class="place-label" x="715" y="650">Nile</text>
+      </svg>
+      <div id="markerLayer" class="marker-layer" aria-label="作品地点"></div>
+    </section>
+    <aside id="detailPanel" class="detail-panel" aria-live="polite" aria-label="作品详情"></aside>
   </main>
   <dialog id="imageDialog" aria-label="作品大图"></dialog>
   <script id="artwork-data" type="application/json">
@@ -47,6 +122,174 @@
 ]
   </script>
   <script>
+    const ARTWORKS = JSON.parse(document.getElementById('artwork-data').textContent);
+    const state = { civilization: 'all', period: '', workType: '', search: '', selectedId: null };
+
+    function normalize(value) {
+      return String(value ?? '').normalize('NFKC').trim().toLowerCase();
+    }
+
+    function filterWorks(works, filters) {
+      const query = normalize(filters.search);
+      return works.filter((work) => {
+        if (filters.civilization && filters.civilization !== 'all' && work.civilization !== filters.civilization) return false;
+        if (filters.period && work.period !== filters.period) return false;
+        if (filters.workType && work.workType !== filters.workType) return false;
+        if (!query) return true;
+        const searchable = [work.titleEn, work.titleZh, work.siteName, ...(work.keywords || [])]
+          .map(normalize).join(' ');
+        return searchable.includes(query);
+      });
+    }
+
+    function groupBySite(works) {
+      const groups = new Map();
+      works.forEach((work) => {
+        const key = `${work.siteName}\u0000${work.coordinates.x}\u0000${work.coordinates.y}`;
+        if (!groups.has(key)) {
+          groups.set(key, {
+            key,
+            siteName: work.siteName,
+            x: work.coordinates.x,
+            y: work.coordinates.y,
+            civilization: work.civilization,
+            works: []
+          });
+        }
+        groups.get(key).works.push(work);
+      });
+      return [...groups.values()]
+        .map((group) => {
+          const civilizations = [...new Set(group.works.map((work) => work.civilization))].sort();
+          return {
+            ...group,
+            civilization: civilizations.length === 1 ? civilizations[0] : 'mixed',
+            civilizations,
+            works: group.works.slice().sort((a, b) => a.id.localeCompare(b.id))
+          };
+        })
+        .sort((a, b) => a.siteName.localeCompare(b.siteName) || a.x - b.x || a.y - b.y);
+    }
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(`Development assertion failed: ${message}`);
+    }
+
+    function runDevelopmentAssertions() {
+      const expectedCounts = { all: 27, egypt: 9, greece: 10, rome: 8 };
+      Object.entries(expectedCounts).forEach(([civilization, expected]) => {
+        const actual = filterWorks(ARTWORKS, {
+          civilization,
+          period: '',
+          workType: '',
+          search: ''
+        }).length;
+        assert(actual === expected, `Expected ${expected} ${civilization} works, received ${actual}`);
+      });
+      assert(normalize('  Ａthens  ') === 'athens', 'normalize() should apply NFKC, trim, and lowercase');
+      const gizaGroups = groupBySite(ARTWORKS.filter((work) => work.siteName === 'Giza'));
+      assert(gizaGroups.length === 1 && gizaGroups[0].works.length === 2,
+        'groupBySite() should deterministically combine an exact site');
+    }
+
+    function populateSelect(select, values) {
+      [...new Set(values)].sort((a, b) => a.localeCompare(b)).forEach((value) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        select.append(option);
+      });
+    }
+
+    const markerLayer = document.getElementById('markerLayer');
+    const detailPanel = document.getElementById('detailPanel');
+
+    function render() {
+      const visibleWorks = filterWorks(ARTWORKS, state);
+      if (state.selectedId && !visibleWorks.some((work) => work.id === state.selectedId)) state.selectedId = null;
+      markerLayer.replaceChildren();
+      groupBySite(visibleWorks).forEach((group) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'site-marker';
+        button.dataset.siteKey = group.key;
+        button.dataset.civilization = group.civilization;
+        button.style.left = `${group.x / 12}%`;
+        button.style.top = `${group.y / 7}%`;
+        const civilizationNames = { egypt:'埃及', greece:'希腊', rome:'罗马' };
+        const civilizationLabel = group.civilizations.map((item) => civilizationNames[item]).join('与');
+        button.setAttribute('aria-label', `${group.siteName}，${civilizationLabel}，${group.works.length} 件作品`);
+        button.title = `${group.siteName} · ${group.works.length} 件`;
+        button.textContent = group.works.length > 1 ? String(group.works.length) : '';
+        markerLayer.append(button);
+      });
+
+      detailPanel.replaceChildren();
+      const count = document.createElement('p');
+      count.className = 'result-count';
+      count.textContent = `当前显示 ${visibleWorks.length} 件作品`;
+      detailPanel.append(count);
+      if (!visibleWorks.length) {
+        const empty = document.createElement('section');
+        empty.className = 'empty-state';
+        const heading = document.createElement('h2');
+        heading.textContent = '没有找到匹配作品';
+        const copy = document.createElement('p');
+        copy.textContent = '试试更换文明、时期、类型，或使用其他关键词。';
+        const clear = document.createElement('button');
+        clear.type = 'button';
+        clear.className = 'clear-button';
+        clear.textContent = '清除筛选';
+        clear.addEventListener('click', clearFilters);
+        empty.append(heading, copy, clear);
+        detailPanel.append(empty);
+      } else {
+        const instruction = document.createElement('section');
+        instruction.className = 'instruction';
+        instruction.setAttribute('aria-label', '地图使用说明');
+        const heading = document.createElement('h2');
+        heading.textContent = '选择地图标记';
+        const copy = document.createElement('p');
+        copy.textContent = '每个圆点代表一处作品地点；圆点内的数字表示该地点包含多件作品。请选择一处地点继续。';
+        const legend = document.createElement('div');
+        legend.className = 'legend';
+        [['埃及','#b85d44'],['希腊','#597f8b'],['罗马','#c8943d']].forEach(([label, color]) => {
+          const item = document.createElement('span');
+          const swatch = document.createElement('i');
+          swatch.style.background = color;
+          item.append(swatch, document.createTextNode(label));
+          legend.append(item);
+        });
+        instruction.append(heading, copy, legend);
+        detailPanel.append(instruction);
+      }
+    }
+
+    function clearFilters() {
+      Object.assign(state, { civilization:'all', period:'', workType:'', search:'', selectedId:null });
+      document.querySelectorAll('.filter-pill').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.civilization === 'all'));
+      });
+      document.getElementById('periodFilter').value = '';
+      document.getElementById('typeFilter').value = '';
+      document.getElementById('searchInput').value = '';
+      render();
+    }
+
+    populateSelect(document.getElementById('periodFilter'), ARTWORKS.map((work) => work.period));
+    populateSelect(document.getElementById('typeFilter'), ARTWORKS.map((work) => work.workType));
+    document.querySelectorAll('.filter-pill').forEach((button) => button.addEventListener('click', () => {
+      state.civilization = button.dataset.civilization;
+      document.querySelectorAll('.filter-pill').forEach((pill) => pill.setAttribute('aria-pressed', String(pill === button)));
+      render();
+    }));
+    document.getElementById('periodFilter').addEventListener('change', (event) => { state.period = event.target.value; render(); });
+    document.getElementById('typeFilter').addEventListener('change', (event) => { state.workType = event.target.value; render(); });
+    document.getElementById('searchInput').addEventListener('input', (event) => { state.search = event.target.value; render(); });
+
+    window.ArtHistoryMap = { normalize, filterWorks, groupBySite, render, clearFilters, state, ARTWORKS };
+    runDevelopmentAssertions();
+    render();
   </script>
 </body>
 </html>
