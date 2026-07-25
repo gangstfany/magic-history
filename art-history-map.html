@@ -46,15 +46,16 @@
     .marker-layer { pointer-events:none; }
     .marker-leader { stroke:#8c7d68; stroke-width:2.5; stroke-linecap:round; opacity:.72; vector-effect:non-scaling-stroke; pointer-events:none; }
     .site-marker { pointer-events:all; cursor:pointer; }
-    .site-marker .marker-label-bg { stroke:#fff; stroke-width:5; filter:drop-shadow(0 3px 4px rgba(40,30,20,.42)); transition:r .15s ease,stroke-width .15s ease; }
-    .site-marker.is-active .marker-label-bg { stroke:#fff; stroke-width:10; filter:drop-shadow(0 4px 7px rgba(40,30,20,.55)); }
-    .site-marker.is-active circle.marker-label-bg { r:29px; }
-    .site-marker .marker-ap-label { fill:#fff; font-size:17px; font-weight:700; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
+    .site-marker .marker-hit-area { fill:transparent; pointer-events:all; }
+    .site-marker .marker-visual { transform-box:fill-box; transform-origin:center; transition:transform .15s ease; pointer-events:none; }
+    .site-marker.is-active .marker-visual { transform:scale(1.08); }
+    .site-marker .marker-label-bg { stroke:#fff; stroke-width:5; filter:drop-shadow(0 3px 4px rgba(40,30,20,.42)); transition:stroke-width .15s ease,filter .15s ease; }
+    .site-marker.is-active .marker-label-bg { stroke-width:8; filter:drop-shadow(0 4px 7px rgba(40,30,20,.55)); }
+    .site-marker .marker-ap-label { fill:#fff; font-weight:700; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
     .site-marker[data-civilization="egypt"] .marker-label-bg { fill:var(--egypt); }
     .site-marker[data-civilization="greece"] .marker-label-bg { fill:var(--greece); }
     .site-marker[data-civilization="rome"] .marker-label-bg { fill:var(--rome); }
     .site-marker[data-civilization="mixed"] .marker-label-bg { fill:var(--greece); stroke:var(--rome); stroke-width:9; }
-    .site-marker.is-active .marker-label-bg { stroke:#fff; stroke-width:10; }
     .map-controls { position:absolute; z-index:2; top:12px; right:12px; display:flex; gap:6px; padding:6px; border:1px solid var(--line); border-radius:12px; background:rgba(255,250,240,.94); box-shadow:0 3px 12px rgba(48,42,36,.12); }
     .map-controls button, .site-cycle button { min-width:40px; min-height:40px; border:1px solid var(--line); border-radius:9px; background:#fffaf0; color:var(--ink); cursor:pointer; }
     .map-controls .overview-button { padding:0 10px; }
@@ -484,6 +485,15 @@
       return `AP ${compactApNumbers(works.map((work) => work.apNumber))}`;
     }
 
+    function createSiteToken(works) {
+      const ids = works.map((work) => String(work.id)).sort().join('__');
+      const safeIds = ids.replace(
+        /[^a-zA-Z0-9_-]/g,
+        (character) => `_${character.codePointAt(0).toString(16)}_`
+      );
+      return `site-${safeIds}`;
+    }
+
     function groupBySite(works) {
       const groups = new Map();
       works.forEach((work) => {
@@ -502,48 +512,165 @@
       });
       return [...groups.values()]
         .map((group) => {
-          const civilizations = [...new Set(group.works.map((work) => work.civilization))].sort();
+          const sortedWorks = group.works.slice().sort((a, b) => a.id.localeCompare(b.id));
+          const civilizations = [...new Set(sortedWorks.map((work) => work.civilization))].sort();
+          const apGroupLabel = formatApGroupLabel(sortedWorks);
           return {
             ...group,
             civilization: civilizations.length === 1 ? civilizations[0] : 'mixed',
             civilizations,
-            works: group.works.slice().sort((a, b) => a.id.localeCompare(b.id))
+            works: sortedWorks,
+            siteToken: createSiteToken(sortedWorks),
+            apLabel: apGroupLabel.slice(3),
+            apGroupLabel
           };
         })
         .sort((a, b) => a.siteName.localeCompare(b.siteName) || a.x - b.x || a.y - b.y);
     }
 
-    function layoutSiteMarkers(groups, minimumDistance = 52) {
-      const positioned = [];
-      groups.forEach((group) => {
-        const anchor = toWorldCoordinates(group);
-        const candidates = [{ x: anchor.x, y: anchor.y }];
-        for (let ring = 1; ring <= 5; ring += 1) {
-          const pointCount = ring * 12;
-          const radius = ring * minimumDistance;
-          for (let point = 0; point < pointCount; point += 1) {
-            const angle = (Math.PI * 2 * point / pointCount) - Math.PI / 2;
-            candidates.push({
-              x: anchor.x + Math.cos(angle) * radius,
-              y: anchor.y + Math.sin(angle) * radius
-            });
+    function getMarkerMetrics(apLabel, isSingle, screenScale) {
+      const scale = Math.max(0.05, screenScale);
+      const fontSize = 12 / scale;
+      const visualHeight = 30 / scale;
+      const visualWidthPx = isSingle
+        ? 30
+        : Math.max(44, Math.min(120, apLabel.length * 7.2 + 18));
+      const visualWidth = visualWidthPx / scale;
+      return {
+        fontSize,
+        visualWidth,
+        visualHeight,
+        cornerRadius: visualHeight / 2,
+        hitWidth: Math.max(44 / scale, visualWidth * 1.12),
+        hitHeight: Math.max(44 / scale, visualHeight * 1.12)
+      };
+    }
+
+    function getMarkerBounds(center, metrics) {
+      return {
+        left: center.x - metrics.hitWidth / 2,
+        right: center.x + metrics.hitWidth / 2,
+        top: center.y - metrics.hitHeight / 2,
+        bottom: center.y + metrics.hitHeight / 2
+      };
+    }
+
+    function markerBoundsOverlap(first, second) {
+      return !(
+        first.right <= second.left
+        || first.left >= second.right
+        || first.bottom <= second.top
+        || first.top >= second.bottom
+      );
+    }
+
+    function expandMarkerBounds(bounds, amount) {
+      return {
+        left: bounds.left - amount,
+        right: bounds.right + amount,
+        top: bounds.top - amount,
+        bottom: bounds.bottom + amount
+      };
+    }
+
+    function createSpatialHash(cellSize) {
+      const cells = new Map();
+      function visitCellKeys(bounds, visitor) {
+        const firstColumn = Math.floor(bounds.left / cellSize);
+        const lastColumn = Math.floor(bounds.right / cellSize);
+        const firstRow = Math.floor(bounds.top / cellSize);
+        const lastRow = Math.floor(bounds.bottom / cellSize);
+        for (let column = firstColumn; column <= lastColumn; column += 1) {
+          for (let row = firstRow; row <= lastRow; row += 1) {
+            visitor(`${column}:${row}`);
           }
         }
-        const display = candidates.find((candidate) => (
-          candidate.x >= 24 && candidate.x <= 1576
-          && candidate.y >= 24 && candidate.y <= 776
-          && positioned.every((site) => (
-            Math.hypot(candidate.x - site.displayX, candidate.y - site.displayY) >= minimumDistance
-          ))
-        ));
-        assert(display, `Unable to place ${group.siteName} without a marker collision`);
-        positioned.push({
+      }
+      return {
+        insert(bounds, item) {
+          visitCellKeys(bounds, (key) => {
+            if (!cells.has(key)) cells.set(key, []);
+            cells.get(key).push(item);
+          });
+        },
+        query(bounds) {
+          const matches = new Set();
+          visitCellKeys(bounds, (key) => {
+            (cells.get(key) || []).forEach((item) => matches.add(item));
+          });
+          return [...matches];
+        }
+      };
+    }
+
+    function layoutSiteMarkers(groups, screenScale = 0.5, project = toWorldCoordinates) {
+      const positioned = [];
+      const scale = Math.max(0.05, screenScale);
+      const gap = 6 / scale;
+      const prepared = groups.map((group) => ({
+        ...group,
+        markerMetrics: getMarkerMetrics(
+          group.apLabel,
+          group.works.length === 1,
+          scale
+        )
+      }));
+      const largestCell = prepared.reduce(
+        (largest, group) => Math.max(
+          largest,
+          group.markerMetrics.hitWidth,
+          group.markerMetrics.hitHeight
+        ),
+        64
+      );
+      const spatialHash = createSpatialHash(largestCell + gap);
+      prepared.forEach((group) => {
+        const anchor = project(group);
+        const metrics = group.markerMetrics;
+        function candidateFits(candidate) {
+          const bounds = getMarkerBounds(candidate, metrics);
+          if (
+            bounds.left < 0 || bounds.right > 1600
+            || bounds.top < 0 || bounds.bottom > 800
+          ) return false;
+          const expandedBounds = expandMarkerBounds(bounds, gap);
+          const nearby = spatialHash.query(expandedBounds);
+          return !nearby.some((site) => (
+            markerBoundsOverlap(expandedBounds, site.bounds)
+          ));
+        }
+        let display = candidateFits(anchor) ? anchor : null;
+        const gridStep = 6 / scale;
+        const ringCount = Math.ceil(1600 / gridStep);
+        for (let ring = 1; ring <= ringCount && !display; ring += 1) {
+          for (let offset = -ring; offset <= ring; offset += 1) {
+            const candidates = [
+              { x:anchor.x + offset * gridStep, y:anchor.y - ring * gridStep },
+              { x:anchor.x + offset * gridStep, y:anchor.y + ring * gridStep }
+            ];
+            display = candidates.find(candidateFits) || null;
+            if (display) break;
+          }
+          for (let offset = -ring + 1; offset < ring && !display; offset += 1) {
+            const candidates = [
+              { x:anchor.x - ring * gridStep, y:anchor.y + offset * gridStep },
+              { x:anchor.x + ring * gridStep, y:anchor.y + offset * gridStep }
+            ];
+            display = candidates.find(candidateFits) || null;
+          }
+        }
+        if (!display) throw new Error(`Unable to place ${group.siteName} without a marker collision`);
+        const positionedGroup = {
           ...group,
           anchorX: anchor.x,
           anchorY: anchor.y,
           displayX: display.x,
-          displayY: display.y
-        });
+          displayY: display.y,
+          markerMetrics: metrics,
+          bounds: getMarkerBounds(display, metrics)
+        };
+        positioned.push(positionedGroup);
+        spatialHash.insert(positionedGroup.bounds, positionedGroup);
       });
       return positioned;
     }
@@ -644,13 +771,17 @@
       const gizaGroups = groupBySite(ARTWORKS.filter((work) => work.siteName === 'Giza'));
       assert(gizaGroups.length === 1 && gizaGroups[0].works.length === 2,
         'groupBySite() should deterministically combine an exact site');
-      const laidOutSites = layoutSiteMarkers(groupBySite(ARTWORKS));
-      laidOutSites.forEach((site, index) => {
-        laidOutSites.slice(index + 1).forEach((other) => {
-          assert(Math.hypot(site.displayX - other.displayX, site.displayY - other.displayY) >= 52,
-            `${site.siteName} and ${other.siteName} markers should not overlap`);
+      [0.23, 0.5].forEach((screenScale) => {
+        const laidOutSites = layoutSiteMarkers(groupBySite(ARTWORKS), screenScale);
+        laidOutSites.forEach((site, index) => {
+          laidOutSites.slice(index + 1).forEach((other) => {
+            assert(!markerBoundsOverlap(site.bounds, other.bounds),
+              `${site.siteName} and ${other.siteName} marker bounds should not overlap`);
+          });
         });
       });
+      assert(/^[a-zA-Z0-9_-]+$/.test(createSiteToken([{ id:'rome\u0000forty one' }])),
+        'createSiteToken() should be safe for attribute selectors');
     }
 
     function assertRenderedMarkerSemantics() {
@@ -674,6 +805,23 @@
     const mapViewport = document.getElementById('mapViewport');
     const imageDialog = document.getElementById('imageDialog');
     let imageDialogTrigger = null;
+    let markerLayoutFrame = null;
+
+    function getRenderedMarkerScale() {
+      const bounds = document.querySelector('.map-svg').getBoundingClientRect();
+      const renderedScale = Math.min(bounds.width / 1600, bounds.height / 800);
+      const visibleScale = renderedScale > 0 ? renderedScale : 0.23;
+      return visibleScale * state.transform.scale;
+    }
+
+    function focusSiteMarker(siteToken) {
+      markerLayer.querySelector(`[data-site-token="${siteToken}"]`)?.focus();
+    }
+
+    function scheduleMarkerLayout() {
+      if (markerLayoutFrame !== null) cancelAnimationFrame(markerLayoutFrame);
+      markerLayoutFrame = requestAnimationFrame(() => render());
+    }
 
     function applyTransform() {
       state.transform = clampTransform(state.transform);
@@ -691,9 +839,7 @@
         state.activeDetailTab = 'quick';
       }
       render();
-      if (restoreFocus) {
-        document.querySelector(`.site-marker[data-site-key="${CSS.escape(group.key)}"]`)?.focus();
-      }
+      if (restoreFocus) focusSiteMarker(group.siteToken);
     }
 
     function cycleSite(group, direction) {
@@ -979,6 +1125,9 @@
     }
 
     function render() {
+      const focusedSiteToken = document.activeElement?.classList?.contains('site-marker')
+        ? document.activeElement.dataset.siteToken
+        : null;
       const visibleWorks = filterWorks(ARTWORKS, state);
       if (state.selectedId && !visibleWorks.some((work) => work.id === state.selectedId)) {
         state.selectedId = null;
@@ -987,7 +1136,10 @@
       markerLayer.replaceChildren();
       const leaders = [];
       const markers = [];
-      const visibleGroups = layoutSiteMarkers(groupBySite(visibleWorks));
+      const visibleGroups = layoutSiteMarkers(
+        groupBySite(visibleWorks),
+        getRenderedMarkerScale()
+      );
       visibleGroups.forEach((group) => {
         if (Math.hypot(group.displayX - group.anchorX, group.displayY - group.anchorY) > 1) {
           const leader = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -1000,15 +1152,14 @@
         }
         const marker = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         marker.classList.add('site-marker');
-        marker.dataset.siteKey = group.key;
+        marker.dataset.siteToken = group.siteToken;
         marker.dataset.civilization = group.civilization;
         marker.setAttribute('transform', `translate(${group.displayX} ${group.displayY})`);
         marker.setAttribute('role', 'button');
         marker.setAttribute('tabindex', '0');
         marker.setAttribute('aria-pressed', String(group.works.some((work) => work.id === state.selectedId)));
         if (group.works.some((work) => work.id === state.selectedId)) marker.classList.add('is-active');
-        const artworkNames = group.works.map((work) => work.titleEn).join('、');
-        marker.setAttribute('aria-label', `${group.siteName}；${formatApGroupLabel(group.works)}；${artworkNames}`);
+        marker.setAttribute('aria-label', `${group.siteName}；${group.apGroupLabel}`);
         marker.addEventListener('click', () => selectSite(group));
         marker.addEventListener('keydown', (event) => {
           if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -1016,31 +1167,41 @@
           selectSite(group, true);
         });
         const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-        title.textContent = `${group.siteName} · ${formatApGroupLabel(group.works)}`;
-        const apNumbers = group.works.map((work) => work.apNumber);
-        const labelText = compactApNumbers(apNumbers);
+        title.textContent = `${group.siteName} · ${group.apGroupLabel}`;
+        const metrics = group.markerMetrics;
+        const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        hitArea.classList.add('marker-hit-area');
+        hitArea.setAttribute('x', String(-metrics.hitWidth / 2));
+        hitArea.setAttribute('y', String(-metrics.hitHeight / 2));
+        hitArea.setAttribute('width', String(metrics.hitWidth));
+        hitArea.setAttribute('height', String(metrics.hitHeight));
+        hitArea.setAttribute('rx', String(metrics.hitHeight / 2));
+        const visual = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        visual.classList.add('marker-visual');
         const background = document.createElementNS(
           'http://www.w3.org/2000/svg',
           group.works.length === 1 ? 'circle' : 'rect'
         );
         background.classList.add('marker-label-bg');
         if (group.works.length === 1) {
-          background.setAttribute('r', '21');
+          background.setAttribute('r', String(metrics.visualWidth / 2));
         } else {
-          const width = Math.max(68, Math.min(136, labelText.length * 12 + 24));
-          background.setAttribute('x', String(-width / 2));
-          background.setAttribute('y', '-21');
-          background.setAttribute('width', String(width));
-          background.setAttribute('height', '42');
-          background.setAttribute('rx', '21');
+          background.setAttribute('x', String(-metrics.visualWidth / 2));
+          background.setAttribute('y', String(-metrics.visualHeight / 2));
+          background.setAttribute('width', String(metrics.visualWidth));
+          background.setAttribute('height', String(metrics.visualHeight));
+          background.setAttribute('rx', String(metrics.cornerRadius));
         }
         const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         label.classList.add('marker-ap-label');
-        label.textContent = compactApNumbers(apNumbers);
-        marker.append(title, background, label);
+        label.setAttribute('font-size', String(metrics.fontSize));
+        label.textContent = group.apLabel;
+        visual.append(background, label);
+        marker.append(title, hitArea, visual);
         markers.push(marker);
       });
       markerLayer.append(...leaders, ...markers);
+      if (focusedSiteToken) focusSiteMarker(focusedSiteToken);
 
       detailPanel.replaceChildren();
       const count = document.createElement('p');
@@ -1121,16 +1282,20 @@
     document.getElementById('searchInput').addEventListener('input', (event) => { state.search = event.target.value; render(); });
     document.getElementById('zoomIn').addEventListener('click', () => {
       state.transform = zoomAroundPoint(state.transform, state.transform.scale + .5);
+      render();
       applyTransform();
     });
     document.getElementById('zoomOut').addEventListener('click', () => {
       state.transform = zoomAroundPoint(state.transform, state.transform.scale - .5);
+      render();
       applyTransform();
     });
     document.getElementById('resetView').addEventListener('click', () => {
       state.transform = { x:0, y:0, scale:1 };
+      render();
       applyTransform();
     });
+    window.addEventListener('resize', scheduleMarkerLayout);
 
     const panSurface = document.getElementById('panSurface');
     let panStart = null;
@@ -1186,8 +1351,14 @@
       filterWorks,
       compactApNumbers,
       formatApGroupLabel,
+      createSiteToken,
       groupBySite,
       toWorldCoordinates,
+      getMarkerMetrics,
+      getMarkerBounds,
+      markerBoundsOverlap,
+      expandMarkerBounds,
+      createSpatialHash,
       layoutSiteMarkers,
       clampTransform,
       cycleIndex,

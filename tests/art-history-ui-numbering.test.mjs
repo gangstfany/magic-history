@@ -24,10 +24,39 @@ function getFunctionSource(html, functionName) {
   return html.slice(start, end);
 }
 
-function loadPureFunctions(html, functionNames) {
-  const sources = functionNames.map((name) => getFunctionSource(html, name)).join('\n');
+function getObjectDeclarationSource(html, declaration) {
+  const start = html.indexOf(declaration);
+  assert.notEqual(start, -1, `missing ${declaration}`);
+  const openBrace = html.indexOf('{', start);
+  let depth = 0;
+  let end = -1;
+  for (let index = openBrace; index < html.length; index += 1) {
+    if (html[index] === '{') depth += 1;
+    if (html[index] === '}') depth -= 1;
+    if (depth === 0) {
+      end = html.indexOf(';', index) + 1;
+      break;
+    }
+  }
+  assert.notEqual(end, -1, `unterminated ${declaration}`);
+  return html.slice(start, end);
+}
+
+function loadPureFunctions(html, functionNames, declarations = []) {
+  const sources = [
+    ...declarations.map((declaration) => getObjectDeclarationSource(html, declaration)),
+    ...functionNames.map((name) => getFunctionSource(html, name)),
+  ].join('\n');
   const exports = functionNames.join(', ');
   return Function(`"use strict"; ${sources}; return { ${exports} };`)();
+}
+
+function parseArtworkData(html) {
+  const match = html.match(
+    /<script id="artwork-data" type="application\/json">([\s\S]*?)<\/script>/,
+  );
+  assert.ok(match, 'missing artwork data');
+  return JSON.parse(match[1]);
 }
 
 function getCssDeclarations(html, selector) {
@@ -86,7 +115,6 @@ test('all art map text inherits the World History font stack', async () => {
   );
   const markerLabelCss = getCssDeclarations(html, '.site-marker .marker-ap-label');
   assert.match(markerLabelCss, /font-weight:\s*700/);
-  assert.match(markerLabelCss, /font-size:\s*17px/);
   const imageCreditCss = getCssDeclarations(html, '.image-credit');
   assert.match(imageCreditCss, /font-size:\s*\.78rem/);
   assert.match(imageCreditCss, /line-height:\s*1\.5/);
@@ -118,13 +146,110 @@ test('map markers display AP numbers with circles for works and capsules for gro
     html,
     /createElementNS\([^;]*group\.works\.length === 1 \? 'circle' : 'rect'\s*\)/,
   );
-  assert.match(html, /label\.textContent = compactApNumbers\(apNumbers\)/);
+  assert.match(html, /label\.textContent = group\.apLabel/);
   assert.doesNotMatch(html, /count\.textContent = (?:String\()?group\.works\.length/);
   assert.match(getCssDeclarations(html, '.site-marker .marker-label-bg'), /filter:\s*drop-shadow/);
   assert.match(
     getCssDeclarations(html, '.site-marker .marker-ap-label'),
     /dominant-baseline:\s*central/,
   );
+  assert.doesNotMatch(
+    getCssDeclarations(html, '.site-marker .marker-label-bg'),
+    /transition:[^;]*\br\b/,
+  );
+  assert.match(
+    getCssDeclarations(html, '.site-marker .marker-visual'),
+    /transition:\s*transform/,
+  );
+  assert.match(
+    getCssDeclarations(html, '.site-marker.is-active .marker-visual'),
+    /transform:\s*scale\((?:1\.0[5-9]|1\.1)\)/,
+  );
+});
+
+test('marker metrics stay readable and touchable on a 390px viewport', async () => {
+  const html = await loadHtml();
+  const { getMarkerMetrics } = loadPureFunctions(html, ['getMarkerMetrics']);
+  const renderedScale = 366 / 1600;
+  const metrics = getMarkerMetrics('35, 39–40', false, renderedScale);
+
+  assert.ok(metrics.fontSize * renderedScale >= 11.5);
+  assert.ok(metrics.hitHeight * renderedScale >= 44);
+  assert.ok(metrics.hitWidth * renderedScale >= 44);
+  assert.ok(metrics.visualWidth < metrics.hitWidth);
+});
+
+test('bounds-aware spatial layout prevents all marker overlaps at mobile scale', async () => {
+  const html = await loadHtml();
+  const artworks = parseArtworkData(html);
+  const {
+    compactApNumbers,
+    formatApGroupLabel,
+    createSiteToken,
+    groupBySite,
+    toWorldCoordinates,
+    getMarkerMetrics,
+    getMarkerBounds,
+    markerBoundsOverlap,
+    expandMarkerBounds,
+    createSpatialHash,
+    layoutSiteMarkers,
+  } = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'createSiteToken',
+      'groupBySite',
+      'toWorldCoordinates',
+      'getMarkerMetrics',
+      'getMarkerBounds',
+      'markerBoundsOverlap',
+      'expandMarkerBounds',
+      'createSpatialHash',
+      'layoutSiteMarkers',
+    ],
+    ['const SITE_WORLD_COORDINATES ='],
+  );
+  const laidOut = layoutSiteMarkers(groupBySite(artworks), 366 / 1600);
+
+  for (let index = 0; index < laidOut.length; index += 1) {
+    for (let otherIndex = index + 1; otherIndex < laidOut.length; otherIndex += 1) {
+      assert.equal(
+        markerBoundsOverlap(laidOut[index].bounds, laidOut[otherIndex].bounds),
+        false,
+        `${laidOut[index].siteName} overlaps ${laidOut[otherIndex].siteName}`,
+      );
+    }
+  }
+  const layoutSource = getFunctionSource(html, 'layoutSiteMarkers');
+  assert.match(layoutSource, /createSpatialHash\(/);
+  assert.doesNotMatch(layoutSource, /positioned\.every\(/);
+});
+
+test('site focus tokens are stable, selector-safe, and used after marker rerenders', async () => {
+  const html = await loadHtml();
+  const { createSiteToken } = loadPureFunctions(html, ['createSiteToken']);
+  const token = createSiteToken([{ id: 'rome\u0000forty one' }, { id: 'ap-42' }]);
+
+  assert.doesNotMatch(token, /\u0000/);
+  assert.match(token, /^[a-zA-Z0-9_-]+$/);
+  assert.equal(
+    token,
+    createSiteToken([{ id: 'ap-42' }, { id: 'rome\u0000forty one' }]),
+  );
+  assert.match(html, /marker\.dataset\.siteToken = group\.siteToken/);
+  assert.match(html, /function focusSiteMarker\(siteToken\)/);
+  assert.match(html, /\[data-site-token="\$\{siteToken\}"\]/);
+  assert.doesNotMatch(html, /data-site-key/);
+});
+
+test('marker layout recomputes when the rendered map size changes', async () => {
+  const html = await loadHtml();
+
+  assert.match(html, /function getRenderedMarkerScale\(/);
+  assert.match(html, /window\.addEventListener\('resize', scheduleMarkerLayout\)/);
+  assert.match(html, /requestAnimationFrame\(\(\) => render\(\)\)/);
 });
 
 test('detail images show the complete artwork without cover cropping', async () => {

@@ -87,14 +87,14 @@ test('comparison navigation moves focus to the newly selected title', async () =
   assert.match(html, /document\.activeElement !== heading/);
 });
 
-test('marker labels name the site, AP numbers, and English artwork titles', async () => {
+test('group marker labels concisely name the site and complete AP range', async () => {
   const html = await loadHtml();
 
-  assert.match(html, /group\.works\.map\(\(work\) => work\.titleEn\)/);
   assert.match(
     html,
-    /marker\.setAttribute\('aria-label', `\$\{group\.siteName\}；\$\{formatApGroupLabel\(group\.works\)\}；\$\{artworkNames\}`\)/,
+    /marker\.setAttribute\('aria-label', `\$\{group\.siteName\}；\$\{group\.apGroupLabel\}`\)/,
   );
+  assert.doesNotMatch(html, /marker\.setAttribute\('aria-label',[^\n]*artworkNames/);
   assert.match(html, /marker\.setAttribute\('role', 'button'\)/);
   assert.match(html, /marker\.setAttribute\('tabindex', '0'\)/);
   assert.match(html, /selectSite\(group, true\)/);
