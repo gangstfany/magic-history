@@ -430,12 +430,12 @@
 
     function clampTransform({ x, y, scale }) {
       const boundedScale = Math.min(3, Math.max(1, scale));
-      const limitX = 1600 * (boundedScale - 1) / 2;
-      const limitY = 800 * (boundedScale - 1) / 2;
+      const minimumX = 1600 * (1 - boundedScale);
+      const minimumY = 800 * (1 - boundedScale);
       return {
         scale: boundedScale,
-        x: Math.min(limitX, Math.max(-limitX, x)),
-        y: Math.min(limitY, Math.max(-limitY, y))
+        x: Math.min(0, Math.max(minimumX, x)),
+        y: Math.min(0, Math.max(minimumY, y))
       };
     }
 
@@ -445,8 +445,11 @@
 
     function runDevelopmentAssertions() {
       const overZoomed = clampTransform({ x: 99999, y: 99999, scale: 9 });
-      assert(overZoomed.scale === 3 && overZoomed.x === 1600 && overZoomed.y === 800,
-        'clampTransform() should cap a 1600 × 800 world map at 3×');
+      assert(overZoomed.scale === 3 && overZoomed.x === 0 && overZoomed.y === 0,
+        'clampTransform() should cap zoom and keep the top-left world edge reachable');
+      const farEdge = clampTransform({ x: -99999, y: -99999, scale: 3 });
+      assert(farEdge.x === -3200 && farEdge.y === -1600,
+        'clampTransform() should keep the right and bottom world edges reachable without blank space');
       const underZoomed = clampTransform({ x: 100, y: 100, scale: 0 });
       assert(underZoomed.scale === 1 && underZoomed.x === 0 && underZoomed.y === 0,
         'clampTransform() should return the 1× overview to its origin');
