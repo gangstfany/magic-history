@@ -67,3 +67,13 @@ test('all art map text inherits the World History font stack', async () => {
   assert.match(imageCreditCss, /line-height:\s*1\.5/);
   assert.match(getCssDeclarations(html, '.legend'), /font-size:\s*\.86rem/);
 });
+
+test('detail images show the complete artwork without cover cropping', async () => {
+  const html = await loadHtml();
+  const detailImageCss = getCssDeclarations(html, '.artwork-image-button img');
+  assert.match(detailImageCss, /object-fit:\s*contain/);
+  assert.doesNotMatch(detailImageCss, /object-fit:\s*cover/);
+
+  const imageButtonCss = getCssDeclarations(html, '.artwork-image-button');
+  assert.match(imageButtonCss, /background:\s*var\(--surface-sunken\)/);
+});
