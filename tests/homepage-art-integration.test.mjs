@@ -46,6 +46,20 @@ test('initial World subject uses the bounded live-frame loading flow', async () 
   assert.match(html, /mapRetry\.addEventListener\('click'/);
 });
 
+test('frame load success requires the expected same-origin document and page landmark', async () => {
+  const html = await loadHtml();
+
+  assert.match(html, /function isExpectedFrameReady\(frame\)/);
+  assert.match(html, /frame\.contentDocument/);
+  assert.match(html, /frame\.contentWindow\.location\.href/);
+  assert.match(html, /new URL\(frame\.getAttribute\('src'\), window\.location\.href\)/);
+  assert.match(html, /doc\.querySelector\('\.map-zone'\)/);
+  assert.match(html, /doc\.querySelector\('#markerLayer'\)/);
+  assert.match(html, /catch \(err\) \{\s*return false;\s*\}/);
+  assert.match(html, /addEventListener\('load', \(\) => \{\s*if \(isExpectedFrameReady\(frame\)\) finishFrameLoad\(frame\);/);
+  assert.match(html, /if \(isExpectedFrameReady\(frame\)\) finishFrameLoad\(frame\);/);
+});
+
 test("Today's Pick cannot reappear after switching away from World", async () => {
   const html = await loadHtml();
 
@@ -57,6 +71,21 @@ test('coming-soon subjects hide stale World event details', async () => {
 
   assert.match(html, /if \(homeEvents\) \{\s*homeEvents\.innerHTML = HOME_EVENTS_EMPTY;\s*homeEvents\.hidden = true;/);
   assert.match(html, /if \(key === 'world'\) syncHomeEvents\(\)/);
+});
+
+test('responsive rules override subject-specific desktop heights without collapsing placeholders', async () => {
+  const html = await loadHtml();
+
+  assert.match(html, /@media \(max-width: 900px\)[\s\S]*?\.map-card\[data-subject="art"\] \.home-map-wrap\s*\{\s*height:\s*300px/);
+  assert.match(html, /@media \(max-width: 900px\)[\s\S]*?\.map-card\[data-subject="euro"\] \.map-events-split[\s\S]*?height:\s*300px/);
+});
+
+test('map caption follows the selected subject and hides for coming-soon subjects', async () => {
+  const html = await loadHtml();
+
+  assert.match(html, /id="homeMapCaption"/);
+  assert.match(html, /homeMapCaption\.textContent = key === 'art'/);
+  assert.match(html, /homeMapCaption\.hidden = !s\.live/);
 });
 
 test('world-only integrations target worldMapFrame and art mode uses the full map width', async () => {

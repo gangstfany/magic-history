@@ -215,6 +215,14 @@ nav.topnav {
   .map-events-split { flex-direction: column; height: auto; }
   .home-map-wrap { flex: none; height: 300px; border-right: none; border-bottom: 1px solid var(--line); }
   .home-events { flex: none; height: 46vh; overflow-y: auto; }
+  .map-card[data-subject="art"] .map-events-split { height: auto; }
+  .map-card[data-subject="art"] .home-map-wrap { height: 300px; }
+  .map-card[data-subject="euro"] .map-events-split,
+  .map-card[data-subject="us"] .map-events-split,
+  .map-card[data-subject="geo"] .map-events-split { height: 300px; }
+  .map-card[data-subject="euro"] .home-map-wrap,
+  .map-card[data-subject="us"] .home-map-wrap,
+  .map-card[data-subject="geo"] .home-map-wrap { height: 100%; }
 }
 
 .features {
@@ -347,7 +355,7 @@ nav.topnav {
           </div>
         </div>
       </div>
-      <div class="home-map-caption">5 regions · 233 events · 104 pins · 6 trade routes</div>
+      <div class="home-map-caption" id="homeMapCaption">5 regions · 233 events · 104 pins · 6 trade routes</div>
 
       <div class="features">
         <div class="feature">
@@ -480,6 +488,7 @@ nav.topnav {
   const artMapFrame = document.getElementById('artMapFrame');
   const mapCard = document.querySelector('.map-card');
   const mapCardHead = document.querySelector('.map-card-head');
+  const homeMapCaption = document.getElementById('homeMapCaption');
   const CAT_ICON = { GOV: '👑', ECN: '💰', CDI: '📜', SIO: '👥', TEC: '⚙' };
 
   function dayOfYear(d) {
@@ -634,8 +643,28 @@ nav.topnav {
     mapRetry.classList.remove('show');
   }
 
+  function isExpectedFrameReady(frame) {
+    try {
+      const doc = frame.contentDocument;
+      const currentUrl = new URL(frame.contentWindow.location.href);
+      const expectedUrl = new URL(frame.getAttribute('src'), window.location.href);
+      if (!doc || currentUrl.origin !== expectedUrl.origin || currentUrl.pathname !== expectedUrl.pathname) return false;
+      if (!['interactive', 'complete'].includes(doc.readyState)) return false;
+      return frame === worldMapFrame
+        ? Boolean(doc.querySelector('.map-zone'))
+        : Boolean(doc.querySelector('#markerLayer'));
+    } catch (err) {
+      return false;
+    }
+  }
+
   [worldMapFrame, artMapFrame].forEach(frame => {
-    if (frame) frame.addEventListener('load', () => finishFrameLoad(frame));
+    if (!frame) return;
+    frame.addEventListener('load', () => {
+      if (isExpectedFrameReady(frame)) finishFrameLoad(frame);
+    });
+    // A fast same-origin cache hit can finish before this listener is installed.
+    if (isExpectedFrameReady(frame)) finishFrameLoad(frame);
   });
 
   function showLiveFrame(s) {
@@ -647,8 +676,8 @@ nav.topnav {
       candidate.toggleAttribute('hidden', !isSelected);
       candidate.setAttribute('aria-hidden', String(!isSelected));
     });
-    if (loadedFrames.has(frame)) {
-      mapSkeleton.classList.remove('show');
+    if (loadedFrames.has(frame) || isExpectedFrameReady(frame)) {
+      finishFrameLoad(frame);
       return;
     }
     mapSkeleton.classList.add('show');
@@ -680,6 +709,12 @@ nav.topnav {
     subjPills.forEach(p => p.setAttribute('aria-pressed', String(p.dataset.subj === key)));
     if (mapCard) mapCard.dataset.subject = key;
     if (mapCardHead) mapCardHead.textContent = key === 'art' ? 'AP Art History Map' : 'History World Map';
+    if (homeMapCaption) {
+      homeMapCaption.textContent = key === 'art'
+        ? '27 AP works · Egypt, Greece & Rome · filter, compare and study'
+        : '5 regions · 233 events · 104 pins · 6 trade routes';
+      homeMapCaption.hidden = !s.live;
+    }
     skLabel.textContent = '正在加载 ' + s.label + ' 地图…';
     if (s.live) {
       mapComingSoon.classList.remove('show');
