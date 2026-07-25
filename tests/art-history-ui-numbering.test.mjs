@@ -619,11 +619,15 @@ test('detail images show the complete artwork without cover cropping', async () 
   const detailImageCss = getCssDeclarations(html, '.artwork-image-button img');
   assert.match(detailImageCss, /object-fit:\s*contain/);
   assert.doesNotMatch(detailImageCss, /object-fit:\s*cover/);
-  assert.match(detailImageCss, /(?:^|;)\s*width:\s*auto/);
-  assert.match(detailImageCss, /(?:^|;)\s*height:\s*auto/);
+  assert.match(
+    detailImageCss,
+    /(?:^|;)\s*height:\s*278px/,
+    'image box height must equal the 300px border-box button minus 20px padding and 2px border',
+  );
+  assert.match(detailImageCss, /(?:^|;)\s*max-height:\s*278px/);
+  assert.match(detailImageCss, /(?:^|;)\s*width:\s*100%/);
   assert.match(detailImageCss, /(?:^|;)\s*max-width:\s*100%/);
-  assert.match(detailImageCss, /(?:^|;)\s*max-height:\s*100%/);
-  assert.doesNotMatch(detailImageCss, /(?:^|;)\s*(?:width|height):\s*100%/);
+  assert.doesNotMatch(detailImageCss, /(?:^|;)\s*(?:height|max-height):\s*100%/);
 
   const imageButtonCss = getCssDeclarations(html, '.artwork-image-button');
   assert.match(imageButtonCss, /background:\s*var\(--surface-sunken\)/);
@@ -631,4 +635,5 @@ test('detail images show the complete artwork without cover cropping', async () 
   assert.match(imageButtonCss, /(?:^|;)\s*height:\s*300px/);
   assert.match(imageButtonCss, /(?:^|;)\s*max-height:\s*300px/);
   assert.match(imageButtonCss, /(?:^|;)\s*padding:\s*10px/);
+  assert.match(imageButtonCss, /(?:^|;)\s*border:\s*1px\s+solid/);
 });
