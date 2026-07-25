@@ -12,9 +12,9 @@ test('homepage keeps persistent, independently labelled world and art frames', a
   const html = await loadHtml();
 
   assert.match(html, /<iframe[^>]+id="worldMapFrame"[^>]+src="world-map\.html"/s);
-  assert.match(html, /<iframe[^>]+id="artMapFrame"[^>]+src="art-history-map\.html"/s);
+  assert.match(html, /<iframe[^>]+id="artMapFrame"[^>]+src="art-history-map\.html\?embed=1"/s);
   assert.equal((html.match(/src="world-map\.html"/g) || []).length, 1);
-  assert.equal((html.match(/src="art-history-map\.html"/g) || []).length, 1);
+  assert.equal((html.match(/src="art-history-map\.html\?embed=1"/g) || []).length, 1);
 });
 
 test('Art History is live in both subject controls', async () => {

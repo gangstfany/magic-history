@@ -68,6 +68,20 @@ function getCssDeclarations(html, selector) {
   return match[1];
 }
 
+test('art map exposes a query-driven embedded presentation mode', async () => {
+  const html = await loadHtml();
+
+  assert.match(
+    html,
+    /new URLSearchParams\(window\.location\.search\)\.get\('embed'\) === '1'/,
+  );
+  assert.match(html, /document\.body\.classList\.toggle\('is-embedded', isEmbedded\)/);
+  assert.match(getCssDeclarations(html, 'body.is-embedded .page-header'), /display:\s*none/);
+  const workspaceCss = getCssDeclarations(html, 'body.is-embedded .art-workspace');
+  assert.match(workspaceCss, /width:\s*100%/);
+  assert.match(workspaceCss, /max-width:\s*none/);
+});
+
 test('art map reuses World History typography and compact detail hierarchy', async () => {
   const html = await loadHtml();
   assert.match(

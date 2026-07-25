@@ -126,6 +126,10 @@
     .dialog-copy h2, .dialog-copy p { margin:0; }
     .dialog-copy p { color:var(--ink-soft); line-height:1.5; }
     .dialog-source { color:#765438; }
+    body.is-embedded { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+    body.is-embedded .page-header { display:none; }
+    body.is-embedded .filter-toolbar { flex:0 0 auto; width:100%; max-width:none; margin:0; padding:8px 12px; border-bottom:1px solid var(--line); background:var(--card); }
+    body.is-embedded .art-workspace { flex:1 1 auto; width:100%; max-width:none; height:auto; min-height:0; margin:0; border:0; border-radius:0; box-shadow:none; }
     @media (max-width:520px) {
       .page-header, .filter-toolbar { padding-left:12px; padding-right:12px; }
       .filter-toolbar > * { max-width:100%; }
@@ -141,6 +145,10 @@
   </style>
 </head>
 <body>
+  <script>
+    const isEmbedded = new URLSearchParams(window.location.search).get('embed') === '1';
+    document.body.classList.toggle('is-embedded', isEmbedded);
+  </script>
   <header class="page-header">
     <h1>AP 艺术史 · 古代地中海与埃及</h1>
     <p class="subtitle">从地点出发，连接作品、文明与历史语境。</p>
