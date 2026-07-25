@@ -149,12 +149,24 @@ test('art map reuses World History typography and compact detail hierarchy', asy
     'detail summary must append English heading before the Chinese subtitle and metadata',
   );
   const englishTitleCss = getCssDeclarations(html, '.work-title-en');
-  assert.match(englishTitleCss, /font-size:\s*22px/);
+  assert.match(englishTitleCss, /font-size:\s*19px/);
   assert.match(englishTitleCss, /font-weight:\s*800/);
   const chineseTitleCss = getCssDeclarations(html, '.work-title-zh');
-  assert.match(chineseTitleCss, /font-size:\s*14px/);
+  assert.match(chineseTitleCss, /font-size:\s*13px/);
   assert.match(chineseTitleCss, /font-weight:\s*600/);
   assert.match(getCssDeclarations(html, '.work-meta'), /font-size:\s*12px/);
+  const detailPanelCss = getCssDeclarations(html, '.detail-panel');
+  assert.match(detailPanelCss, /font-size:\s*13\.5px/);
+  assert.match(detailPanelCss, /font-weight:\s*600/);
+  assert.match(detailPanelCss, /line-height:\s*1\.55/);
+  assert.match(detailPanelCss, /padding:\s*18px/);
+  const detailTabCss = getCssDeclarations(html, '.detail-tab');
+  assert.match(detailTabCss, /font-size:\s*13px/);
+  assert.match(detailTabCss, /font-weight:\s*600/);
+  const compactFilterCss = getCssDeclarations(html, '.filter-pill, .clear-button');
+  assert.match(compactFilterCss, /font-size:\s*13px/);
+  assert.match(compactFilterCss, /font-weight:\s*600/);
+  assert.match(compactFilterCss, /min-height:\s*34px/);
   assert.match(
     html,
     /meta\.textContent = `AP #\$\{work\.apNumber\} · \$\{civilizations\[work\.civilization\]\} · \$\{work\.period\} · \$\{work\.date\}`/,
@@ -187,7 +199,7 @@ test('all art map text inherits the World History font stack', async () => {
   const imageCreditCss = getCssDeclarations(html, '.image-credit');
   assert.match(imageCreditCss, /font-size:\s*\.78rem/);
   assert.match(imageCreditCss, /line-height:\s*1\.5/);
-  assert.match(getCssDeclarations(html, '.legend'), /font-size:\s*\.86rem/);
+  assert.match(getCssDeclarations(html, '.legend'), /font-size:\s*12px/);
 });
 
 test('compact AP number helpers preserve gaps and merge consecutive ranges', async () => {
