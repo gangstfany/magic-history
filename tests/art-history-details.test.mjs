@@ -59,7 +59,30 @@ test('image dialog supports labelled media, attribution, and focus restoration',
   assert.match(html, /imageDialogTrigger\?\.focus\(\)/);
 });
 
-test('all artworks have a separate, linked image credit without changing core data', async () => {
+test('AP 15 uses the Louvre E 3023 Seated Scribe image and matching credit', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const seatedScribe = artworks.find(({ id }) => id === 'ap15-seated-scribe');
+
+  assert.ok(seatedScribe, 'missing AP 15 Seated Scribe');
+  assert.equal(
+    seatedScribe.imageUrl,
+    'https://commons.wikimedia.org/wiki/Special:Redirect/file/Le_Scribe_accroupi_-_Mus%C3%A9e_du_Louvre_Antiquit%C3%A9s_%C3%A9gyptiennes_E_3023.jpg',
+  );
+  assert.equal(
+    seatedScribe.imageSourceUrl,
+    'https://commons.wikimedia.org/wiki/File:Le_Scribe_accroupi_-_Mus%C3%A9e_du_Louvre_Antiquit%C3%A9s_%C3%A9gyptiennes_E_3023.jpg',
+  );
+  assert.equal(seatedScribe.imageAlt, '卢浮宫 E 3023 坐姿书记官彩绘石灰岩像');
+  assert.deepEqual(credits['ap15-seated-scribe'], {
+    creatorOrInstitution: '摄影：Shonagon；来源机构：Wikimedia Commons',
+    licenseName: 'CC0 1.0',
+    licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
+  });
+});
+
+test('all artworks have linked credits and only the approved AP 15 image correction', async () => {
   const html = await loadHtml();
   const artworkMatch = html.match(
     /<script id="artwork-data" type="application\/json">([\s\S]*?)<\/script>/,
@@ -67,7 +90,7 @@ test('all artworks have a separate, linked image credit without changing core da
   assert.ok(artworkMatch, 'missing artwork data');
   assert.equal(
     createHash('sha256').update(artworkMatch[1]).digest('hex'),
-    '9f84346761ab9fb8cbb67547dcac83512f20eabf001bb4f45ac6c18cb3566493',
+    '305f7fdd7ee57ae87f03a3be5eb84e7de98f9c3f0dfa034ced0f9562b5e56b6e',
   );
 
   const artworks = JSON.parse(artworkMatch[1]);
