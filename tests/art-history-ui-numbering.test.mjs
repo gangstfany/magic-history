@@ -5,6 +5,31 @@ import { readFile } from 'node:fs/promises';
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const loadHtml = () => readFile(HTML_PATH, 'utf8');
 
+function getFunctionSource(html, functionName) {
+  const signature = `function ${functionName}(`;
+  const start = html.indexOf(signature);
+  assert.notEqual(start, -1, `missing ${functionName}()`);
+  const openBrace = html.indexOf('{', start);
+  let depth = 0;
+  let end = -1;
+  for (let index = openBrace; index < html.length; index += 1) {
+    if (html[index] === '{') depth += 1;
+    if (html[index] === '}') depth -= 1;
+    if (depth === 0) {
+      end = index + 1;
+      break;
+    }
+  }
+  assert.notEqual(end, -1, `unterminated ${functionName}()`);
+  return html.slice(start, end);
+}
+
+function loadPureFunctions(html, functionNames) {
+  const sources = functionNames.map((name) => getFunctionSource(html, name)).join('\n');
+  const exports = functionNames.join(', ');
+  return Function(`"use strict"; ${sources}; return { ${exports} };`)();
+}
+
 function getCssDeclarations(html, selector) {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const match = html.match(
@@ -59,13 +84,47 @@ test('all art map text inherits the World History font stack', async () => {
     /font:\s*[^;}]*(?:ui-sans-serif|system-ui)/,
     'font shorthands must not override the page font family',
   );
-  const markerLabelCss = getCssDeclarations(html, '.site-marker .marker-count');
+  const markerLabelCss = getCssDeclarations(html, '.site-marker .marker-ap-label');
   assert.match(markerLabelCss, /font-weight:\s*700/);
-  assert.match(markerLabelCss, /font-size:\s*20px/);
+  assert.match(markerLabelCss, /font-size:\s*17px/);
   const imageCreditCss = getCssDeclarations(html, '.image-credit');
   assert.match(imageCreditCss, /font-size:\s*\.78rem/);
   assert.match(imageCreditCss, /line-height:\s*1\.5/);
   assert.match(getCssDeclarations(html, '.legend'), /font-size:\s*\.86rem/);
+});
+
+test('compact AP number helpers preserve gaps and merge consecutive ranges', async () => {
+  const html = await loadHtml();
+  const { compactApNumbers, formatApGroupLabel } = loadPureFunctions(
+    html,
+    ['compactApNumbers', 'formatApGroupLabel'],
+  );
+
+  assert.equal(compactApNumbers([35, 39, 40]), '35, 39–40');
+  assert.equal(compactApNumbers([41, 42, 43, 44, 45, 46, 47]), '41–47');
+  assert.equal(
+    formatApGroupLabel([{ apNumber: 40 }, { apNumber: 39 }, { apNumber: 35 }]),
+    'AP 35, 39–40',
+  );
+});
+
+test('map markers display AP numbers with circles for works and capsules for groups', async () => {
+  const html = await loadHtml();
+
+  assert.match(html, /works\.map\(\(work\) => work\.apNumber\)/);
+  assert.match(html, /classList\.add\('marker-label-bg'\)/);
+  assert.match(html, /classList\.add\('marker-ap-label'\)/);
+  assert.match(
+    html,
+    /createElementNS\([^;]*group\.works\.length === 1 \? 'circle' : 'rect'\s*\)/,
+  );
+  assert.match(html, /label\.textContent = compactApNumbers\(apNumbers\)/);
+  assert.doesNotMatch(html, /count\.textContent = (?:String\()?group\.works\.length/);
+  assert.match(getCssDeclarations(html, '.site-marker .marker-label-bg'), /filter:\s*drop-shadow/);
+  assert.match(
+    getCssDeclarations(html, '.site-marker .marker-ap-label'),
+    /dominant-baseline:\s*central/,
+  );
 });
 
 test('detail images show the complete artwork without cover cropping', async () => {

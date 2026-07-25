@@ -46,14 +46,15 @@
     .marker-layer { pointer-events:none; }
     .marker-leader { stroke:#8c7d68; stroke-width:2.5; stroke-linecap:round; opacity:.72; vector-effect:non-scaling-stroke; pointer-events:none; }
     .site-marker { pointer-events:all; cursor:pointer; }
-    .site-marker .marker-dot { stroke:#fff; stroke-width:5; filter:drop-shadow(0 3px 4px rgba(40,30,20,.42)); transition:r .15s ease,stroke-width .15s ease; }
-    .site-marker.is-active .marker-dot { r:29px; stroke:#fff; stroke-width:10; filter:drop-shadow(0 4px 7px rgba(40,30,20,.55)); }
-    .site-marker .marker-count { fill:#fff; font-size:20px; font-weight:700; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
-    .site-marker[data-civilization="egypt"] .marker-dot { fill:var(--egypt); }
-    .site-marker[data-civilization="greece"] .marker-dot { fill:var(--greece); }
-    .site-marker[data-civilization="rome"] .marker-dot { fill:var(--rome); }
-    .site-marker[data-civilization="mixed"] .marker-dot { fill:var(--greece); stroke:var(--rome); stroke-width:9; }
-    .site-marker.is-active .marker-dot { stroke:#fff; stroke-width:10; }
+    .site-marker .marker-label-bg { stroke:#fff; stroke-width:5; filter:drop-shadow(0 3px 4px rgba(40,30,20,.42)); transition:r .15s ease,stroke-width .15s ease; }
+    .site-marker.is-active .marker-label-bg { stroke:#fff; stroke-width:10; filter:drop-shadow(0 4px 7px rgba(40,30,20,.55)); }
+    .site-marker.is-active circle.marker-label-bg { r:29px; }
+    .site-marker .marker-ap-label { fill:#fff; font-size:17px; font-weight:700; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
+    .site-marker[data-civilization="egypt"] .marker-label-bg { fill:var(--egypt); }
+    .site-marker[data-civilization="greece"] .marker-label-bg { fill:var(--greece); }
+    .site-marker[data-civilization="rome"] .marker-label-bg { fill:var(--rome); }
+    .site-marker[data-civilization="mixed"] .marker-label-bg { fill:var(--greece); stroke:var(--rome); stroke-width:9; }
+    .site-marker.is-active .marker-label-bg { stroke:#fff; stroke-width:10; }
     .map-controls { position:absolute; z-index:2; top:12px; right:12px; display:flex; gap:6px; padding:6px; border:1px solid var(--line); border-radius:12px; background:rgba(255,250,240,.94); box-shadow:0 3px 12px rgba(48,42,36,.12); }
     .map-controls button, .site-cycle button { min-width:40px; min-height:40px; border:1px solid var(--line); border-radius:9px; background:#fffaf0; color:var(--ink); cursor:pointer; }
     .map-controls .overview-button { padding:0 10px; }
@@ -459,6 +460,30 @@
       });
     }
 
+    function compactApNumbers(numbers) {
+      const sorted = [...new Set(numbers)].sort((a, b) => a - b);
+      const ranges = [];
+      let start = sorted[0];
+      let previous = sorted[0];
+      sorted.slice(1).forEach((value) => {
+        if (value === previous + 1) {
+          previous = value;
+          return;
+        }
+        ranges.push(start === previous ? `${start}` : `${start}–${previous}`);
+        start = value;
+        previous = value;
+      });
+      if (start !== undefined) {
+        ranges.push(start === previous ? `${start}` : `${start}–${previous}`);
+      }
+      return ranges.join(', ');
+    }
+
+    function formatApGroupLabel(works) {
+      return `AP ${compactApNumbers(works.map((work) => work.apNumber))}`;
+    }
+
     function groupBySite(works) {
       const groups = new Map();
       works.forEach((work) => {
@@ -612,6 +637,10 @@
         assert(actual === expected, `Expected ${expected} ${civilization} works, received ${actual}`);
       });
       assert(normalize('  Ａthens  ') === 'athens', 'normalize() should apply NFKC, trim, and lowercase');
+      assert(compactApNumbers([35, 39, 40]) === '35, 39–40',
+        'compactApNumbers() should preserve gaps between AP ranges');
+      assert(compactApNumbers([41, 42, 43, 44, 45, 46, 47]) === '41–47',
+        'compactApNumbers() should merge consecutive AP numbers');
       const gizaGroups = groupBySite(ARTWORKS.filter((work) => work.siteName === 'Giza'));
       assert(gizaGroups.length === 1 && gizaGroups[0].works.length === 2,
         'groupBySite() should deterministically combine an exact site');
@@ -978,10 +1007,8 @@
         marker.setAttribute('tabindex', '0');
         marker.setAttribute('aria-pressed', String(group.works.some((work) => work.id === state.selectedId)));
         if (group.works.some((work) => work.id === state.selectedId)) marker.classList.add('is-active');
-        const civilizationNames = { egypt:'埃及', greece:'希腊', rome:'罗马' };
-        const civilizationLabel = group.civilizations.map((item) => civilizationNames[item]).join('与');
-        const artworkNames = group.works.map((work) => work.titleZh).join('、');
-        marker.setAttribute('aria-label', `${group.siteName}，${civilizationLabel}，${group.works.length} 件作品；作品：${artworkNames}`);
+        const artworkNames = group.works.map((work) => work.titleEn).join('、');
+        marker.setAttribute('aria-label', `${group.siteName}；${formatApGroupLabel(group.works)}；${artworkNames}`);
         marker.addEventListener('click', () => selectSite(group));
         marker.addEventListener('keydown', (event) => {
           if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -989,17 +1016,28 @@
           selectSite(group, true);
         });
         const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-        title.textContent = `${group.siteName} · ${group.works.length} 件`;
-        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        dot.classList.add('marker-dot');
-        dot.setAttribute('r', '21');
-        marker.append(title, dot);
-        if (group.works.length > 1) {
-          const count = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          count.classList.add('marker-count');
-          count.textContent = String(group.works.length);
-          marker.append(count);
+        title.textContent = `${group.siteName} · ${formatApGroupLabel(group.works)}`;
+        const apNumbers = group.works.map((work) => work.apNumber);
+        const labelText = compactApNumbers(apNumbers);
+        const background = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          group.works.length === 1 ? 'circle' : 'rect'
+        );
+        background.classList.add('marker-label-bg');
+        if (group.works.length === 1) {
+          background.setAttribute('r', '21');
+        } else {
+          const width = Math.max(68, Math.min(136, labelText.length * 12 + 24));
+          background.setAttribute('x', String(-width / 2));
+          background.setAttribute('y', '-21');
+          background.setAttribute('width', String(width));
+          background.setAttribute('height', '42');
+          background.setAttribute('rx', '21');
         }
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.classList.add('marker-ap-label');
+        label.textContent = compactApNumbers(apNumbers);
+        marker.append(title, background, label);
         markers.push(marker);
       });
       markerLayer.append(...leaders, ...markers);
@@ -1035,7 +1073,7 @@
         const heading = document.createElement('h2');
         heading.textContent = '选择地图标记';
         const copy = document.createElement('p');
-        copy.textContent = '点击圆点，或用 Tab 聚焦后按 Enter / 空格，查看该地点的作品。圆点内数字表示同地点包含多件作品。';
+        copy.textContent = '点击 AP 编号标记，或用 Tab 聚焦后按 Enter / 空格，查看该地点的作品。多件作品会以紧凑编号范围显示。';
         const legend = document.createElement('div');
         legend.className = 'legend';
         [['埃及','#b85d44'],['希腊','#597f8b'],['罗马','#c8943d']].forEach(([label, color]) => {
@@ -1146,6 +1184,8 @@
     window.ArtHistoryMap = {
       normalize,
       filterWorks,
+      compactApNumbers,
+      formatApGroupLabel,
       groupBySite,
       toWorldCoordinates,
       layoutSiteMarkers,

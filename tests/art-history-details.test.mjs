@@ -87,11 +87,17 @@ test('comparison navigation moves focus to the newly selected title', async () =
   assert.match(html, /document\.activeElement !== heading/);
 });
 
-test('marker labels name the site, count, and aggregated artworks', async () => {
+test('marker labels name the site, AP numbers, and English artwork titles', async () => {
   const html = await loadHtml();
 
-  assert.match(html, /group\.works\.map\(\(work\) => work\.titleZh\)/);
-  assert.match(html, /作品：\$\{artworkNames\}/);
+  assert.match(html, /group\.works\.map\(\(work\) => work\.titleEn\)/);
+  assert.match(
+    html,
+    /marker\.setAttribute\('aria-label', `\$\{group\.siteName\}；\$\{formatApGroupLabel\(group\.works\)\}；\$\{artworkNames\}`\)/,
+  );
+  assert.match(html, /marker\.setAttribute\('role', 'button'\)/);
+  assert.match(html, /marker\.setAttribute\('tabindex', '0'\)/);
+  assert.match(html, /selectSite\(group, true\)/);
 });
 
 test('map panning owns touch gestures only on the interactive pan surface', async () => {
