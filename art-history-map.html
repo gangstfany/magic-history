@@ -49,24 +49,24 @@
     .site-marker .marker-hit-area { fill:transparent; pointer-events:all; }
     .site-marker .marker-visual { transform-box:fill-box; transform-origin:center; transition:transform .15s ease; pointer-events:none; }
     .site-marker.is-active .marker-visual { transform:scale(1.08); }
-    .site-marker .marker-label-bg { stroke:#fff; stroke-width:5; filter:drop-shadow(0 3px 4px rgba(40,30,20,.42)); transition:stroke-width .15s ease,filter .15s ease; }
-    .site-marker.is-active .marker-label-bg { stroke-width:8; filter:drop-shadow(0 4px 7px rgba(40,30,20,.55)); }
+    .site-marker .marker-label-bg { stroke:#fff; stroke-width:2; filter:drop-shadow(0 2px 3px rgba(40,30,20,.32)); transition:stroke-width .15s ease,filter .15s ease; }
+    .site-marker.is-active .marker-label-bg { stroke-width:3; filter:drop-shadow(0 3px 5px rgba(40,30,20,.45)); }
     .site-marker .marker-ap-label { fill:#fff; font-weight:700; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
     .site-marker[data-civilization="egypt"] .marker-label-bg { fill:var(--egypt); }
     .site-marker[data-civilization="greece"] .marker-label-bg { fill:var(--greece); }
     .site-marker[data-civilization="rome"] .marker-label-bg { fill:var(--rome); }
-    .site-marker[data-civilization="mixed"] .marker-label-bg { fill:var(--greece); stroke:var(--rome); stroke-width:9; }
+    .site-marker[data-civilization="mixed"] .marker-label-bg { fill:var(--greece); stroke:var(--rome); stroke-width:3; }
     .expanded-pin-leader { stroke:#665b4c; stroke-width:2; stroke-linecap:round; opacity:.78; vector-effect:non-scaling-stroke; pointer-events:none; }
     .expanded-work-pin { pointer-events:all; cursor:pointer; }
     .expanded-work-pin .expanded-pin-hit-area { fill:transparent; pointer-events:all; }
     .expanded-work-pin .expanded-pin-visual { transform-box:fill-box; transform-origin:center; transition:transform .15s ease; pointer-events:none; }
-    .expanded-work-pin .expanded-pin-bg { stroke:#fff; stroke-width:5; filter:drop-shadow(0 3px 4px rgba(40,30,20,.42)); vector-effect:non-scaling-stroke; }
+    .expanded-work-pin .expanded-pin-bg { stroke:#fff; stroke-width:2; filter:drop-shadow(0 2px 3px rgba(40,30,20,.32)); vector-effect:non-scaling-stroke; }
     .expanded-work-pin .expanded-pin-label { fill:#fff; font-weight:800; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
     .expanded-work-pin[data-civilization="egypt"] .expanded-pin-bg { fill:var(--egypt); }
     .expanded-work-pin[data-civilization="greece"] .expanded-pin-bg { fill:var(--greece); }
     .expanded-work-pin[data-civilization="rome"] .expanded-pin-bg { fill:var(--rome); }
     .expanded-work-pin.is-active .expanded-pin-visual { transform:scale(1.12); }
-    .expanded-work-pin.is-active .expanded-pin-bg { stroke:#211f1c; stroke-width:8; }
+    .expanded-work-pin.is-active .expanded-pin-bg { stroke:var(--ink); stroke-width:3; }
     .expanded-pin-list { display:none; width:100%; }
     .expanded-pin-list.is-visible { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; padding:10px; border-top:1px solid var(--line); background:#fffaf2; }
     .map-panel.has-compact-list { display:grid; grid-template-rows:minmax(260px,1fr) auto; overflow:auto; }
@@ -76,9 +76,10 @@
     .expanded-pin-list-button[data-civilization="greece"] { background:var(--greece); }
     .expanded-pin-list-button[data-civilization="rome"] { background:var(--rome); }
     .expanded-pin-list-button.is-active { border-color:#211f1c; box-shadow:0 0 0 3px #fff inset; }
-    .map-controls { position:absolute; z-index:2; top:12px; right:12px; display:flex; gap:6px; padding:6px; border:1px solid var(--line); border-radius:12px; background:rgba(255,250,240,.94); box-shadow:0 3px 12px rgba(48,42,36,.12); }
-    .map-controls button, .site-cycle button { min-width:40px; min-height:40px; border:1px solid var(--line); border-radius:9px; background:#fffaf0; color:var(--ink); cursor:pointer; }
-    .map-controls .overview-button { padding:0 10px; }
+    .map-controls { position:absolute; z-index:2; top:12px; right:12px; display:flex; flex-direction:column; gap:6px; }
+    .map-controls button { width:30px; height:30px; min-width:30px; min-height:30px; padding:0; border:1.5px solid #ccc; border-radius:6px; color:#333; background:#fff; font-size:20px; font-weight:700; line-height:1; box-shadow:0 2px 6px rgba(0,0,0,.15); cursor:pointer; }
+    .map-controls .overview-button { font-size:11px; }
+    .site-cycle button { min-width:40px; min-height:40px; border:1px solid var(--line); border-radius:9px; background:#fffaf0; color:var(--ink); cursor:pointer; }
     .selected-summary { display:grid; gap:8px; }
     .selected-summary h2, .selected-summary p { margin:0; }
     .work-title-en { margin:0; font-size:19px; line-height:1.25; font-weight:800; letter-spacing:-.01em; }
@@ -358,7 +359,7 @@
       <div class="map-controls" role="group" aria-label="地图导航">
         <button id="zoomIn" type="button" aria-label="放大地图">＋</button>
         <button id="zoomOut" type="button" aria-label="缩小地图">−</button>
-        <button id="resetView" class="overview-button" type="button">全景</button>
+        <button id="resetView" class="overview-button" type="button" aria-label="还原地图">1:1</button>
       </div>
     </section>
     <aside id="detailPanel" class="detail-panel" aria-live="polite" aria-label="作品详情"></aside>
@@ -710,11 +711,11 @@
 
     function getMarkerMetrics(apLabel, isSingle, screenScale) {
       const scale = Math.max(0.05, screenScale);
-      const fontSize = 12 / scale;
-      const visualHeight = 30 / scale;
+      const fontSize = 10 / scale;
+      const visualHeight = 22 / scale;
       const visualWidthPx = isSingle
-        ? 30
-        : Math.max(44, Math.min(120, apLabel.length * 7.2 + 18));
+        ? 22
+        : Math.max(38, Math.min(108, apLabel.length * 6.4 + 16));
       const visualWidth = visualWidthPx / scale;
       return {
         fontSize,
@@ -722,15 +723,15 @@
         visualHeight,
         cornerRadius: visualHeight / 2,
         hitWidth: Math.max(44 / scale, visualWidth * 1.12),
-        hitHeight: Math.max(44 / scale, visualHeight * 1.12)
+        hitHeight: 44 / scale
       };
     }
 
     function getExpandedPinMetrics(screenScale) {
       const scale = Math.max(0.05, screenScale);
       return {
-        fontSize: 12 / scale,
-        visualDiameter: 30 / scale,
+        fontSize: 10 / scale,
+        visualDiameter: 22 / scale,
         hitWidth: 44 / scale,
         hitHeight: 44 / scale
       };

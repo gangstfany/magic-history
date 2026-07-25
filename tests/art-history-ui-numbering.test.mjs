@@ -272,6 +272,43 @@ test('map markers display AP numbers with circles for works and capsules for gro
   );
 });
 
+test('marker visuals match World pins while hit targets stay touchable', async () => {
+  const html = await loadHtml();
+  const { getMarkerMetrics, getExpandedPinMetrics } = loadPureFunctions(
+    html,
+    ['getMarkerMetrics', 'getExpandedPinMetrics'],
+  );
+  const single = getMarkerMetrics('1', true, 1);
+  const child = getExpandedPinMetrics(1);
+
+  assert.equal(single.fontSize, 10);
+  assert.equal(single.visualWidth, 22);
+  assert.equal(single.visualHeight, 22);
+  assert.equal(single.hitWidth, 44);
+  assert.equal(single.hitHeight, 44);
+  assert.equal(child.fontSize, 10);
+  assert.equal(child.visualDiameter, 22);
+  assert.equal(child.hitWidth, 44);
+  assert.equal(child.hitHeight, 44);
+  assert.match(getCssDeclarations(html, '.site-marker .marker-label-bg'), /stroke-width:\s*2/);
+  assert.match(getCssDeclarations(html, '.expanded-work-pin .expanded-pin-bg'), /stroke-width:\s*2/);
+});
+
+test('desktop map controls use the World History 30px vertical stack', async () => {
+  const html = await loadHtml();
+  const controls = getCssDeclarations(html, '.map-controls');
+  const buttons = getCssDeclarations(html, '.map-controls button');
+
+  assert.match(controls, /flex-direction:\s*column/);
+  assert.match(buttons, /width:\s*30px/);
+  assert.match(buttons, /height:\s*30px/);
+  assert.match(buttons, /border-radius:\s*6px/);
+  assert.match(
+    html,
+    /<button id="resetView" class="overview-button" type="button" aria-label="还原地图">1:1<\/button>/,
+  );
+});
+
 test('marker metrics stay readable and touchable on a 390px viewport', async () => {
   const html = await loadHtml();
   const { getMapScreenScale, getMarkerMetrics } = loadPureFunctions(
@@ -283,7 +320,7 @@ test('marker metrics stay readable and touchable on a 390px viewport', async () 
 
   assert.equal(renderedScale, 362 / 1600);
   assert.equal(getMapScreenScale(0, 0), 0.23);
-  assert.ok(metrics.fontSize * renderedScale >= 11.5);
+  assert.ok(metrics.fontSize * renderedScale >= 9.5);
   assert.ok(metrics.hitHeight * renderedScale >= 44);
   assert.ok(metrics.hitWidth * renderedScale >= 44);
   assert.ok(metrics.visualWidth < metrics.hitWidth);
