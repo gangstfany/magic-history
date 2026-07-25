@@ -68,6 +68,13 @@ function getCssDeclarations(html, selector) {
   return match[1];
 }
 
+function getMediaQuerySource(html, query) {
+  const start = html.indexOf(`@media ${query}`);
+  assert.notEqual(start, -1, `missing @media ${query}`);
+  const end = html.indexOf('@media ', start + query.length + 7);
+  return html.slice(start, end === -1 ? html.length : end);
+}
+
 test('art map exposes a query-driven embedded presentation mode', async () => {
   const html = await loadHtml();
 
@@ -108,6 +115,22 @@ test('art map exposes a query-driven embedded presentation mode', async () => {
     html.indexOf('body.is-embedded {') < html.indexOf('@media (max-width:520px)'),
     'embedded rules must precede the responsive media query',
   );
+  const narrowEmbeddedCss = getMediaQuerySource(html, '(max-width:520px)');
+  const narrowBodyCss = getCssDeclarations(narrowEmbeddedCss, 'body.is-embedded');
+  assert.match(narrowBodyCss, /height:\s*auto/);
+  assert.match(narrowBodyCss, /min-height:\s*100vh/);
+  assert.match(narrowBodyCss, /overflow:\s*auto/);
+  const narrowWorkspaceCss = getCssDeclarations(
+    narrowEmbeddedCss,
+    'body.is-embedded .art-workspace',
+  );
+  assert.match(narrowWorkspaceCss, /width:\s*100%/);
+  assert.match(narrowWorkspaceCss, /max-width:\s*none/);
+  assert.match(narrowWorkspaceCss, /height:\s*auto/);
+  assert.match(narrowWorkspaceCss, /min-height:\s*0/);
+  assert.match(narrowWorkspaceCss, /margin:\s*0/);
+  assert.match(narrowWorkspaceCss, /border:\s*0/);
+  assert.match(narrowWorkspaceCss, /border-radius:\s*0/);
 });
 
 test('art map reuses World History typography and compact detail hierarchy', async () => {

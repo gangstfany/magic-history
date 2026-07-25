@@ -131,6 +131,8 @@
     body.is-embedded .filter-toolbar { flex:0 0 auto; width:100%; max-width:none; margin:0; padding:8px 12px; border-bottom:1px solid var(--line); background:var(--card); }
     body.is-embedded .art-workspace { flex:1 1 auto; width:100%; max-width:none; height:auto; min-height:0; margin:0; border:0; border-radius:0; box-shadow:none; }
     @media (max-width:520px) {
+      body.is-embedded { height:auto; min-height:100vh; overflow:auto; }
+      body.is-embedded .art-workspace { width:100%; max-width:none; height:auto; min-height:0; margin:0; border:0; border-radius:0; }
       .page-header, .filter-toolbar { padding-left:12px; padding-right:12px; }
       .filter-toolbar > * { max-width:100%; }
       .filter-label:has(#searchInput) { width:100%; }
