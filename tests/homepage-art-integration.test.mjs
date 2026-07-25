@@ -76,7 +76,11 @@ test('coming-soon subjects hide stale World event details', async () => {
 test('responsive rules override subject-specific desktop heights without collapsing placeholders', async () => {
   const html = await loadHtml();
 
-  assert.match(html, /@media \(max-width: 900px\)[\s\S]*?\.map-card\[data-subject="art"\] \.home-map-wrap\s*\{\s*height:\s*300px/);
+  assert.match(
+    html,
+    /@media \(max-width: 900px\)[\s\S]*?\.map-card\[data-subject="art"\] \.home-map-wrap\s*\{\s*flex:\s*0 0 auto;\s*height:\s*300px/,
+    'Art mobile wrapper must reset the desktop 100% flex-basis before applying its 300px height',
+  );
   assert.match(html, /@media \(max-width: 900px\)[\s\S]*?\.map-card\[data-subject="euro"\] \.map-events-split[\s\S]*?height:\s*300px/);
 });
 
