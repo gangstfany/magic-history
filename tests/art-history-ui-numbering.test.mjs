@@ -402,16 +402,67 @@ test('desktop expanded pins avoid their parent target and every other site marke
   });
 });
 
+test('compact mode follows actual spider capacity at embedded map scales', async () => {
+  const html = await loadHtml();
+  const artworks = parseArtworkData(html);
+  const functionNames = [
+    'compactApNumbers',
+    'formatApGroupLabel',
+    'createSiteToken',
+    'groupBySite',
+    'toWorldCoordinates',
+    'getMarkerMetrics',
+    'getExpandedPinMetrics',
+    'getMarkerBounds',
+    'markerBoundsOverlap',
+    'expandMarkerBounds',
+    'createSpatialHash',
+    'findNearestAvailableMarkerSlot',
+    'layoutSiteMarkers',
+    'expandedPinPositions',
+    'shouldUseCompactExpandedList',
+  ];
+  const helpers = loadPureFunctions(
+    html,
+    functionNames,
+    ['const SITE_WORLD_COORDINATES ='],
+  );
+
+  for (const screenScale of [0.22625, 0.253, 0.27, 0.5]) {
+    const groups = helpers.layoutSiteMarkers(helpers.groupBySite(artworks), screenScale);
+    const obstacles = groups.map((group) => group.bounds);
+    groups.filter((group) => group.works.length > 1).forEach((group) => {
+      assert.equal(
+        helpers.shouldUseCompactExpandedList(
+          group,
+          { x: group.displayX, y: group.displayY },
+          screenScale,
+          obstacles,
+        ),
+        screenScale <= 0.27,
+        `${group.siteName} should use ${screenScale <= 0.27 ? 'compact' : 'spider'} mode`,
+      );
+    });
+  }
+});
+
 test('mobile expansion uses a bounded compact list with exact AP work buttons', async () => {
   const html = await loadHtml();
   const compactSource = getFunctionSource(html, 'renderCompactExpandedList');
   const renderSource = getFunctionSource(html, 'render');
 
   assert.match(html, /<div id="expandedPinList" class="expanded-pin-list" hidden>/);
-  assert.match(renderSource, /shouldUseCompactExpandedList\(\)/);
+  assert.match(
+    renderSource,
+    /shouldUseCompactExpandedList\(\s*expandedGroup,\s*expandedCenter,\s*renderedMarkerScale,\s*obstacleBounds/,
+  );
   assert.match(compactSource, /button\.dataset\.workId = work\.id/);
   assert.match(compactSource, /button\.setAttribute\('role',\s*'button'\)/);
   assert.match(compactSource, /button\.setAttribute\('tabindex',\s*'0'\)/);
+  assert.match(
+    compactSource,
+    /button\.setAttribute\('aria-pressed',\s*String\(state\.selectedId === work\.id\)\)/,
+  );
   assert.match(
     compactSource,
     /`AP \$\{work\.apNumber\} · \$\{work\.titleEn\} · \$\{group\.siteName\}`/,

@@ -1155,6 +1155,7 @@
         search:'',
         selectedId:target.id,
         selectedSiteIndex:0,
+        expandedSiteToken:null,
         activeDetailTab:'quick'
       });
       document.querySelectorAll('.filter-pill').forEach((button) => {
@@ -1331,8 +1332,14 @@
       return summary;
     }
 
-    function shouldUseCompactExpandedList() {
-      return window.matchMedia('(max-width:520px)').matches;
+    function shouldUseCompactExpandedList(group, center, screenScale, obstacleBounds) {
+      if (screenScale < 0.3) return true;
+      try {
+        expandedPinPositions(group, center, screenScale, obstacleBounds);
+        return false;
+      } catch {
+        return true;
+      }
     }
 
     function renderCompactExpandedList(group) {
@@ -1345,6 +1352,7 @@
         button.dataset.civilization = work.civilization;
         button.setAttribute('role', 'button');
         button.setAttribute('tabindex', '0');
+        button.setAttribute('aria-pressed', String(state.selectedId === work.id));
         button.setAttribute(
           'aria-label',
           `AP ${work.apNumber} · ${work.titleEn} · ${group.siteName}`
@@ -1517,14 +1525,21 @@
       expandedPinList.hidden = true;
       expandedPinList.replaceChildren();
       if (expandedGroup) {
-        if (shouldUseCompactExpandedList()) {
+        const expandedCenter = { x: expandedGroup.displayX, y: expandedGroup.displayY };
+        const obstacleBounds = visibleGroups.map((group) => group.bounds);
+        if (shouldUseCompactExpandedList(
+          expandedGroup,
+          expandedCenter,
+          renderedMarkerScale,
+          obstacleBounds
+        )) {
           renderCompactExpandedList(expandedGroup);
         } else {
           const expanded = renderExpandedWorkPins(
             expandedGroup,
-            { x: expandedGroup.displayX, y: expandedGroup.displayY },
+            expandedCenter,
             renderedMarkerScale,
-            visibleGroups.map((group) => group.bounds)
+            obstacleBounds
           );
           leaders.push(...expanded.leaders);
           markers.push(...expanded.pins);

@@ -31,8 +31,13 @@ test('detail view exposes four accessible study tabs', async () => {
 
 test('comparison navigation resolves targets without rewriting artwork data', async () => {
   const html = await loadHtml();
+  const selectComparison = html.match(
+    /function selectComparison\(comparisonId\) \{([\s\S]*?)\n    \}/,
+  )?.[1];
 
   assert.match(html, /function selectComparison\(/);
+  assert.ok(selectComparison, 'missing selectComparison() body');
+  assert.match(selectComparison, /expandedSiteToken:\s*null/);
   assert.match(html, /comparisonIds/);
   assert.match(html, /dataset\.comparisonId/);
   assert.match(html, /function createComparisonAngle\(/);
