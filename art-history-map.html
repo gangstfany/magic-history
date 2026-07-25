@@ -5,15 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AP 艺术史 · 古代地中海与埃及</title>
   <style>
-    :root { color-scheme: light; --paper:#f4eddf; --card:#fffaf0; --ink:#302a24; --muted:#756b60; --line:#d6c6ad; --egypt:#b85d44; --greece:#597f8b; --rome:#c8943d; }
+    :root {
+      color-scheme:light;
+      --ink:#211f1c;
+      --ink-soft:#6b6558;
+      --ink-faint:#9b9382;
+      --paper:#f9f4e8;
+      --card:#fffdf8;
+      --line:#e7dcc6;
+      --line-strong:#d8c9a8;
+      --accent:#8b1a1a;
+      --egypt:#b85d44;
+      --greece:#597f8b;
+      --rome:#c8943d;
+    }
     * { box-sizing: border-box; }
-    body { margin:0; min-width:0; color:var(--ink); background:var(--paper); font-family:ui-serif, Georgia, "Noto Serif SC", serif; }
+    html, body {
+      font-family:"PingFang SC", "Hiragino Sans GB", -apple-system, "Helvetica Neue", sans-serif;
+      -webkit-font-smoothing:antialiased;
+    }
+    body { margin:0; min-width:0; color:var(--ink); background:var(--paper); }
     .page-header { max-width:1180px; margin:auto; padding:28px 20px 14px; }
-    h1 { margin:0 0 6px; font-size:clamp(1.55rem,4vw,2.35rem); }
-    .subtitle { margin:0; color:var(--muted); }
+    .page-header h1 { margin:0 0 6px; font-size:19px; font-weight:800; letter-spacing:-.01em; }
+    .subtitle { margin:0; color:var(--ink-soft); font-size:12px; line-height:1.6; }
     .filter-toolbar { max-width:1180px; margin:0 auto 16px; padding:0 20px; display:flex; flex-wrap:wrap; gap:10px; align-items:end; }
     .civilization-filters { display:flex; flex-wrap:wrap; gap:7px; }
-    .filter-label { display:grid; gap:4px; font-size:.82rem; color:var(--muted); }
+    .filter-label { display:grid; gap:4px; font-size:.82rem; color:var(--ink-soft); }
     button, select, input { font:inherit; }
     .filter-pill, .clear-button { border:1px solid var(--line); border-radius:999px; padding:9px 14px; color:var(--ink); background:var(--card); cursor:pointer; }
     .filter-pill[aria-pressed="true"] { color:#fff; background:#4d463e; border-color:#4d463e; }
@@ -41,16 +58,19 @@
     .map-controls .overview-button { padding:0 10px; }
     .selected-summary { display:grid; gap:10px; }
     .selected-summary h2, .selected-summary p { margin:0; }
-    .selected-summary .work-meta { color:var(--muted); line-height:1.55; }
+    .work-title-en { margin:0; font-size:22px; line-height:1.2; font-weight:800; letter-spacing:-.01em; }
+    .work-title-zh { margin:0; font-size:14px; line-height:1.5; font-weight:600; color:var(--ink-soft); }
+    .selected-summary .work-meta { color:var(--ink-soft); line-height:1.55; }
+    .work-meta { font-size:12px; font-weight:600; }
     .artwork-image-button { width:100%; min-height:150px; padding:0; overflow:hidden; border:1px solid var(--line); border-radius:12px; background:#e9dfcf; cursor:zoom-in; }
     .artwork-image-button img { display:block; width:100%; max-height:230px; object-fit:cover; }
-    .image-fallback { min-height:150px; display:grid; place-items:center; padding:20px; color:var(--muted); background:linear-gradient(135deg,#eadfce,#f8f0e5); text-align:center; }
+    .image-fallback { min-height:150px; display:grid; place-items:center; padding:20px; color:var(--ink-soft); background:linear-gradient(135deg,#eadfce,#f8f0e5); text-align:center; }
     .identity-list { display:grid; gap:6px; margin:0; }
     .identity-row { display:grid; grid-template-columns:5.3em minmax(0,1fr); gap:8px; line-height:1.5; }
-    .identity-row dt { color:var(--muted); }
+    .identity-row dt { color:var(--ink-soft); }
     .identity-row dd { margin:0; }
     .detail-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-top:5px; border-bottom:1px solid var(--line); }
-    .detail-tab { min-height:40px; padding:7px 4px; border:0; border-radius:8px 8px 0 0; color:var(--muted); background:transparent; cursor:pointer; }
+    .detail-tab { min-height:40px; padding:7px 4px; border:0; border-radius:8px 8px 0 0; color:var(--ink-soft); background:transparent; cursor:pointer; }
     .detail-tab[aria-selected="true"] { color:var(--ink); background:#eee2cf; font-weight:700; box-shadow:inset 0 -3px #8a5c39; }
     .detail-tabpanel { display:grid; gap:12px; padding:14px 0 2px; line-height:1.65; }
     .detail-tabpanel h3, .detail-tabpanel p, .detail-tabpanel ul { margin:0; }
@@ -60,16 +80,16 @@
     .comparison-grid { display:grid; gap:8px; }
     .comparison-card { display:grid; gap:3px; width:100%; padding:11px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:#fffaf0; text-align:left; cursor:pointer; }
     .comparison-card strong { font-size:.95rem; }
-    .comparison-card span { color:var(--muted); font-size:.82rem; }
+    .comparison-card span { color:var(--ink-soft); font-size:.82rem; }
     .comparison-card .comparison-angle { color:var(--ink); font-size:.84rem; line-height:1.55; }
-    .image-credit { color:var(--muted); font: .78rem/1.5 ui-sans-serif,system-ui; }
+    .image-credit { color:var(--ink-soft); font: .78rem/1.5 ui-sans-serif,system-ui; }
     .image-credit a, .dialog-license { color:#765438; }
     .site-cycle { display:flex; align-items:center; justify-content:space-between; gap:8px; }
     .detail-panel { min-width:0; overflow:auto; padding:22px; border-left:1px solid var(--line); background:#fffaf2; }
-    .result-count { margin:0 0 16px; font-weight:700; }
+    .result-count { margin:0 0 16px; color:var(--ink-soft); font-size:12px; font-weight:700; }
     .instruction, .empty-state { min-height:200px; display:grid; align-content:center; gap:12px; }
     .instruction h2, .empty-state h2 { margin:0; font-size:1.25rem; }
-    .instruction p, .empty-state p { margin:0; color:var(--muted); line-height:1.65; }
+    .instruction p, .empty-state p { margin:0; color:var(--ink-soft); line-height:1.65; }
     .legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; font: .86rem ui-sans-serif,system-ui; }
     .legend span { display:inline-flex; align-items:center; gap:6px; }
     .legend i { width:10px; height:10px; border-radius:50%; }
@@ -81,7 +101,7 @@
     .dialog-media img { display:block; max-width:100%; max-height:70vh; object-fit:contain; }
     .dialog-copy { display:grid; gap:5px; padding-right:45px; }
     .dialog-copy h2, .dialog-copy p { margin:0; }
-    .dialog-copy p { color:var(--muted); line-height:1.5; }
+    .dialog-copy p { color:var(--ink-soft); line-height:1.5; }
     .dialog-source { color:#765438; }
     @media (max-width:520px) {
       .page-header, .filter-toolbar { padding-left:12px; padding-right:12px; }
@@ -721,7 +741,7 @@
       image.alt = work.imageAlt;
       installImageFallback(image, work);
       document.getElementById('dialogMedia').replaceChildren(image);
-      document.getElementById('dialogTitle').textContent = `${work.titleZh} · ${work.titleEn}`;
+      document.getElementById('dialogTitle').textContent = `${work.titleEn} · ${work.titleZh}`;
       document.getElementById('dialogCaption').textContent = work.imageAlt;
       const credit = IMAGE_CREDITS[work.id];
       document.getElementById('dialogCredit').textContent = `图片：${credit.creatorOrInstitution}`;
@@ -769,11 +789,13 @@
       const summary = document.createElement('section');
       summary.className = 'selected-summary';
       const heading = document.createElement('h2');
+      heading.className = 'work-title-en';
       heading.tabIndex = -1;
       heading.dataset.selectedArtworkTitle = '';
-      heading.textContent = work.titleZh;
-      const english = document.createElement('p');
-      english.textContent = work.titleEn;
+      heading.textContent = work.titleEn;
+      const chineseTitle = document.createElement('p');
+      chineseTitle.className = 'work-title-zh';
+      chineseTitle.textContent = work.titleZh;
       const meta = document.createElement('p');
       meta.className = 'work-meta';
       const civilizations = { egypt:'埃及', greece:'希腊', rome:'罗马' };
@@ -782,7 +804,7 @@
       const imageButton = document.createElement('button');
       imageButton.type = 'button';
       imageButton.className = 'artwork-image-button';
-      imageButton.setAttribute('aria-label', `打开${work.titleZh}大图`);
+      imageButton.setAttribute('aria-label', `Open ${work.titleEn}（${work.titleZh}）大图`);
       const image = document.createElement('img');
       image.src = work.imageUrl;
       image.alt = work.imageAlt;
@@ -810,7 +832,7 @@
         row.append(term, description);
         identity.append(row);
       });
-      summary.append(heading, english, meta, imageButton, imageCredit, identity);
+      summary.append(heading, chineseTitle, meta, imageButton, imageCredit, identity);
 
       if (group.works.length > 1) {
         const cycle = document.createElement('div');
