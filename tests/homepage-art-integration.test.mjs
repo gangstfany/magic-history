@@ -37,6 +37,28 @@ test('subject switching exposes one live frame accessibly and preserves both fra
   assert.doesNotMatch(html, /\.src\s*=\s*['"](?:world-map|art-history-map)\.html/);
 });
 
+test('initial World subject uses the bounded live-frame loading flow', async () => {
+  const html = await loadHtml();
+
+  assert.match(html, /function showLiveFrame\(s\)/);
+  assert.match(html, /window\.setTimeout\([\s\S]*?6000\)/);
+  assert.match(html, /subjPills\.forEach[\s\S]*?selectSubject\('world'\)/);
+  assert.match(html, /mapRetry\.addEventListener\('click'/);
+});
+
+test("Today's Pick cannot reappear after switching away from World", async () => {
+  const html = await loadHtml();
+
+  assert.match(html, /todayPick\.style\.display\s*=\s*selectedSubject === 'world' \? 'block' : 'none'/);
+});
+
+test('coming-soon subjects hide stale World event details', async () => {
+  const html = await loadHtml();
+
+  assert.match(html, /if \(homeEvents\) \{\s*homeEvents\.innerHTML = HOME_EVENTS_EMPTY;\s*homeEvents\.hidden = true;/);
+  assert.match(html, /if \(key === 'world'\) syncHomeEvents\(\)/);
+});
+
 test('world-only integrations target worldMapFrame and art mode uses the full map width', async () => {
   const html = await loadHtml();
 
