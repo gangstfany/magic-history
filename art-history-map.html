@@ -461,6 +461,12 @@
     };
 
     function toWorldCoordinates(workOrGroup) {
+      if (
+        Number.isFinite(workOrGroup.worldX)
+        && Number.isFinite(workOrGroup.worldY)
+      ) {
+        return { x:workOrGroup.worldX, y:workOrGroup.worldY };
+      }
       const projected = SITE_WORLD_COORDINATES[workOrGroup.siteName];
       if (projected) return { ...projected };
       return {
@@ -519,6 +525,12 @@
       return `site-${safeIds}`;
     }
 
+    function getApUnitNumber(apNumber) {
+      const limits = [11, 47, 98, 152, 166, 181, 195, 220, 231, 250];
+      const index = limits.findIndex((maximum) => apNumber <= maximum);
+      return index === -1 ? null : index + 1;
+    }
+
     function groupBySite(works) {
       const groups = new Map();
       works.forEach((work) => {
@@ -537,7 +549,9 @@
       });
       return [...groups.values()]
         .map((group) => {
-          const sortedWorks = group.works.slice().sort((a, b) => a.id.localeCompare(b.id));
+          const sortedWorks = group.works.slice().sort(
+            (a, b) => a.apNumber - b.apNumber || a.id.localeCompare(b.id)
+          );
           const civilizations = [...new Set(sortedWorks.map((work) => work.civilization))].sort();
           const apGroupLabel = formatApGroupLabel(sortedWorks);
           return {
@@ -551,6 +565,86 @@
           };
         })
         .sort((a, b) => a.siteName.localeCompare(b.siteName) || a.x - b.x || a.y - b.y);
+    }
+
+    function getMapHierarchyLevel(siteCount, zoomScale) {
+      if (siteCount <= 40) return 'site';
+      if (zoomScale < 1.5) return 'overview';
+      if (zoomScale < 2.5) return 'intermediate';
+      return 'site';
+    }
+
+    function groupByRegionGrid(works, level) {
+      const columns = 8;
+      const rows = 4;
+      const groups = new Map();
+      works.forEach((work) => {
+        const point = toWorldCoordinates({
+          siteName: work.siteName,
+          x: work.coordinates.x,
+          y: work.coordinates.y
+        });
+        const column = Math.min(columns - 1, Math.max(0, Math.floor(point.x / (1600 / columns))));
+        const row = Math.min(rows - 1, Math.max(0, Math.floor(point.y / (800 / rows))));
+        const apUnit = getApUnitNumber(work.apNumber);
+        const key = level === 'overview'
+          ? `unit-${apUnit}`
+          : `unit-${apUnit}-region-${row}-${column}`;
+        if (!groups.has(key)) {
+          groups.set(key, {
+            key,
+            kind: level === 'overview' ? 'unit' : 'region',
+            siteName: level === 'overview'
+              ? `AP Unit ${apUnit}`
+              : `AP Unit ${apUnit} · 地理区域 ${row + 1}-${column + 1}`,
+            worldXTotal: 0,
+            worldYTotal: 0,
+            works: []
+          });
+        }
+        const group = groups.get(key);
+        group.works.push(work);
+        group.worldXTotal += point.x;
+        group.worldYTotal += point.y;
+      });
+      return [...groups.values()].map((group) => {
+        const sortedWorks = group.works.slice().sort(
+          (first, second) => first.apNumber - second.apNumber || first.id.localeCompare(second.id)
+        );
+        const civilizations = [...new Set(sortedWorks.map((work) => work.civilization))].sort();
+        const apGroupLabel = formatApGroupLabel(sortedWorks);
+        return {
+          key: group.key,
+          kind: group.kind,
+          siteName: group.siteName,
+          worldX: group.worldXTotal / sortedWorks.length,
+          worldY: group.worldYTotal / sortedWorks.length,
+          civilization: civilizations.length === 1 ? civilizations[0] : 'mixed',
+          civilizations,
+          works: sortedWorks,
+          siteToken: createSiteToken([{ id:group.key }]),
+          apLabel: apGroupLabel.slice(3),
+          apGroupLabel,
+          apUnits: [...new Set(sortedWorks.map((work) => getApUnitNumber(work.apNumber)))]
+            .filter(Boolean)
+            .sort((first, second) => first - second)
+        };
+      }).sort((first, second) => (
+        first.apUnits[0] - second.apUnits[0] || first.key.localeCompare(second.key)
+      ));
+    }
+
+    function buildMapGroups(works, zoomScale = 1) {
+      const siteGroups = groupBySite(works);
+      const level = getMapHierarchyLevel(siteGroups.length, zoomScale);
+      if (level !== 'site') return groupByRegionGrid(works, level);
+      return siteGroups.map((group) => ({
+        ...group,
+        kind: 'site',
+        apUnits: [...new Set(group.works.map((work) => getApUnitNumber(work.apNumber)))]
+          .filter(Boolean)
+          .sort((first, second) => first - second)
+      }));
     }
 
     function getMapScreenScale(width, height, zoomScale = 1) {
@@ -589,15 +683,24 @@
       };
     }
 
-    function expandedPinPositions(group, center, screenScale = 0.5, obstacleBounds = []) {
+    function expandedPinPositions(
+      group,
+      center,
+      screenScale = 0.5,
+      obstacleBounds = [],
+      allowedBounds
+    ) {
+      allowedBounds = allowedBounds || { left:0, right:1600, top:0, bottom:800 };
       const metrics = getExpandedPinMetrics(screenScale);
       const count = group.works.length;
       if (!count) return [];
       const minimumRadius = metrics.hitWidth + 6 / Math.max(0.05, screenScale);
       const positionsFit = (positions) => positions.every((position, index) => {
         if (
-          position.bounds.left < 0 || position.bounds.right > 1600
-          || position.bounds.top < 0 || position.bounds.bottom > 800
+          position.bounds.left < allowedBounds.left
+          || position.bounds.right > allowedBounds.right
+          || position.bounds.top < allowedBounds.top
+          || position.bounds.bottom > allowedBounds.bottom
         ) return false;
         return obstacleBounds.every((bounds) => (
           !markerBoundsOverlap(position.bounds, bounds)
@@ -646,12 +749,12 @@
             top: Math.min(bounds.top, position.bounds.top),
             bottom: Math.max(bounds.bottom, position.bounds.bottom)
           }), { left:Infinity, right:-Infinity, top:Infinity, bottom:-Infinity });
-          const shiftX = outerBounds.left < 0
-            ? -outerBounds.left
-            : Math.min(0, 1600 - outerBounds.right);
-          const shiftY = outerBounds.top < 0
-            ? -outerBounds.top
-            : Math.min(0, 800 - outerBounds.bottom);
+          const shiftX = outerBounds.left < allowedBounds.left
+            ? allowedBounds.left - outerBounds.left
+            : Math.min(0, allowedBounds.right - outerBounds.right);
+          const shiftY = outerBounds.top < allowedBounds.top
+            ? allowedBounds.top - outerBounds.top
+            : Math.min(0, allowedBounds.bottom - outerBounds.bottom);
           positions = positions.map((position) => {
             const x = position.x + shiftX;
             const y = position.y + shiftY;
@@ -660,8 +763,8 @@
           if (positionsFit(positions)) return positions;
         }
       }
-      const columnLimit = Math.ceil(1600 / metrics.hitWidth);
-      const rowLimit = Math.ceil(800 / metrics.hitHeight);
+      const columnLimit = Math.ceil((allowedBounds.right - allowedBounds.left) / metrics.hitWidth);
+      const rowLimit = Math.ceil((allowedBounds.bottom - allowedBounds.top) / metrics.hitHeight);
       const candidates = [];
       for (let row = -rowLimit; row <= rowLimit; row += 1) {
         for (let column = -columnLimit; column <= columnLimit; column += 1) {
@@ -670,8 +773,8 @@
           const y = center.y + row * metrics.hitHeight;
           const bounds = getMarkerBounds({ x, y }, metrics);
           if (
-            bounds.left < 0 || bounds.right > 1600
-            || bounds.top < 0 || bounds.bottom > 800
+            bounds.left < allowedBounds.left || bounds.right > allowedBounds.right
+            || bounds.top < allowedBounds.top || bounds.bottom > allowedBounds.bottom
           ) continue;
           candidates.push({
             x,
@@ -887,6 +990,16 @@
       };
     }
 
+    function getVisibleWorldBounds(transform) {
+      const scale = Math.max(1, transform.scale);
+      return {
+        left: Math.max(0, -transform.x / scale),
+        right: Math.min(1600, (1600 - transform.x) / scale),
+        top: Math.max(0, -transform.y / scale),
+        bottom: Math.min(800, (800 - transform.y) / scale)
+      };
+    }
+
     function cycleIndex(index, length, direction) {
       return length ? (index + direction + length) % length : 0;
     }
@@ -1042,6 +1155,18 @@
     }
 
     function expandSiteGroup(group, restoreFocus = false) {
+      if (group.kind !== 'site') {
+        const nextScale = state.transform.scale < 1.5 ? 1.5 : 2.5;
+        state.expandedSiteToken = null;
+        state.transform = zoomAroundPoint(
+          state.transform,
+          nextScale,
+          { x:group.displayX, y:group.displayY }
+        );
+        render();
+        applyTransform();
+        return;
+      }
       if (group.works.length === 1) {
         selectArtwork(group.works[0].id, group.siteToken);
         if (restoreFocus) focusSiteMarker(group.siteToken);
@@ -1186,7 +1311,7 @@
       const meta = document.createElement('p');
       meta.className = 'work-meta';
       const civilizations = { egypt:'埃及', greece:'希腊', rome:'罗马' };
-      meta.textContent = `AP #${work.apNumber} · ${civilizations[work.civilization]} · ${work.period}`;
+      meta.textContent = `AP #${work.apNumber} · ${civilizations[work.civilization]} · ${work.period} · ${work.date}`;
 
       const imageButton = document.createElement('button');
       imageButton.type = 'button';
@@ -1335,10 +1460,17 @@
       return summary;
     }
 
-    function shouldUseCompactExpandedList(group, center, screenScale, obstacleBounds) {
+    function shouldUseCompactExpandedList(
+      group,
+      center,
+      screenScale,
+      obstacleBounds,
+      visibleBounds
+    ) {
+      visibleBounds = visibleBounds || { left:0, right:1600, top:0, bottom:800 };
       if (screenScale < 0.3) return true;
       try {
-        expandedPinPositions(group, center, screenScale, obstacleBounds);
+        expandedPinPositions(group, center, screenScale, obstacleBounds, visibleBounds);
         return false;
       } catch {
         return true;
@@ -1371,7 +1503,13 @@
       mapPanel.classList.add('has-compact-list');
     }
 
-    function renderExpandedWorkPins(group, center, screenScale, obstacleBounds) {
+    function renderExpandedWorkPins(
+      group,
+      center,
+      screenScale,
+      obstacleBounds,
+      visibleBounds
+    ) {
       const leaders = [];
       const pins = [];
       const metrics = getExpandedPinMetrics(screenScale);
@@ -1379,7 +1517,8 @@
         group,
         center,
         screenScale,
-        obstacleBounds
+        obstacleBounds,
+        visibleBounds
       ).forEach(({ work, x, y }) => {
         const leader = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         leader.classList.add('expanded-pin-leader');
@@ -1447,7 +1586,7 @@
       const markers = [];
       const renderedMarkerScale = getRenderedMarkerScale();
       const visibleGroups = layoutSiteMarkers(
-        groupBySite(visibleWorks),
+        buildMapGroups(visibleWorks, state.transform.scale),
         renderedMarkerScale
       );
       if (
@@ -1476,7 +1615,7 @@
         marker.setAttribute('role', 'button');
         marker.setAttribute('tabindex', '0');
         marker.setAttribute('aria-pressed', String(group.works.some((work) => work.id === state.selectedId)));
-        if (group.works.length > 1) {
+        if (group.kind === 'site' && group.works.length > 1) {
           marker.setAttribute('aria-expanded', String(state.expandedSiteToken === group.siteToken));
         }
         if (
@@ -1534,11 +1673,13 @@
       if (expandedGroup) {
         const expandedCenter = { x: expandedGroup.displayX, y: expandedGroup.displayY };
         const obstacleBounds = visibleGroups.map((group) => group.bounds);
+        const visibleWorldBounds = getVisibleWorldBounds(state.transform);
         if (shouldUseCompactExpandedList(
           expandedGroup,
           expandedCenter,
           renderedMarkerScale,
-          obstacleBounds
+          obstacleBounds,
+          visibleWorldBounds
         )) {
           renderCompactExpandedList(expandedGroup);
         } else {
@@ -1546,7 +1687,8 @@
             expandedGroup,
             expandedCenter,
             renderedMarkerScale,
-            obstacleBounds
+            obstacleBounds,
+            visibleWorldBounds
           );
           leaders.push(...expanded.leaders);
           markers.push(...expanded.pins);
@@ -1577,7 +1719,8 @@
         detailPanel.append(empty);
       } else if (state.selectedId) {
         const selected = visibleWorks.find((work) => work.id === state.selectedId);
-        const selectedGroup = visibleGroups.find((group) => group.works.some((work) => work.id === state.selectedId));
+        const selectedGroup = groupBySite(visibleWorks)
+          .find((group) => group.works.some((work) => work.id === state.selectedId));
         state.selectedSiteIndex = Math.max(0, selectedGroup.works.findIndex((work) => work.id === state.selectedId));
         detailPanel.append(renderArtworkDetails(selected, selectedGroup));
       } else {

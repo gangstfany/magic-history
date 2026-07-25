@@ -499,4 +499,3 @@ Do not copy or rewrite `world-map.html`.
 - [ ] **Step 4: Verify from the Desktop directory**
 
 Run all tests and the validator from the Desktop project. Point the local preview server at the Desktop directory and repeat the AP #41 and 390 px checks.
-

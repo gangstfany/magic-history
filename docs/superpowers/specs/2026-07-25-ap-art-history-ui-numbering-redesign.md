@@ -1,6 +1,6 @@
 # AP Art History UI and AP Numbering Redesign
 
-**Date:** 2026-07-25  
+**Date:** 2026-07-25
 **Status:** Approved direction; awaiting written-spec review
 
 ## Goal

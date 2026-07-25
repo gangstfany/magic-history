@@ -92,6 +92,10 @@ test('art map reuses World History typography and compact detail hierarchy', asy
   assert.match(getCssDeclarations(html, '.work-meta'), /font-size:\s*12px/);
   assert.match(
     html,
+    /meta\.textContent = `AP #\$\{work\.apNumber\} · \$\{civilizations\[work\.civilization\]\} · \$\{work\.period\} · \$\{work\.date\}`/,
+  );
+  assert.match(
+    html,
     /imageButton\.setAttribute\('aria-label',\s*`Open \$\{work\.titleEn\}（\$\{work\.titleZh\}）大图`\)/,
   );
   assert.match(html, /<dialog id="imageDialog"[^>]*aria-labelledby="dialogTitle"/);
@@ -134,6 +138,26 @@ test('compact AP number helpers preserve gaps and merge consecutive ranges', asy
     formatApGroupLabel([{ apNumber: 40 }, { apNumber: 39 }, { apNumber: 35 }]),
     'AP 35, 39–40',
   );
+});
+
+test('site works sort by numeric AP number before id', async () => {
+  const html = await loadHtml();
+  const { compactApNumbers, formatApGroupLabel, createSiteToken, groupBySite } =
+    loadPureFunctions(
+      html,
+      ['compactApNumbers', 'formatApGroupLabel', 'createSiteToken', 'groupBySite'],
+    );
+  const shared = {
+    siteName: 'Synthetic Shared Site',
+    coordinates: { x: 10, y: 20 },
+    civilization: 'greece',
+  };
+  const group = groupBySite([
+    { ...shared, id: 'alphabetically-first', apNumber: 10 },
+    { ...shared, id: 'alphabetically-last', apNumber: 2 },
+  ])[0];
+
+  assert.deepEqual(group.works.map((work) => work.apNumber), [2, 10]);
 });
 
 test('map markers display AP numbers with circles for works and capsules for groups', async () => {
@@ -240,6 +264,108 @@ test('bounds-aware spatial layout prevents all marker overlaps at mobile scale',
   assert.doesNotMatch(layoutSource, /positioned\.every\(/);
 });
 
+test('250-work overview uses deterministic zoom hierarchy without exhausting marker capacity', async () => {
+  const html = await loadHtml();
+  const {
+    compactApNumbers,
+    formatApGroupLabel,
+    createSiteToken,
+    getApUnitNumber,
+    toWorldCoordinates,
+    groupBySite,
+    getMapHierarchyLevel,
+    groupByRegionGrid,
+    buildMapGroups,
+    getMarkerMetrics,
+    getMarkerBounds,
+    markerBoundsOverlap,
+    expandMarkerBounds,
+    createSpatialHash,
+    findNearestAvailableMarkerSlot,
+    layoutSiteMarkers,
+  } = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'createSiteToken',
+      'getApUnitNumber',
+      'toWorldCoordinates',
+      'groupBySite',
+      'getMapHierarchyLevel',
+      'groupByRegionGrid',
+      'buildMapGroups',
+      'getMarkerMetrics',
+      'getMarkerBounds',
+      'markerBoundsOverlap',
+      'expandMarkerBounds',
+      'createSpatialHash',
+      'findNearestAvailableMarkerSlot',
+      'layoutSiteMarkers',
+    ],
+    ['const SITE_WORLD_COORDINATES ='],
+  );
+  const artworks = Array.from({ length: 250 }, (_, index) => {
+    const apNumber = index + 1;
+    return {
+      id: `synthetic-ap-${apNumber}`,
+      apNumber,
+      siteName: `Synthetic Site ${apNumber}`,
+      coordinates: {
+        x: -1200 + (index % 25) * 100,
+        y: -500 + Math.floor(index / 25) * 100,
+      },
+      civilization: ['egypt', 'greece', 'rome'][index % 3],
+      titleEn: `Synthetic Work ${apNumber}`,
+    };
+  });
+
+  const overview = buildMapGroups(artworks, 1);
+  const intermediate = buildMapGroups(artworks, 1.75);
+  const close = buildMapGroups(artworks, 3);
+
+  assert.ok(overview.length < intermediate.length);
+  assert.ok(intermediate.length < close.length);
+  assert.ok(overview.length <= 10);
+  assert.equal(close.length, 250);
+  assert.deepEqual(
+    buildMapGroups(artworks, 1).map((group) => group.key),
+    overview.map((group) => group.key),
+  );
+  assert.deepEqual(
+    overview.map((group) => group.apUnits[0]),
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  );
+  assert.ok(overview.every((group) => group.apUnits.length === 1));
+  assert.doesNotThrow(() => layoutSiteMarkers(overview, 0.253));
+  assert.ok(overview.every((group) => group.apGroupLabel.startsWith('AP ')));
+  assert.ok(overview.every((group) => group.kind === 'unit'));
+  assert.ok(intermediate.every((group) => group.kind === 'region'));
+  assert.ok(close.every((group) => group.kind === 'site'));
+  assert.equal(getMapHierarchyLevel(250, 1), 'overview');
+  assert.equal(getMapHierarchyLevel(250, 1.75), 'intermediate');
+  assert.equal(getMapHierarchyLevel(250, 3), 'site');
+});
+
+test('region markers zoom into the next deterministic hierarchy level', async () => {
+  const html = await loadHtml();
+  const renderSource = getFunctionSource(html, 'render');
+  const expandSource = getFunctionSource(html, 'expandSiteGroup');
+
+  assert.match(
+    renderSource,
+    /buildMapGroups\(visibleWorks,\s*state\.transform\.scale\)/,
+  );
+  assert.match(expandSource, /group\.kind !== 'site'/);
+  assert.match(
+    expandSource,
+    /state\.transform\.scale < 1\.5 \? 1\.5 : 2\.5/,
+  );
+  assert.match(expandSource, /zoomAroundPoint\(/);
+  assert.match(expandSource, /state\.expandedSiteToken = null/);
+  assert.match(expandSource, /applyTransform\(\)/);
+});
+
 test('expanded AP pins use deterministic, bounded, non-overlapping spider positions', async () => {
   const html = await loadHtml();
   const {
@@ -286,6 +412,68 @@ test('expanded AP pins use deterministic, bounded, non-overlapping spider positi
       );
     });
   });
+});
+
+test('zoomed spider positions stay inside the currently visible world bounds', async () => {
+  const html = await loadHtml();
+  const {
+    getMarkerBounds,
+    markerBoundsOverlap,
+    getExpandedPinMetrics,
+    getVisibleWorldBounds,
+    expandedPinPositions,
+    shouldUseCompactExpandedList,
+  } = loadPureFunctions(
+    html,
+    [
+      'getMarkerBounds',
+      'markerBoundsOverlap',
+      'getExpandedPinMetrics',
+      'getVisibleWorldBounds',
+      'expandedPinPositions',
+      'shouldUseCompactExpandedList',
+    ],
+  );
+  const visibleBounds = getVisibleWorldBounds({ x: -1600, y: -800, scale: 2 });
+  assert.deepEqual(visibleBounds, {
+    left: 800,
+    right: 1600,
+    top: 400,
+    bottom: 800,
+  });
+  const screenScale = 1;
+  const center = { x: 850, y: 450 };
+  const group = {
+    works: Array.from({ length: 7 }, (_, index) => ({
+      id: `edge-ap-${index + 41}`,
+      apNumber: index + 41,
+    })),
+  };
+  const parentBounds = getMarkerBounds(center, getExpandedPinMetrics(screenScale));
+  const pins = expandedPinPositions(
+    group,
+    center,
+    screenScale,
+    [parentBounds],
+    visibleBounds,
+  );
+
+  pins.forEach((pin) => {
+    assert.ok(pin.bounds.left >= visibleBounds.left);
+    assert.ok(pin.bounds.right <= visibleBounds.right);
+    assert.ok(pin.bounds.top >= visibleBounds.top);
+    assert.ok(pin.bounds.bottom <= visibleBounds.bottom);
+  });
+  assert.equal(
+    shouldUseCompactExpandedList(
+      group,
+      center,
+      screenScale,
+      [parentBounds],
+      { left: 800, right: 900, top: 400, bottom: 500 },
+    ),
+    true,
+  );
 });
 
 test('expanded pins fit every collision-safe site center at mobile scale', async () => {
