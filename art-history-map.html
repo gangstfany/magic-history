@@ -47,7 +47,7 @@
     .site-marker { pointer-events:all; cursor:pointer; }
     .site-marker .marker-dot { stroke:#fff; stroke-width:5; filter:drop-shadow(0 3px 4px rgba(40,30,20,.42)); transition:r .15s ease,stroke-width .15s ease; }
     .site-marker.is-active .marker-dot { r:29px; stroke:#fff; stroke-width:10; filter:drop-shadow(0 4px 7px rgba(40,30,20,.55)); }
-    .site-marker .marker-count { fill:#fff; font:700 20px ui-sans-serif,system-ui; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
+    .site-marker .marker-count { fill:#fff; font-size:20px; font-weight:700; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
     .site-marker[data-civilization="egypt"] .marker-dot { fill:var(--egypt); }
     .site-marker[data-civilization="greece"] .marker-dot { fill:var(--greece); }
     .site-marker[data-civilization="rome"] .marker-dot { fill:var(--rome); }
@@ -82,7 +82,7 @@
     .comparison-card strong { font-size:.95rem; }
     .comparison-card span { color:var(--ink-soft); font-size:.82rem; }
     .comparison-card .comparison-angle { color:var(--ink); font-size:.84rem; line-height:1.55; }
-    .image-credit { color:var(--ink-soft); font: .78rem/1.5 ui-sans-serif,system-ui; }
+    .image-credit { color:var(--ink-soft); font-size:.78rem; line-height:1.5; }
     .image-credit a, .dialog-license { color:#765438; }
     .site-cycle { display:flex; align-items:center; justify-content:space-between; gap:8px; }
     .detail-panel { min-width:0; overflow:auto; padding:22px; border-left:1px solid var(--line); background:#fffaf2; }
@@ -90,7 +90,7 @@
     .instruction, .empty-state { min-height:200px; display:grid; align-content:center; gap:12px; }
     .instruction h2, .empty-state h2 { margin:0; font-size:1.25rem; }
     .instruction p, .empty-state p { margin:0; color:var(--ink-soft); line-height:1.65; }
-    .legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; font: .86rem ui-sans-serif,system-ui; }
+    .legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; font-size:.86rem; }
     .legend span { display:inline-flex; align-items:center; gap:6px; }
     .legend i { width:10px; height:10px; border-radius:50%; }
     #imageDialog { width:min(920px,calc(100% - 28px)); max-height:calc(100vh - 28px); padding:0; border:0; border-radius:16px; color:var(--ink); background:var(--card); box-shadow:0 24px 80px rgba(20,15,10,.45); }
