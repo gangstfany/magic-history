@@ -1,19 +1,28 @@
-# AP Art History Ancient Mediterranean Map Implementation Plan
+# AP Art History Ancient Mediterranean Study Map — Full World Layout Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a standalone Ancient Mediterranean AP Art History map for the 27 in-scope Egypt, Greece, and Rome works, then expose it through the existing homepage subject switcher without regressing the world history map.
+**Goal:** Build a standalone AP Art History study map for the 27 in-scope Egypt, Greece, and Rome works on the same detailed full-world layout as the original map, then expose it through the existing homepage subject switcher without regressing the world history map.
 
-**Architecture:** Keep `art-history-map.html` independent from `world-map.html`. The art page contains its own data, SVG map, filters, state, detail panel, and lightbox; a Node validation script extracts the embedded JSON before browser testing. `index.html` keeps one iframe per live subject so world-history and art-history state survive repeated switching.
+**Architecture:** Keep `art-history-map.html` independent from `world-map.html` at runtime. Copy only the original map's detailed world-geography layer into an SVG with `viewBox="0 0 1600 800"`; do not copy its pins, routes, event overlays, or scripts. The art page owns its data, 15-site projection and collision-avoidance layers, filters, state, detail panel, and lightbox; a Node validation script extracts the embedded JSON before browser testing. `index.html` keeps one mounted iframe per live subject so world-history and art-history state survive repeated switching.
 
 **Tech Stack:** HTML5, CSS, inline SVG, vanilla JavaScript, Node.js validation scripts, local HTTP server, in-app browser verification.
 
 ---
 
+## Implementation Status
+
+The option-A world layout, 15-site marker aggregation and leader-line
+placement, filters, selection, zoom and pan, site cycling, study panel,
+comparisons, lightbox, and persistent two-iframe homepage switching are
+implemented. The task sequence below remains the verification and maintenance
+record for that implementation.
+
 ## File Structure
 
 - Create `art-history-map.html`: standalone art map UI, embedded artwork JSON,
-  state, rendering, interaction, and accessibility behavior.
+  copied world-geography layer, 15-site projection and marker layout, state,
+  rendering, interaction, and accessibility behavior.
 - Create `scripts/validate-art-history-data.mjs`: extract and validate the
   artwork JSON from the HTML.
 - Create `tests/art-history-data.test.mjs`: regression tests for the exact AP
@@ -26,6 +35,20 @@
 - Modify `index.html:500-648`: isolate world-only logic and implement
   state-preserving subject switching.
 - Do not modify `world-map.html`.
+
+## Confirmed Option-A Map Contract
+
+- Copy the complete detailed geography layer from `world-map.html` into the
+  standalone art page and keep its `0 0 1600 800` coordinate system.
+- Exclude every world-history pin, route, event panel, overlay, and legacy
+  interaction script.
+- Resolve the 27 artwork records to 15 historical sites. Aggregate works at
+  the same site into count markers.
+- Use deterministic marker collision avoidance. Draw a leader line from every
+  displaced marker back to its world-coordinate anchor.
+- Keep the complete art interaction inside `art-history-map.html`; keep both
+  homepage iframes mounted and toggle their visibility so subject state
+  persists.
 
 ## Exact First-Release Manifest
 
@@ -77,12 +100,12 @@ test('uses unique ids and AP numbers', () => {
   assert.equal(new Set(works.map(work => work.apNumber)).size, works.length);
 });
 
-test('resolves comparisons and keeps coordinates in the SVG viewBox', () => {
+test('resolves comparisons and keeps coordinates in the world-map contract', () => {
   const works = loadAndValidate('art-history-map.html');
   const ids = new Set(works.map(work => work.id));
   for (const work of works) {
-    assert.ok(work.coordinates.x >= 0 && work.coordinates.x <= 1200);
-    assert.ok(work.coordinates.y >= 0 && work.coordinates.y <= 700);
+    assert.ok(work.coordinates.x >= 0 && work.coordinates.x <= 1600);
+    assert.ok(work.coordinates.y >= 0 && work.coordinates.y <= 800);
     for (const id of work.comparisonIds) assert.ok(ids.has(id), `${work.id}: ${id}`);
   }
 });
@@ -199,7 +222,7 @@ Create `art-history-map.html` with semantic regions:
       <div id="filters" aria-label="作品筛选"></div>
     </header>
     <section class="art-workspace">
-      <div id="mapPanel" class="map-panel" aria-label="古代地中海地图"></div>
+      <div id="mapPanel" class="map-panel" aria-label="世界地图上的古代地中海艺术地点"></div>
       <aside id="detailPanel" class="detail-panel" aria-live="polite"></aside>
     </section>
   </main>
@@ -245,7 +268,9 @@ Populate `#artwork-data` in the exact manifest order. For every record:
 - add one or more `comparisonIds` unless no in-scope comparison is honest;
 - set the site qualifier to `"approximate"` or `"findspot"` when needed;
 - use museum, Smarthistory, or Wikimedia image and source-page URLs;
-- choose SVG coordinates within the `0 0 1200 700` viewBox.
+- retain a stable source coordinate with each record and resolve its
+  `siteName` through the 15-site world-coordinate table when rendering in the
+  `0 0 1600 800` viewBox.
 
 Use the validator's exact field names. AP #27 must use the stable ID
 `ap27-anavysos-kouros`, coordinates `{ "x": 625, "y": 346 }`, and comparison
@@ -341,13 +366,18 @@ Implement:
 Use the project palette and the approved marker colours:
 Egypt `#b85d44`, Greece `#597f8b`, Rome `#c8943d`.
 
-- [ ] **Step 3: Render the focused SVG and count markers**
+- [ ] **Step 3: Render the original detailed world geography and 15 site markers**
 
-Create one inline SVG with `viewBox="0 0 1200 700"`. Render site groups by
-`siteName + coordinates`. A group with multiple works displays its count;
-otherwise display a dot. Use semantic buttons positioned over SVG coordinates
-or focusable SVG groups with `role="button"`, `tabindex="0"`, and an
-`aria-label` listing the site and work count.
+Create one inline SVG with `viewBox="0 0 1600 800"`. Copy the complete detailed
+geography paths from `world-map.html` without its pins, routes, event overlays,
+or scripts. Render the 27 works as 15 site groups resolved through
+`SITE_WORLD_COORDINATES`. A group with multiple works displays its count;
+otherwise display a dot. Use focusable SVG groups with `role="button"`,
+`tabindex="0"`, and an `aria-label` listing the site and work count.
+
+Run the grouped sites through a deterministic collision-avoidance layout.
+When a displayed marker differs from its world-coordinate anchor, draw a
+non-interactive leader line from the anchor to the displayed marker.
 
 Keep rendering deterministic:
 
@@ -362,6 +392,19 @@ function groupBySite(works) {
     }).works.push(work);
     return groups;
   }, {}));
+}
+```
+
+Keep world placement explicit:
+
+```js
+function toWorldCoordinates(workOrGroup) {
+  const projected = SITE_WORLD_COORDINATES[workOrGroup.siteName];
+  if (projected) return { ...projected };
+  return {
+    x: Math.max(0, Math.min(1600, 807 + workOrGroup.x * 0.28)),
+    y: Math.max(0, Math.min(800, 230 + workOrGroup.y * 0.3)),
+  };
 }
 ```
 
@@ -415,12 +458,12 @@ Add development assertions:
 ```js
 function clampTransform({ x, y, scale }) {
   const boundedScale = Math.min(3, Math.max(1, scale));
-  const limitX = 1200 * (boundedScale - 1) / 2;
-  const limitY = 700 * (boundedScale - 1) / 2;
+  const minimumX = 1600 * (1 - boundedScale);
+  const minimumY = 800 * (1 - boundedScale);
   return {
     scale: boundedScale,
-    x: Math.min(limitX, Math.max(-limitX, x)),
-    y: Math.min(limitY, Math.max(-limitY, y)),
+    x: Math.min(0, Math.max(minimumX, x)),
+    y: Math.min(0, Math.max(minimumY, y)),
   };
 }
 console.assert(clampTransform({ x: 0, y: 0, scale: 9 }).scale === 3);
@@ -641,10 +684,12 @@ second homepage rule that moves its detail panel.
 - [ ] **Step 6: Verify repeated switching and iframe state**
 
 Select a world marker, switch to Art, select and filter an artwork, switch back
-to World, and then back to Art. Confirm:
+to World, and then back to Art. Both iframes remain mounted throughout.
+Confirm:
 
 - world event selection remains;
 - art selection and filters remain;
+- each iframe keeps its independent zoom and pan state;
 - Today's Pick is hidden only in Art mode;
 - Art never receives world iframe style mutations;
 - Euro, US, and Human Geo still show coming-soon;

@@ -1,18 +1,20 @@
-# AP Art History Ancient Mediterranean Interactive Map Design
+# AP Art History Ancient Mediterranean Study Map — Full World Layout Design
 
 ## Status
 
-Approved in conversation on 2026-07-25. This document is the implementation
-boundary for the first art history map release.
+Approved in conversation on 2026-07-25 and revised to the user's final
+option A: the Ancient Mediterranean study content is shown on the same
+detailed full-world geography used by the existing world-history map. This
+document is the implementation boundary for the first art history map release.
 
 ## Goal
 
 Create a standalone AP Art History interactive map for the Ancient
-Mediterranean. The first release covers every work in the official AP Art
-History 250 list associated with ancient Egypt, ancient Greece, and ancient
-Rome. It must work by itself and also embed into the existing Magic History
-homepage without changing the existing world history map's data or core
-behavior.
+Mediterranean study set, presented on a detailed full-world map. The first
+release covers every work in the official AP Art History 250 list associated
+with ancient Egypt, ancient Greece, and ancient Rome. It must work by itself
+and also embed into the existing Magic History homepage without changing the
+existing world history map's data or core behavior.
 
 The experience is a study tool, not just a geographical index. It should help
 students connect each work's location with its form, function, content,
@@ -44,7 +46,11 @@ an internet connection.
 
 - All AP 250 works that belong to ancient Egypt, ancient Greece, or ancient
   Rome.
-- A focused Ancient Mediterranean map.
+- The complete detailed world geography layer copied from `world-map.html`,
+  with an SVG `viewBox` of `0 0 1600 800`.
+- Fifteen historical-site markers that aggregate the 27 works, with
+  deterministic collision avoidance and leader lines where a marker must move
+  away from its geographic anchor.
 - Civilisation, period, and artwork-type filtering.
 - Search by artwork title, Chinese title, place, and keyword.
 - An artwork detail panel with image enlargement.
@@ -69,7 +75,9 @@ without redesigning the map or detail card.
 
 Create `art-history-map.html` as a self-contained page. It owns:
 
-- the Ancient Mediterranean SVG map;
+- a static copy of the detailed full-world SVG geography from
+  `world-map.html`;
+- the art-history marker, leader-line, and interaction layers;
 - artwork data;
 - filters and search;
 - map state;
@@ -78,6 +86,8 @@ Create `art-history-map.html` as a self-contained page. It owns:
 - responsive rules;
 - loading, empty, and error states.
 
+The copied geography is the only reused world-map layer. Do not bring over the
+world-history pins, routes, event panels, overlays, or old interaction scripts.
 Do not share JavaScript globals, CSS selectors, or data objects with
 `world-map.html`.
 
@@ -93,9 +103,9 @@ the event panel and "Today in History" content. When the user returns to World
 History, restore those elements and their previous state.
 
 Each map should retain its iframe state while switching subjects. Prefer
-keeping both iframe instances mounted and toggling visibility. If that proves
-unreliable in the existing page, persist each map's selected item, filters,
-zoom, and pan before changing the iframe source and restore them on return.
+keeping both iframe instances mounted and toggling visibility. The implemented
+integration uses this persistent two-iframe approach, so each map retains its
+selected item, filters, zoom, and pan while the other subject is visible.
 
 Show a brief skeleton state during initial map loading. If the art map fails
 to load, show a retry control instead of an empty region.
@@ -121,6 +131,10 @@ At widths below 520 CSS pixels, stack the map above the detail panel. Do not
 stack at narrow desktop widths such as the 652-pixel in-app browser; the two
 layout options must remain visually distinct there.
 
+The SVG uses `viewBox="0 0 1600 800"` and preserves the detailed geography of
+the original world map. The world land layer is visual context only: it must
+not expose the original world-history pins, routes, events, or map scripts.
+
 ## Artwork Data Model
 
 Each artwork record must contain:
@@ -135,7 +149,9 @@ Each artwork record must contain:
 - `artistCulture`: artist, architect, workshop, or culture.
 - `siteName`: historical site used on the map.
 - `siteQualifier`: optional qualifier such as "approximate" or "findspot".
-- `coordinates`: map coordinates for the marker.
+- `coordinates`: stable source coordinates retained with the artwork record;
+  the art map resolves each `siteName` through its 15-site world-coordinate
+  table before rendering in the `1600 × 800` viewBox.
 - `medium`: official medium summary.
 - `workType`: architecture, sculpture, painting, relief, or another controlled
   value.
@@ -165,6 +181,9 @@ must be reported rather than silently rendering an incomplete card.
 - When several works share a site, render one count marker. Selecting it opens
   the first matching work and exposes previous/next controls in the detail
   panel.
+- Group the 27 records into 15 site markers. Place markers deterministically,
+  keep them separated, and draw a leader line back to the geographic anchor
+  whenever collision avoidance offsets a marker.
 
 ### Navigation
 
@@ -254,7 +273,10 @@ the artwork name. Keep all written study content available.
 - AP number, titles, date, site, culture or artist, and medium match the
   sources.
 - Every comparison ID resolves to a real record.
-- Every map coordinate resolves to a visible site.
+- Every artwork site resolves through the 15-site coordinate table to a
+  visible point in the `1600 × 800` world viewBox.
+- Marker collision avoidance is deterministic and displaced markers retain a
+  visible leader line to their geographic anchor.
 - Every image has alt text, a source name, and a source page URL.
 
 ### Behavior
@@ -272,7 +294,8 @@ the artwork name. Keep all written study content available.
 
 - `art-history-map.html` works when opened directly.
 - The homepage can switch repeatedly between World History and Art History.
-- Each map retains its prior state after switching.
+- The persistent world and art iframe instances retain each map's prior state
+  after switching.
 - World-history content and behavior remain unchanged.
 - Art-history mode does not show world-history-only event or daily-history
   content.
@@ -294,4 +317,3 @@ the artwork name. Keep all written study content available.
 - A short source record for image and content references
 - Verification notes covering data, interaction, responsive behavior, and
   regression checks for the world history map
-
