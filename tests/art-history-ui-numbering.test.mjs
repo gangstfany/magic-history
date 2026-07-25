@@ -240,6 +240,269 @@ test('bounds-aware spatial layout prevents all marker overlaps at mobile scale',
   assert.doesNotMatch(layoutSource, /positioned\.every\(/);
 });
 
+test('expanded AP pins use deterministic, bounded, non-overlapping spider positions', async () => {
+  const html = await loadHtml();
+  const {
+    getMarkerBounds,
+    markerBoundsOverlap,
+    getExpandedPinMetrics,
+    expandedPinPositions,
+  } = loadPureFunctions(
+    html,
+    [
+      'getMarkerBounds',
+      'markerBoundsOverlap',
+      'getExpandedPinMetrics',
+      'expandedPinPositions',
+    ],
+  );
+  const screenScale = 362 / 1600;
+  const group = {
+    works: Array.from({ length: 7 }, (_, index) => ({
+      id: `ap-${index + 41}`,
+      apNumber: index + 41,
+    })),
+  };
+  const center = { x: 875, y: 296 };
+  const first = expandedPinPositions(group, center, screenScale);
+  const second = expandedPinPositions(group, center, screenScale);
+  const metrics = getExpandedPinMetrics(screenScale);
+
+  assert.deepEqual(first, second, 'spider positions must not change across renders');
+  assert.equal(first.length, group.works.length);
+  assert.ok(metrics.hitWidth * screenScale >= 44);
+  assert.ok(metrics.hitHeight * screenScale >= 44);
+  first.forEach((pin, index) => {
+    assert.equal(pin.work.id, group.works[index].id);
+    assert.ok(pin.bounds.left >= 0, `${pin.work.id} crosses left edge`);
+    assert.ok(pin.bounds.right <= 1600, `${pin.work.id} crosses right edge`);
+    assert.ok(pin.bounds.top >= 0, `${pin.work.id} crosses top edge`);
+    assert.ok(pin.bounds.bottom <= 800, `${pin.work.id} crosses bottom edge`);
+    first.slice(index + 1).forEach((other) => {
+      assert.equal(
+        markerBoundsOverlap(pin.bounds, other.bounds),
+        false,
+        `${pin.work.id} overlaps ${other.work.id}`,
+      );
+    });
+  });
+});
+
+test('expanded pins fit every collision-safe site center at mobile scale', async () => {
+  const html = await loadHtml();
+  const artworks = parseArtworkData(html);
+  const {
+    compactApNumbers,
+    formatApGroupLabel,
+    createSiteToken,
+    groupBySite,
+    toWorldCoordinates,
+    getMarkerMetrics,
+    getExpandedPinMetrics,
+    getMarkerBounds,
+    markerBoundsOverlap,
+    expandMarkerBounds,
+    createSpatialHash,
+    findNearestAvailableMarkerSlot,
+    layoutSiteMarkers,
+    expandedPinPositions,
+  } = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'createSiteToken',
+      'groupBySite',
+      'toWorldCoordinates',
+      'getMarkerMetrics',
+      'getExpandedPinMetrics',
+      'getMarkerBounds',
+      'markerBoundsOverlap',
+      'expandMarkerBounds',
+      'createSpatialHash',
+      'findNearestAvailableMarkerSlot',
+      'layoutSiteMarkers',
+      'expandedPinPositions',
+    ],
+    ['const SITE_WORLD_COORDINATES ='],
+  );
+  const screenScale = 362 / 1600;
+  const groups = layoutSiteMarkers(groupBySite(artworks), screenScale);
+
+  groups.filter((group) => group.works.length > 1).forEach((group) => {
+    assert.doesNotThrow(
+      () => expandedPinPositions(
+        group,
+        { x: group.displayX, y: group.displayY },
+        screenScale,
+      ),
+      `${group.siteName} must expand around its collision-safe display center`,
+    );
+  });
+});
+
+test('desktop expanded pins avoid their parent target and every other site marker', async () => {
+  const html = await loadHtml();
+  const artworks = parseArtworkData(html);
+  const {
+    compactApNumbers,
+    formatApGroupLabel,
+    createSiteToken,
+    groupBySite,
+    toWorldCoordinates,
+    getMarkerMetrics,
+    getExpandedPinMetrics,
+    getMarkerBounds,
+    markerBoundsOverlap,
+    expandMarkerBounds,
+    createSpatialHash,
+    findNearestAvailableMarkerSlot,
+    layoutSiteMarkers,
+    expandedPinPositions,
+  } = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'createSiteToken',
+      'groupBySite',
+      'toWorldCoordinates',
+      'getMarkerMetrics',
+      'getExpandedPinMetrics',
+      'getMarkerBounds',
+      'markerBoundsOverlap',
+      'expandMarkerBounds',
+      'createSpatialHash',
+      'findNearestAvailableMarkerSlot',
+      'layoutSiteMarkers',
+      'expandedPinPositions',
+    ],
+    ['const SITE_WORLD_COORDINATES ='],
+  );
+  const screenScale = 0.5;
+  const groups = layoutSiteMarkers(groupBySite(artworks), screenScale);
+  const obstacles = groups.map((group) => group.bounds);
+
+  groups.filter((group) => group.works.length > 1).forEach((group) => {
+    const pins = expandedPinPositions(
+      group,
+      { x: group.displayX, y: group.displayY },
+      screenScale,
+      obstacles,
+    );
+    pins.forEach((pin) => {
+      obstacles.forEach((bounds) => {
+        assert.equal(
+          markerBoundsOverlap(pin.bounds, bounds),
+          false,
+          `${group.siteName} ${pin.work.id} overlaps a site marker`,
+        );
+      });
+    });
+  });
+});
+
+test('mobile expansion uses a bounded compact list with exact AP work buttons', async () => {
+  const html = await loadHtml();
+  const compactSource = getFunctionSource(html, 'renderCompactExpandedList');
+  const renderSource = getFunctionSource(html, 'render');
+
+  assert.match(html, /<div id="expandedPinList" class="expanded-pin-list" hidden>/);
+  assert.match(renderSource, /shouldUseCompactExpandedList\(\)/);
+  assert.match(compactSource, /button\.dataset\.workId = work\.id/);
+  assert.match(compactSource, /button\.setAttribute\('role',\s*'button'\)/);
+  assert.match(compactSource, /button\.setAttribute\('tabindex',\s*'0'\)/);
+  assert.match(
+    compactSource,
+    /`AP \$\{work\.apNumber\} · \$\{work\.titleEn\} · \$\{group\.siteName\}`/,
+  );
+  assert.match(compactSource, /selectArtwork\(work\.id,\s*group\.siteToken/);
+  assert.match(getCssDeclarations(html, '.expanded-pin-list'), /width:\s*100%/);
+  assert.match(
+    getCssDeclarations(html, '.expanded-pin-list-button'),
+    /min-height:\s*44px/,
+  );
+  assert.match(
+    getCssDeclarations(html, '.expanded-pin-list-button'),
+    /overflow-wrap:\s*anywhere/,
+  );
+});
+
+test('site expansion identity remains stable for compatible filtered subsets', async () => {
+  const html = await loadHtml();
+  const artworks = parseArtworkData(html);
+  const { compactApNumbers, formatApGroupLabel, createSiteToken, groupBySite } =
+    loadPureFunctions(
+      html,
+      ['compactApNumbers', 'formatApGroupLabel', 'createSiteToken', 'groupBySite'],
+    );
+  const rome = artworks.filter((work) => work.siteName === 'Rome');
+  const fullToken = groupBySite(rome)[0].siteToken;
+  const subsetToken = groupBySite(rome.slice(0, 2))[0].siteToken;
+
+  assert.equal(fullToken, subsetToken);
+  assert.match(
+    getFunctionSource(html, 'render'),
+    /group\.siteToken === state\.expandedSiteToken && group\.works\.length > 1/,
+  );
+});
+
+test('multi-work groups expand while single groups and child pins select exact works', async () => {
+  const html = await loadHtml();
+  const stateSource = getObjectDeclarationSource(html, 'const state =');
+  const expandSource = getFunctionSource(html, 'expandSiteGroup');
+  const selectSource = getFunctionSource(html, 'selectArtwork');
+  const expandedRenderSource = getFunctionSource(html, 'renderExpandedWorkPins');
+  const renderSource = getFunctionSource(html, 'render');
+
+  assert.match(stateSource, /expandedSiteToken:\s*null/);
+  assert.match(expandSource, /group\.works\.length === 1/);
+  assert.match(expandSource, /selectArtwork\(group\.works\[0\]\.id,\s*group\.siteToken/);
+  assert.match(
+    expandSource,
+    /state\.expandedSiteToken === group\.siteToken \? null : group\.siteToken/,
+  );
+  assert.match(selectSource, /state\.selectedId = workId/);
+  assert.match(selectSource, /state\.expandedSiteToken = siteToken/);
+  assert.match(selectSource, /state\.activeDetailTab = 'quick'/);
+  assert.match(renderSource, /expandSiteGroup\(group/);
+  assert.doesNotMatch(renderSource, /selectSite\(group/);
+
+  assert.match(expandedRenderSource, /expandedPinPositions\(\s*group,\s*center/);
+  assert.match(expandedRenderSource, /classList\.add\('expanded-work-pin'\)/);
+  assert.match(expandedRenderSource, /pin\.setAttribute\('role',\s*'button'\)/);
+  assert.match(expandedRenderSource, /pin\.setAttribute\('tabindex',\s*'0'\)/);
+  assert.match(
+    expandedRenderSource,
+    /`AP \$\{work\.apNumber\} · \$\{work\.titleEn\} · \$\{group\.siteName\}`/,
+  );
+  assert.match(expandedRenderSource, /label\.textContent = String\(work\.apNumber\)/);
+  assert.match(expandedRenderSource, /selectArtwork\(work\.id,\s*group\.siteToken/);
+  assert.match(expandedRenderSource, /event\.key !== 'Enter' && event\.key !== ' '/);
+});
+
+test('expansion closes only when incompatible and focus survives marker rerenders', async () => {
+  const html = await loadHtml();
+  const renderSource = getFunctionSource(html, 'render');
+  const clearSource = getFunctionSource(html, 'clearFilters');
+
+  assert.match(
+    renderSource,
+    /visibleGroups\.some\(\(group\) => \(\s*group\.siteToken === state\.expandedSiteToken && group\.works\.length > 1/,
+  );
+  assert.match(renderSource, /state\.expandedSiteToken = null/);
+  assert.match(clearSource, /expandedSiteToken:\s*null/);
+  assert.match(html, /function focusExpandedWorkPin\(workId\)/);
+  assert.match(html, /\[data-work-id="\$\{workId\}"\]/);
+  assert.match(renderSource, /focusedWorkId/);
+  assert.match(renderSource, /focusExpandedWorkPin\(focusedWorkId\)/);
+  assert.doesNotMatch(
+    renderSource,
+    /state\.transform\.scale\s*>=\s*2[\s\S]*expandedSiteToken/,
+    'zoom level must not automatically expand all groups',
+  );
+});
+
 test('site focus tokens are stable, selector-safe, and used after marker rerenders', async () => {
   const html = await loadHtml();
   const { createSiteToken } = loadPureFunctions(html, ['createSiteToken']);

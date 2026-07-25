@@ -97,7 +97,7 @@ test('group marker labels concisely name the site and complete AP range', async 
   assert.doesNotMatch(html, /marker\.setAttribute\('aria-label',[^\n]*artworkNames/);
   assert.match(html, /marker\.setAttribute\('role', 'button'\)/);
   assert.match(html, /marker\.setAttribute\('tabindex', '0'\)/);
-  assert.match(html, /selectSite\(group, true\)/);
+  assert.match(html, /expandSiteGroup\(group, true\)/);
 });
 
 test('map panning owns touch gestures only on the interactive pan surface', async () => {
