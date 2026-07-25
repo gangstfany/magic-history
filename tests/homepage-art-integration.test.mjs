@@ -73,15 +73,21 @@ test('coming-soon subjects hide stale World event details', async () => {
   assert.match(html, /if \(key === 'world'\) syncHomeEvents\(\)/);
 });
 
-test('responsive rules override subject-specific desktop heights without collapsing placeholders', async () => {
+test('responsive rules preserve useful Art height without collapsing other subject placeholders', async () => {
   const html = await loadHtml();
 
   assert.match(
     html,
-    /@media \(max-width: 900px\)[\s\S]*?\.map-card\[data-subject="art"\] \.home-map-wrap\s*\{\s*flex:\s*0 0 auto;\s*height:\s*300px/,
-    'Art mobile wrapper must reset the desktop 100% flex-basis before applying its 300px height',
+    /@media \(max-width: 900px\)[\s\S]*?\.map-card\[data-subject="art"\] \.home-map-wrap\s*\{\s*flex:\s*0 0 auto;\s*height:\s*min\(720px, 78vh\)/,
+    'Art mobile wrapper must reset the desktop 100% flex-basis before preserving useful embedded height',
   );
-  assert.match(html, /@media \(max-width: 900px\)[\s\S]*?\.map-card\[data-subject="euro"\] \.map-events-split[\s\S]*?height:\s*300px/);
+  for (const subject of ['euro', 'us', 'geo']) {
+    assert.match(
+      html,
+      new RegExp(`@media \\(max-width: 900px\\)[\\s\\S]*?\\.map-card\\[data-subject="${subject}"\\] \\.map-events-split[\\s\\S]*?height:\\s*300px`),
+      `${subject} placeholder must retain its 300px narrow-screen height`,
+    );
+  }
 });
 
 test('map caption follows the selected subject and hides for coming-soon subjects', async () => {

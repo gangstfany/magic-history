@@ -133,11 +133,15 @@
     body.is-embedded .art-workspace { flex:1 1 auto; width:100%; max-width:none; height:auto; min-height:0; margin:0; border:0; border-radius:0; box-shadow:none; }
     @media (max-width:520px) {
       body.is-embedded { height:auto; min-height:100vh; overflow:auto; }
+      body.is-embedded .filter-toolbar { padding:8px 12px; }
       body.is-embedded .art-workspace { width:100%; max-width:none; height:auto; min-height:0; margin:0; border:0; border-radius:0; }
       .page-header, .filter-toolbar { padding-left:12px; padding-right:12px; }
       .filter-toolbar > * { max-width:100%; }
+      .civilization-filters { gap:8px; }
+      .filter-pill, .clear-button, select, input[type="search"] { min-height:44px; }
       .filter-label:has(#searchInput) { width:100%; }
       #searchInput { width:100%; }
+      .map-controls button { width:44px; height:44px; min-width:44px; min-height:44px; }
       .art-workspace { width:calc(100% - 24px); height:auto; min-height:0; grid-template-columns:1fr; grid-template-rows:auto auto; }
       .map-panel { display:grid; grid-template-rows:minmax(330px,55vh) auto; overflow:visible; }
       .map-svg { grid-row:1; min-height:330px; }

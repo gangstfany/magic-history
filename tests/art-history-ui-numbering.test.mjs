@@ -133,6 +133,42 @@ test('art map exposes a query-driven embedded presentation mode', async () => {
   assert.match(narrowWorkspaceCss, /border-radius:\s*0/);
 });
 
+test('compact desktop controls recover 44px touch targets on narrow screens', async () => {
+  const html = await loadHtml();
+  const narrowCss = getMediaQuerySource(html, '(max-width:520px)');
+
+  const narrowControls = getCssDeclarations(narrowCss, '.map-controls button');
+  assert.match(narrowControls, /width:\s*44px/);
+  assert.match(narrowControls, /height:\s*44px/);
+  assert.match(narrowControls, /min-width:\s*44px/);
+  assert.match(narrowControls, /min-height:\s*44px/);
+
+  const narrowFilters = getCssDeclarations(
+    narrowCss,
+    '.filter-pill, .clear-button, select, input[type="search"]',
+  );
+  assert.match(narrowFilters, /min-height:\s*44px/);
+  assert.match(getCssDeclarations(narrowCss, '.civilization-filters'), /gap:\s*8px/);
+
+  const narrowEmbeddedBody = getCssDeclarations(narrowCss, 'body.is-embedded');
+  assert.match(narrowEmbeddedBody, /height:\s*auto/);
+  assert.match(narrowEmbeddedBody, /min-height:\s*100vh/);
+  assert.match(narrowEmbeddedBody, /overflow:\s*auto/);
+  assert.match(
+    getCssDeclarations(narrowCss, 'body.is-embedded .filter-toolbar'),
+    /padding:\s*8px 12px/,
+  );
+
+  const narrowWorkspace = getCssDeclarations(narrowCss, 'body.is-embedded .art-workspace');
+  assert.match(narrowWorkspace, /width:\s*100%/);
+  assert.match(narrowWorkspace, /max-width:\s*none/);
+  assert.match(narrowWorkspace, /height:\s*auto/);
+  assert.match(narrowWorkspace, /min-height:\s*0/);
+  assert.match(narrowWorkspace, /margin:\s*0/);
+  assert.match(narrowWorkspace, /border:\s*0/);
+  assert.match(narrowWorkspace, /border-radius:\s*0/);
+});
+
 test('art map reuses World History typography and compact detail hierarchy', async () => {
   const html = await loadHtml();
   assert.match(
