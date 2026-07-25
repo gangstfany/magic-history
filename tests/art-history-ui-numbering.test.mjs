@@ -264,7 +264,7 @@ test('bounds-aware spatial layout prevents all marker overlaps at mobile scale',
   assert.doesNotMatch(layoutSource, /positioned\.every\(/);
 });
 
-test('250-work overview uses deterministic zoom hierarchy without exhausting marker capacity', async () => {
+test('250-work map falls back to a collision-safe hierarchy at every mobile zoom', async () => {
   const html = await loadHtml();
   const {
     compactApNumbers,
@@ -276,6 +276,7 @@ test('250-work overview uses deterministic zoom hierarchy without exhausting mar
     getMapHierarchyLevel,
     groupByRegionGrid,
     buildMapGroups,
+    buildMapGroupCandidates,
     getMarkerMetrics,
     getMarkerBounds,
     markerBoundsOverlap,
@@ -283,6 +284,7 @@ test('250-work overview uses deterministic zoom hierarchy without exhausting mar
     createSpatialHash,
     findNearestAvailableMarkerSlot,
     layoutSiteMarkers,
+    layoutMapGroups,
   } = loadPureFunctions(
     html,
     [
@@ -295,6 +297,7 @@ test('250-work overview uses deterministic zoom hierarchy without exhausting mar
       'getMapHierarchyLevel',
       'groupByRegionGrid',
       'buildMapGroups',
+      'buildMapGroupCandidates',
       'getMarkerMetrics',
       'getMarkerBounds',
       'markerBoundsOverlap',
@@ -302,6 +305,7 @@ test('250-work overview uses deterministic zoom hierarchy without exhausting mar
       'createSpatialHash',
       'findNearestAvailableMarkerSlot',
       'layoutSiteMarkers',
+      'layoutMapGroups',
     ],
     ['const SITE_WORLD_COORDINATES ='],
   );
@@ -320,50 +324,173 @@ test('250-work overview uses deterministic zoom hierarchy without exhausting mar
     };
   });
 
-  const overview = buildMapGroups(artworks, 1);
-  const intermediate = buildMapGroups(artworks, 1.75);
-  const close = buildMapGroups(artworks, 3);
+  for (const zoomScale of [1, 1.5, 1.75, 2.5, 3]) {
+    const screenScale = (362 / 1600) * zoomScale;
+    const laidOut = layoutMapGroups(artworks, zoomScale, screenScale, {});
+    assert.ok(laidOut.length <= 40, `${zoomScale}x rendered too many top-level groups`);
+    assert.doesNotThrow(
+      () => layoutSiteMarkers(laidOut, screenScale),
+      `${zoomScale}x hierarchy result must remain layout-safe`,
+    );
+    assert.deepEqual(
+      layoutMapGroups(artworks, zoomScale, screenScale, {}).map((group) => group.key),
+      laidOut.map((group) => group.key),
+      `${zoomScale}x fallback must be deterministic`,
+    );
+  }
 
-  assert.ok(overview.length < intermediate.length);
-  assert.ok(intermediate.length < close.length);
-  assert.ok(overview.length <= 10);
-  assert.equal(close.length, 250);
+  const candidates = buildMapGroupCandidates(artworks, 3, {});
   assert.deepEqual(
-    buildMapGroups(artworks, 1).map((group) => group.key),
-    overview.map((group) => group.key),
+    candidates.map((groups) => groups[0].kind),
+    ['site', 'region', 'unit'],
   );
-  assert.deepEqual(
-    overview.map((group) => group.apUnits[0]),
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-  );
-  assert.ok(overview.every((group) => group.apUnits.length === 1));
-  assert.doesNotThrow(() => layoutSiteMarkers(overview, 0.253));
-  assert.ok(overview.every((group) => group.apGroupLabel.startsWith('AP ')));
-  assert.ok(overview.every((group) => group.kind === 'unit'));
-  assert.ok(intermediate.every((group) => group.kind === 'region'));
-  assert.ok(close.every((group) => group.kind === 'site'));
-  assert.equal(getMapHierarchyLevel(250, 1), 'overview');
-  assert.equal(getMapHierarchyLevel(250, 1.75), 'intermediate');
+  assert.equal(buildMapGroups(artworks, 3).length, 250);
   assert.equal(getMapHierarchyLevel(250, 3), 'site');
 });
 
-test('region markers zoom into the next deterministic hierarchy level', async () => {
+test('unit to region to site branch refinement stays stable and layout-safe on mobile', async () => {
   const html = await loadHtml();
-  const renderSource = getFunctionSource(html, 'render');
-  const expandSource = getFunctionSource(html, 'expandSiteGroup');
-
-  assert.match(
-    renderSource,
-    /buildMapGroups\(visibleWorks,\s*state\.transform\.scale\)/,
+  const helpers = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'createSiteToken',
+      'getApUnitNumber',
+      'toWorldCoordinates',
+      'groupBySite',
+      'getMapHierarchyLevel',
+      'groupByRegionGrid',
+      'buildMapGroups',
+      'buildMapGroupCandidates',
+      'getMarkerMetrics',
+      'getMarkerBounds',
+      'markerBoundsOverlap',
+      'expandMarkerBounds',
+      'createSpatialHash',
+      'findNearestAvailableMarkerSlot',
+      'layoutSiteMarkers',
+      'layoutMapGroups',
+    ],
+    ['const SITE_WORLD_COORDINATES ='],
   );
-  assert.match(expandSource, /group\.kind !== 'site'/);
+  const artworks = Array.from({ length: 250 }, (_, index) => {
+    const apNumber = index + 1;
+    return {
+      id: `synthetic-ap-${apNumber}`,
+      apNumber,
+      siteName: `Synthetic Site ${apNumber}`,
+      coordinates: {
+        x: -1200 + (index % 25) * 100,
+        y: -500 + Math.floor(index / 25) * 100,
+      },
+      civilization: ['egypt', 'greece', 'rome'][index % 3],
+      titleEn: `Synthetic Work ${apNumber}`,
+    };
+  });
+  const mobileScale = (zoomScale) => (362 / 1600) * zoomScale;
+  const approvedWorks = parseArtworkData(html);
+  for (const zoomScale of [1, 1.5, 1.75, 2.5, 3]) {
+    const approvedLayout = helpers.layoutMapGroups(
+      approvedWorks,
+      zoomScale,
+      mobileScale(zoomScale),
+      {},
+    );
+    assert.equal(approvedLayout.length, 15);
+    assert.ok(approvedLayout.every((group) => group.kind === 'site'));
+  }
+  const overview = helpers.layoutMapGroups(artworks, 1, mobileScale(1), {});
+  assert.ok(overview.every((group) => group.kind === 'unit'));
+  for (const unit of overview) {
+    const unitBranch = { activeUnit: unit.apUnits[0], activeRegion: null };
+    const regions = helpers.layoutMapGroups(
+      artworks,
+      1.5,
+      mobileScale(1.5),
+      unitBranch,
+    );
+    assert.ok(regions.every((group) => group.kind === 'region'));
+    assert.ok(regions.every((group) => group.parentKey === unit.key));
+    assert.doesNotThrow(() => helpers.layoutSiteMarkers(regions, mobileScale(1.5)));
+    assert.deepEqual(
+      helpers.layoutMapGroups(artworks, 1.5, mobileScale(1.5), unitBranch)
+        .map((group) => group.key),
+      regions.map((group) => group.key),
+    );
+    for (const region of regions) {
+      const regionBranch = {
+        activeUnit: unit.apUnits[0],
+        activeRegion: region.key,
+      };
+      const sites = helpers.layoutMapGroups(
+        artworks,
+        2.5,
+        mobileScale(2.5),
+        regionBranch,
+      );
+      assert.ok(sites.every((group) => group.kind === 'site'));
+      assert.ok(sites.every((group) => group.parentKey === region.key));
+      assert.ok(sites.every((group) => group.works.length === 1));
+      assert.doesNotThrow(() => helpers.layoutSiteMarkers(sites, mobileScale(2.5)));
+      assert.deepEqual(
+        helpers.layoutMapGroups(artworks, 2.5, mobileScale(2.5), regionBranch)
+          .map((group) => group.key),
+        sites.map((group) => group.key),
+      );
+    }
+  }
+});
+
+test('hierarchy keyboard activation focuses a stable child after rerender', async () => {
+  const html = await loadHtml();
+  const stateSource = getObjectDeclarationSource(html, 'const state =');
+  const expandSource = getFunctionSource(html, 'expandSiteGroup');
+  const renderSource = getFunctionSource(html, 'render');
+  const focusSource = getFunctionSource(html, 'focusHierarchyChild');
+  const zoomSyncSource = getFunctionSource(html, 'syncHierarchyBranchForZoom');
+  const { getHierarchyChildFocusToken } = loadPureFunctions(
+    html,
+    ['getHierarchyChildFocusToken'],
+  );
+  const groups = [
+    { key: 'region-b', parentKey: 'unit-4', siteToken: 'region-b-token' },
+    { key: 'region-a', parentKey: 'unit-4', siteToken: 'region-a-token' },
+    { key: 'region-c', parentKey: 'unit-5', siteToken: 'region-c-token' },
+  ];
+
+  assert.equal(
+    getHierarchyChildFocusToken(groups, 'unit-4'),
+    'region-b-token',
+  );
+  assert.equal(getHierarchyChildFocusToken(groups, 'unit-9'), null);
+  assert.match(stateSource, /activeUnit:\s*null/);
+  assert.match(stateSource, /activeRegion:\s*null/);
+  assert.match(stateSource, /pendingFocusParentKey:\s*null/);
+  assert.match(expandSource, /group\.kind === 'unit'/);
+  assert.match(expandSource, /state\.activeUnit = group\.apUnits\[0\]/);
+  assert.match(expandSource, /group\.kind === 'region'/);
+  assert.match(expandSource, /state\.activeRegion = group\.key/);
   assert.match(
     expandSource,
-    /state\.transform\.scale < 1\.5 \? 1\.5 : 2\.5/,
+    /restoreFocus[\s\S]*state\.pendingFocusParentKey = group\.key/,
   );
-  assert.match(expandSource, /zoomAroundPoint\(/);
-  assert.match(expandSource, /state\.expandedSiteToken = null/);
-  assert.match(expandSource, /applyTransform\(\)/);
+  assert.match(focusSource, /focusSiteMarker\(childToken\)/);
+  assert.match(
+    renderSource,
+    /markerLayer\.replaceChildren\([\s\S]*state\.pendingFocusParentKey[\s\S]*focusHierarchyChild\([\s\S]*state\.pendingFocusParentKey = null/,
+  );
+  assert.match(
+    getFunctionSource(html, 'clearFilters'),
+    /activeUnit:\s*null[\s\S]*activeRegion:\s*null[\s\S]*pendingFocusParentKey:\s*null/,
+  );
+  assert.match(zoomSyncSource, /state\.transform\.scale < 2\.5[\s\S]*state\.activeRegion = null/);
+  assert.match(zoomSyncSource, /state\.transform\.scale < 1\.5[\s\S]*state\.activeUnit = null/);
+  assert.match(html, /filter-pill[\s\S]*clearHierarchyBranch\(\)/);
+  assert.match(
+    html,
+    /getElementById\('resetView'\)[\s\S]*clearHierarchyBranch\(\)[\s\S]*transform = \{ x:0, y:0, scale:1 \}/,
+  );
 });
 
 test('expanded AP pins use deterministic, bounded, non-overlapping spider positions', async () => {
@@ -795,7 +922,7 @@ test('marker layout recomputes when the rendered map size changes', async () => 
 test('render keeps the previous marker layer until a complete layout succeeds', async () => {
   const html = await loadHtml();
   const renderSource = getFunctionSource(html, 'render');
-  const layoutIndex = renderSource.indexOf('layoutSiteMarkers(');
+  const layoutIndex = renderSource.indexOf('layoutMapGroups(');
   const replaceIndex = renderSource.indexOf('markerLayer.replaceChildren(');
 
   assert.ok(layoutIndex >= 0, 'render must calculate a marker layout');

@@ -439,6 +439,9 @@
       selectedId: null,
       selectedSiteIndex: 0,
       expandedSiteToken: null,
+      activeUnit: null,
+      activeRegion: null,
+      pendingFocusParentKey: null,
       activeDetailTab: 'quick',
       transform: { x: 0, y: 0, scale: 1 }
     };
@@ -594,6 +597,7 @@
           groups.set(key, {
             key,
             kind: level === 'overview' ? 'unit' : 'region',
+            parentKey: level === 'overview' ? null : `unit-${apUnit}`,
             siteName: level === 'overview'
               ? `AP Unit ${apUnit}`
               : `AP Unit ${apUnit} · 地理区域 ${row + 1}-${column + 1}`,
@@ -616,6 +620,7 @@
         return {
           key: group.key,
           kind: group.kind,
+          parentKey: group.parentKey,
           siteName: group.siteName,
           worldX: group.worldXTotal / sortedWorks.length,
           worldY: group.worldYTotal / sortedWorks.length,
@@ -634,17 +639,55 @@
       ));
     }
 
-    function buildMapGroups(works, zoomScale = 1) {
+    function buildMapGroups(works, zoomScale = 1, branch = null) {
+      const activeBranch = branch || {};
       const siteGroups = groupBySite(works);
-      const level = getMapHierarchyLevel(siteGroups.length, zoomScale);
-      if (level !== 'site') return groupByRegionGrid(works, level);
-      return siteGroups.map((group) => ({
+      const asSiteGroups = (groups, parentKey = null) => groups.map((group) => ({
         ...group,
         kind: 'site',
+        parentKey,
         apUnits: [...new Set(group.works.map((work) => getApUnitNumber(work.apNumber)))]
           .filter(Boolean)
           .sort((first, second) => first - second)
       }));
+      if (siteGroups.length <= 40) return asSiteGroups(siteGroups);
+      if (activeBranch.activeRegion) {
+        const region = groupByRegionGrid(works, 'intermediate')
+          .find((group) => group.key === activeBranch.activeRegion);
+        return region ? asSiteGroups(groupBySite(region.works), region.key) : [];
+      }
+      if (activeBranch.activeUnit) {
+        const unitKey = `unit-${activeBranch.activeUnit}`;
+        return groupByRegionGrid(
+          works.filter((work) => getApUnitNumber(work.apNumber) === activeBranch.activeUnit),
+          'intermediate'
+        ).map((group) => ({ ...group, parentKey:unitKey }));
+      }
+      const level = getMapHierarchyLevel(siteGroups.length, zoomScale);
+      if (level !== 'site') return groupByRegionGrid(works, level);
+      return asSiteGroups(siteGroups);
+    }
+
+    function buildMapGroupCandidates(works, zoomScale = 1, branch = null) {
+      const activeBranch = branch || {};
+      const siteGroups = groupBySite(works);
+      if (siteGroups.length <= 40 || activeBranch.activeUnit || activeBranch.activeRegion) {
+        return [buildMapGroups(works, zoomScale, activeBranch)];
+      }
+      const units = groupByRegionGrid(works, 'overview');
+      const level = getMapHierarchyLevel(siteGroups.length, zoomScale);
+      if (level === 'overview') return [units];
+      const regions = groupByRegionGrid(works, 'intermediate');
+      if (level === 'intermediate') return [regions, units];
+      const sites = siteGroups.map((group) => ({
+        ...group,
+        kind: 'site',
+        parentKey: null,
+        apUnits: [...new Set(group.works.map((work) => getApUnitNumber(work.apNumber)))]
+          .filter(Boolean)
+          .sort((first, second) => first - second)
+      }));
+      return [sites, regions, units];
     }
 
     function getMapScreenScale(width, height, zoomScale = 1) {
@@ -975,6 +1018,26 @@
       return positioned;
     }
 
+    function layoutMapGroups(
+      works,
+      zoomScale = 1,
+      screenScale = 0.5,
+      branch = null
+    ) {
+      let collisionError = null;
+      const candidates = buildMapGroupCandidates(works, zoomScale, branch);
+      for (const groups of candidates) {
+        try {
+          return layoutSiteMarkers(groups, screenScale);
+        } catch (error) {
+          if (!String(error?.message).startsWith('Unable to place ')) throw error;
+          collisionError = error;
+        }
+      }
+      if (collisionError) throw collisionError;
+      return [];
+    }
+
     function assert(condition, message) {
       if (!condition) throw new Error(`Development assertion failed: ${message}`);
     }
@@ -1128,6 +1191,17 @@
       markerLayer.querySelector(`[data-site-token="${siteToken}"]`)?.focus();
     }
 
+    function getHierarchyChildFocusToken(groups, parentKey) {
+      return groups.find((group) => group.parentKey === parentKey)?.siteToken || null;
+    }
+
+    function focusHierarchyChild(parentKey, groups) {
+      const childToken = getHierarchyChildFocusToken(groups, parentKey);
+      if (!childToken) return false;
+      focusSiteMarker(childToken);
+      return true;
+    }
+
     function focusExpandedWorkPin(workId) {
       document.querySelector(`[data-work-id="${workId}"]`)?.focus();
     }
@@ -1155,12 +1229,28 @@
     }
 
     function expandSiteGroup(group, restoreFocus = false) {
-      if (group.kind !== 'site') {
-        const nextScale = state.transform.scale < 1.5 ? 1.5 : 2.5;
+      if (group.kind === 'unit') {
+        state.activeUnit = group.apUnits[0];
+        state.activeRegion = null;
+        if (restoreFocus) state.pendingFocusParentKey = group.key;
         state.expandedSiteToken = null;
         state.transform = zoomAroundPoint(
           state.transform,
-          nextScale,
+          Math.max(1.5, state.transform.scale),
+          { x:group.displayX, y:group.displayY }
+        );
+        render();
+        applyTransform();
+        return;
+      }
+      if (group.kind === 'region') {
+        state.activeUnit = group.apUnits[0];
+        state.activeRegion = group.key;
+        if (restoreFocus) state.pendingFocusParentKey = group.key;
+        state.expandedSiteToken = null;
+        state.transform = zoomAroundPoint(
+          state.transform,
+          Math.max(2.5, state.transform.scale),
           { x:group.displayX, y:group.displayY }
         );
         render();
@@ -1284,6 +1374,9 @@
         selectedId:target.id,
         selectedSiteIndex:0,
         expandedSiteToken:null,
+        activeUnit:null,
+        activeRegion:null,
+        pendingFocusParentKey:null,
         activeDetailTab:'quick'
       });
       document.querySelectorAll('.filter-pill').forEach((button) => {
@@ -1585,9 +1678,14 @@
       const leaders = [];
       const markers = [];
       const renderedMarkerScale = getRenderedMarkerScale();
-      const visibleGroups = layoutSiteMarkers(
-        buildMapGroups(visibleWorks, state.transform.scale),
-        renderedMarkerScale
+      const visibleGroups = layoutMapGroups(
+        visibleWorks,
+        state.transform.scale,
+        renderedMarkerScale,
+        {
+          activeUnit:state.activeUnit,
+          activeRegion:state.activeRegion
+        }
       );
       if (
         state.expandedSiteToken
@@ -1695,7 +1793,10 @@
         }
       }
       markerLayer.replaceChildren(...leaders, ...markers);
-      if (focusedWorkId) focusExpandedWorkPin(focusedWorkId);
+      if (state.pendingFocusParentKey) {
+        focusHierarchyChild(state.pendingFocusParentKey, visibleGroups);
+        state.pendingFocusParentKey = null;
+      } else if (focusedWorkId) focusExpandedWorkPin(focusedWorkId);
       else if (focusedSiteToken) focusSiteMarker(focusedSiteToken);
 
       detailPanel.replaceChildren();
@@ -1754,6 +1855,9 @@
         selectedId:null,
         selectedSiteIndex:0,
         expandedSiteToken:null,
+        activeUnit:null,
+        activeRegion:null,
+        pendingFocusParentKey:null,
         activeDetailTab:'quick',
         transform:{ x:0, y:0, scale:1 }
       });
@@ -1767,16 +1871,45 @@
       applyTransform();
     }
 
+    function clearHierarchyBranch() {
+      state.activeUnit = null;
+      state.activeRegion = null;
+      state.pendingFocusParentKey = null;
+      state.expandedSiteToken = null;
+    }
+
+    function syncHierarchyBranchForZoom() {
+      if (state.transform.scale < 2.5) state.activeRegion = null;
+      if (state.transform.scale < 1.5) {
+        state.activeUnit = null;
+        state.activeRegion = null;
+      }
+      state.pendingFocusParentKey = null;
+    }
+
     populateSelect(document.getElementById('periodFilter'), ARTWORKS.map((work) => work.period));
     populateSelect(document.getElementById('typeFilter'), ARTWORKS.map((work) => work.workType));
     document.querySelectorAll('.filter-pill').forEach((button) => button.addEventListener('click', () => {
+      clearHierarchyBranch();
       state.civilization = button.dataset.civilization;
       document.querySelectorAll('.filter-pill').forEach((pill) => pill.setAttribute('aria-pressed', String(pill === button)));
       render();
     }));
-    document.getElementById('periodFilter').addEventListener('change', (event) => { state.period = event.target.value; render(); });
-    document.getElementById('typeFilter').addEventListener('change', (event) => { state.workType = event.target.value; render(); });
-    document.getElementById('searchInput').addEventListener('input', (event) => { state.search = event.target.value; render(); });
+    document.getElementById('periodFilter').addEventListener('change', (event) => {
+      clearHierarchyBranch();
+      state.period = event.target.value;
+      render();
+    });
+    document.getElementById('typeFilter').addEventListener('change', (event) => {
+      clearHierarchyBranch();
+      state.workType = event.target.value;
+      render();
+    });
+    document.getElementById('searchInput').addEventListener('input', (event) => {
+      clearHierarchyBranch();
+      state.search = event.target.value;
+      render();
+    });
     document.getElementById('zoomIn').addEventListener('click', () => {
       state.transform = zoomAroundPoint(state.transform, state.transform.scale + .5);
       render();
@@ -1784,10 +1917,12 @@
     });
     document.getElementById('zoomOut').addEventListener('click', () => {
       state.transform = zoomAroundPoint(state.transform, state.transform.scale - .5);
+      syncHierarchyBranchForZoom();
       render();
       applyTransform();
     });
     document.getElementById('resetView').addEventListener('click', () => {
+      clearHierarchyBranch();
       state.transform = { x:0, y:0, scale:1 };
       render();
       applyTransform();
