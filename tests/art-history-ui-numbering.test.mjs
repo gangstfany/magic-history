@@ -168,6 +168,10 @@ test('art map reuses World History typography and compact detail hierarchy', asy
   assert.match(compactFilterCss, /font-weight:\s*600/);
   assert.match(compactFilterCss, /min-height:\s*34px/);
   assert.match(
+    getCssDeclarations(html, '.instruction p, .empty-state p'),
+    /line-height:\s*1\.55/,
+  );
+  assert.match(
     html,
     /meta\.textContent = `AP #\$\{work\.apNumber\} · \$\{civilizations\[work\.civilization\]\} · \$\{work\.period\} · \$\{work\.date\}`/,
   );
