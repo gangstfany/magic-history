@@ -169,10 +169,15 @@ test('map markers display AP numbers with circles for works and capsules for gro
 
 test('marker metrics stay readable and touchable on a 390px viewport', async () => {
   const html = await loadHtml();
-  const { getMarkerMetrics } = loadPureFunctions(html, ['getMarkerMetrics']);
-  const renderedScale = 366 / 1600;
+  const { getMapScreenScale, getMarkerMetrics } = loadPureFunctions(
+    html,
+    ['getMapScreenScale', 'getMarkerMetrics'],
+  );
+  const renderedScale = getMapScreenScale(362, 330);
   const metrics = getMarkerMetrics('35, 39–40', false, renderedScale);
 
+  assert.equal(renderedScale, 362 / 1600);
+  assert.equal(getMapScreenScale(0, 0), 0.23);
   assert.ok(metrics.fontSize * renderedScale >= 11.5);
   assert.ok(metrics.hitHeight * renderedScale >= 44);
   assert.ok(metrics.hitWidth * renderedScale >= 44);
@@ -193,6 +198,7 @@ test('bounds-aware spatial layout prevents all marker overlaps at mobile scale',
     markerBoundsOverlap,
     expandMarkerBounds,
     createSpatialHash,
+    findNearestAvailableMarkerSlot,
     layoutSiteMarkers,
   } = loadPureFunctions(
     html,
@@ -207,13 +213,19 @@ test('bounds-aware spatial layout prevents all marker overlaps at mobile scale',
       'markerBoundsOverlap',
       'expandMarkerBounds',
       'createSpatialHash',
+      'findNearestAvailableMarkerSlot',
       'layoutSiteMarkers',
     ],
     ['const SITE_WORLD_COORDINATES ='],
   );
-  const laidOut = layoutSiteMarkers(groupBySite(artworks), 366 / 1600);
+  const renderedScale = 362 / 1600;
+  const laidOut = layoutSiteMarkers(groupBySite(artworks), renderedScale);
 
   for (let index = 0; index < laidOut.length; index += 1) {
+    assert.ok(laidOut[index].bounds.left >= 0, `${laidOut[index].siteName} crosses left edge`);
+    assert.ok(laidOut[index].bounds.right <= 1600, `${laidOut[index].siteName} crosses right edge`);
+    assert.ok(laidOut[index].bounds.top >= 0, `${laidOut[index].siteName} crosses top edge`);
+    assert.ok(laidOut[index].bounds.bottom <= 800, `${laidOut[index].siteName} crosses bottom edge`);
     for (let otherIndex = index + 1; otherIndex < laidOut.length; otherIndex += 1) {
       assert.equal(
         markerBoundsOverlap(laidOut[index].bounds, laidOut[otherIndex].bounds),
@@ -224,6 +236,7 @@ test('bounds-aware spatial layout prevents all marker overlaps at mobile scale',
   }
   const layoutSource = getFunctionSource(html, 'layoutSiteMarkers');
   assert.match(layoutSource, /createSpatialHash\(/);
+  assert.match(layoutSource, /findNearestAvailableMarkerSlot\(/);
   assert.doesNotMatch(layoutSource, /positioned\.every\(/);
 });
 
@@ -248,8 +261,23 @@ test('marker layout recomputes when the rendered map size changes', async () => 
   const html = await loadHtml();
 
   assert.match(html, /function getRenderedMarkerScale\(/);
+  assert.match(
+    getFunctionSource(html, 'getRenderedMarkerScale'),
+    /getMapScreenScale\(bounds\.width, bounds\.height, state\.transform\.scale\)/,
+  );
   assert.match(html, /window\.addEventListener\('resize', scheduleMarkerLayout\)/);
+  assert.match(html, /new ResizeObserver\(scheduleMarkerLayout\)/);
   assert.match(html, /requestAnimationFrame\(\(\) => render\(\)\)/);
+});
+
+test('render keeps the previous marker layer until a complete layout succeeds', async () => {
+  const html = await loadHtml();
+  const renderSource = getFunctionSource(html, 'render');
+  const layoutIndex = renderSource.indexOf('layoutSiteMarkers(');
+  const replaceIndex = renderSource.indexOf('markerLayer.replaceChildren(');
+
+  assert.ok(layoutIndex >= 0, 'render must calculate a marker layout');
+  assert.ok(replaceIndex > layoutIndex, 'render must replace markers only after layout succeeds');
 });
 
 test('detail images show the complete artwork without cover cropping', async () => {

@@ -528,6 +528,14 @@
         .sort((a, b) => a.siteName.localeCompare(b.siteName) || a.x - b.x || a.y - b.y);
     }
 
+    function getMapScreenScale(width, height, zoomScale = 1) {
+      const renderedScale = Math.min(width / 1600, height / 800);
+      const visibleScale = Number.isFinite(renderedScale) && renderedScale > 0
+        ? renderedScale
+        : 0.23;
+      return visibleScale * zoomScale;
+    }
+
     function getMarkerMetrics(apLabel, isSingle, screenScale) {
       const scale = Math.max(0.05, screenScale);
       const fontSize = 12 / scale;
@@ -603,6 +611,33 @@
       };
     }
 
+    function findNearestAvailableMarkerSlot(anchor, metrics, screenScale, candidateFits) {
+      const scale = Math.max(0.05, screenScale);
+      const step = 3 / scale;
+      const minimumX = metrics.hitWidth / 2;
+      const maximumX = 1600 - metrics.hitWidth / 2;
+      const minimumY = metrics.hitHeight / 2;
+      const maximumY = 800 - metrics.hitHeight / 2;
+      const columnCount = Math.ceil((maximumX - minimumX) / step);
+      const rowCount = Math.ceil((maximumY - minimumY) / step);
+      let nearest = null;
+      let nearestDistance = Infinity;
+      for (let row = 0; row <= rowCount; row += 1) {
+        const y = Math.min(maximumY, minimumY + row * step);
+        for (let column = 0; column <= columnCount; column += 1) {
+          const x = Math.min(maximumX, minimumX + column * step);
+          const candidate = { x, y };
+          if (!candidateFits(candidate)) continue;
+          const distance = (x - anchor.x) ** 2 + (y - anchor.y) ** 2;
+          if (distance < nearestDistance) {
+            nearest = candidate;
+            nearestDistance = distance;
+          }
+        }
+      }
+      return nearest;
+    }
+
     function layoutSiteMarkers(groups, screenScale = 0.5, project = toWorldCoordinates) {
       const positioned = [];
       const scale = Math.max(0.05, screenScale);
@@ -658,6 +693,14 @@
             ];
             display = candidates.find(candidateFits) || null;
           }
+        }
+        if (!display) {
+          display = findNearestAvailableMarkerSlot(
+            anchor,
+            metrics,
+            scale,
+            candidateFits
+          );
         }
         if (!display) throw new Error(`Unable to place ${group.siteName} without a marker collision`);
         const positionedGroup = {
@@ -771,7 +814,7 @@
       const gizaGroups = groupBySite(ARTWORKS.filter((work) => work.siteName === 'Giza'));
       assert(gizaGroups.length === 1 && gizaGroups[0].works.length === 2,
         'groupBySite() should deterministically combine an exact site');
-      [0.23, 0.5].forEach((screenScale) => {
+      [getMapScreenScale(362, 330), 0.5].forEach((screenScale) => {
         const laidOutSites = layoutSiteMarkers(groupBySite(ARTWORKS), screenScale);
         laidOutSites.forEach((site, index) => {
           laidOutSites.slice(index + 1).forEach((other) => {
@@ -802,6 +845,7 @@
 
     const markerLayer = document.getElementById('markerLayer');
     const detailPanel = document.getElementById('detailPanel');
+    const mapPanel = document.getElementById('mapPanel');
     const mapViewport = document.getElementById('mapViewport');
     const imageDialog = document.getElementById('imageDialog');
     let imageDialogTrigger = null;
@@ -809,9 +853,7 @@
 
     function getRenderedMarkerScale() {
       const bounds = document.querySelector('.map-svg').getBoundingClientRect();
-      const renderedScale = Math.min(bounds.width / 1600, bounds.height / 800);
-      const visibleScale = renderedScale > 0 ? renderedScale : 0.23;
-      return visibleScale * state.transform.scale;
+      return getMapScreenScale(bounds.width, bounds.height, state.transform.scale);
     }
 
     function focusSiteMarker(siteToken) {
@@ -1133,7 +1175,6 @@
         state.selectedId = null;
         state.selectedSiteIndex = 0;
       }
-      markerLayer.replaceChildren();
       const leaders = [];
       const markers = [];
       const visibleGroups = layoutSiteMarkers(
@@ -1200,7 +1241,7 @@
         marker.append(title, hitArea, visual);
         markers.push(marker);
       });
-      markerLayer.append(...leaders, ...markers);
+      markerLayer.replaceChildren(...leaders, ...markers);
       if (focusedSiteToken) focusSiteMarker(focusedSiteToken);
 
       detailPanel.replaceChildren();
@@ -1296,6 +1337,8 @@
       applyTransform();
     });
     window.addEventListener('resize', scheduleMarkerLayout);
+    const markerResizeObserver = new ResizeObserver(scheduleMarkerLayout);
+    markerResizeObserver.observe(mapPanel);
 
     const panSurface = document.getElementById('panSurface');
     let panStart = null;
@@ -1354,11 +1397,13 @@
       createSiteToken,
       groupBySite,
       toWorldCoordinates,
+      getMapScreenScale,
       getMarkerMetrics,
       getMarkerBounds,
       markerBoundsOverlap,
       expandMarkerBounds,
       createSpatialHash,
+      findNearestAvailableMarkerSlot,
       layoutSiteMarkers,
       clampTransform,
       cycleIndex,
