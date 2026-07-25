@@ -150,7 +150,11 @@ nav.topnav {
 .map-card-head { padding: 13px 20px; font-size: 15px; font-weight: 800; color: #8b3a2f; border-bottom: 1px solid var(--line); background: #fffdf8; }
 .map-events-split { display: flex; align-items: stretch; height: min(540px, 62vh); }
 .home-map-wrap { position: relative; flex: 0 0 66.67%; height: 100%; overflow: hidden; border-right: 1px solid var(--line); background: #efe7d6; }
-.home-map-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
+.subject-map-frame { display: none; width: 100%; height: 100%; border: 0; }
+.subject-map-frame.active { display: block; }
+.map-card[data-subject="art"] .map-events-split { height: min(760px, 78vh); }
+.map-card[data-subject="art"] .home-map-wrap { flex-basis: 100%; height: 100%; border-right: 0; border-bottom: 0; }
+.map-card[data-subject="art"] .home-events { display: none; }
 .home-map-caption { text-align: center; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); letter-spacing: 0.01em; margin: 10px 0 0; }
 
 /* ---- subject switcher (地图上方的科目切换药丸) ---- */
@@ -182,6 +186,8 @@ nav.topnav {
 .map-skeleton .sk-label { font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
 .map-skeleton .sk-bar { width: 220px; height: 12px; border-radius: 6px; background: linear-gradient(90deg, #ece3d2 25%, #f6efe0 50%, #ece3d2 75%); background-size: 200% 100%; animation: sk-shimmer 1.1s linear infinite; }
 .map-skeleton .sk-bar.s2 { width: 150px; }
+.map-retry { display:none; min-height:40px; padding:8px 16px; border:1px solid var(--line); border-radius:999px; color:var(--ink); background:var(--card); font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+.map-retry.show { display:block; }
 @keyframes sk-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 /* ---- 右侧事件面板:与地图等高、内部滚动;点标点后该站事件在这里完整显示(单列) ---- */
@@ -307,22 +313,24 @@ nav.topnav {
       <div class="today-pick" id="todayPick" style="display:none"></div>
 
       <div class="subject-switcher" id="subjectSwitcher">
-        <span class="subj-pill active" data-subj="world" style="--pdot:var(--gold)"><span class="dot"></span>World History</span>
-        <span class="subj-pill" data-subj="euro" style="--pdot:var(--sage)"><span class="dot"></span>Euro History <span class="soon">soon</span></span>
-        <span class="subj-pill" data-subj="us" style="--pdot:var(--pink)"><span class="dot"></span>US History <span class="soon">soon</span></span>
-        <span class="subj-pill" data-subj="geo" style="--pdot:var(--blue)"><span class="dot"></span>Human Geo <span class="soon">soon</span></span>
-        <span class="subj-pill" data-subj="art" style="--pdot:var(--terracotta)"><span class="dot"></span>Art History <span class="soon">soon</span></span>
+        <span class="subj-pill active" data-subj="world" style="--pdot:var(--gold)" aria-pressed="true"><span class="dot"></span>World History</span>
+        <span class="subj-pill" data-subj="euro" style="--pdot:var(--sage)" aria-pressed="false"><span class="dot"></span>Euro History <span class="soon">soon</span></span>
+        <span class="subj-pill" data-subj="us" style="--pdot:var(--pink)" aria-pressed="false"><span class="dot"></span>US History <span class="soon">soon</span></span>
+        <span class="subj-pill" data-subj="geo" style="--pdot:var(--blue)" aria-pressed="false"><span class="dot"></span>Human Geo <span class="soon">soon</span></span>
+        <span class="subj-pill" data-subj="art" style="--pdot:var(--terracotta)" aria-pressed="false"><span class="dot"></span>Art History</span>
       </div>
 
-      <div class="map-card">
+      <div class="map-card" data-subject="world">
         <div class="map-card-head">History World Map</div>
         <div class="map-events-split">
           <div class="home-map-wrap" id="home-map-embed">
-            <iframe src="world-map.html" title="Interactive world history map" loading="lazy"></iframe>
+            <iframe id="worldMapFrame" class="subject-map-frame active" src="world-map.html" title="Interactive world history map" loading="lazy" aria-hidden="false"></iframe>
+            <iframe id="artMapFrame" class="subject-map-frame" src="art-history-map.html" title="Interactive AP art history map" loading="lazy" hidden aria-hidden="true"></iframe>
             <div class="map-overlay map-skeleton" id="mapSkeleton">
               <div class="sk-label" id="skLabel">正在加载地图…</div>
               <div class="sk-bar"></div>
               <div class="sk-bar s2"></div>
+              <button type="button" class="map-retry" id="mapRetry">重试加载</button>
             </div>
             <div class="map-overlay map-coming-soon" id="mapComingSoon">
               <div class="cs-badge">✦</div>
@@ -391,7 +399,7 @@ nav.topnav {
           </li>
           <li class="subject-item" data-subject="art">
             <span class="name">Art History</span>
-            <span class="tag" style="background:var(--pink-soft)">Coming soon</span>
+            <span class="tag" style="background:var(--pink-soft)">Live</span>
             <span class="arrow">→</span>
           </li>
         </ul>
@@ -465,7 +473,10 @@ nav.topnav {
   // ---- Today's Pick:从内嵌地图的隐藏数据源里,按"今天是一年中第几天"确定性选一条事件 ----
   // 同一天所有访客看到的一样,第二天自动换一条;不写"历史上的今天"是因为数据只精确到年/年份区间,没有月日
   const todayPick = document.getElementById('todayPick');
-  const homeMapFrame = document.querySelector('#home-map-embed iframe');
+  const worldMapFrame = document.getElementById('worldMapFrame');
+  const artMapFrame = document.getElementById('artMapFrame');
+  const mapCard = document.querySelector('.map-card');
+  const mapCardHead = document.querySelector('.map-card-head');
   const CAT_ICON = { GOV: '👑', ECN: '💰', CDI: '📜', SIO: '👥', TEC: '⚙' };
 
   function dayOfYear(d) {
@@ -501,7 +512,7 @@ nav.topnav {
 
   function renderTodayPick() {
     let doc;
-    try { doc = homeMapFrame.contentDocument; } catch (err) { return; }
+    try { doc = worldMapFrame.contentDocument; } catch (err) { return; }
     if (!doc) return;
     const all = collectEntries(doc);
     if (!all.length) return;
@@ -521,7 +532,7 @@ nav.topnav {
   // 不能靠"此刻 contentDocument.readyState 是不是 complete"来判断有没有加载完——
   // iframe 用了 loading="lazy",脚本跑到这里时它可能还停在初始的 about:blank(那个空文档的 readyState 本来就是
   // complete),会被误判成"已加载完"提前用空文档跑一次直接 return,真正导航到地图页面时触发的 load 事件反而没人在听
-  if (homeMapFrame) homeMapFrame.addEventListener('load', renderTodayPick);
+  if (worldMapFrame) worldMapFrame.addEventListener('load', renderTodayPick);
 
   // ---- 地图与事件"左右分栏":iframe 里只保留地图(隐藏它自带的表头/事件区),点标点后事件渲染到右侧面板 ----
   const homeEvents = document.getElementById('home-events');
@@ -529,9 +540,9 @@ nav.topnav {
 
   // 把内嵌地图收拾成"只剩地图、填满整格":隐藏 world-map 自带的表头和事件区,让地图区撑满 iframe
   function styleEmbeddedMap() {
-    if (!homeMapFrame) return;
+    if (!worldMapFrame) return;
     let doc;
-    try { doc = homeMapFrame.contentDocument; } catch (err) { return; }
+    try { doc = worldMapFrame.contentDocument; } catch (err) { return; }
     if (!doc) return;
     const header = doc.querySelector('header.topbar'); if (header) header.style.display = 'none';
     const ez = doc.querySelector('.event-zone'); if (ez) ez.style.display = 'none';
@@ -542,9 +553,9 @@ nav.topnav {
 
   // 读 iframe 里刚渲染好的事件,渲染到右侧面板;没选中事件时显示空状态提示
   function syncHomeEvents() {
-    if (!homeEvents || !homeMapFrame) return;
+    if (!homeEvents || !worldMapFrame) return;
     let doc;
-    try { doc = homeMapFrame.contentDocument; } catch (err) { return; }
+    try { doc = worldMapFrame.contentDocument; } catch (err) { return; }
     if (!doc) return;
     const panel = doc.querySelector('.event-panel');
     const hasEvent = panel && panel.classList.contains('show') && panel.innerHTML.trim();
@@ -560,12 +571,12 @@ nav.topnav {
     }
   }
 
-  if (homeMapFrame) {
-    homeMapFrame.addEventListener('load', () => {
+  if (worldMapFrame) {
+    worldMapFrame.addEventListener('load', () => {
       styleEmbeddedMap();
       [80, 300, 800].forEach(t => setTimeout(styleEmbeddedMap, t));
       try {
-        const doc = homeMapFrame.contentDocument;
+        const doc = worldMapFrame.contentDocument;
         // 点地块/点标点后,等 iframe 内渲染完,再同步到右侧事件面板
         if (doc) doc.addEventListener('click', () => setTimeout(syncHomeEvents, 80), true);
       } catch (err) {}
@@ -577,10 +588,10 @@ nav.topnav {
   // 点卡片:滚到地图 + 在地图里模拟"点那个地区→点那个标点",跟手动点一样弹出事件卡片和路线动画
   todayPick.addEventListener('click', () => {
     const num = todayPick.dataset.pinNum;
-    if (!num || !homeMapFrame) return;
+    if (!num || !worldMapFrame) return;
     document.getElementById('home-map-embed').scrollIntoView({ behavior: 'smooth', block: 'start' });
     let doc, win;
-    try { doc = homeMapFrame.contentDocument; win = homeMapFrame.contentWindow; } catch (err) { return; }
+    try { doc = worldMapFrame.contentDocument; win = worldMapFrame.contentWindow; } catch (err) { return; }
     const pinGroup = Array.from(doc.querySelectorAll('.pin-group')).find(g => {
       const t = g.querySelector('text'); return t && t.textContent.trim() === num;
     });
@@ -596,40 +607,97 @@ nav.topnav {
 
   // ---- 科目切换器:World 用真地图,其余科目在地图区显示"即将上线"占位;切换先过一下加载骨架屏 ----
   const SUBJECTS = {
-    world: { label: 'World History', live: true },
+    world: { label: 'World History', live: true, frame: worldMapFrame },
+    art:   { label: 'Art History', live: true, frame: artMapFrame },
     euro:  { label: 'Euro History',    soft: '#dbe4d2', ink: '#3f5230' },
     us:    { label: 'US History',      soft: '#f7e0e1', ink: '#8a3540' },
     geo:   { label: 'Human Geography', soft: '#dbe7f0', ink: '#2f5678' },
-    art:   { label: 'Art History',     soft: '#efd8cd', ink: '#8a4326' },
   };
   const subjPills = document.querySelectorAll('.subj-pill');
   const mapSkeleton = document.getElementById('mapSkeleton');
   const mapComingSoon = document.getElementById('mapComingSoon');
   const skLabel = document.getElementById('skLabel');
   const csTitle = document.getElementById('csTitle');
+  const mapRetry = document.getElementById('mapRetry');
+  const loadedFrames = new WeakSet();
+  let loadTimer = 0;
+  let selectedSubject = 'world';
+
+  function finishFrameLoad(frame) {
+    loadedFrames.add(frame);
+    if (SUBJECTS[selectedSubject]?.frame !== frame) return;
+    clearTimeout(loadTimer);
+    mapSkeleton.classList.remove('show');
+    mapRetry.classList.remove('show');
+  }
+
+  [worldMapFrame, artMapFrame].forEach(frame => {
+    if (frame) frame.addEventListener('load', () => finishFrameLoad(frame));
+  });
+
+  function showLiveFrame(s) {
+    const frame = s.frame;
+    [worldMapFrame, artMapFrame].forEach(candidate => {
+      if (!candidate) return;
+      const isSelected = candidate === frame;
+      candidate.classList.toggle('active', isSelected);
+      candidate.toggleAttribute('hidden', !isSelected);
+      candidate.setAttribute('aria-hidden', String(!isSelected));
+    });
+    if (loadedFrames.has(frame)) {
+      mapSkeleton.classList.remove('show');
+      return;
+    }
+    mapSkeleton.classList.add('show');
+    loadTimer = window.setTimeout(() => {
+      if (selectedSubject === (frame === artMapFrame ? 'art' : 'world') && !loadedFrames.has(frame)) {
+        skLabel.textContent = s.label + ' 地图暂时没有载入';
+        mapRetry.classList.add('show');
+      }
+    }, 6000);
+  }
+
+  mapRetry.addEventListener('click', () => {
+    const frame = SUBJECTS[selectedSubject]?.frame;
+    if (!frame) return;
+    mapRetry.classList.remove('show');
+    skLabel.textContent = '正在重新加载地图…';
+    frame.contentWindow.location.reload();
+    showLiveFrame(SUBJECTS[selectedSubject]);
+  });
 
   // 函数声明(会被提升),所以上面的 .subject-item / 下面的药丸点击都能调用它
   function selectSubject(key) {
     const s = SUBJECTS[key];
     if (!s) return;
-    // 切换科目时把右侧事件面板复位成空状态(上一科选中的事件对新视图无意义)
-    if (homeEvents) { homeEvents.innerHTML = HOME_EVENTS_EMPTY; homeEvents.scrollTop = 0; }
+    selectedSubject = key;
+    clearTimeout(loadTimer);
+    mapRetry.classList.remove('show');
     subjPills.forEach(p => p.classList.toggle('active', p.dataset.subj === key));
+    subjPills.forEach(p => p.setAttribute('aria-pressed', String(p.dataset.subj === key)));
+    if (mapCard) mapCard.dataset.subject = key;
+    if (mapCardHead) mapCardHead.textContent = key === 'art' ? 'AP Art History Map' : 'History World Map';
     skLabel.textContent = '正在加载 ' + s.label + ' 地图…';
-    mapSkeleton.classList.add('show');
-    setTimeout(() => {
-      mapSkeleton.classList.remove('show');
-      if (s.live) {
-        mapComingSoon.classList.remove('show');           // 露出真地图
-        todayPick.style.display = todayPick.dataset.pinNum ? 'block' : 'none';
-      } else {
-        mapComingSoon.style.setProperty('--soon-soft', s.soft);
-        mapComingSoon.style.setProperty('--soon-ink', s.ink);
-        csTitle.textContent = s.label;
-        mapComingSoon.classList.add('show');              // 盖上"即将上线"占位
-        todayPick.style.display = 'none';                 // 非 World 隐藏 World 专属的 Today's Pick
-      }
-    }, 650);
+    if (s.live) {
+      mapComingSoon.classList.remove('show');
+      showLiveFrame(s);
+      if (homeEvents) homeEvents.hidden = key !== 'world';
+      todayPick.style.display = key === 'world' && todayPick.dataset.pinNum ? 'block' : 'none';
+      return;
+    }
+    [worldMapFrame, artMapFrame].forEach(frame => {
+      if (!frame) return;
+      frame.classList.remove('active');
+      frame.hidden = true;
+      frame.setAttribute('aria-hidden', 'true');
+    });
+    mapSkeleton.classList.remove('show');
+    mapComingSoon.style.setProperty('--soon-soft', s.soft);
+    mapComingSoon.style.setProperty('--soon-ink', s.ink);
+    csTitle.textContent = s.label;
+    mapComingSoon.classList.add('show');
+    if (homeEvents) homeEvents.hidden = false;
+    todayPick.style.display = 'none';
   }
   subjPills.forEach(p => p.addEventListener('click', () => selectSubject(p.dataset.subj)));
 
