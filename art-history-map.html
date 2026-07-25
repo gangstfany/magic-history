@@ -41,6 +41,25 @@
     .selected-summary { display:grid; gap:10px; }
     .selected-summary h2, .selected-summary p { margin:0; }
     .selected-summary .work-meta { color:var(--muted); line-height:1.55; }
+    .artwork-image-button { width:100%; min-height:150px; padding:0; overflow:hidden; border:1px solid var(--line); border-radius:12px; background:#e9dfcf; cursor:zoom-in; }
+    .artwork-image-button img { display:block; width:100%; max-height:230px; object-fit:cover; }
+    .image-fallback { min-height:150px; display:grid; place-items:center; padding:20px; color:var(--muted); background:linear-gradient(135deg,#eadfce,#f8f0e5); text-align:center; }
+    .identity-list { display:grid; gap:6px; margin:0; }
+    .identity-row { display:grid; grid-template-columns:5.3em minmax(0,1fr); gap:8px; line-height:1.5; }
+    .identity-row dt { color:var(--muted); }
+    .identity-row dd { margin:0; }
+    .detail-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-top:5px; border-bottom:1px solid var(--line); }
+    .detail-tab { min-height:40px; padding:7px 4px; border:0; border-radius:8px 8px 0 0; color:var(--muted); background:transparent; cursor:pointer; }
+    .detail-tab[aria-selected="true"] { color:var(--ink); background:#eee2cf; font-weight:700; box-shadow:inset 0 -3px #8a5c39; }
+    .detail-tabpanel { display:grid; gap:12px; padding:14px 0 2px; line-height:1.65; }
+    .detail-tabpanel h3, .detail-tabpanel p, .detail-tabpanel ul { margin:0; }
+    .study-block { display:grid; gap:5px; }
+    .study-block h3 { font-size:.92rem; color:#765438; }
+    .anchor-list { padding-left:1.25em; }
+    .comparison-grid { display:grid; gap:8px; }
+    .comparison-card { display:grid; gap:3px; width:100%; padding:11px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:#fffaf0; text-align:left; cursor:pointer; }
+    .comparison-card strong { font-size:.95rem; }
+    .comparison-card span { color:var(--muted); font-size:.82rem; }
     .site-cycle { display:flex; align-items:center; justify-content:space-between; gap:8px; }
     .detail-panel { min-width:0; overflow:auto; padding:22px; border-left:1px solid var(--line); background:#fffaf2; }
     .result-count { margin:0 0 16px; font-weight:700; }
@@ -50,6 +69,16 @@
     .legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; font: .86rem ui-sans-serif,system-ui; }
     .legend span { display:inline-flex; align-items:center; gap:6px; }
     .legend i { width:10px; height:10px; border-radius:50%; }
+    #imageDialog { width:min(920px,calc(100% - 28px)); max-height:calc(100vh - 28px); padding:0; border:0; border-radius:16px; color:var(--ink); background:var(--card); box-shadow:0 24px 80px rgba(20,15,10,.45); }
+    #imageDialog::backdrop { background:rgba(26,22,18,.78); }
+    .dialog-inner { position:relative; display:grid; gap:10px; padding:18px; }
+    .dialog-close { position:absolute; z-index:2; top:10px; right:10px; width:44px; height:44px; border:1px solid var(--line); border-radius:50%; color:var(--ink); background:rgba(255,250,240,.95); font-size:1.4rem; cursor:pointer; }
+    .dialog-media { min-height:200px; display:grid; place-items:center; overflow:hidden; border-radius:10px; background:#e9dfcf; }
+    .dialog-media img { display:block; max-width:100%; max-height:70vh; object-fit:contain; }
+    .dialog-copy { display:grid; gap:5px; padding-right:45px; }
+    .dialog-copy h2, .dialog-copy p { margin:0; }
+    .dialog-copy p { color:var(--muted); line-height:1.5; }
+    .dialog-source { color:#765438; }
     @media (max-width:520px) {
       .page-header, .filter-toolbar { padding-left:12px; padding-right:12px; }
       .filter-toolbar > * { max-width:100%; }
@@ -273,7 +302,17 @@
     </section>
     <aside id="detailPanel" class="detail-panel" aria-live="polite" aria-label="作品详情"></aside>
   </main>
-  <dialog id="imageDialog" aria-label="作品大图"></dialog>
+  <dialog id="imageDialog" aria-labelledby="dialogTitle">
+    <div class="dialog-inner">
+      <button id="dialogClose" class="dialog-close" type="button" aria-label="关闭大图">×</button>
+      <div id="dialogMedia" class="dialog-media"><img id="dialogImage" alt=""></div>
+      <div class="dialog-copy">
+        <h2 id="dialogTitle"></h2>
+        <p id="dialogCaption"></p>
+        <a id="dialogSource" class="dialog-source" target="_blank" rel="noopener noreferrer">查看图片来源与许可信息</a>
+      </div>
+    </div>
+  </dialog>
   <script id="artwork-data" type="application/json">
 [
   {"id":"ap13-palette-of-king-narmer","apNumber":13,"titleEn":"Palette of King Narmer","titleZh":"纳尔迈王调色板","civilization":"egypt","period":"Predynastic Egypt","date":"c. 3000–2920 B.C.E.","artistCulture":"Predynastic Egyptian","siteName":"Hierakonpolis (Nekhen)","siteQualifier":"出土地","coordinates":{"x":790,"y":430},"medium":"Greywacke","workType":"ceremonial palette","function":"奉献于神庙并宣示王权与统一","form":"双面浮雕、分层构图、等级比例","content":"国王戴上下埃及王冠击敌，神兽交颈形成调色凹槽","context":"早期王朝形成期以礼仪图像建构统一君权","recognitionAnchors":["两面不同王冠","击敌姿态与等级比例","交颈神兽"],"comparisonIds":["ap24-last-judgment-of-hunefer","ap40-alexander-mosaic"],"imageUrl":"https://commons.wikimedia.org/wiki/Special:Redirect/file/Narmer_Palette.jpg","imageAlt":"纳尔迈王调色板正反面浮雕","imageSourceName":"Wikimedia Commons","imageSourceUrl":"https://commons.wikimedia.org/wiki/File:Narmer_Palette.jpg","keywords":["Narmer","palette","hierarchy","unification"]},
@@ -314,6 +353,7 @@
       search: '',
       selectedId: null,
       selectedSiteIndex: 0,
+      activeDetailTab: 'quick',
       transform: { x: 0, y: 0, scale: 1 }
     };
     const SITE_WORLD_COORDINATES = {
@@ -544,6 +584,8 @@
     const markerLayer = document.getElementById('markerLayer');
     const detailPanel = document.getElementById('detailPanel');
     const mapViewport = document.getElementById('mapViewport');
+    const imageDialog = document.getElementById('imageDialog');
+    let imageDialogTrigger = null;
 
     function applyTransform() {
       state.transform = clampTransform(state.transform);
@@ -558,6 +600,7 @@
       if (!alreadySelected) {
         state.selectedSiteIndex = 0;
         state.selectedId = group.works[0].id;
+        state.activeDetailTab = 'quick';
       }
       render();
       if (restoreFocus) {
@@ -568,9 +611,229 @@
     function cycleSite(group, direction) {
       state.selectedSiteIndex = cycleIndex(state.selectedSiteIndex, group.works.length, direction);
       state.selectedId = group.works[state.selectedSiteIndex].id;
+      state.activeDetailTab = 'quick';
       render();
       const label = direction < 0 ? '上一件同地点作品' : '下一件同地点作品';
       detailPanel.querySelector(`[aria-label="${label}"]`)?.focus();
+    }
+
+    function installImageFallback(image, work) {
+      image.addEventListener('error', () => {
+        const fallback = document.createElement('div');
+        fallback.className = 'image-fallback';
+        fallback.textContent = `${work.titleZh} · ${work.titleEn}`;
+        image.replaceWith(fallback);
+      }, { once:true });
+    }
+
+    function createStudyBlock(title, ...paragraphs) {
+      const block = document.createElement('section');
+      block.className = 'study-block';
+      const heading = document.createElement('h3');
+      heading.textContent = title;
+      block.append(heading);
+      paragraphs.filter(Boolean).forEach((value) => {
+        const copy = document.createElement('p');
+        copy.textContent = value;
+        block.append(copy);
+      });
+      return block;
+    }
+
+    function openImageDialog(work, trigger) {
+      imageDialogTrigger = trigger;
+      const image = document.createElement('img');
+      image.id = 'dialogImage';
+      image.src = work.imageUrl;
+      image.alt = work.imageAlt;
+      installImageFallback(image, work);
+      document.getElementById('dialogMedia').replaceChildren(image);
+      document.getElementById('dialogTitle').textContent = `${work.titleZh} · ${work.titleEn}`;
+      document.getElementById('dialogCaption').textContent = work.imageAlt;
+      const source = document.getElementById('dialogSource');
+      source.href = work.imageSourceUrl;
+      source.textContent = `图片来源：${work.imageSourceName}（查看许可与原始文件）`;
+      imageDialog.showModal();
+      document.getElementById('dialogClose').focus();
+    }
+
+    function selectComparison(comparisonId) {
+      const target = ARTWORKS.find((work) => work.id === comparisonId);
+      if (!target) return;
+      Object.assign(state, {
+        civilization:'all',
+        period:'',
+        workType:'',
+        search:'',
+        selectedId:target.id,
+        selectedSiteIndex:0,
+        activeDetailTab:'quick'
+      });
+      document.querySelectorAll('.filter-pill').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.civilization === 'all'));
+      });
+      document.getElementById('periodFilter').value = '';
+      document.getElementById('typeFilter').value = '';
+      document.getElementById('searchInput').value = '';
+      render();
+      detailPanel.querySelector('h2')?.focus({ preventScroll:true });
+      detailPanel.scrollTo({ top:0, behavior:'smooth' });
+    }
+
+    function renderArtworkDetails(work, group) {
+      const summary = document.createElement('section');
+      summary.className = 'selected-summary';
+      const heading = document.createElement('h2');
+      heading.tabIndex = -1;
+      heading.textContent = work.titleZh;
+      const english = document.createElement('p');
+      english.textContent = work.titleEn;
+      const meta = document.createElement('p');
+      meta.className = 'work-meta';
+      const civilizations = { egypt:'埃及', greece:'希腊', rome:'罗马' };
+      meta.textContent = `AP #${work.apNumber} · ${civilizations[work.civilization]} · ${work.period}`;
+
+      const imageButton = document.createElement('button');
+      imageButton.type = 'button';
+      imageButton.className = 'artwork-image-button';
+      imageButton.setAttribute('aria-label', `打开${work.titleZh}大图`);
+      const image = document.createElement('img');
+      image.src = work.imageUrl;
+      image.alt = work.imageAlt;
+      installImageFallback(image, work);
+      imageButton.append(image);
+      imageButton.addEventListener('click', () => openImageDialog(work, imageButton));
+
+      const identity = document.createElement('dl');
+      identity.className = 'identity-list';
+      [
+        ['年代', work.date],
+        ['艺术家／文化', work.artistCulture],
+        ['材料', work.medium],
+        ['地点', `${work.siteName}${work.siteQualifier ? ` · ${work.siteQualifier}` : ''}`],
+        ['类型', work.workType],
+        ['功能', work.function]
+      ].forEach(([label, value]) => {
+        const row = document.createElement('div');
+        row.className = 'identity-row';
+        const term = document.createElement('dt');
+        term.textContent = label;
+        const description = document.createElement('dd');
+        description.textContent = value;
+        row.append(term, description);
+        identity.append(row);
+      });
+      summary.append(heading, english, meta, imageButton, identity);
+
+      if (group.works.length > 1) {
+        const cycle = document.createElement('div');
+        cycle.className = 'site-cycle';
+        const previous = document.createElement('button');
+        previous.type = 'button';
+        previous.setAttribute('aria-label', '上一件同地点作品');
+        previous.textContent = '←';
+        previous.addEventListener('click', () => cycleSite(group, -1));
+        const position = document.createElement('span');
+        position.textContent = `${state.selectedSiteIndex + 1} / ${group.works.length}`;
+        const next = document.createElement('button');
+        next.type = 'button';
+        next.setAttribute('aria-label', '下一件同地点作品');
+        next.textContent = '→';
+        next.addEventListener('click', () => cycleSite(group, 1));
+        cycle.append(previous, position, next);
+        summary.append(cycle);
+      }
+
+      const tabs = [
+        { id:'quick', label:'速览' },
+        { id:'form', label:'形式' },
+        { id:'context', label:'语境' },
+        { id:'compare', label:'比较' }
+      ];
+      const tablist = document.createElement('div');
+      tablist.className = 'detail-tabs';
+      tablist.setAttribute('role', 'tablist');
+      tablist.setAttribute('aria-label', '作品学习视角');
+      const panel = document.createElement('section');
+      panel.id = 'detail-tabpanel';
+      panel.className = 'detail-tabpanel';
+      panel.setAttribute('role', 'tabpanel');
+      panel.tabIndex = 0;
+
+      function activateTab(tabId, focus = false) {
+        state.activeDetailTab = tabId;
+        tablist.querySelectorAll('[role="tab"]').forEach((button) => {
+          const active = button.dataset.tab === tabId;
+          button.setAttribute('aria-selected', String(active));
+          button.tabIndex = active ? 0 : -1;
+          if (active) panel.setAttribute('aria-labelledby', button.id);
+        });
+        panel.replaceChildren();
+        if (tabId === 'quick') {
+          panel.append(createStudyBlock('核心功能', work.function));
+          const anchors = createStudyBlock('识别锚点');
+          const list = document.createElement('ul');
+          list.className = 'anchor-list';
+          work.recognitionAnchors.forEach((anchor) => {
+            const item = document.createElement('li');
+            item.textContent = anchor;
+            list.append(item);
+          });
+          anchors.append(list);
+          panel.append(anchors);
+        } else if (tabId === 'form') {
+          panel.append(createStudyBlock('形式', work.form), createStudyBlock('内容', work.content));
+        } else if (tabId === 'context') {
+          panel.append(createStudyBlock('历史语境', work.context), createStudyBlock('图像内容', work.content));
+        } else {
+          const grid = document.createElement('div');
+          grid.className = 'comparison-grid';
+          work.comparisonIds.forEach((comparisonId) => {
+            const comparison = ARTWORKS.find((item) => item.id === comparisonId);
+            if (!comparison) return;
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'comparison-card';
+            card.dataset.comparisonId = comparison.id;
+            const title = document.createElement('strong');
+            title.textContent = `${comparison.titleZh} · ${comparison.titleEn}`;
+            const details = document.createElement('span');
+            details.textContent = `AP #${comparison.apNumber} · ${comparison.period}`;
+            card.append(title, details);
+            card.addEventListener('click', () => selectComparison(comparison.id));
+            grid.append(card);
+          });
+          panel.append(grid.children.length ? grid : createStudyBlock('暂无比较作品', '此作品暂未关联比较对象。'));
+        }
+        if (focus) tablist.querySelector(`[data-tab="${tabId}"]`)?.focus();
+      }
+
+      tabs.forEach(({ id, label }, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.id = `detail-tab-${id}`;
+        button.className = 'detail-tab';
+        button.dataset.tab = id;
+        button.setAttribute('role', 'tab');
+        button.setAttribute('aria-controls', 'detail-tabpanel');
+        button.textContent = label;
+        button.addEventListener('click', () => activateTab(id));
+        button.addEventListener('keydown', (event) => {
+          const current = tabs.findIndex((tab) => tab.id === state.activeDetailTab);
+          let next = current;
+          if (event.key === 'ArrowRight') next = (current + 1) % tabs.length;
+          else if (event.key === 'ArrowLeft') next = (current - 1 + tabs.length) % tabs.length;
+          else if (event.key === 'Home') next = 0;
+          else if (event.key === 'End') next = tabs.length - 1;
+          else return;
+          event.preventDefault();
+          activateTab(tabs[next].id, true);
+        });
+        tablist.append(button);
+      });
+      summary.append(tablist, panel);
+      activateTab(tabs.some((tab) => tab.id === state.activeDetailTab) ? state.activeDetailTab : 'quick');
+      return summary;
     }
 
     function render() {
@@ -650,35 +913,7 @@
         const selected = visibleWorks.find((work) => work.id === state.selectedId);
         const selectedGroup = visibleGroups.find((group) => group.works.some((work) => work.id === state.selectedId));
         state.selectedSiteIndex = Math.max(0, selectedGroup.works.findIndex((work) => work.id === state.selectedId));
-        const summary = document.createElement('section');
-        summary.className = 'selected-summary';
-        const heading = document.createElement('h2');
-        heading.textContent = selected.titleZh;
-        const english = document.createElement('p');
-        english.textContent = selected.titleEn;
-        const meta = document.createElement('p');
-        meta.className = 'work-meta';
-        meta.textContent = `AP #${selected.apNumber} · ${selected.siteName} · ${selected.date}`;
-        summary.append(heading, english, meta);
-        if (selectedGroup.works.length > 1) {
-          const cycle = document.createElement('div');
-          cycle.className = 'site-cycle';
-          const previous = document.createElement('button');
-          previous.type = 'button';
-          previous.setAttribute('aria-label', '上一件同地点作品');
-          previous.textContent = '←';
-          previous.addEventListener('click', () => cycleSite(selectedGroup, -1));
-          const position = document.createElement('span');
-          position.textContent = `${state.selectedSiteIndex + 1} / ${selectedGroup.works.length}`;
-          const next = document.createElement('button');
-          next.type = 'button';
-          next.setAttribute('aria-label', '下一件同地点作品');
-          next.textContent = '→';
-          next.addEventListener('click', () => cycleSite(selectedGroup, 1));
-          cycle.append(previous, position, next);
-          summary.append(cycle);
-        }
-        detailPanel.append(summary);
+        detailPanel.append(renderArtworkDetails(selected, selectedGroup));
       } else {
         const instruction = document.createElement('section');
         instruction.className = 'instruction';
@@ -702,7 +937,7 @@
     }
 
     function clearFilters() {
-      Object.assign(state, { civilization:'all', period:'', workType:'', search:'', selectedId:null, selectedSiteIndex:0 });
+      Object.assign(state, { civilization:'all', period:'', workType:'', search:'', selectedId:null, selectedSiteIndex:0, activeDetailTab:'quick' });
       document.querySelectorAll('.filter-pill').forEach((button) => {
         button.setAttribute('aria-pressed', String(button.dataset.civilization === 'all'));
       });
@@ -772,6 +1007,15 @@
     panSurface.addEventListener('pointerup', stopPan);
     panSurface.addEventListener('pointercancel', stopPan);
 
+    document.getElementById('dialogClose').addEventListener('click', () => imageDialog.close());
+    imageDialog.addEventListener('click', (event) => {
+      if (event.target === imageDialog) imageDialog.close();
+    });
+    imageDialog.addEventListener('close', () => {
+      imageDialogTrigger?.focus();
+      imageDialogTrigger = null;
+    });
+
     window.ArtHistoryMap = {
       normalize,
       filterWorks,
@@ -782,6 +1026,9 @@
       cycleIndex,
       zoomAroundPoint,
       clientDeltaToViewBox,
+      installImageFallback,
+      openImageDialog,
+      selectComparison,
       applyTransform,
       render,
       clearFilters,
