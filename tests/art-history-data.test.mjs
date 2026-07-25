@@ -61,3 +61,10 @@ test('resolves comparison ids and keeps coordinates inside the map', async () =>
     }
   }
 });
+
+test('keeps the approved AP 27 source coordinates', async () => {
+  const artworks = await loadAndValidate();
+  const kouros = artworks.find(({ id }) => id === 'ap27-anavysos-kouros');
+
+  assert.deepEqual(kouros?.coordinates, { x: 405, y: 285 });
+});

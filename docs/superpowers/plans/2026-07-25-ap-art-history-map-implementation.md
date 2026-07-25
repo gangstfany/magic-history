@@ -273,7 +273,7 @@ Populate `#artwork-data` in the exact manifest order. For every record:
   `0 0 1600 800` viewBox.
 
 Use the validator's exact field names. AP #27 must use the stable ID
-`ap27-anavysos-kouros`, coordinates `{ "x": 625, "y": 346 }`, and comparison
+`ap27-anavysos-kouros`, coordinates `{ "x": 405, "y": 285 }`, and comparison
 IDs `ap28-peplos-kore` and `ap34-doryphoros`. Resolve its image and source URLs
 from the completed AP #27 source-ledger row. Apply the same stable
 `ap<NUMBER>-<slug>` ID convention and ledger lookup to the other 26 works.

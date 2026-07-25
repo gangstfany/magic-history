@@ -23,6 +23,7 @@
     .art-workspace { width:calc(100% - 40px); max-width:1180px; height:min(620px,78vh); min-height:480px; margin:0 auto 28px; display:grid; grid-template-columns:minmax(0,2fr) minmax(275px,1fr); overflow:hidden; border:1px solid var(--line); border-radius:18px; background:var(--card); box-shadow:0 14px 36px rgba(74,57,38,.11); }
     .map-panel { position:relative; min-width:0; overflow:hidden; background:#f0e6d6; }
     .map-svg { display:block; width:100%; height:100%; }
+    #panSurface { touch-action:none; }
     .world-geography { pointer-events:none; }
     .marker-layer { pointer-events:none; }
     .marker-leader { stroke:#8c7d68; stroke-width:2.5; stroke-linecap:round; opacity:.72; vector-effect:non-scaling-stroke; pointer-events:none; }
@@ -60,6 +61,9 @@
     .comparison-card { display:grid; gap:3px; width:100%; padding:11px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:#fffaf0; text-align:left; cursor:pointer; }
     .comparison-card strong { font-size:.95rem; }
     .comparison-card span { color:var(--muted); font-size:.82rem; }
+    .comparison-card .comparison-angle { color:var(--ink); font-size:.84rem; line-height:1.55; }
+    .image-credit { color:var(--muted); font: .78rem/1.5 ui-sans-serif,system-ui; }
+    .image-credit a, .dialog-license { color:#765438; }
     .site-cycle { display:flex; align-items:center; justify-content:space-between; gap:8px; }
     .detail-panel { min-width:0; overflow:auto; padding:22px; border-left:1px solid var(--line); background:#fffaf2; }
     .result-count { margin:0 0 16px; font-weight:700; }
@@ -309,6 +313,8 @@
       <div class="dialog-copy">
         <h2 id="dialogTitle"></h2>
         <p id="dialogCaption"></p>
+        <p id="dialogCredit"></p>
+        <a id="dialogLicense" class="dialog-license" target="_blank" rel="noopener noreferrer"></a>
         <a id="dialogSource" class="dialog-source" target="_blank" rel="noopener noreferrer">查看图片来源与许可信息</a>
       </div>
     </div>
@@ -344,8 +350,40 @@
   {"id":"ap47-ludovisi-battle-sarcophagus","apNumber":47,"titleEn":"Ludovisi Battle Sarcophagus","titleZh":"卢多维西战斗石棺","civilization":"rome","period":"Late Imperial Roman","date":"c. 250 C.E.","artistCulture":"Late Imperial Roman","siteName":"Rome","coordinates":{"x":170,"y":230},"medium":"Marble","workType":"sarcophagus relief","function":"安葬并英雄化罗马军官","form":"高浮雕、密集无地线构图、强烈光影与钻孔","content":"中央罗马统帅在罗马人与蛮族混战上方从容出现","context":"三世纪危机时期图像以混乱、等级比例和胜利承诺建构秩序","recognitionAnchors":["满幅拥挤战斗","中央无盔统帅额头密特拉符号","深钻孔形成强光影"],"comparisonIds":["ap23-tutankhamun-funerary-mask","ap38-great-altar-pergamon"],"imageUrl":"https://commons.wikimedia.org/wiki/Special:Redirect/file/Grande_Ludovisi_Altemps_Inv8574.jpg","imageAlt":"卢多维西战斗石棺正面高浮雕","imageSourceName":"Wikimedia Commons","imageSourceUrl":"https://commons.wikimedia.org/wiki/File:Grande_Ludovisi_Altemps_Inv8574.jpg","keywords":["Ludovisi","sarcophagus","Late Empire","battle"]}
 ]
   </script>
+  <script id="image-credit-data" type="application/json">
+{
+  "ap13-palette-of-king-narmer":{"creatorOrInstitution":"作者：anonymous；来源机构：Wikimedia Commons","licenseName":"Public Domain Mark 1.0","licenseUrl":"https://creativecommons.org/publicdomain/mark/1.0/"},
+  "ap15-seated-scribe":{"creatorOrInstitution":"摄影：Janmad；来源机构：Wikimedia Commons","licenseName":"CC BY 3.0","licenseUrl":"https://creativecommons.org/licenses/by/3.0/"},
+  "ap17-great-pyramids-giza":{"creatorOrInstitution":"摄影：Ricardo Liberato；来源机构：Wikimedia Commons","licenseName":"CC BY-SA 2.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/2.0/"},
+  "ap18-king-menkaura-and-queen":{"creatorOrInstitution":"摄影：Jen（Calliopejen1）；来源机构：Wikimedia Commons","licenseName":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0/"},
+  "ap20-temple-of-amun-re-karnak":{"creatorOrInstitution":"摄影：Diego Delso；来源机构：Wikimedia Commons","licenseName":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0/"},
+  "ap21-mortuary-temple-hatshepsut":{"creatorOrInstitution":"摄影：Vyacheslav Argenberg；来源机构：Wikimedia Commons","licenseName":"CC BY 4.0","licenseUrl":"https://creativecommons.org/licenses/by/4.0/"},
+  "ap22-akhenaten-nefertiti-daughters":{"creatorOrInstitution":"摄影：Gerbil；来源机构：Wikimedia Commons","licenseName":"Public Domain Mark 1.0","licenseUrl":"https://creativecommons.org/publicdomain/mark/1.0/"},
+  "ap23-tutankhamun-funerary-mask":{"creatorOrInstitution":"摄影：Thomas Clouet；来源机构：Wikimedia Commons","licenseName":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0/"},
+  "ap24-last-judgment-of-hunefer":{"creatorOrInstitution":"摄影署名：Jon Bodsworth；来源机构：Wikimedia Commons","licenseName":"Public Domain Mark 1.0","licenseUrl":"https://creativecommons.org/publicdomain/mark/1.0/"},
+  "ap26-athenian-acropolis":{"creatorOrInstitution":"摄影：Glen Larson；来源机构：Wikimedia Commons","licenseName":"Public Domain Mark 1.0","licenseUrl":"https://creativecommons.org/publicdomain/mark/1.0/"},
+  "ap27-anavysos-kouros":{"creatorOrInstitution":"摄影：Mountain；来源机构：Wikimedia Commons","licenseName":"Public Domain Mark 1.0","licenseUrl":"https://creativecommons.org/publicdomain/mark/1.0/"},
+  "ap28-peplos-kore":{"creatorOrInstitution":"摄影：Marsyas；来源机构：Wikimedia Commons","licenseName":"CC BY-SA 2.5","licenseUrl":"https://creativecommons.org/licenses/by-sa/2.5/"},
+  "ap33-niobides-krater":{"creatorOrInstitution":"摄影：Seudo；来源机构：Wikimedia Commons","licenseName":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0/"},
+  "ap34-doryphoros":{"creatorOrInstitution":"摄影者未列；来源机构：Wikimedia Commons","licenseName":"Public Domain Mark 1.0","licenseUrl":"https://creativecommons.org/publicdomain/mark/1.0/"},
+  "ap35-athenian-agora":{"creatorOrInstitution":"摄影：DerHexer；来源机构：Wikimedia Commons","licenseName":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0/"},
+  "ap36-grave-stele-hegeso":{"creatorOrInstitution":"摄影：George E. Koronaios；来源机构：Wikimedia Commons","licenseName":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0/"},
+  "ap37-winged-victory-samothrace":{"creatorOrInstitution":"摄影：Gary Todd；来源机构：Wikimedia Commons","licenseName":"CC0 1.0","licenseUrl":"https://creativecommons.org/publicdomain/zero/1.0/"},
+  "ap38-great-altar-pergamon":{"creatorOrInstitution":"摄影：Jan Mehlich（Lestat）；来源机构：Wikimedia Commons","licenseName":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0/"},
+  "ap41-old-market-woman":{"creatorOrInstitution":"机构：The Metropolitan Museum of Art（Open Access）","licenseName":"CC0 1.0","licenseUrl":"https://creativecommons.org/publicdomain/zero/1.0/"},
+  "ap39-house-of-the-vettii":{"creatorOrInstitution":"摄影：Argo Navis；来源机构：Wikimedia Commons","licenseName":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0/"},
+  "ap40-alexander-mosaic":{"creatorOrInstitution":"来源机构：Wikimedia Commons / art database","licenseName":"Public Domain Mark 1.0","licenseUrl":"https://creativecommons.org/publicdomain/mark/1.0/"},
+  "ap42-seated-boxer":{"creatorOrInstitution":"摄影：Bradley Weber；来源机构：Wikimedia Commons","licenseName":"CC BY 2.0","licenseUrl":"https://creativecommons.org/licenses/by/2.0/"},
+  "ap43-head-of-a-roman-patrician":{"creatorOrInstitution":"19 世纪出版物扫描，作者不详；来源机构：Wikimedia Commons","licenseName":"Public Domain Mark 1.0","licenseUrl":"https://creativecommons.org/publicdomain/mark/1.0/"},
+  "ap44-colosseum":{"creatorOrInstitution":"摄影：Mattia.masala；来源机构：Wikimedia Commons","licenseName":"CC0 1.0","licenseUrl":"https://creativecommons.org/publicdomain/zero/1.0/"},
+  "ap45-forum-of-trajan":{"creatorOrInstitution":"摄影：Wolfgang Moroder；来源机构：Wikimedia Commons","licenseName":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0/"},
+  "ap46-pantheon":{"creatorOrInstitution":"摄影：T. Le Berre；来源机构：Wikimedia Commons","licenseName":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0/"},
+  "ap47-ludovisi-battle-sarcophagus":{"creatorOrInstitution":"摄影署名：Jastrow（2006）；来源机构：Wikimedia Commons","licenseName":"Public Domain Mark 1.0","licenseUrl":"https://creativecommons.org/publicdomain/mark/1.0/"}
+}
+  </script>
   <script>
     const ARTWORKS = JSON.parse(document.getElementById('artwork-data').textContent);
+    const IMAGE_CREDITS = JSON.parse(document.getElementById('image-credit-data').textContent);
     const state = {
       civilization: 'all',
       period: '',
@@ -640,6 +678,41 @@
       return block;
     }
 
+    function createImageCredit(work) {
+      const credit = IMAGE_CREDITS[work.id];
+      const line = document.createElement('p');
+      line.className = 'image-credit';
+      line.append(document.createTextNode(`图片：${credit.creatorOrInstitution} · `));
+      const license = document.createElement('a');
+      license.href = credit.licenseUrl;
+      license.target = '_blank';
+      license.rel = 'noopener noreferrer';
+      license.textContent = credit.licenseName;
+      line.append(license);
+      return line;
+    }
+
+    function summarizeComparisonField(value) {
+      return String(value).split(/[，；。]/).map((part) => part.trim()).find(Boolean) || String(value);
+    }
+
+    function createComparisonAngle(work, comparison) {
+      const exactLinks = [];
+      if (work.civilization === comparison.civilization) exactLinks.push('同属一个文明传统');
+      if (work.period === comparison.period) exactLinks.push(`同属 ${work.period}`);
+      if (work.workType === comparison.workType) exactLinks.push(`同为 ${work.workType}`);
+      if (work.medium === comparison.medium) exactLinks.push(`同用 ${work.medium}`);
+      const connection = exactLinks.length
+        ? exactLinks.join('、')
+        : '两者分属不同类别，适合观察材料、用途与时代如何改变表现';
+      return [
+        `联系：${connection}。`,
+        `形式：本作“${summarizeComparisonField(work.form)}”；对比“${summarizeComparisonField(comparison.form)}”。`,
+        `功能：本作“${summarizeComparisonField(work.function)}”；对比“${summarizeComparisonField(comparison.function)}”。`,
+        `语境：本作“${summarizeComparisonField(work.context)}”；对比“${summarizeComparisonField(comparison.context)}”。`
+      ].join('');
+    }
+
     function openImageDialog(work, trigger) {
       imageDialogTrigger = trigger;
       const image = document.createElement('img');
@@ -650,11 +723,23 @@
       document.getElementById('dialogMedia').replaceChildren(image);
       document.getElementById('dialogTitle').textContent = `${work.titleZh} · ${work.titleEn}`;
       document.getElementById('dialogCaption').textContent = work.imageAlt;
+      const credit = IMAGE_CREDITS[work.id];
+      document.getElementById('dialogCredit').textContent = `图片：${credit.creatorOrInstitution}`;
+      const license = document.getElementById('dialogLicense');
+      license.href = credit.licenseUrl;
+      license.textContent = `许可：${credit.licenseName}`;
       const source = document.getElementById('dialogSource');
       source.href = work.imageSourceUrl;
-      source.textContent = `图片来源：${work.imageSourceName}（查看许可与原始文件）`;
+      source.textContent = `来源页：${work.imageSourceName}（查看原始文件）`;
       imageDialog.showModal();
       document.getElementById('dialogClose').focus();
+    }
+
+    function focusSelectedArtworkHeading() {
+      const heading = detailPanel.querySelector('[data-selected-artwork-title]');
+      if (!heading) return;
+      heading.focus({ preventScroll:true });
+      if (document.activeElement !== heading) heading.focus();
     }
 
     function selectComparison(comparisonId) {
@@ -676,7 +761,7 @@
       document.getElementById('typeFilter').value = '';
       document.getElementById('searchInput').value = '';
       render();
-      detailPanel.querySelector('h2')?.focus({ preventScroll:true });
+      focusSelectedArtworkHeading();
       detailPanel.scrollTo({ top:0, behavior:'smooth' });
     }
 
@@ -685,6 +770,7 @@
       summary.className = 'selected-summary';
       const heading = document.createElement('h2');
       heading.tabIndex = -1;
+      heading.dataset.selectedArtworkTitle = '';
       heading.textContent = work.titleZh;
       const english = document.createElement('p');
       english.textContent = work.titleEn;
@@ -703,6 +789,7 @@
       installImageFallback(image, work);
       imageButton.append(image);
       imageButton.addEventListener('click', () => openImageDialog(work, imageButton));
+      const imageCredit = createImageCredit(work);
 
       const identity = document.createElement('dl');
       identity.className = 'identity-list';
@@ -723,7 +810,7 @@
         row.append(term, description);
         identity.append(row);
       });
-      summary.append(heading, english, meta, imageButton, identity);
+      summary.append(heading, english, meta, imageButton, imageCredit, identity);
 
       if (group.works.length > 1) {
         const cycle = document.createElement('div');
@@ -799,7 +886,10 @@
             title.textContent = `${comparison.titleZh} · ${comparison.titleEn}`;
             const details = document.createElement('span');
             details.textContent = `AP #${comparison.apNumber} · ${comparison.period}`;
-            card.append(title, details);
+            const angle = document.createElement('span');
+            angle.className = 'comparison-angle';
+            angle.textContent = createComparisonAngle(work, comparison);
+            card.append(title, details, angle);
             card.addEventListener('click', () => selectComparison(comparison.id));
             grid.append(card);
           });
@@ -867,7 +957,8 @@
         if (group.works.some((work) => work.id === state.selectedId)) marker.classList.add('is-active');
         const civilizationNames = { egypt:'埃及', greece:'希腊', rome:'罗马' };
         const civilizationLabel = group.civilizations.map((item) => civilizationNames[item]).join('与');
-        marker.setAttribute('aria-label', `${group.siteName}，${civilizationLabel}，${group.works.length} 件作品`);
+        const artworkNames = group.works.map((work) => work.titleZh).join('、');
+        marker.setAttribute('aria-label', `${group.siteName}，${civilizationLabel}，${group.works.length} 件作品；作品：${artworkNames}`);
         marker.addEventListener('click', () => selectSite(group));
         marker.addEventListener('keydown', (event) => {
           if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -937,7 +1028,16 @@
     }
 
     function clearFilters() {
-      Object.assign(state, { civilization:'all', period:'', workType:'', search:'', selectedId:null, selectedSiteIndex:0, activeDetailTab:'quick' });
+      Object.assign(state, {
+        civilization:'all',
+        period:'',
+        workType:'',
+        search:'',
+        selectedId:null,
+        selectedSiteIndex:0,
+        activeDetailTab:'quick',
+        transform:{ x:0, y:0, scale:1 }
+      });
       document.querySelectorAll('.filter-pill').forEach((button) => {
         button.setAttribute('aria-pressed', String(button.dataset.civilization === 'all'));
       });
@@ -945,6 +1045,7 @@
       document.getElementById('typeFilter').value = '';
       document.getElementById('searchInput').value = '';
       render();
+      applyTransform();
     }
 
     populateSelect(document.getElementById('periodFilter'), ARTWORKS.map((work) => work.period));
@@ -974,6 +1075,7 @@
     let panStart = null;
     panSurface.addEventListener('pointerdown', (event) => {
       if (event.button !== 0) return;
+      if (event.cancelable) event.preventDefault();
       panSurface.setPointerCapture(event.pointerId);
       panStart = {
         pointerId: event.pointerId,
@@ -985,6 +1087,7 @@
     });
     panSurface.addEventListener('pointermove', (event) => {
       if (!panStart || event.pointerId !== panStart.pointerId) return;
+      if (event.cancelable) event.preventDefault();
       const bounds = document.querySelector('.map-svg').getBoundingClientRect();
       const delta = clientDeltaToViewBox(
         event.clientX - panStart.clientX,
@@ -1001,11 +1104,12 @@
     });
     const stopPan = (event) => {
       if (!panStart || event.pointerId !== panStart.pointerId) return;
-      if (panSurface.hasPointerCapture(event.pointerId)) panSurface.releasePointerCapture(event.pointerId);
       panStart = null;
+      if (panSurface.hasPointerCapture(event.pointerId)) panSurface.releasePointerCapture(event.pointerId);
     };
     panSurface.addEventListener('pointerup', stopPan);
     panSurface.addEventListener('pointercancel', stopPan);
+    panSurface.addEventListener('lostpointercapture', stopPan);
 
     document.getElementById('dialogClose').addEventListener('click', () => imageDialog.close());
     imageDialog.addEventListener('click', (event) => {
@@ -1027,8 +1131,11 @@
       zoomAroundPoint,
       clientDeltaToViewBox,
       installImageFallback,
+      createImageCredit,
+      createComparisonAngle,
       openImageDialog,
       selectComparison,
+      focusSelectedArtworkHeading,
       applyTransform,
       render,
       clearFilters,
