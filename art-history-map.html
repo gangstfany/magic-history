@@ -25,14 +25,14 @@
     .map-svg { display:block; width:100%; height:100%; }
     .world-geography path { pointer-events:none; }
     .marker-layer { pointer-events:none; }
-    .site-marker { cursor:pointer; pointer-events:auto; }
+    .marker-leader { stroke:#8c7d68; stroke-width:2.5; stroke-linecap:round; opacity:.72; vector-effect:non-scaling-stroke; pointer-events:none; }
+    .site-marker { pointer-events:none; }
     .site-marker .marker-dot { stroke:#fff; stroke-width:5; filter:drop-shadow(0 3px 4px rgba(40,30,20,.42)); }
     .site-marker .marker-count { fill:#fff; font:700 20px ui-sans-serif,system-ui; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
     .site-marker[data-civilization="egypt"] .marker-dot { fill:var(--egypt); }
     .site-marker[data-civilization="greece"] .marker-dot { fill:var(--greece); }
     .site-marker[data-civilization="rome"] .marker-dot { fill:var(--rome); }
     .site-marker[data-civilization="mixed"] .marker-dot { fill:var(--greece); stroke:var(--rome); stroke-width:9; }
-    .site-marker:focus .marker-dot, .site-marker:focus-visible .marker-dot { stroke:#28708a; stroke-width:10; }
     .detail-panel { min-width:0; overflow:auto; padding:22px; border-left:1px solid var(--line); background:#fffaf2; }
     .result-count { margin:0 0 16px; font-weight:700; }
     .instruction, .empty-state { min-height:200px; display:grid; align-content:center; gap:12px; }
@@ -364,6 +364,41 @@
         .sort((a, b) => a.siteName.localeCompare(b.siteName) || a.x - b.x || a.y - b.y);
     }
 
+    function layoutSiteMarkers(groups, minimumDistance = 52) {
+      const positioned = [];
+      groups.forEach((group) => {
+        const anchor = toWorldCoordinates(group);
+        const candidates = [{ x: anchor.x, y: anchor.y }];
+        for (let ring = 1; ring <= 5; ring += 1) {
+          const pointCount = ring * 12;
+          const radius = ring * minimumDistance;
+          for (let point = 0; point < pointCount; point += 1) {
+            const angle = (Math.PI * 2 * point / pointCount) - Math.PI / 2;
+            candidates.push({
+              x: anchor.x + Math.cos(angle) * radius,
+              y: anchor.y + Math.sin(angle) * radius
+            });
+          }
+        }
+        const display = candidates.find((candidate) => (
+          candidate.x >= 24 && candidate.x <= 1576
+          && candidate.y >= 24 && candidate.y <= 776
+          && positioned.every((site) => (
+            Math.hypot(candidate.x - site.displayX, candidate.y - site.displayY) >= minimumDistance
+          ))
+        ));
+        assert(display, `Unable to place ${group.siteName} without a marker collision`);
+        positioned.push({
+          ...group,
+          anchorX: anchor.x,
+          anchorY: anchor.y,
+          displayX: display.x,
+          displayY: display.y
+        });
+      });
+      return positioned;
+    }
+
     function assert(condition, message) {
       if (!condition) throw new Error(`Development assertion failed: ${message}`);
     }
@@ -397,6 +432,22 @@
       const gizaGroups = groupBySite(ARTWORKS.filter((work) => work.siteName === 'Giza'));
       assert(gizaGroups.length === 1 && gizaGroups[0].works.length === 2,
         'groupBySite() should deterministically combine an exact site');
+      const laidOutSites = layoutSiteMarkers(groupBySite(ARTWORKS));
+      laidOutSites.forEach((site, index) => {
+        laidOutSites.slice(index + 1).forEach((other) => {
+          assert(Math.hypot(site.displayX - other.displayX, site.displayY - other.displayY) >= 52,
+            `${site.siteName} and ${other.siteName} markers should not overlap`);
+        });
+      });
+    }
+
+    function assertRenderedMarkerSemantics() {
+      document.querySelectorAll('.site-marker').forEach((marker) => {
+        assert(!marker.hasAttribute('tabindex') && marker.getAttribute('role') !== 'button',
+          'Task 3 markers should be non-interactive map annotations');
+      });
+      assert(!detailPanel.textContent.includes('选择地图标记'),
+        'Task 3 instructions should not promise marker selection');
     }
 
     function populateSelect(select, values) {
@@ -415,15 +466,24 @@
       const visibleWorks = filterWorks(ARTWORKS, state);
       if (state.selectedId && !visibleWorks.some((work) => work.id === state.selectedId)) state.selectedId = null;
       markerLayer.replaceChildren();
-      groupBySite(visibleWorks).forEach((group) => {
-        const projected = toWorldCoordinates(group);
+      const leaders = [];
+      const markers = [];
+      layoutSiteMarkers(groupBySite(visibleWorks)).forEach((group) => {
+        if (Math.hypot(group.displayX - group.anchorX, group.displayY - group.anchorY) > 1) {
+          const leader = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          leader.classList.add('marker-leader');
+          leader.setAttribute('x1', group.anchorX);
+          leader.setAttribute('y1', group.anchorY);
+          leader.setAttribute('x2', group.displayX);
+          leader.setAttribute('y2', group.displayY);
+          leaders.push(leader);
+        }
         const marker = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         marker.classList.add('site-marker');
         marker.dataset.siteKey = group.key;
         marker.dataset.civilization = group.civilization;
-        marker.setAttribute('transform', `translate(${projected.x} ${projected.y})`);
-        marker.setAttribute('role', 'button');
-        marker.setAttribute('tabindex', '0');
+        marker.setAttribute('transform', `translate(${group.displayX} ${group.displayY})`);
+        marker.setAttribute('role', 'img');
         const civilizationNames = { egypt:'埃及', greece:'希腊', rome:'罗马' };
         const civilizationLabel = group.civilizations.map((item) => civilizationNames[item]).join('与');
         marker.setAttribute('aria-label', `${group.siteName}，${civilizationLabel}，${group.works.length} 件作品`);
@@ -439,8 +499,9 @@
           count.textContent = String(group.works.length);
           marker.append(count);
         }
-        markerLayer.append(marker);
+        markers.push(marker);
       });
+      markerLayer.append(...leaders, ...markers);
 
       detailPanel.replaceChildren();
       const count = document.createElement('p');
@@ -466,9 +527,9 @@
         instruction.className = 'instruction';
         instruction.setAttribute('aria-label', '地图使用说明');
         const heading = document.createElement('h2');
-        heading.textContent = '选择地图标记';
+        heading.textContent = '地图标记概览';
         const copy = document.createElement('p');
-        copy.textContent = '每个圆点代表一处作品地点；圆点内的数字表示该地点包含多件作品。请选择一处地点继续。';
+        copy.textContent = '每个圆点代表一处作品地点；圆点内的数字表示该地点包含多件作品。短引线连接真实地理位置与避让后的标记。';
         const legend = document.createElement('div');
         legend.className = 'legend';
         [['埃及','#b85d44'],['希腊','#597f8b'],['罗马','#c8943d']].forEach(([label, color]) => {
@@ -510,6 +571,7 @@
       filterWorks,
       groupBySite,
       toWorldCoordinates,
+      layoutSiteMarkers,
       render,
       clearFilters,
       state,
@@ -517,6 +579,7 @@
     };
     runDevelopmentAssertions();
     render();
+    assertRenderedMarkerSemantics();
   </script>
 </body>
 </html>
