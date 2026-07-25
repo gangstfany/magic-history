@@ -23,7 +23,7 @@
     .art-workspace { width:calc(100% - 40px); max-width:1180px; height:min(620px,78vh); min-height:480px; margin:0 auto 28px; display:grid; grid-template-columns:minmax(0,2fr) minmax(275px,1fr); overflow:hidden; border:1px solid var(--line); border-radius:18px; background:var(--card); box-shadow:0 14px 36px rgba(74,57,38,.11); }
     .map-panel { position:relative; min-width:0; overflow:hidden; background:#f0e6d6; }
     .map-svg { display:block; width:100%; height:100%; }
-    .world-geography path { pointer-events:none; }
+    .world-geography { pointer-events:none; }
     .marker-layer { pointer-events:none; }
     .marker-leader { stroke:#8c7d68; stroke-width:2.5; stroke-linecap:round; opacity:.72; vector-effect:non-scaling-stroke; pointer-events:none; }
     .site-marker { pointer-events:all; cursor:pointer; }
@@ -443,6 +443,22 @@
       return length ? (index + direction + length) % length : 0;
     }
 
+    function zoomAroundPoint(transform, nextScale, point = { x:800, y:400 }) {
+      const boundedScale = Math.min(3, Math.max(1, nextScale));
+      const contentX = (point.x - transform.x) / transform.scale;
+      const contentY = (point.y - transform.y) / transform.scale;
+      return clampTransform({
+        scale: boundedScale,
+        x: point.x - contentX * boundedScale,
+        y: point.y - contentY * boundedScale
+      });
+    }
+
+    function clientDeltaToViewBox(deltaX, deltaY, width, height) {
+      const renderedScale = Math.min(width / 1600, height / 800);
+      return { x: deltaX / renderedScale, y: deltaY / renderedScale };
+    }
+
     function runDevelopmentAssertions() {
       const overZoomed = clampTransform({ x: 99999, y: 99999, scale: 9 });
       assert(overZoomed.scale === 3 && overZoomed.x === 0 && overZoomed.y === 0,
@@ -459,7 +475,20 @@
         'map navigation state should start at the overview scale');
       assert(cycleIndex(0, 3, -1) === 2 && cycleIndex(2, 3, 1) === 0,
         'site cycling should wrap in both directions');
+      const centeredZoom = zoomAroundPoint({ x:0, y:0, scale:1 }, 2);
+      assert(centeredZoom.x === -800 && centeredZoom.y === -400,
+        'zoom should preserve the visible world center');
+      const pannedZoom = zoomAroundPoint({ x:-400, y:-200, scale:2 }, 3);
+      assert(pannedZoom.x === -1000 && pannedZoom.y === -500,
+        'zoom should preserve the current center after panning');
+      const letterboxedDelta = clientDeltaToViewBox(100, 100, 800, 800);
+      assert(letterboxedDelta.x === 200 && letterboxedDelta.y === 200,
+        'pointer deltas should use one meet scale when the SVG is letterboxed');
       const worldSvg = document.querySelector('.map-svg');
+      assert(getComputedStyle(document.querySelector('.world-geography')).pointerEvents === 'none',
+        'non-interactive geography should leave the background pan surface hittable');
+      assert(document.getElementById('panSurface').nextElementSibling?.classList.contains('world-geography'),
+        'the pan surface should sit behind geography and markers without covering them');
       assert(worldSvg.getAttribute('viewBox') === '0 0 1600 800',
         'art map should render the complete 1600 × 800 world overview');
       assert(worldSvg.querySelectorAll('.world-geography .region-path').length >= 100,
@@ -540,6 +569,8 @@
       state.selectedSiteIndex = cycleIndex(state.selectedSiteIndex, group.works.length, direction);
       state.selectedId = group.works[state.selectedSiteIndex].id;
       render();
+      const label = direction < 0 ? '上一件同地点作品' : '下一件同地点作品';
+      detailPanel.querySelector(`[aria-label="${label}"]`)?.focus();
     }
 
     function render() {
@@ -692,11 +723,11 @@
     document.getElementById('typeFilter').addEventListener('change', (event) => { state.workType = event.target.value; render(); });
     document.getElementById('searchInput').addEventListener('input', (event) => { state.search = event.target.value; render(); });
     document.getElementById('zoomIn').addEventListener('click', () => {
-      state.transform.scale += .5;
+      state.transform = zoomAroundPoint(state.transform, state.transform.scale + .5);
       applyTransform();
     });
     document.getElementById('zoomOut').addEventListener('click', () => {
-      state.transform.scale -= .5;
+      state.transform = zoomAroundPoint(state.transform, state.transform.scale - .5);
       applyTransform();
     });
     document.getElementById('resetView').addEventListener('click', () => {
@@ -720,10 +751,16 @@
     panSurface.addEventListener('pointermove', (event) => {
       if (!panStart || event.pointerId !== panStart.pointerId) return;
       const bounds = document.querySelector('.map-svg').getBoundingClientRect();
+      const delta = clientDeltaToViewBox(
+        event.clientX - panStart.clientX,
+        event.clientY - panStart.clientY,
+        bounds.width,
+        bounds.height
+      );
       state.transform = clampTransform({
         ...state.transform,
-        x: panStart.x + (event.clientX - panStart.clientX) * 1600 / bounds.width,
-        y: panStart.y + (event.clientY - panStart.clientY) * 800 / bounds.height
+        x: panStart.x + delta.x,
+        y: panStart.y + delta.y
       });
       applyTransform();
     });
@@ -743,6 +780,8 @@
       layoutSiteMarkers,
       clampTransform,
       cycleIndex,
+      zoomAroundPoint,
+      clientDeltaToViewBox,
       applyTransform,
       render,
       clearFilters,
