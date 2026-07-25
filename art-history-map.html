@@ -68,6 +68,9 @@
     .expanded-work-pin.is-active .expanded-pin-visual { transform:scale(1.12); }
     .expanded-work-pin.is-active .expanded-pin-bg { stroke:#211f1c; stroke-width:8; }
     .expanded-pin-list { display:none; width:100%; }
+    .expanded-pin-list.is-visible { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; padding:10px; border-top:1px solid var(--line); background:#fffaf2; }
+    .map-panel.has-compact-list { display:grid; grid-template-rows:minmax(260px,1fr) auto; overflow:auto; }
+    .map-panel.has-compact-list .map-svg { grid-row:1; min-height:260px; }
     .expanded-pin-list-button { min-height:44px; padding:9px 10px; border:2px solid transparent; border-radius:10px; color:#fff; background:#4d463e; font-weight:800; text-align:left; overflow-wrap:anywhere; cursor:pointer; }
     .expanded-pin-list-button[data-civilization="egypt"] { background:var(--egypt); }
     .expanded-pin-list-button[data-civilization="greece"] { background:var(--greece); }
@@ -131,7 +134,7 @@
       .art-workspace { width:calc(100% - 24px); height:auto; min-height:0; grid-template-columns:1fr; grid-template-rows:auto auto; }
       .map-panel { display:grid; grid-template-rows:minmax(330px,55vh) auto; overflow:visible; }
       .map-svg { grid-row:1; min-height:330px; }
-      .expanded-pin-list:not([hidden]) { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; padding:10px; border-top:1px solid var(--line); background:#fffaf2; }
+      .map-panel.has-compact-list { grid-template-rows:minmax(330px,55vh) auto; overflow:visible; }
       .detail-panel { max-height:360px; border-left:0; border-top:1px solid var(--line); }
     }
     @media (prefers-reduced-motion:reduce) { *, *::before, *::after { scroll-behavior:auto!important; transition-duration:.01ms!important; animation-duration:.01ms!important; animation-iteration-count:1!important; } }
@@ -1364,6 +1367,8 @@
       });
       expandedPinList.replaceChildren(...buttons);
       expandedPinList.hidden = false;
+      expandedPinList.classList.add('is-visible');
+      mapPanel.classList.add('has-compact-list');
     }
 
     function renderExpandedWorkPins(group, center, screenScale, obstacleBounds) {
@@ -1523,6 +1528,8 @@
         group.works.length > 1 && group.siteToken === state.expandedSiteToken
       ));
       expandedPinList.hidden = true;
+      expandedPinList.classList.remove('is-visible');
+      mapPanel.classList.remove('has-compact-list');
       expandedPinList.replaceChildren();
       if (expandedGroup) {
         const expandedCenter = { x: expandedGroup.displayX, y: expandedGroup.displayY };

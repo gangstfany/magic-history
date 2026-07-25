@@ -457,6 +457,10 @@ test('mobile expansion uses a bounded compact list with exact AP work buttons', 
     /shouldUseCompactExpandedList\(\s*expandedGroup,\s*expandedCenter,\s*renderedMarkerScale,\s*obstacleBounds/,
   );
   assert.match(compactSource, /button\.dataset\.workId = work\.id/);
+  assert.match(compactSource, /expandedPinList\.classList\.add\('is-visible'\)/);
+  assert.match(compactSource, /mapPanel\.classList\.add\('has-compact-list'\)/);
+  assert.match(renderSource, /expandedPinList\.classList\.remove\('is-visible'\)/);
+  assert.match(renderSource, /mapPanel\.classList\.remove\('has-compact-list'\)/);
   assert.match(compactSource, /button\.setAttribute\('role',\s*'button'\)/);
   assert.match(compactSource, /button\.setAttribute\('tabindex',\s*'0'\)/);
   assert.match(
@@ -469,6 +473,22 @@ test('mobile expansion uses a bounded compact list with exact AP work buttons', 
   );
   assert.match(compactSource, /selectArtwork\(work\.id,\s*group\.siteToken/);
   assert.match(getCssDeclarations(html, '.expanded-pin-list'), /width:\s*100%/);
+  assert.match(
+    getCssDeclarations(html, '.expanded-pin-list.is-visible'),
+    /display:\s*grid/,
+  );
+  assert.ok(
+    html.indexOf('.expanded-pin-list.is-visible') < html.indexOf('@media (max-width:520px)'),
+    'compact visibility must not depend on the 520px media query',
+  );
+  assert.match(
+    getCssDeclarations(html, '.map-panel.has-compact-list'),
+    /display:\s*grid/,
+  );
+  assert.match(
+    getCssDeclarations(html, '.map-panel.has-compact-list'),
+    /overflow:\s*(?:auto|visible)/,
+  );
   assert.match(
     getCssDeclarations(html, '.expanded-pin-list-button'),
     /min-height:\s*44px/,
