@@ -51,6 +51,17 @@ function loadPureFunctions(html, functionNames, declarations = []) {
   return Function(`"use strict"; ${sources}; return { ${exports} };`)();
 }
 
+function loadMapFitFunctions(html) {
+  const sources = [
+    getObjectDeclarationSource(html, 'const SITE_WORLD_COORDINATES ='),
+    getObjectDeclarationSource(html, 'const state ='),
+    getFunctionSource(html, 'toWorldCoordinates'),
+    'function clampTransform(transform) { return transform; }',
+    getFunctionSource(html, 'fitMapToWorks'),
+  ].join('\n');
+  return Function(`"use strict"; ${sources}; return { state, toWorldCoordinates, fitMapToWorks };`)();
+}
+
 function parseArtworkData(html) {
   const match = html.match(
     /<script id="artwork-data" type="application\/json">([\s\S]*?)<\/script>/,
@@ -149,6 +160,14 @@ test('compact desktop controls recover 44px touch targets on narrow screens', as
   );
   assert.match(narrowFilters, /min-height:\s*44px/);
   assert.match(getCssDeclarations(narrowCss, '.culture-filters'), /gap:\s*8px/);
+  assert.match(getCssDeclarations(narrowCss, '#unitFilter, .culture-filters .filter-pill'), /min-height:\s*44px/);
+
+  const desktopCultureFilters = getCssDeclarations(html, '.culture-filters');
+  assert.match(desktopCultureFilters, /gap:\s*6px/);
+  const desktopUnitFilter = getCssDeclarations(html, '#unitFilter');
+  assert.match(desktopUnitFilter, /font-size:\s*13px/);
+  assert.match(desktopUnitFilter, /font-weight:\s*600/);
+  assert.match(desktopUnitFilter, /min-height:\s*34px/);
 
   const narrowEmbeddedBody = getCssDeclarations(narrowCss, 'body.is-embedded');
   assert.match(narrowEmbeddedBody, /height:\s*auto/);
@@ -392,6 +411,51 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
       .map((work) => work.id),
     ['white-temple'],
   );
+});
+
+test('culture selection updates existing buttons without replacing the focused button', async () => {
+  const html = await loadHtml();
+  const { updateCultureFilterSelection } = loadPureFunctions(
+    html,
+    ['updateCultureFilterSelection'],
+  );
+  const makeButton = (culture) => {
+    const attributes = new Map();
+    return {
+      dataset: { culture },
+      setAttribute(name, value) { attributes.set(name, value); },
+      getAttribute(name) { return attributes.get(name) ?? null; },
+    };
+  };
+  const egypt = makeButton('egypt');
+  const greece = makeButton('greece');
+  const container = {
+    querySelectorAll(selector) {
+      assert.equal(selector, '[data-culture]');
+      return [egypt, greece];
+    },
+  };
+
+  const selected = updateCultureFilterSelection(container, 'greece');
+  assert.equal(selected, greece);
+  assert.equal(container.querySelectorAll('[data-culture]')[1], greece);
+  assert.equal(egypt.getAttribute('aria-pressed'), 'false');
+  assert.equal(greece.getAttribute('aria-pressed'), 'true');
+});
+
+test('map fitting uses nested coordinates for an unmapped future site', async () => {
+  const html = await loadHtml();
+  const { state, toWorldCoordinates, fitMapToWorks } = loadMapFitFunctions(html);
+  const unmappedWork = {
+    siteName: 'Future Unmapped Site',
+    coordinates: { x: 120, y: 240 },
+  };
+
+  assert.deepEqual(toWorldCoordinates(unmappedWork), { x: 840.6, y: 302 });
+  fitMapToWorks([unmappedWork]);
+  assert.ok(Number.isFinite(state.transform.x));
+  assert.ok(Number.isFinite(state.transform.y));
+  assert.ok(Number.isFinite(state.transform.scale));
 });
 
 test('site works sort by numeric AP number before id', async () => {

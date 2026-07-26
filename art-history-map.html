@@ -514,9 +514,12 @@
       }
       const projected = SITE_WORLD_COORDINATES[workOrGroup.siteName];
       if (projected) return { ...projected };
+      const coordinates = workOrGroup.coordinates || workOrGroup;
+      const x = Number.isFinite(coordinates.x) ? coordinates.x : 0;
+      const y = Number.isFinite(coordinates.y) ? coordinates.y : 0;
       return {
-        x: Math.max(0, Math.min(1600, 807 + workOrGroup.x * 0.28)),
-        y: Math.max(0, Math.min(800, 230 + workOrGroup.y * 0.3))
+        x: Math.max(0, Math.min(1600, 807 + x * 0.28)),
+        y: Math.max(0, Math.min(800, 230 + y * 0.3))
       };
     }
 
@@ -1268,6 +1271,16 @@
       typeFilter.value = state.workType;
     }
 
+    function updateCultureFilterSelection(container, cultureId) {
+      let selectedButton = null;
+      container.querySelectorAll('[data-culture]').forEach((button) => {
+        const selected = button.dataset.culture === cultureId;
+        button.setAttribute('aria-pressed', String(selected));
+        if (selected) selectedButton = button;
+      });
+      return selectedButton;
+    }
+
     function renderCultureFilters() {
       const container = document.getElementById('cultureFilters');
       const cultures = state.unit === 'all' ? null : CULTURES_BY_UNIT[Number(state.unit)];
@@ -1284,7 +1297,7 @@
         button.addEventListener('click', () => {
           clearHierarchyBranch();
           state.culture = culture.id;
-          renderCultureFilters();
+          updateCultureFilterSelection(container, state.culture);
           render();
         });
         container.append(button);
@@ -1300,7 +1313,13 @@
 
     function fitMapToWorks(works) {
       if (!works.length) return;
-      const points = works.map((work) => toWorldCoordinates(work));
+      const points = works.map((work) => toWorldCoordinates(work)).filter((point) => (
+        Number.isFinite(point.x) && Number.isFinite(point.y)
+      ));
+      if (!points.length) {
+        state.transform = { x:0, y:0, scale:1 };
+        return;
+      }
       const left = Math.min(...points.map((point) => point.x));
       const right = Math.max(...points.map((point) => point.x));
       const top = Math.min(...points.map((point) => point.y));
@@ -1310,11 +1329,15 @@
         1600 / Math.max(1, right - left + padding * 2),
         800 / Math.max(1, bottom - top + padding * 2)
       )));
-      state.transform = clampTransform({
+      const nextTransform = clampTransform({
         scale,
         x: 800 - (left + right) / 2 * scale,
         y: 400 - (top + bottom) / 2 * scale
       });
+      state.transform = [nextTransform.x, nextTransform.y, nextTransform.scale]
+        .every(Number.isFinite)
+        ? nextTransform
+        : { x:0, y:0, scale:1 };
     }
 
     const markerLayer = document.getElementById('markerLayer');
