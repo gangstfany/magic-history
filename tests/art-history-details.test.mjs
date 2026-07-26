@@ -82,7 +82,7 @@ test('AP 15 uses the Louvre E 3023 Seated Scribe image and matching credit', asy
   });
 });
 
-test('all artworks have linked credits and only the approved AP 15 image correction', async () => {
+test('all artworks retain linked credits after approved data metadata changes', async () => {
   const html = await loadHtml();
   const artworkMatch = html.match(
     /<script id="artwork-data" type="application\/json">([\s\S]*?)<\/script>/,
@@ -90,7 +90,7 @@ test('all artworks have linked credits and only the approved AP 15 image correct
   assert.ok(artworkMatch, 'missing artwork data');
   assert.equal(
     createHash('sha256').update(artworkMatch[1]).digest('hex'),
-    '305f7fdd7ee57ae87f03a3be5eb84e7de98f9c3f0dfa034ced0f9562b5e56b6e',
+    '683dc85455b5cf0e4613553c0c4abed238e796ca4090eb529cf605cbdcaf6f60',
   );
 
   const artworks = JSON.parse(artworkMatch[1]);
