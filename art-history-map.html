@@ -30,12 +30,13 @@
     .page-header h1 { margin:0 0 6px; font-size:19px; font-weight:800; letter-spacing:-.01em; }
     .subtitle { margin:0; color:var(--ink-soft); font-size:12px; line-height:1.6; }
     .filter-toolbar { max-width:1180px; margin:0 auto 16px; padding:0 20px; display:flex; flex-wrap:wrap; gap:8px; align-items:end; }
-    .civilization-filters { display:flex; flex-wrap:wrap; gap:6px; }
+    .culture-filters { display:flex; flex-wrap:wrap; gap:6px; flex-basis:100%; width:100%; }
     .filter-label { display:grid; gap:3px; color:var(--ink-soft); font-size:12px; font-weight:600; }
     button, select, input { font:inherit; }
     .filter-pill, .clear-button { min-height:34px; border:1px solid var(--line); border-radius:999px; padding:6px 12px; color:var(--ink); background:var(--card); font-size:13px; font-weight:600; cursor:pointer; }
     .filter-pill[aria-pressed="true"] { color:#fff; background:#4d463e; border-color:#4d463e; }
     select, input[type="search"] { min-height:34px; max-width:100%; border:1px solid var(--line); border-radius:8px; padding:5px 9px; color:var(--ink); background:var(--card); font-size:13px; font-weight:600; }
+    #unitFilter { min-height:34px; font-size:13px; font-weight:600; }
     #searchInput { width:min(260px,100%); }
     :focus-visible { outline:3px solid #28708a; outline-offset:3px; }
     .art-workspace { width:calc(100% - 40px); max-width:1180px; height:min(620px,78vh); min-height:480px; margin:0 auto 28px; display:grid; grid-template-columns:minmax(0,2fr) minmax(275px,1fr); overflow:hidden; border:1px solid var(--line); border-radius:18px; background:var(--card); box-shadow:0 14px 36px rgba(74,57,38,.11); }
@@ -137,8 +138,9 @@
       body.is-embedded .art-workspace { width:100%; max-width:none; height:auto; min-height:0; margin:0; border:0; border-radius:0; }
       .page-header, .filter-toolbar { padding-left:12px; padding-right:12px; }
       .filter-toolbar > * { max-width:100%; }
-      .civilization-filters { gap:8px; }
+      .culture-filters { gap:8px; }
       .filter-pill, .clear-button, select, input[type="search"] { min-height:44px; }
+      #unitFilter, .culture-filters .filter-pill { min-height:44px; }
       .filter-label:has(#searchInput) { width:100%; }
       #searchInput { width:100%; }
       .map-controls button { width:44px; height:44px; min-width:44px; min-height:44px; }
@@ -161,15 +163,11 @@
     <p class="subtitle">从地点出发，连接作品、文明与历史语境。</p>
   </header>
   <div id="filterContainer" class="filter-toolbar" role="group" aria-label="作品筛选">
-    <div class="civilization-filters" role="group" aria-label="文明">
-      <button class="filter-pill" type="button" data-civilization="all" aria-pressed="true">全部</button>
-      <button class="filter-pill" type="button" data-civilization="egypt" aria-pressed="false">埃及</button>
-      <button class="filter-pill" type="button" data-civilization="greece" aria-pressed="false">希腊</button>
-      <button class="filter-pill" type="button" data-civilization="rome" aria-pressed="false">罗马</button>
-    </div>
+    <label class="filter-label">Unit<select id="unitFilter" aria-label="Unit"><option value="all">All Units</option></select></label>
     <label class="filter-label">时期<select id="periodFilter"><option value="">全部时期</option></select></label>
     <label class="filter-label">作品类型<select id="typeFilter"><option value="">全部类型</option></select></label>
     <label class="filter-label">搜索<input id="searchInput" type="search" placeholder="标题、地点或关键词"></label>
+    <div id="cultureFilters" class="culture-filters" role="group" aria-label="Culture"></div>
   </div>
   <main class="art-workspace">
     <section id="mapPanel" class="map-panel" aria-label="完整世界地图；当前作品地点集中在古代地中海、埃及、希腊与罗马">
@@ -474,7 +472,8 @@
       southernEurope: Object.freeze({ nameEn: 'Southern Europe' }),
     });
     const state = {
-      civilization: 'all',
+      unit: 'all',
+      culture: 'all',
       period: '',
       workType: '',
       search: '',
@@ -527,11 +526,19 @@
     function filterWorks(works, filters) {
       const query = normalize(filters.search);
       return works.filter((work) => {
-        if (filters.civilization && filters.civilization !== 'all' && work.civilization !== filters.civilization) return false;
+        if (filters.unit && filters.unit !== 'all' && work.unit !== Number(filters.unit)) return false;
+        if (filters.culture && filters.culture !== 'all' && work.culture !== filters.culture) return false;
         if (filters.period && work.period !== filters.period) return false;
         if (filters.workType && work.workType !== filters.workType) return false;
         if (!query) return true;
-        const searchable = [work.titleEn, work.titleZh, work.siteName, ...(work.keywords || [])]
+        const searchable = [
+          work.titleEn,
+          work.titleZh,
+          work.siteName,
+          work.artistCulture,
+          work.period,
+          ...(work.keywords || [])
+        ]
           .map(normalize).join(' ');
         return searchable.includes(query);
       });
@@ -1174,14 +1181,15 @@
           `${work.id} should project inside the world map`);
       });
       const expectedCounts = { all: 27, egypt: 9, greece: 10, rome: 8 };
-      Object.entries(expectedCounts).forEach(([civilization, expected]) => {
+      Object.entries(expectedCounts).forEach(([culture, expected]) => {
         const actual = filterWorks(ARTWORKS, {
-          civilization,
+          unit: 'all',
+          culture,
           period: '',
           workType: '',
           search: ''
         }).length;
-        assert(actual === expected, `Expected ${expected} ${civilization} works, received ${actual}`);
+        assert(actual === expected, `Expected ${expected} ${culture} works, received ${actual}`);
       });
       assert(normalize('  Ａthens  ') === 'athens', 'normalize() should apply NFKC, trim, and lowercase');
       assert(compactApNumbers([35, 39, 40]) === '35, 39–40',
@@ -1211,12 +1219,100 @@
       });
     }
 
-    function populateSelect(select, values) {
+    function appendOption(select, value, label) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      select.append(option);
+    }
+
+    function populateSelect(select, values, placeholder) {
+      select.replaceChildren();
+      appendOption(select, '', placeholder);
       [...new Set(values)].sort((a, b) => a.localeCompare(b)).forEach((value) => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = value;
-        select.append(option);
+        appendOption(select, value, value);
+      });
+    }
+
+    function getWorksForUnit(unit = state.unit) {
+      return unit === 'all'
+        ? ARTWORKS
+        : ARTWORKS.filter((work) => work.unit === Number(unit));
+    }
+
+    function populateUnitOptions() {
+      const unitFilter = document.getElementById('unitFilter');
+      unitFilter.replaceChildren();
+      appendOption(unitFilter, 'all', 'All Units');
+      AP_UNITS.filter((unit) => ARTWORKS.some((work) => work.unit === unit.id))
+        .forEach((unit) => {
+          appendOption(
+            unitFilter,
+            String(unit.id),
+            `U${unit.id} · ${unit.nameEn} · AP ${unit.start}-${unit.end}`
+          );
+        });
+      unitFilter.value = state.unit;
+    }
+
+    function renderDependentFilterOptions() {
+      const unitWorks = getWorksForUnit();
+      if (!unitWorks.some((work) => work.period === state.period)) state.period = '';
+      if (!unitWorks.some((work) => work.workType === state.workType)) state.workType = '';
+      const periodFilter = document.getElementById('periodFilter');
+      const typeFilter = document.getElementById('typeFilter');
+      populateSelect(periodFilter, unitWorks.map((work) => work.period), '全部时期');
+      populateSelect(typeFilter, unitWorks.map((work) => work.workType), '全部类型');
+      periodFilter.value = state.period;
+      typeFilter.value = state.workType;
+    }
+
+    function renderCultureFilters() {
+      const container = document.getElementById('cultureFilters');
+      const cultures = state.unit === 'all' ? null : CULTURES_BY_UNIT[Number(state.unit)];
+      container.replaceChildren();
+      container.hidden = !cultures;
+      if (!cultures) return;
+      cultures.forEach((culture) => {
+        const button = document.createElement('button');
+        button.className = 'filter-pill';
+        button.type = 'button';
+        button.dataset.culture = culture.id;
+        button.setAttribute('aria-pressed', String(state.culture === culture.id));
+        button.textContent = culture.labelEn;
+        button.addEventListener('click', () => {
+          clearHierarchyBranch();
+          state.culture = culture.id;
+          renderCultureFilters();
+          render();
+        });
+        container.append(button);
+      });
+    }
+
+    function syncFilterControls() {
+      document.getElementById('unitFilter').value = state.unit;
+      renderDependentFilterOptions();
+      renderCultureFilters();
+      document.getElementById('searchInput').value = state.search;
+    }
+
+    function fitMapToWorks(works) {
+      if (!works.length) return;
+      const points = works.map((work) => toWorldCoordinates(work));
+      const left = Math.min(...points.map((point) => point.x));
+      const right = Math.max(...points.map((point) => point.x));
+      const top = Math.min(...points.map((point) => point.y));
+      const bottom = Math.max(...points.map((point) => point.y));
+      const padding = 160;
+      const scale = Math.min(3, Math.max(1, Math.min(
+        1600 / Math.max(1, right - left + padding * 2),
+        800 / Math.max(1, bottom - top + padding * 2)
+      )));
+      state.transform = clampTransform({
+        scale,
+        x: 800 - (left + right) / 2 * scale,
+        y: 400 - (top + bottom) / 2 * scale
       });
     }
 
@@ -1414,7 +1510,8 @@
       const target = ARTWORKS.find((work) => work.id === comparisonId);
       if (!target) return;
       Object.assign(state, {
-        civilization:'all',
+        unit:'all',
+        culture:'all',
         period:'',
         workType:'',
         search:'',
@@ -1426,12 +1523,7 @@
         pendingFocusParentKey:null,
         activeDetailTab:'quick'
       });
-      document.querySelectorAll('.filter-pill').forEach((button) => {
-        button.setAttribute('aria-pressed', String(button.dataset.civilization === 'all'));
-      });
-      document.getElementById('periodFilter').value = '';
-      document.getElementById('typeFilter').value = '';
-      document.getElementById('searchInput').value = '';
+      syncFilterControls();
       render();
       focusSelectedArtworkHeading();
       detailPanel.scrollTo({ top:0, behavior:'smooth' });
@@ -1857,7 +1949,7 @@
         const heading = document.createElement('h2');
         heading.textContent = '没有找到匹配作品';
         const copy = document.createElement('p');
-        copy.textContent = '试试更换文明、时期、类型，或使用其他关键词。';
+        copy.textContent = '试试更换文化、时期、类型，或使用其他关键词。';
         const clear = document.createElement('button');
         clear.type = 'button';
         clear.className = 'clear-button';
@@ -1895,7 +1987,8 @@
 
     function clearFilters() {
       Object.assign(state, {
-        civilization:'all',
+        unit:'all',
+        culture:'all',
         period:'',
         workType:'',
         search:'',
@@ -1908,12 +2001,7 @@
         activeDetailTab:'quick',
         transform:{ x:0, y:0, scale:1 }
       });
-      document.querySelectorAll('.filter-pill').forEach((button) => {
-        button.setAttribute('aria-pressed', String(button.dataset.civilization === 'all'));
-      });
-      document.getElementById('periodFilter').value = '';
-      document.getElementById('typeFilter').value = '';
-      document.getElementById('searchInput').value = '';
+      syncFilterControls();
       render();
       applyTransform();
     }
@@ -1934,14 +2022,24 @@
       state.pendingFocusParentKey = null;
     }
 
-    populateSelect(document.getElementById('periodFilter'), ARTWORKS.map((work) => work.period));
-    populateSelect(document.getElementById('typeFilter'), ARTWORKS.map((work) => work.workType));
-    document.querySelectorAll('.filter-pill').forEach((button) => button.addEventListener('click', () => {
+    populateUnitOptions();
+    syncFilterControls();
+    document.getElementById('unitFilter').addEventListener('change', (event) => {
       clearHierarchyBranch();
-      state.civilization = button.dataset.civilization;
-      document.querySelectorAll('.filter-pill').forEach((pill) => pill.setAttribute('aria-pressed', String(pill === button)));
+      state.unit = event.target.value;
+      state.culture = 'all';
+      state.period = '';
+      state.workType = '';
+      state.activeUnit = state.unit === 'all' ? null : Number(state.unit);
+      state.transform = { x:0, y:0, scale:1 };
+      syncFilterControls();
       render();
-    }));
+      if (state.unit !== 'all') {
+        fitMapToWorks(getWorksForUnit());
+        render();
+      }
+      applyTransform();
+    });
     document.getElementById('periodFilter').addEventListener('change', (event) => {
       clearHierarchyBranch();
       state.period = event.target.value;

@@ -148,7 +148,7 @@ test('compact desktop controls recover 44px touch targets on narrow screens', as
     '.filter-pill, .clear-button, select, input[type="search"]',
   );
   assert.match(narrowFilters, /min-height:\s*44px/);
-  assert.match(getCssDeclarations(narrowCss, '.civilization-filters'), /gap:\s*8px/);
+  assert.match(getCssDeclarations(narrowCss, '.culture-filters'), /gap:\s*8px/);
 
   const narrowEmbeddedBody = getCssDeclarations(narrowCss, 'body.is-embedded');
   assert.match(narrowEmbeddedBody, /height:\s*auto/);
@@ -333,6 +333,64 @@ test('Unit 2 culture labels and map regions expose the migration interfaces', as
   assert.equal(MAP_REGIONS.middleEast?.nameEn, 'Middle East');
   assert.equal(MAP_REGIONS.northAfrica?.nameEn, 'North Africa');
   assert.equal(MAP_REGIONS.southernEurope?.nameEn, 'Southern Europe');
+});
+
+test('Unit toolbar uses one accessible Unit select and an English culture group', async () => {
+  const html = await loadHtml();
+
+  assert.equal((html.match(/<select id="unitFilter"/g) || []).length, 1);
+  assert.match(html, /<div id="cultureFilters" class="culture-filters" role="group" aria-label="Culture"><\/div>/);
+  for (const label of ['All cultures', 'Ancient Near East', 'Egypt', 'Greece', 'Etruscan', 'Rome']) {
+    assert.match(html, new RegExp(label));
+  }
+  assert.doesNotMatch(html, /aria-label="文明"/);
+  assert.doesNotMatch(html, /Dataset progress · U2 36\/36/);
+  assert.match(html, /<label class="filter-label">Unit<select id="unitFilter" aria-label="Unit"><option value="all">All Units<\/option><\/select><\/label>/);
+  assert.match(html, /<label class="filter-label">时期<select id="periodFilter"><option value="">全部时期<\/option><\/select><\/label>/);
+  assert.match(html, /<label class="filter-label">作品类型<select id="typeFilter"><option value="">全部类型<\/option><\/select><\/label>/);
+  assert.match(html, /<label class="filter-label">搜索<input id="searchInput" type="search" placeholder="标题、地点或关键词"><\/label>/);
+});
+
+test('filterWorks combines Unit, culture, exact filters, and bilingual free search', async () => {
+  const html = await loadHtml();
+  const { normalize, filterWorks } = loadPureFunctions(html, ['normalize', 'filterWorks']);
+  const works = [
+    {
+      id: 'white-temple', unit: 2, culture: 'ancientNearEast',
+      titleEn: 'White Temple and its ziggurat', titleZh: '白神庙与金字塔台',
+      siteName: 'Uruk', artistCulture: 'Sumerian', period: 'Sumerian',
+      workType: 'temple complex', keywords: ['ziggurat', 'Uruk'],
+    },
+    {
+      id: 'etruscan-tomb', unit: 2, culture: 'etruscan',
+      titleEn: 'Tomb of the Triclinium', titleZh: '三榻墓',
+      siteName: 'Tarquinia', artistCulture: 'Etruscan', period: 'Etruscan',
+      workType: 'tomb painting', keywords: ['banquet'],
+    },
+    {
+      id: 'other-unit', unit: 3, culture: 'rome',
+      titleEn: 'Later Roman Work', titleZh: '后期罗马作品',
+      siteName: 'Rome', artistCulture: 'Roman', period: 'Imperial Roman',
+      workType: 'sculpture', keywords: ['portrait'],
+    },
+  ];
+
+  assert.equal(normalize('  Ｓumerian  '), 'sumerian');
+  assert.deepEqual(
+    filterWorks(works, { unit: '2', culture: 'ancientNearEast', period: '', workType: '', search: '' })
+      .map((work) => work.id),
+    ['white-temple'],
+  );
+  assert.deepEqual(
+    filterWorks(works, { unit: 'all', culture: 'etruscan', period: '', workType: '', search: '三榻墓' })
+      .map((work) => work.id),
+    ['etruscan-tomb'],
+  );
+  assert.deepEqual(
+    filterWorks(works, { unit: '2', culture: 'all', period: 'Sumerian', workType: 'temple complex', search: 'Sumerian' })
+      .map((work) => work.id),
+    ['white-temple'],
+  );
 });
 
 test('site works sort by numeric AP number before id', async () => {
