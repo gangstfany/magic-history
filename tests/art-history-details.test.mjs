@@ -1,9 +1,48 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
+const ORIGINAL_ARTWORK_IDS = [
+  'ap13-palette-of-king-narmer',
+  'ap15-seated-scribe',
+  'ap17-great-pyramids-giza',
+  'ap18-king-menkaura-and-queen',
+  'ap20-temple-of-amun-re-karnak',
+  'ap21-mortuary-temple-hatshepsut',
+  'ap22-akhenaten-nefertiti-daughters',
+  'ap23-tutankhamun-funerary-mask',
+  'ap24-last-judgment-of-hunefer',
+  'ap26-athenian-acropolis',
+  'ap27-anavysos-kouros',
+  'ap28-peplos-kore',
+  'ap33-niobides-krater',
+  'ap34-doryphoros',
+  'ap35-athenian-agora',
+  'ap36-grave-stele-hegeso',
+  'ap37-winged-victory-samothrace',
+  'ap38-great-altar-pergamon',
+  'ap39-house-of-the-vettii',
+  'ap40-alexander-mosaic',
+  'ap41-old-market-woman',
+  'ap42-seated-boxer',
+  'ap43-head-of-a-roman-patrician',
+  'ap44-colosseum',
+  'ap45-forum-of-trajan',
+  'ap46-pantheon',
+  'ap47-ludovisi-battle-sarcophagus',
+];
+const NEW_ARTWORK_IDS = [
+  'ap12-white-temple-ziggurat',
+  'ap14-statues-votive-figures',
+  'ap16-standard-of-ur',
+  'ap19-code-of-hammurabi',
+  'ap25-lamassu-sargon-ii',
+  'ap29-sarcophagus-of-the-spouses',
+  'ap30-apadana-darius-xerxes',
+  'ap31-temple-minerva-apollo',
+  'ap32-tomb-of-the-triclinium',
+];
 
 async function loadHtml() {
   return readFile(HTML_PATH, 'utf8');
@@ -82,21 +121,29 @@ test('AP 15 uses the Louvre E 3023 Seated Scribe image and matching credit', asy
   });
 });
 
-test('all artworks retain linked credits after approved data metadata changes', async () => {
+test('preserves the original 27 ids and gives all 36 works one credited image', async () => {
   const html = await loadHtml();
-  const artworkMatch = html.match(
-    /<script id="artwork-data" type="application\/json">([\s\S]*?)<\/script>/,
-  );
-  assert.ok(artworkMatch, 'missing artwork data');
-  assert.equal(
-    createHash('sha256').update(artworkMatch[1]).digest('hex'),
-    '683dc85455b5cf0e4613553c0c4abed238e796ca4090eb529cf605cbdcaf6f60',
-  );
-
-  const artworks = JSON.parse(artworkMatch[1]);
+  const artworks = parseJsonBlock(html, 'artwork-data');
   const credits = parseJsonBlock(html, 'image-credit-data');
+  const artworkIds = artworks.map(({ id }) => id);
+
+  assert.equal(artworks.length, 36);
+  for (const id of ORIGINAL_ARTWORK_IDS) {
+    assert.ok(artworkIds.includes(id), `missing original artwork ${id}`);
+  }
+  for (const id of NEW_ARTWORK_IDS) {
+    assert.ok(artworkIds.includes(id), `missing imported artwork ${id}`);
+  }
+
   assert.deepEqual(Object.keys(credits).sort(), artworks.map(({ id }) => id).sort());
   for (const artwork of artworks) {
+    assert.equal(typeof artwork.imageUrl, 'string', `${artwork.id} needs one image URL`);
+    assert.ok(artwork.imageUrl.trim(), `${artwork.id} needs a non-empty image URL`);
+    assert.equal(
+      Object.hasOwn(artwork, 'images'),
+      false,
+      `${artwork.id} must not introduce an image gallery`,
+    );
     const credit = credits[artwork.id];
     assert.ok(credit.creatorOrInstitution, `${artwork.id} missing creator or institution`);
     assert.ok(credit.licenseName, `${artwork.id} missing license name`);

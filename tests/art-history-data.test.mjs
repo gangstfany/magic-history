@@ -11,9 +11,80 @@ import { loadAndValidate } from '../scripts/validate-art-history-data.mjs';
 
 const execFileAsync = promisify(execFile);
 const VALIDATOR_PATH = fileURLToPath(new URL('../scripts/validate-art-history-data.mjs', import.meta.url));
-const EXPECTED_AP_NUMBERS = [
-  13, 15, 17, 18, 20, 21, 22, 23, 24, 26, 27, 28, 33, 34,
-  35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+const EXPECTED_AP_NUMBERS = Array.from({ length: 36 }, (_, index) => index + 12);
+const EXPECTED_NEW_WORKS = [
+  {
+    apNumber: 12,
+    id: 'ap12-white-temple-ziggurat',
+    title: 'White Temple and its ziggurat',
+    site: 'Uruk, Iraq',
+    culture: 'ancientNearEast',
+    region: 'middleEast',
+  },
+  {
+    apNumber: 14,
+    id: 'ap14-statues-votive-figures',
+    title: 'Statues of votive figures, from the Square Temple at Eshnunna',
+    site: 'Eshnunna (Tell Asmar), Iraq',
+    culture: 'ancientNearEast',
+    region: 'middleEast',
+  },
+  {
+    apNumber: 16,
+    id: 'ap16-standard-of-ur',
+    title: 'Standard of Ur from the Royal Tombs at Ur',
+    site: 'Ur, Iraq',
+    culture: 'ancientNearEast',
+    region: 'middleEast',
+  },
+  {
+    apNumber: 19,
+    id: 'ap19-code-of-hammurabi',
+    title: 'The Code of Hammurabi',
+    site: 'Susa, Iran',
+    culture: 'ancientNearEast',
+    region: 'middleEast',
+  },
+  {
+    apNumber: 25,
+    id: 'ap25-lamassu-sargon-ii',
+    title: 'Lamassu from the citadel of Sargon II, Dur Sharrukin',
+    site: 'Dur Sharrukin (Khorsabad), Iraq',
+    culture: 'ancientNearEast',
+    region: 'middleEast',
+  },
+  {
+    apNumber: 29,
+    id: 'ap29-sarcophagus-of-the-spouses',
+    title: 'Sarcophagus of the Spouses',
+    site: 'Cerveteri, Italy',
+    culture: 'etruscan',
+    region: 'southernEurope',
+  },
+  {
+    apNumber: 30,
+    id: 'ap30-apadana-darius-xerxes',
+    title: 'Audience Hall (apadana) of Darius and Xerxes',
+    site: 'Persepolis, Iran',
+    culture: 'ancientNearEast',
+    region: 'middleEast',
+  },
+  {
+    apNumber: 31,
+    id: 'ap31-temple-minerva-apollo',
+    title: 'Temple of Minerva and sculpture of Apollo',
+    site: 'Veii, Italy',
+    culture: 'etruscan',
+    region: 'southernEurope',
+  },
+  {
+    apNumber: 32,
+    id: 'ap32-tomb-of-the-triclinium',
+    title: 'Tomb of the Triclinium',
+    site: 'Tarquinia, Italy',
+    culture: 'etruscan',
+    region: 'southernEurope',
+  },
 ];
 
 test('CLI validates the supplied HTML path', async () => {
@@ -33,11 +104,27 @@ test('CLI validates the supplied HTML path', async () => {
   }
 });
 
-test('contains the exact approved 27-work manifest', async () => {
+test('contains the complete AP 12–47 Unit 2 manifest', async () => {
   const artworks = await loadAndValidate();
   const apNumbers = artworks.map(({ apNumber }) => apNumber).sort((a, b) => a - b);
 
+  assert.equal(artworks.length, 36);
   assert.deepEqual(apNumbers, EXPECTED_AP_NUMBERS);
+});
+
+test('imports the exact nine missing works with approved classification metadata', async () => {
+  const artworks = await loadAndValidate();
+
+  for (const expected of EXPECTED_NEW_WORKS) {
+    const artwork = artworks.find(({ id }) => id === expected.id);
+    assert.ok(artwork, `missing ${expected.id}`);
+    assert.equal(artwork.apNumber, expected.apNumber, `${expected.id} AP number`);
+    assert.equal(artwork.titleEn, expected.title, `${expected.id} title`);
+    assert.equal(artwork.siteName, expected.site, `${expected.id} site`);
+    assert.equal(artwork.culture, expected.culture, `${expected.id} culture`);
+    assert.equal(artwork.region, expected.region, `${expected.id} region`);
+    assert.equal(artwork.unit, 2, `${expected.id} unit`);
+  }
 });
 
 test('assigns every current work to Unit 2 with culture and region metadata', async () => {

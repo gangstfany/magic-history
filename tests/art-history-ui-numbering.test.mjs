@@ -563,30 +563,22 @@ test('marker metrics stay readable and touchable on a 390px viewport', async () 
   assert.ok(metrics.visualWidth < metrics.hitWidth);
 });
 
-test('bounds-aware spatial layout prevents all marker overlaps at mobile scale', async () => {
+test('complete Unit 2 uses the existing grid fallback when mobile cannot fit all sites', async () => {
   const html = await loadHtml();
   const artworks = parseArtworkData(html);
-  const {
-    compactApNumbers,
-    formatApGroupLabel,
-    createSiteToken,
-    groupBySite,
-    toWorldCoordinates,
-    getMarkerMetrics,
-    getMarkerBounds,
-    markerBoundsOverlap,
-    expandMarkerBounds,
-    createSpatialHash,
-    findNearestAvailableMarkerSlot,
-    layoutSiteMarkers,
-  } = loadPureFunctions(
+  const helpers = loadPureFunctions(
     html,
     [
       'compactApNumbers',
       'formatApGroupLabel',
       'createSiteToken',
-      'groupBySite',
+      'getApUnitNumber',
       'toWorldCoordinates',
+      'groupBySite',
+      'getMapHierarchyLevel',
+      'groupByRegionGrid',
+      'buildMapGroups',
+      'buildMapGroupCandidates',
       'getMarkerMetrics',
       'getMarkerBounds',
       'markerBoundsOverlap',
@@ -594,12 +586,89 @@ test('bounds-aware spatial layout prevents all marker overlaps at mobile scale',
       'createSpatialHash',
       'findNearestAvailableMarkerSlot',
       'layoutSiteMarkers',
+      'layoutMapGroups',
     ],
-    ['const SITE_WORLD_COORDINATES ='],
+    ['const AP_UNITS =', 'const SITE_WORLD_COORDINATES ='],
+  );
+  const screenScale = 362 / 1600;
+  const siteGroups = helpers.groupBySite(artworks);
+
+  assert.equal(artworks.length, 36);
+  assert.equal(siteGroups.length, 24);
+  const laidOut = helpers.layoutMapGroups(artworks, 1, screenScale, {});
+  assert.ok(laidOut.length < siteGroups.length);
+  assert.ok(laidOut.every((group) => group.kind === 'region'));
+
+  const selectedRegion = laidOut[0];
+  const regionSites = helpers.layoutMapGroups(
+    artworks,
+    2.5,
+    screenScale * 2.5,
+    {
+      activeUnit: selectedRegion.apUnits[0],
+      activeRegion: selectedRegion.key,
+    },
+  );
+  assert.ok(regionSites.length > 0);
+  assert.ok(regionSites.every((group) => group.kind === 'site'));
+  assert.ok(regionSites.every((group) => group.parentKey === selectedRegion.key));
+  assert.deepEqual(
+    regionSites.flatMap((group) => group.works.map(({ id }) => id)).sort(),
+    selectedRegion.works.map(({ id }) => id).sort(),
+  );
+});
+
+test('bounds-aware spatial layout prevents all marker overlaps at mobile scale', async () => {
+  const html = await loadHtml();
+  const artworks = parseArtworkData(html);
+  const {
+    compactApNumbers,
+    formatApGroupLabel,
+    createSiteToken,
+    getApUnitNumber,
+    groupBySite,
+    toWorldCoordinates,
+    getMapHierarchyLevel,
+    groupByRegionGrid,
+    buildMapGroups,
+    buildMapGroupCandidates,
+    getMarkerMetrics,
+    getMarkerBounds,
+    markerBoundsOverlap,
+    expandMarkerBounds,
+    createSpatialHash,
+    findNearestAvailableMarkerSlot,
+    layoutSiteMarkers,
+    layoutMapGroups,
+  } = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'createSiteToken',
+      'getApUnitNumber',
+      'groupBySite',
+      'toWorldCoordinates',
+      'getMapHierarchyLevel',
+      'groupByRegionGrid',
+      'buildMapGroups',
+      'buildMapGroupCandidates',
+      'getMarkerMetrics',
+      'getMarkerBounds',
+      'markerBoundsOverlap',
+      'expandMarkerBounds',
+      'createSpatialHash',
+      'findNearestAvailableMarkerSlot',
+      'layoutSiteMarkers',
+      'layoutMapGroups',
+    ],
+    ['const AP_UNITS =', 'const SITE_WORLD_COORDINATES ='],
   );
   const renderedScale = 362 / 1600;
-  const laidOut = layoutSiteMarkers(groupBySite(artworks), renderedScale);
+  const siteGroups = groupBySite(artworks);
+  const laidOut = layoutMapGroups(artworks, 1, renderedScale, {});
 
+  assert.ok(laidOut.length < siteGroups.length);
   for (let index = 0; index < laidOut.length; index += 1) {
     assert.ok(laidOut[index].bounds.left >= 0, `${laidOut[index].siteName} crosses left edge`);
     assert.ok(laidOut[index].bounds.right <= 1600, `${laidOut[index].siteName} crosses right edge`);
@@ -745,6 +814,7 @@ test('unit to region to site branch refinement stays stable and layout-safe on m
   });
   const mobileScale = (zoomScale) => (362 / 1600) * zoomScale;
   const approvedWorks = parseArtworkData(html);
+  assert.equal(helpers.groupBySite(approvedWorks).length, 24);
   for (const zoomScale of [1, 1.5, 1.75, 2.5, 3]) {
     const approvedLayout = helpers.layoutMapGroups(
       approvedWorks,
@@ -752,8 +822,13 @@ test('unit to region to site branch refinement stays stable and layout-safe on m
       mobileScale(zoomScale),
       {},
     );
-    assert.equal(approvedLayout.length, 15);
-    assert.ok(approvedLayout.every((group) => group.kind === 'site'));
+    if (zoomScale === 1) {
+      assert.equal(approvedLayout.length, 3);
+      assert.ok(approvedLayout.every((group) => group.kind === 'region'));
+    } else {
+      assert.equal(approvedLayout.length, 24);
+      assert.ok(approvedLayout.every((group) => group.kind === 'site'));
+    }
   }
   const overview = helpers.layoutMapGroups(artworks, 1, mobileScale(1), {});
   assert.ok(overview.every((group) => group.kind === 'unit'));
@@ -997,9 +1072,10 @@ test('expanded pins fit every collision-safe site center at mobile scale', async
     ['const SITE_WORLD_COORDINATES ='],
   );
   const screenScale = 362 / 1600;
-  const groups = layoutSiteMarkers(groupBySite(artworks), screenScale);
+  const groupedSites = groupBySite(artworks).filter((group) => group.works.length > 1);
+  const groups = layoutSiteMarkers(groupedSites, screenScale);
 
-  groups.filter((group) => group.works.length > 1).forEach((group) => {
+  groups.forEach((group) => {
     assert.doesNotThrow(
       () => expandedPinPositions(
         group,
@@ -1099,9 +1175,11 @@ test('compact mode follows actual spider capacity at embedded map scales', async
   );
 
   for (const screenScale of [0.22625, 0.253, 0.27, 0.5]) {
-    const groups = helpers.layoutSiteMarkers(helpers.groupBySite(artworks), screenScale);
+    const groupedSites = helpers.groupBySite(artworks)
+      .filter((group) => group.works.length > 1);
+    const groups = helpers.layoutSiteMarkers(groupedSites, screenScale);
     const obstacles = groups.map((group) => group.bounds);
-    groups.filter((group) => group.works.length > 1).forEach((group) => {
+    groups.forEach((group) => {
       assert.equal(
         helpers.shouldUseCompactExpandedList(
           group,
