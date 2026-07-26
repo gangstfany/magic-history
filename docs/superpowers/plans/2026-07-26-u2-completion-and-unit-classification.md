@@ -45,39 +45,16 @@ Use this Node executable in all commands:
 - Modify: `scripts/validate-art-history-data.mjs`
 - Modify: `art-history-map.html`
 
-- [ ] **Step 1: Replace the 27-work manifest test with the official U2 manifest**
+- [ ] **Step 1: Add a failing schema-migration test for the existing 27 works**
 
-In `tests/art-history-data.test.mjs`, replace `EXPECTED_AP_NUMBERS` and its test with:
+Keep the existing exact 27-work manifest until Task 3 imports the missing records. Add:
 
 ```js
-const EXPECTED_AP_NUMBERS = Array.from({ length: 36 }, (_, index) => index + 12);
-const EXPECTED_NEW_IDS = [
-  'ap12-white-temple-ziggurat',
-  'ap14-statues-votive-figures',
-  'ap16-standard-of-ur',
-  'ap19-code-of-hammurabi',
-  'ap25-lamassu-sargon-ii',
-  'ap29-sarcophagus-of-the-spouses',
-  'ap30-apadana-darius-xerxes',
-  'ap31-temple-minerva-apollo',
-  'ap32-tomb-of-the-triclinium',
-];
-
-test('contains the complete official U2 AP 12-47 manifest', async () => {
+test('existing records are normalized to the U2 culture and region model', async () => {
   const artworks = await loadAndValidate();
-  const apNumbers = artworks.map(({ apNumber }) => apNumber).sort((a, b) => a - b);
-  assert.deepEqual(apNumbers, EXPECTED_AP_NUMBERS);
-  assert.equal(artworks.length, 36);
   assert.ok(artworks.every(({ unit }) => unit === 2));
-});
-
-test('adds exactly the nine previously missing U2 works', async () => {
-  const artworks = await loadAndValidate();
-  const actual = artworks
-    .filter(({ id }) => EXPECTED_NEW_IDS.includes(id))
-    .map(({ id }) => id)
-    .sort();
-  assert.deepEqual(actual, EXPECTED_NEW_IDS.slice().sort());
+  assert.ok(artworks.every(({ culture }) => typeof culture === 'string'));
+  assert.ok(artworks.every(({ region }) => typeof region === 'string'));
 });
 ```
 
@@ -116,7 +93,7 @@ Run:
 /Users/tiffanyxu/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node --test tests/art-history-data.test.mjs tests/art-history-ui-numbering.test.mjs
 ```
 
-Expected: failure because only 27 records exist and `AP_UNITS`, `getUnitById()`, and the corrected Unit 6-9 boundaries are not implemented.
+Expected: failure because normalized Unit/culture/region metadata, `AP_UNITS`, `getUnitById()`, and the corrected Unit 6-9 boundaries are not implemented.
 
 - [ ] **Step 4: Add centralized Unit, culture, and region configuration**
 
@@ -229,7 +206,7 @@ Run:
 /Users/tiffanyxu/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node --test tests/art-history-data.test.mjs
 ```
 
-Expected: manifest tests still fail because the nine records are not added; schema errors for the existing 27 records are gone.
+Expected: all Task 1 tests pass; the existing exact 27-work manifest remains locked until Task 3.
 
 - [ ] **Step 8: Commit the model and validator slice**
 
@@ -499,11 +476,41 @@ rg -n "TODO|TBD|FIXME|placeholder|example\\.com" docs/data-sources/u2-missing-wo
 
 Expected: no matches.
 
-- [ ] **Step 2: Add failing tests for exact identifiers, sites, and single-image credits**
+- [ ] **Step 2: Replace the manifest test and add failing tests for exact identifiers, sites, and single-image credits**
 
 In `tests/art-history-data.test.mjs`:
 
 ```js
+const EXPECTED_AP_NUMBERS = Array.from({ length: 36 }, (_, index) => index + 12);
+const EXPECTED_NEW_IDS = [
+  'ap12-white-temple-ziggurat',
+  'ap14-statues-votive-figures',
+  'ap16-standard-of-ur',
+  'ap19-code-of-hammurabi',
+  'ap25-lamassu-sargon-ii',
+  'ap29-sarcophagus-of-the-spouses',
+  'ap30-apadana-darius-xerxes',
+  'ap31-temple-minerva-apollo',
+  'ap32-tomb-of-the-triclinium',
+];
+
+test('contains the complete official U2 AP 12-47 manifest', async () => {
+  const artworks = await loadAndValidate();
+  const apNumbers = artworks.map(({ apNumber }) => apNumber).sort((a, b) => a - b);
+  assert.deepEqual(apNumbers, EXPECTED_AP_NUMBERS);
+  assert.equal(artworks.length, 36);
+  assert.ok(artworks.every(({ unit }) => unit === 2));
+});
+
+test('adds exactly the nine previously missing U2 works', async () => {
+  const artworks = await loadAndValidate();
+  const actual = artworks
+    .filter(({ id }) => EXPECTED_NEW_IDS.includes(id))
+    .map(({ id }) => id)
+    .sort();
+  assert.deepEqual(actual, EXPECTED_NEW_IDS.slice().sort());
+});
+
 const EXPECTED_NEW_WORKS = new Map([
   [12, ['ap12-white-temple-ziggurat', 'Uruk, Iraq', 'ancientNearEast']],
   [14, ['ap14-statues-votive-figures', 'Eshnunna (Tell Asmar), Iraq', 'ancientNearEast']],
