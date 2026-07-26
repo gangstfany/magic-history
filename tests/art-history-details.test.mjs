@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
+const SOURCE_WORKSHEET_PATH = new URL(
+  '../docs/data-sources/u2-missing-works.md',
+  import.meta.url,
+);
+const EXPECTED_CED_SOURCE = '[College Board AP Art History CED](https://apcentral.collegeboard.org/media/pdf/ap-art-history-course-and-exam-description.pdf)';
 const ORIGINAL_ARTWORK_IDS = [
   'ap13-palette-of-king-narmer',
   'ap15-seated-scribe',
@@ -43,6 +48,145 @@ const NEW_ARTWORK_IDS = [
   'ap31-temple-minerva-apollo',
   'ap32-tomb-of-the-triclinium',
 ];
+const EXPECTED_NEW_ARTWORK_MEDIA = {
+  'ap12-white-temple-ziggurat': {
+    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Uruk_(3).jpg',
+    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Uruk_(3).jpg',
+    creatorOrInstitution: '摄影：tobeytravels；来源机构：Wikimedia Commons',
+    licenseName: 'CC BY-SA 2.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.0/',
+  },
+  'ap14-statues-votive-figures': {
+    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sumerian_Status_from_Tell_Asmar,_part_of_the_Tell_Asmar_Hoard.jpg',
+    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Sumerian_Status_from_Tell_Asmar,_part_of_the_Tell_Asmar_Hoard.jpg',
+    creatorOrInstitution: '摄影：Osama Shukir Muhammed Amin FRCP(Glasg)；来源机构：Wikimedia Commons',
+    licenseName: 'CC BY-SA 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+  },
+  'ap16-standard-of-ur': {
+    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Denis_Bourez_-_British_Museum,_London_(8747049029)_(2).jpg',
+    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Denis_Bourez_-_British_Museum,_London_(8747049029)_(2).jpg',
+    creatorOrInstitution: '摄影：Denis Bourez；来源机构：Wikimedia Commons / British Museum',
+    licenseName: 'CC BY 2.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by/2.0/',
+  },
+  'ap19-code-of-hammurabi': {
+    imageUrl: 'https://www.worldhistory.org/image/14341/code-of-hammurabi/download/',
+    imageSourceUrl: 'https://www.worldhistory.org/image/14341/code-of-hammurabi/',
+    creatorOrInstitution: '摄影：Larry Koester；来源机构：World History Encyclopedia / Louvre Museum',
+    licenseName: 'CC BY 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+  },
+  'ap25-lamassu-sargon-ii': {
+    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Lamassu_(Winged_Bull)_of_Throne_Room_of_Palace_of_Sargon_II,_Khorsabad,_Assyria_(28218791021).jpg',
+    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Lamassu_(Winged_Bull)_of_Throne_Room_of_Palace_of_Sargon_II,_Khorsabad,_Assyria_(28218791021).jpg',
+    creatorOrInstitution: '摄影：Gary Todd；来源机构：Wikimedia Commons / Louvre Museum',
+    licenseName: 'CC0 1.0',
+    licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
+  },
+  'ap29-sarcophagus-of-the-spouses': {
+    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sarcofago_degli_Sposi_Villa_Giulia.jpg',
+    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Sarcofago_degli_Sposi_Villa_Giulia.jpg',
+    creatorOrInstitution: '摄影：Tutorialwiki；来源机构：Wikimedia Commons / Museo Nazionale Etrusco di Villa Giulia',
+    licenseName: 'CC BY-SA 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+  },
+  'ap30-apadana-darius-xerxes': {
+    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Persepolis_-_Apadana_01.jpg',
+    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Persepolis_-_Apadana_01.jpg',
+    creatorOrInstitution: '摄影：Bernard Gagnon；来源机构：Wikimedia Commons',
+    licenseName: 'CC BY-SA 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+  },
+  'ap31-temple-minerva-apollo': {
+    imageUrl: 'https://www.worldhistory.org/image/5528/apollo-of-veii/download/',
+    imageSourceUrl: 'https://www.worldhistory.org/image/5528/apollo-of-veii/',
+    creatorOrInstitution: '摄影：Carole Raddato；来源机构：World History Encyclopedia / Museo Nazionale Etrusco di Villa Giulia',
+    licenseName: 'CC BY-NC-SA 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+  },
+  'ap32-tomb-of-the-triclinium': {
+    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Pittore_forse_attico,_affreschi_della_tomba_del_triclinio,_500-475_ac_ca,_01.jpg',
+    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Pittore_forse_attico,_affreschi_della_tomba_del_triclinio,_500-475_ac_ca,_01.jpg',
+    creatorOrInstitution: '摄影：Sailko；来源机构：Wikimedia Commons / Museo Archeologico Nazionale di Tarquinia；许可提示：个人/学习用途允许，其他用途（尤其商业再利用）须另行获得意大利文化遗产主管部门授权',
+    licenseName: 'CC BY 3.0；另受意大利文化遗产再利用授权限制',
+    licenseUrl: 'https://commons.wikimedia.org/wiki/File:Pittore_forse_attico,_affreschi_della_tomba_del_triclinio,_500-475_ac_ca,_01.jpg',
+  },
+};
+const EXPECTED_SOURCE_WORKSHEET_ROWS = [
+  {
+    ap: '12',
+    id: '`ap12-white-temple-ziggurat`',
+    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, p. 6<br>[Smarthistory — White Temple and ziggurat](https://smarthistory.org/white-temple-and-ziggurat-uruk/)',
+    image: '[Uncropped White Temple and ziggurat view](https://commons.wikimedia.org/wiki/File:Uruk_(3).jpg)',
+    creator: 'tobeytravels / Wikimedia Commons',
+    license: '[CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/)',
+  },
+  {
+    ap: '14',
+    id: '`ap14-statues-votive-figures`',
+    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, p. 7<br>[Smarthistory — Standing Male Worshipper (Tell Asmar)](https://smarthistory.org/standing-male-worshipper-from-the-square-temple-at-eshnunna-tell-asmar/)',
+    image: '[Tell Asmar votive figures](https://commons.wikimedia.org/wiki/File:Sumerian_Status_from_Tell_Asmar,_part_of_the_Tell_Asmar_Hoard.jpg)',
+    creator: 'Osama Shukir Muhammed Amin FRCP(Glasg) / Wikimedia Commons',
+    license: '[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)',
+  },
+  {
+    ap: '16',
+    id: '`ap16-standard-of-ur`',
+    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, pp. 8–9<br>[Smarthistory — Standard of Ur](https://smarthistory.org/standard-of-ur-2/)',
+    image: '[Standard of Ur — complete object view](https://commons.wikimedia.org/wiki/File:Denis_Bourez_-_British_Museum,_London_(8747049029)_(2).jpg)',
+    creator: 'Denis Bourez / Wikimedia Commons / British Museum',
+    license: '[CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)',
+  },
+  {
+    ap: '19',
+    id: '`ap19-code-of-hammurabi`',
+    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, pp. 10–11<br>[Smarthistory — Law Code Stele of King Hammurabi](https://smarthistory.org/hammurabi-2/)',
+    image: '[Code of Hammurabi](https://www.worldhistory.org/image/14341/code-of-hammurabi/)',
+    creator: 'Larry Koester / World History Encyclopedia / Louvre Museum',
+    license: '[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)',
+  },
+  {
+    ap: '25',
+    id: '`ap25-lamassu-sargon-ii`',
+    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, pp. 14–15<br>[Smarthistory — Lamassu from the citadel of Sargon II](https://smarthistory.org/lamassu-from-the-citadel-of-sargon-ii/)',
+    image: '[Lamassu from Sargon II’s palace](https://commons.wikimedia.org/wiki/File:Lamassu_%28Winged_Bull%29_of_Throne_Room_of_Palace_of_Sargon_II,_Khorsabad,_Assyria_%2828218791021%29.jpg)',
+    creator: 'Gary Todd / Wikimedia Commons / Louvre Museum',
+    license: '[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)',
+  },
+  {
+    ap: '29',
+    id: '`ap29-sarcophagus-of-the-spouses`',
+    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, p. 16<br>[Smarthistory — Sarcophagus of the Spouses (Rome)](https://smarthistory.org/sarcophagus-of-the-spouses-rome/)',
+    image: '[Sarcophagus of the Spouses](https://commons.wikimedia.org/wiki/File:Sarcofago_degli_Sposi_Villa_Giulia.jpg)',
+    creator: 'Tutorialwiki / Wikimedia Commons / Museo Nazionale Etrusco di Villa Giulia',
+    license: '[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)',
+  },
+  {
+    ap: '30',
+    id: '`ap30-apadana-darius-xerxes`',
+    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, p. 17<br>[Smarthistory — Persepolis: The Audience Hall of Darius and Xerxes](https://smarthistory.org/persepolis-the-audience-hall-of-darius-and-xerxes/)',
+    image: '[Persepolis — Apadana](https://commons.wikimedia.org/wiki/File:Persepolis_-_Apadana_01.jpg)',
+    creator: 'Bernard Gagnon / Wikimedia Commons',
+    license: '[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)',
+  },
+  {
+    ap: '31',
+    id: '`ap31-temple-minerva-apollo`',
+    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, pp. 17–18<br>[Smarthistory — Temple of Minerva and the sculpture of Apollo (Veii)](https://smarthistory.org/temple-of-minerva-and-the-sculpture-of-apollo-veii/)',
+    image: '[Apollo of Veii](https://www.worldhistory.org/image/5528/apollo-of-veii/)',
+    creator: 'Carole Raddato / World History Encyclopedia / Museo Nazionale Etrusco di Villa Giulia',
+    license: '[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)',
+  },
+  {
+    ap: '32',
+    id: '`ap32-tomb-of-the-triclinium`',
+    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, pp. 18–19<br>[Smarthistory — Tomb of the Triclinium](https://smarthistory.org/tomb-of-the-triclinium/)',
+    image: '[Tomb of the Triclinium frescoes](https://commons.wikimedia.org/wiki/File:Pittore_forse_attico,_affreschi_della_tomba_del_triclinio,_500-475_ac_ca,_01.jpg)',
+    creator: 'Sailko / Wikimedia Commons / Museo Archeologico Nazionale di Tarquinia',
+    license: '[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/); Italian cultural-heritage rules permit personal/study use, but require further authorization for other uses, especially commercial reuse ([Commons warning](https://commons.wikimedia.org/wiki/File:Pittore_forse_attico,_affreschi_della_tomba_del_triclinio,_500-475_ac_ca,_01.jpg))',
+  },
+];
 
 async function loadHtml() {
   return readFile(HTML_PATH, 'utf8');
@@ -54,6 +198,19 @@ function parseJsonBlock(html, id) {
   ));
   assert.ok(match, `missing ${id} JSON block`);
   return JSON.parse(match[1]);
+}
+
+function parseSourceWorksheet(markdown) {
+  return markdown
+    .split('\n')
+    .filter((line) => /^\|\s*\d+\s*\|/.test(line))
+    .map((line) => {
+      const [ap, id, identifying, study, image, creator, license, visual] = line
+        .slice(1, -1)
+        .split('|')
+        .map((cell) => cell.trim());
+      return { ap, id, identifying, study, image, creator, license, visual };
+    });
 }
 
 test('detail view exposes four accessible study tabs', async () => {
@@ -119,6 +276,53 @@ test('AP 15 uses the Louvre E 3023 Seated Scribe image and matching credit', asy
     licenseName: 'CC0 1.0',
     licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
   });
+});
+
+test('nine imported works use the exact verified image sources and credits', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+
+  for (const [id, expected] of Object.entries(EXPECTED_NEW_ARTWORK_MEDIA)) {
+    const artwork = artworks.find((candidate) => candidate.id === id);
+    assert.ok(artwork, `missing ${id}`);
+    assert.equal(artwork.imageUrl, expected.imageUrl, `${id} image URL`);
+    assert.equal(artwork.imageSourceUrl, expected.imageSourceUrl, `${id} source URL`);
+    assert.deepEqual(
+      credits[id],
+      {
+        creatorOrInstitution: expected.creatorOrInstitution,
+        licenseName: expected.licenseName,
+        licenseUrl: expected.licenseUrl,
+      },
+      `${id} image credit`,
+    );
+  }
+});
+
+test('Unit 2 source worksheet has nine exact verified rows and study links', async () => {
+  const markdown = await readFile(SOURCE_WORKSHEET_PATH, 'utf8');
+  const rows = parseSourceWorksheet(markdown);
+
+  assert.equal(rows.length, 9);
+  assert.deepEqual(
+    rows.map(({ id }) => id),
+    NEW_ARTWORK_IDS.map((id) => `\`${id}\``),
+  );
+  for (const [index, expected] of EXPECTED_SOURCE_WORKSHEET_ROWS.entries()) {
+    const row = rows[index];
+    assert.equal(row.ap, expected.ap, `${expected.id} AP number`);
+    assert.equal(row.id, expected.id, `${expected.id} id`);
+    assert.equal(row.identifying, EXPECTED_CED_SOURCE, `${expected.id} CED source`);
+    assert.equal(row.study, expected.study, `${expected.id} study sources`);
+    assert.equal(row.image, expected.image, `${expected.id} image source`);
+    assert.equal(row.creator, expected.creator, `${expected.id} creator`);
+    assert.equal(row.license, expected.license, `${expected.id} license`);
+    assert.equal(row.visual, 'complete subject visible', `${expected.id} visual check`);
+    assert.match(row.study, /https:\/\/smarthistory\.org\//, `${expected.id} Smarthistory URL`);
+    assert.ok(row.image, `${expected.id} needs an image source`);
+    assert.ok(row.license, `${expected.id} needs a license`);
+  }
 });
 
 test('preserves the original 27 ids and gives all 36 works one credited image', async () => {

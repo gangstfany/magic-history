@@ -24,7 +24,7 @@ const EXPECTED_NEW_WORKS = [
   {
     apNumber: 14,
     id: 'ap14-statues-votive-figures',
-    title: 'Statues of votive figures, from the Square Temple at Eshnunna',
+    title: 'Statues of votive figures, from the Square Temple at Eshnunna (modern Tell Asmar, Iraq)',
     site: 'Eshnunna (Tell Asmar), Iraq',
     culture: 'ancientNearEast',
     region: 'middleEast',
@@ -32,7 +32,7 @@ const EXPECTED_NEW_WORKS = [
   {
     apNumber: 16,
     id: 'ap16-standard-of-ur',
-    title: 'Standard of Ur from the Royal Tombs at Ur',
+    title: 'Standard of Ur from the Royal Tombs at Ur (modern Tell el-Muqayyar, Iraq)',
     site: 'Ur, Iraq',
     culture: 'ancientNearEast',
     region: 'middleEast',
@@ -48,7 +48,7 @@ const EXPECTED_NEW_WORKS = [
   {
     apNumber: 25,
     id: 'ap25-lamassu-sargon-ii',
-    title: 'Lamassu from the citadel of Sargon II, Dur Sharrukin',
+    title: 'Lamassu from the citadel of Sargon II, Dur Sharrukin (modern Khorsabad, Iraq)',
     site: 'Dur Sharrukin (Khorsabad), Iraq',
     culture: 'ancientNearEast',
     region: 'middleEast',
@@ -72,7 +72,7 @@ const EXPECTED_NEW_WORKS = [
   {
     apNumber: 31,
     id: 'ap31-temple-minerva-apollo',
-    title: 'Temple of Minerva and sculpture of Apollo',
+    title: 'Temple of Minerva (Veii, near Rome, Italy) and sculpture of Apollo',
     site: 'Veii, Italy',
     culture: 'etruscan',
     region: 'southernEurope',
