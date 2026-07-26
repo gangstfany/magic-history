@@ -340,6 +340,7 @@ test('Unit toolbar uses one accessible Unit select and an English culture group'
 
   assert.equal((html.match(/<select id="unitFilter"/g) || []).length, 1);
   assert.match(html, /<div id="cultureFilters" class="culture-filters" role="group" aria-label="Culture"><\/div>/);
+  assert.match(getCssDeclarations(html, '.culture-filters[hidden]'), /display:\s*none/);
   for (const label of ['All cultures', 'Ancient Near East', 'Egypt', 'Greece', 'Etruscan', 'Rome']) {
     assert.match(html, new RegExp(label));
   }
