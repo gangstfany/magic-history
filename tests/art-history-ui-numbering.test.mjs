@@ -257,6 +257,28 @@ test('compact AP number helpers preserve gaps and merge consecutive ranges', asy
   );
 });
 
+test('official AP unit helpers use every published unit boundary', async () => {
+  const html = await loadHtml();
+  const { getUnitById, getApUnitNumber } = loadPureFunctions(
+    html,
+    ['getUnitById', 'getApUnitNumber'],
+    ['const AP_UNITS ='],
+  );
+  const boundaries = [
+    [1, 1], [11, 1], [12, 2], [47, 2], [48, 3], [98, 3], [99, 4], [152, 4],
+    [153, 5], [166, 5], [167, 6], [180, 6], [181, 7], [191, 7], [192, 8],
+    [212, 8], [213, 9], [223, 9], [224, 10], [250, 10],
+  ];
+
+  for (const [apNumber, unitId] of boundaries) {
+    assert.equal(getApUnitNumber(apNumber), unitId, `AP #${apNumber}`);
+  }
+  assert.equal(getApUnitNumber(0), null);
+  assert.equal(getApUnitNumber(251), null);
+  assert.equal(getUnitById(2).nameEn, 'Ancient Mediterranean');
+  assert.equal(getUnitById(2).requiredCount, 36);
+});
+
 test('site works sort by numeric AP number before id', async () => {
   const html = await loadHtml();
   const { compactApNumbers, formatApGroupLabel, createSiteToken, groupBySite } =
@@ -461,7 +483,7 @@ test('250-work map falls back to a collision-safe hierarchy at every mobile zoom
       'layoutSiteMarkers',
       'layoutMapGroups',
     ],
-    ['const SITE_WORLD_COORDINATES ='],
+    ['const AP_UNITS =', 'const SITE_WORLD_COORDINATES ='],
   );
   const artworks = Array.from({ length: 250 }, (_, index) => {
     const apNumber = index + 1;
@@ -526,7 +548,7 @@ test('unit to region to site branch refinement stays stable and layout-safe on m
       'layoutSiteMarkers',
       'layoutMapGroups',
     ],
-    ['const SITE_WORLD_COORDINATES ='],
+    ['const AP_UNITS =', 'const SITE_WORLD_COORDINATES ='],
   );
   const artworks = Array.from({ length: 250 }, (_, index) => {
     const apNumber = index + 1;

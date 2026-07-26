@@ -40,6 +40,18 @@ test('contains the exact approved 27-work manifest', async () => {
   assert.deepEqual(apNumbers, EXPECTED_AP_NUMBERS);
 });
 
+test('assigns every current work to Unit 2 with culture and region metadata', async () => {
+  const artworks = await loadAndValidate();
+
+  for (const artwork of artworks) {
+    assert.equal(artwork.unit, 2, `${artwork.id} must be in Unit 2`);
+    assert.equal(typeof artwork.culture, 'string', `${artwork.id} must have a culture`);
+    assert.ok(artwork.culture.trim(), `${artwork.id} must have a non-empty culture`);
+    assert.equal(typeof artwork.region, 'string', `${artwork.id} must have a region`);
+    assert.ok(artwork.region.trim(), `${artwork.id} must have a non-empty region`);
+  }
+});
+
 test('uses unique artwork ids and AP numbers', async () => {
   const artworks = await loadAndValidate();
   const ids = artworks.map(({ id }) => id);

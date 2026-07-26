@@ -7,7 +7,9 @@ const REQUIRED_FIELDS = [
   'apNumber',
   'titleEn',
   'titleZh',
-  'civilization',
+  'unit',
+  'culture',
+  'region',
   'period',
   'date',
   'artistCulture',
@@ -28,9 +30,10 @@ const REQUIRED_FIELDS = [
   'keywords',
 ];
 const STRING_FIELDS = REQUIRED_FIELDS.filter(
-  (field) => !['apNumber', 'coordinates', 'recognitionAnchors', 'comparisonIds', 'keywords'].includes(field),
+  (field) => !['apNumber', 'unit', 'coordinates', 'recognitionAnchors', 'comparisonIds', 'keywords'].includes(field),
 );
-const CIVILIZATIONS = new Set(['egypt', 'greece', 'rome']);
+const U2_CULTURES = new Set(['ancientNearEast', 'egypt', 'greece', 'etruscan', 'rome']);
+const MAP_REGIONS = new Set(['middleEast', 'northAfrica', 'southernEurope']);
 
 function fail(message) {
   throw new Error(`Invalid artwork data: ${message}`);
@@ -82,8 +85,17 @@ export function validateArtworks(artworks) {
     if (!Number.isInteger(artwork.apNumber) || artwork.apNumber <= 0) {
       fail(`${label}.apNumber must be a positive integer`);
     }
-    if (!CIVILIZATIONS.has(artwork.civilization)) {
-      fail(`${label}.civilization must be egypt, greece, or rome`);
+    if (artwork.unit !== 2) {
+      fail(`${label}.unit must be 2`);
+    }
+    if (artwork.apNumber < 12 || artwork.apNumber > 47) {
+      fail(`${label}.apNumber must be within the current Unit 2 range (12..47)`);
+    }
+    if (!U2_CULTURES.has(artwork.culture)) {
+      fail(`${label}.culture must be a valid Unit 2 culture`);
+    }
+    if (!MAP_REGIONS.has(artwork.region)) {
+      fail(`${label}.region must be middleEast, northAfrica, or southernEurope`);
     }
     if (ids.has(artwork.id)) {
       fail(`duplicate id ${artwork.id}`);
