@@ -279,6 +279,32 @@ test('official AP unit helpers use every published unit boundary', async () => {
   assert.equal(getUnitById(2).requiredCount, 36);
 });
 
+test('Unit 2 culture labels and map regions expose the migration interfaces', async () => {
+  const html = await loadHtml();
+  const configSource = [
+    getObjectDeclarationSource(html, 'const CULTURES_BY_UNIT ='),
+    getObjectDeclarationSource(html, 'const MAP_REGIONS ='),
+  ].join('\n');
+  const { CULTURES_BY_UNIT, MAP_REGIONS } = Function(
+    `"use strict"; ${configSource}; return { CULTURES_BY_UNIT, MAP_REGIONS };`,
+  )();
+
+  assert.deepEqual(
+    CULTURES_BY_UNIT[2].map(({ id, labelEn }) => [id, labelEn]),
+    [
+      ['all', 'All cultures'],
+      ['ancientNearEast', 'Ancient Near East'],
+      ['egypt', 'Egypt'],
+      ['greece', 'Greece'],
+      ['etruscan', 'Etruscan'],
+      ['rome', 'Rome'],
+    ],
+  );
+  assert.equal(MAP_REGIONS.middleEast?.nameEn, 'Middle East');
+  assert.equal(MAP_REGIONS.northAfrica?.nameEn, 'North Africa');
+  assert.equal(MAP_REGIONS.southernEurope?.nameEn, 'Southern Europe');
+});
+
 test('site works sort by numeric AP number before id', async () => {
   const html = await loadHtml();
   const { compactApNumbers, formatApGroupLabel, createSiteToken, groupBySite } =
