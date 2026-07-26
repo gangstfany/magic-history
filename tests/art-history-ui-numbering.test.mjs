@@ -259,6 +259,14 @@ test('compact AP number helpers preserve gaps and merge consecutive ranges', asy
 
 test('official AP unit helpers use every published unit boundary', async () => {
   const html = await loadHtml();
+  const configSource = [
+    getObjectDeclarationSource(html, 'const AP_UNITS ='),
+    getObjectDeclarationSource(html, 'const CULTURES_BY_UNIT ='),
+    getObjectDeclarationSource(html, 'const MAP_REGIONS ='),
+  ].join('\n');
+  const { AP_UNITS, CULTURES_BY_UNIT, MAP_REGIONS } = Function(
+    `"use strict"; ${configSource}; return { AP_UNITS, CULTURES_BY_UNIT, MAP_REGIONS };`,
+  )();
   const { getUnitById, getApUnitNumber } = loadPureFunctions(
     html,
     ['getUnitById', 'getApUnitNumber'],
@@ -270,6 +278,26 @@ test('official AP unit helpers use every published unit boundary', async () => {
     [212, 8], [213, 9], [223, 9], [224, 10], [250, 10],
   ];
 
+  assert.deepEqual(AP_UNITS, [
+    { id: 1, nameEn: 'Global Prehistory', start: 1, end: 11, requiredCount: 11 },
+    { id: 2, nameEn: 'Ancient Mediterranean', start: 12, end: 47, requiredCount: 36 },
+    { id: 3, nameEn: 'Early Europe and Colonial Americas', start: 48, end: 98, requiredCount: 51 },
+    { id: 4, nameEn: 'Later Europe and Americas', start: 99, end: 152, requiredCount: 54 },
+    { id: 5, nameEn: 'Indigenous Americas', start: 153, end: 166, requiredCount: 14 },
+    { id: 6, nameEn: 'Africa', start: 167, end: 180, requiredCount: 14 },
+    { id: 7, nameEn: 'West and Central Asia', start: 181, end: 191, requiredCount: 11 },
+    { id: 8, nameEn: 'South, East, and Southeast Asia', start: 192, end: 212, requiredCount: 21 },
+    { id: 9, nameEn: 'The Pacific', start: 213, end: 223, requiredCount: 11 },
+    { id: 10, nameEn: 'Global Contemporary', start: 224, end: 250, requiredCount: 27 },
+  ]);
+  assert.equal(Object.isFrozen(AP_UNITS), true);
+  assert.ok(AP_UNITS.every(Object.isFrozen));
+  assert.equal(Object.isFrozen(CULTURES_BY_UNIT), true);
+  assert.equal(Object.isFrozen(CULTURES_BY_UNIT[2]), true);
+  assert.ok(CULTURES_BY_UNIT[2].every(Object.isFrozen));
+  assert.equal(Object.isFrozen(MAP_REGIONS), true);
+  assert.ok(Object.values(MAP_REGIONS).every(Object.isFrozen));
+
   for (const [apNumber, unitId] of boundaries) {
     assert.equal(getApUnitNumber(apNumber), unitId, `AP #${apNumber}`);
   }
@@ -277,6 +305,8 @@ test('official AP unit helpers use every published unit boundary', async () => {
   assert.equal(getApUnitNumber(251), null);
   assert.equal(getUnitById(2).nameEn, 'Ancient Mediterranean');
   assert.equal(getUnitById(2).requiredCount, 36);
+  assert.equal(getUnitById(12), null);
+  assert.equal(getUnitById('2'), null);
 });
 
 test('Unit 2 culture labels and map regions expose the migration interfaces', async () => {
