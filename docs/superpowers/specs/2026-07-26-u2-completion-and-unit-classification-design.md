@@ -20,6 +20,43 @@ The change must preserve the approved World History-aligned typography, compact 
 - Use one primary image per artwork. Do not add a gallery, thumbnails, or a carousel.
 - Add the nine missing U2 works in the same delivery as the Unit classification.
 
+## Typography and Component Inheritance
+
+The corrected AP Art History page is the source of truth for every existing and new component. This delivery must not rescale the iframe, introduce a second font stack, or create independent type rules for Unit controls.
+
+All text inherits:
+
+```css
+"PingFang SC", "Hiragino Sans GB", -apple-system, "Helvetica Neue", sans-serif
+```
+
+The complete embedded type hierarchy remains:
+
+| Role | Size | Weight | Line height or geometry |
+| --- | ---: | ---: | --- |
+| Outer `AP Art History Map` title | 15px | 800 | Supplied by `index.html` |
+| English artwork title | 19px | 800 | Wraps without clipping |
+| Chinese artwork subtitle | 13px | 600 | Immediately below English title |
+| Detail and study body copy | 13.5px | 600 | Approximately 1.55 |
+| Metadata, counts, and dates | 12px | 600-700 | Compact secondary hierarchy |
+| Filter labels and select text | 12-13px | 600-700 | 34px desktop control height |
+| Study tabs | 13px | 600 | Selected tab 700 |
+| Small map/category labels | 10px | 700 | Never used for body copy |
+
+New components reuse those tokens:
+
+- Unit select: 13px, weight 600, 34px desktop height.
+- Culture pills: 13px, weight 600, 34px desktop height, existing 6px by 12px compact padding.
+- Unit-cluster code: 11px, weight 700.
+- Unit, region, and site subtitle: 10px, weight 600.
+- Individual AP-number pin: 10px, weight 700.
+- Detail-panel padding: 18px in embedded desktop mode.
+- Map controls: 30px by 30px on desktop, with the existing World History-aligned 20px zoom glyph and compact reset label.
+- Individual marker visual: 22px; grouped markers remain content-sized capsules at the same visual height.
+- Selects, pills, map controls, and markers recover a minimum 44px interaction target on narrow touch layouts.
+
+The new Unit selector and culture row must use the existing filter classes or shared design tokens. They must not duplicate the same appearance with separate one-off CSS.
+
 ## Official Unit Model
 
 The map data model will reserve these official Unit ranges:
