@@ -193,13 +193,13 @@ export async function startStaticServer(root = PROJECT_ROOT) {
   };
 }
 
-function installErrorCollection(page, label, { includeWarnings = false } = {}) {
+function installErrorCollection(page, label) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(`${label} pageerror: ${error.message}`));
   page.on('console', (message) => {
     if (
       message.type() === 'error'
-      || (includeWarnings && message.type() === 'warning')
+      || message.type() === 'warning'
     ) {
       errors.push(`${label} console ${message.type()}: ${message.text()}`);
     }
@@ -434,7 +434,13 @@ async function selectBoundaryFilters(frame) {
   assert.match(await frame.locator('.result-count').textContent(), /\b6\b/);
 }
 
-async function verifyStandalone(browser, baseUrl, viewport, full) {
+async function verifyStandalone(
+  browser,
+  baseUrl,
+  viewport,
+  full,
+  { injectConsoleWarning = false } = {},
+) {
   return withBrowserContext(browser, {
     viewport,
     reducedMotion: 'reduce',
@@ -462,6 +468,9 @@ async function verifyStandalone(browser, baseUrl, viewport, full) {
     } else {
       await selectBoundaryFilters(page);
       metrics = await assertCommonLayout(page, 'standalone', viewport);
+    }
+    if (injectConsoleWarning) {
+      await page.evaluate(() => console.warn('responsive warning regression'));
     }
     assert.deepEqual(errors, []);
     return metrics;
@@ -644,6 +653,15 @@ async function waitForLoadedImage(image) {
   assert.ok(await image.evaluate((element) => element.complete && element.naturalWidth > 0));
 }
 
+function assertSingleImageRequest(imageRequests, work, checkpoint) {
+  assert.equal(imageRequests.length, 1,
+    `${checkpoint} AP ${work.apNumber} should issue exactly one image request`,
+  );
+  assert.equal(imageRequests[0], work.imageUrl,
+    `${checkpoint} AP ${work.apNumber} requested image URL`,
+  );
+}
+
 async function verifyNineImportedWorks(page, frame, imageRequests, mode) {
   const verified = [];
   for (const work of NINE_IMPORTED_WORKS) {
@@ -675,13 +693,10 @@ async function verifyNineImportedWorks(page, frame, imageRequests, mode) {
     assert.equal(await inlineLicense.getAttribute('href'), work.credit.licenseUrl);
     assert.equal((await inlineLicense.textContent()).trim(), work.credit.licenseName);
 
-    assert.ok(imageRequests.length >= 1, `${mode} AP ${work.apNumber} should request its image`);
-    assert.deepEqual(
-      [...new Set(imageRequests)],
-      [work.imageUrl],
-      `${mode} AP ${work.apNumber} requested image URL`,
-    );
+    assertSingleImageRequest(imageRequests, work, `${mode} detail`);
 
+    const originalImageButton = await imageButton.elementHandle();
+    assert.ok(originalImageButton, `${mode} AP ${work.apNumber} original image button handle`);
     await imageButton.focus();
     await page.keyboard.press('Enter');
     const dialog = frame.locator('#imageDialog');
@@ -706,11 +721,27 @@ async function verifyNineImportedWorks(page, frame, imageRequests, mode) {
       `来源页：${work.imageSourceName}（查看原始文件）`,
     );
 
-    assert.deepEqual(
-      [...new Set(imageRequests)],
-      [work.imageUrl],
-      `${mode} AP ${work.apNumber} dialog must retain the audited image URL`,
+    assertSingleImageRequest(imageRequests, work, `${mode} open dialog`);
+
+    const originalViewport = page.viewportSize();
+    assert.ok(originalViewport, `${mode} AP ${work.apNumber} viewport`);
+    await page.setViewportSize({
+      width: originalViewport.width - 1,
+      height: originalViewport.height,
+    });
+    await frame.waitForFunction(
+      (element) => !element.isConnected,
+      originalImageButton,
     );
+    assert.equal(await originalImageButton.evaluate((element) => element.isConnected), false);
+    await frame.waitForFunction(
+      (element) => (
+        document.querySelector('.artwork-image-button')?.isConnected
+        && document.querySelector('.artwork-image-button') !== element
+      ),
+      originalImageButton,
+    );
+
     await page.keyboard.press('Enter');
     await dialog.waitFor({ state: 'hidden' });
     await frame.waitForFunction(() => (
@@ -723,6 +754,11 @@ async function verifyNineImportedWorks(page, frame, imageRequests, mode) {
       true,
       `${mode} AP ${work.apNumber} should restore focus to the current detail image button`,
     );
+    await page.setViewportSize(originalViewport);
+    await frame.waitForFunction(() => (
+      document.activeElement === document.querySelector('.artwork-image-button')
+    ));
+    assertSingleImageRequest(imageRequests, work, `${mode} closed dialog`);
     verified.push({
       apNumber: work.apNumber,
       imageUrl: work.imageUrl,
@@ -736,7 +772,7 @@ async function verifyImportedWorksStandalone(browser, baseUrl) {
   const viewport = { width: 1440, height: 900 };
   return withBrowserContext(browser, { viewport, reducedMotion: 'reduce' }, async (context) => {
     const page = await context.newPage();
-    const issues = installErrorCollection(page, 'nine works standalone', { includeWarnings: true });
+    const issues = installErrorCollection(page, 'nine works standalone');
     const imageRequests = [];
     await mockRemoteImages(page, (url) => imageRequests.push(url));
     await page.goto(`${baseUrl}/art-history-map.html`, { waitUntil: 'load' });
@@ -755,7 +791,7 @@ async function verifyImportedWorksEmbedded(browser, baseUrl) {
   const viewport = { width: 1024, height: 768 };
   return withBrowserContext(browser, { viewport, reducedMotion: 'reduce' }, async (context) => {
     const page = await context.newPage();
-    const issues = installErrorCollection(page, 'nine works embedded', { includeWarnings: true });
+    const issues = installErrorCollection(page, 'nine works embedded');
     const imageRequests = [];
     await mockRemoteImages(page, (url) => imageRequests.push(url));
     await page.goto(`${baseUrl}/index.html`, { waitUntil: 'load' });
@@ -768,6 +804,21 @@ async function verifyImportedWorksEmbedded(browser, baseUrl) {
     assert.deepEqual(issues, []);
     return { viewport, works };
   });
+}
+
+async function verifyResponsiveWarningRegression(browser, baseUrl) {
+  const viewport = { width: 519, height: 700 };
+  await assert.rejects(
+    verifyStandalone(
+      browser,
+      baseUrl,
+      viewport,
+      false,
+      { injectConsoleWarning: true },
+    ),
+    /responsive warning regression/,
+  );
+  return { viewport, warningRejected: true };
 }
 
 export async function runFocusedImportedVerification() {
@@ -784,6 +835,22 @@ export async function runFocusedImportedVerification() {
       standalone: await verifyImportedWorksStandalone(browser, server.baseUrl),
       embedded: await verifyImportedWorksEmbedded(browser, server.baseUrl),
     }),
+  });
+}
+
+export async function runFocusedWarningVerification() {
+  const playwright = await discoverPlaywright();
+  const executablePath = await discoverBrowser(playwright.chromium);
+  return runManagedVerification({
+    startServer: () => startStaticServer(),
+    launchBrowser: () => playwright.chromium.launch({
+      executablePath,
+      headless: true,
+      args: ['--disable-gpu', '--no-sandbox'],
+    }),
+    verify: async ({ server, browser }) => (
+      verifyResponsiveWarningRegression(browser, server.baseUrl)
+    ),
   });
 }
 
@@ -841,6 +908,8 @@ export async function runVerification() {
     }),
     verify: async ({ server, browser }) => {
       const report = [];
+      const warningRegression = await verifyResponsiveWarningRegression(browser, server.baseUrl);
+      report.push({ kind: 'warning-regression', ...warningRegression });
       for (const viewport of REQUIRED_VIEWPORTS) {
         const standalone = await verifyStandalone(browser, server.baseUrl, viewport, true);
         const embedded = await verifyEmbedded(browser, server.baseUrl, viewport, true);
@@ -867,9 +936,14 @@ const isMain = process.argv[1]
   && fileURLToPath(import.meta.url) === normalize(process.argv[1]);
 
 if (isMain) {
-  const verification = process.argv.includes('--imported-only')
-    ? runFocusedImportedVerification()
-    : runVerification();
+  let verification;
+  if (process.argv.includes('--imported-only')) {
+    verification = runFocusedImportedVerification();
+  } else if (process.argv.includes('--warning-regression-only')) {
+    verification = runFocusedWarningVerification();
+  } else {
+    verification = runVerification();
+  }
   verification
     .then((report) => {
       process.stdout.write(`${JSON.stringify({ ok: true, cases: report }, null, 2)}\n`);

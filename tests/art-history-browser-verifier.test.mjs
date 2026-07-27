@@ -106,6 +106,32 @@ test('nine-work browser fixture is canonical and independently matches source fi
   assert.match(verifierSource, /verifyNineImportedWorks/);
 });
 
+test('responsive browser modes reject console warnings by default', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+
+  assert.match(source, /function installErrorCollection\(page, label\)/);
+  assert.match(
+    source,
+    /message\.type\(\) === 'error'\s*\|\|\s*message\.type\(\) === 'warning'/,
+  );
+  assert.doesNotMatch(source, /includeWarnings/);
+  assert.match(source, /verifyResponsiveWarningRegression/);
+  assert.match(source, /console\.warn\('responsive warning regression'\)/);
+  assert.match(source, /assert\.rejects/);
+});
+
+test('nine-work traversal rejects duplicate requests and forces a real trigger-replacing rerender', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+
+  assert.match(source, /assert\.equal\(imageRequests\.length,\s*1/);
+  assert.match(source, /assert\.equal\(imageRequests\[0\],\s*work\.imageUrl/);
+  assert.doesNotMatch(source, /new Set\(imageRequests\)/);
+  assert.match(source, /const originalImageButton = await imageButton\.elementHandle\(\)/);
+  assert.match(source, /page\.setViewportSize\(/);
+  assert.match(source, /!element\.isConnected/);
+  assert.match(source, /document\.querySelector\('\.artwork-image-button'\) !== element/);
+});
+
 test('verification lifecycle closes the server when browser launch rejects', async () => {
   const { runManagedVerification } = await import(VERIFIER_URL.href);
   const events = [];
