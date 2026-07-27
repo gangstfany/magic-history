@@ -17,6 +17,7 @@ import {
 const execFileAsync = promisify(execFile);
 const VALIDATOR_PATH = fileURLToPath(new URL('../scripts/validate-art-history-data.mjs', import.meta.url));
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
+const U1_CANONICAL_PATH = new URL('./fixtures/u1-canonical.json', import.meta.url);
 const MANIFEST_PATHS = {
   1: new URL('../data/ap-art-history-unit-1-manifest.json', import.meta.url),
   2: new URL('../data/ap-art-history-unit-2-manifest.json', import.meta.url),
@@ -209,6 +210,21 @@ async function loadDocumentData() {
   };
 }
 
+test('live U1 records and credits match the reviewed canonical fixture', async () => {
+  const [{ artworks, credits }, fixture] = await Promise.all([
+    loadDocumentData(),
+    readFile(U1_CANONICAL_PATH, 'utf8').then(JSON.parse),
+  ]);
+  assert.deepEqual(
+    artworks.filter(({ unit }) => unit === 1),
+    fixture.artworks,
+  );
+  assert.deepEqual(
+    Object.fromEntries(fixture.artworks.map(({ id }) => [id, credits[id]])),
+    fixture.credits,
+  );
+});
+
 function makeUnit1Artworks(manifest) {
   const regions = [
     'africa',
@@ -271,10 +287,14 @@ function makeUnit1Credits(artworks) {
 }
 
 async function loadCompleteFixture() {
-  const [{ artworks: unit2Artworks, credits: unit2Credits }, manifests] = await Promise.all([
+  const [{ artworks, credits }, manifests] = await Promise.all([
     loadDocumentData(),
     loadManifests(),
   ]);
+  const unit2Artworks = artworks.filter(({ unit }) => unit === 2);
+  const unit2Credits = Object.fromEntries(
+    unit2Artworks.map(({ id }) => [id, credits[id]]),
+  );
   const unit1Artworks = makeUnit1Artworks(manifests[1]);
   return {
     artworks: [...unit1Artworks, ...unit2Artworks],
