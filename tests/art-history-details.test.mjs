@@ -348,13 +348,13 @@ test('source worksheet parser rejects rows with missing or extra cells', () => {
   );
 });
 
-test('keeps the complete official 36-work id set and one credit per image', async () => {
+test('keeps all 47 loaded works, the complete Unit 2 id set, and one credit per image', async () => {
   const html = await loadHtml();
   const artworks = parseJsonBlock(html, 'artwork-data');
   const credits = parseJsonBlock(html, 'image-credit-data');
   const artworkIds = artworks.map(({ id }) => id);
 
-  assert.equal(artworks.length, 36);
+  assert.equal(artworks.length, 47);
   for (const id of ORIGINAL_ARTWORK_IDS) {
     assert.ok(artworkIds.includes(id), `missing original artwork ${id}`);
   }
@@ -364,17 +364,26 @@ test('keeps the complete official 36-work id set and one credit per image', asyn
 
   assert.deepEqual(Object.keys(credits).sort(), artworks.map(({ id }) => id).sort());
   for (const artwork of artworks) {
-    assert.equal(typeof artwork.imageUrl, 'string', `${artwork.id} needs one image URL`);
-    assert.ok(artwork.imageUrl.trim(), `${artwork.id} needs a non-empty image URL`);
-    assert.equal(
-      Object.hasOwn(artwork, 'images'),
-      false,
-      `${artwork.id} must not introduce an image gallery`,
-    );
-    const credit = credits[artwork.id];
-    assert.ok(credit.creatorOrInstitution, `${artwork.id} missing creator or institution`);
-    assert.ok(credit.licenseName, `${artwork.id} missing license name`);
-    assert.match(credit.licenseUrl, /^https:\/\//, `${artwork.id} needs a linked license`);
+    const mediaItems = artwork.images ?? [artwork];
+    const creditItems = Array.isArray(credits[artwork.id])
+      ? credits[artwork.id]
+      : [credits[artwork.id]];
+    assert.equal(creditItems.length, mediaItems.length, `${artwork.id} needs one credit per image`);
+    mediaItems.forEach((media, index) => {
+      assert.equal(typeof media.imageUrl, 'string', `${artwork.id} image ${index + 1} needs a URL`);
+      assert.ok(media.imageUrl.trim(), `${artwork.id} image ${index + 1} needs a non-empty URL`);
+      const credit = creditItems[index];
+      assert.ok(credit.creatorOrInstitution, `${artwork.id} missing creator or institution`);
+      assert.ok(credit.licenseName, `${artwork.id} missing license name`);
+      assert.match(credit.licenseUrl, /^https:\/\//, `${artwork.id} needs a linked license`);
+    });
+    if (artwork.unit === 2) {
+      assert.equal(
+        Object.hasOwn(artwork, 'images'),
+        false,
+        `${artwork.id} must preserve the Unit 2 single-image model`,
+      );
+    }
   }
 
   assert.match(html, /function createImageCredit\(/);

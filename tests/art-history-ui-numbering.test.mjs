@@ -449,11 +449,12 @@ test('official AP unit helpers use every published unit boundary', async () => {
   const html = await loadHtml();
   const configSource = [
     getObjectDeclarationSource(html, 'const AP_UNITS ='),
-    getObjectDeclarationSource(html, 'const CULTURES_BY_UNIT ='),
+    getObjectDeclarationSource(html, 'const TRADITION_LABELS ='),
+    getObjectDeclarationSource(html, 'const UNIT_FILTER_CONFIG ='),
     getObjectDeclarationSource(html, 'const MAP_REGIONS ='),
   ].join('\n');
-  const { AP_UNITS, CULTURES_BY_UNIT, MAP_REGIONS } = Function(
-    `"use strict"; ${configSource}; return { AP_UNITS, CULTURES_BY_UNIT, MAP_REGIONS };`,
+  const { AP_UNITS, TRADITION_LABELS, UNIT_FILTER_CONFIG, MAP_REGIONS } = Function(
+    `"use strict"; ${configSource}; return { AP_UNITS, TRADITION_LABELS, UNIT_FILTER_CONFIG, MAP_REGIONS };`,
   )();
   const { getUnitById, getApUnitNumber } = loadPureFunctions(
     html,
@@ -480,11 +481,14 @@ test('official AP unit helpers use every published unit boundary', async () => {
   ]);
   assert.equal(Object.isFrozen(AP_UNITS), true);
   assert.ok(AP_UNITS.every(Object.isFrozen));
-  assert.equal(Object.isFrozen(CULTURES_BY_UNIT), true);
-  assert.equal(Object.isFrozen(CULTURES_BY_UNIT[2]), true);
-  assert.ok(CULTURES_BY_UNIT[2].every(Object.isFrozen));
+  assert.equal(Object.isFrozen(TRADITION_LABELS), true);
+  assert.ok(Object.values(TRADITION_LABELS).every(Object.isFrozen));
+  assert.equal(Object.isFrozen(UNIT_FILTER_CONFIG), true);
+  assert.ok(Object.values(UNIT_FILTER_CONFIG).every(Object.isFrozen));
+  assert.ok(Object.values(UNIT_FILTER_CONFIG).every(({ cultureIds }) => Object.isFrozen(cultureIds)));
   assert.equal(Object.isFrozen(MAP_REGIONS), true);
   assert.ok(Object.values(MAP_REGIONS).every(Object.isFrozen));
+  assert.ok(Object.values(MAP_REGIONS).every(({ unitIds }) => Object.isFrozen(unitIds)));
 
   for (const [apNumber, unitId] of boundaries) {
     assert.equal(getApUnitNumber(apNumber), unitId, `AP #${apNumber}`);
@@ -497,41 +501,52 @@ test('official AP unit helpers use every published unit boundary', async () => {
   assert.equal(getUnitById('2'), null);
 });
 
-test('Unit 2 culture labels and map regions expose the migration interfaces', async () => {
+test('Unit filter configuration, tradition labels, and map regions cover Units 1 and 2', async () => {
   const html = await loadHtml();
   const configSource = [
-    getObjectDeclarationSource(html, 'const CULTURES_BY_UNIT ='),
+    getObjectDeclarationSource(html, 'const TRADITION_LABELS ='),
+    getObjectDeclarationSource(html, 'const UNIT_FILTER_CONFIG ='),
     getObjectDeclarationSource(html, 'const MAP_REGIONS ='),
   ].join('\n');
-  const { CULTURES_BY_UNIT, MAP_REGIONS } = Function(
-    `"use strict"; ${configSource}; return { CULTURES_BY_UNIT, MAP_REGIONS };`,
+  const { TRADITION_LABELS, UNIT_FILTER_CONFIG, MAP_REGIONS } = Function(
+    `"use strict"; ${configSource}; return { TRADITION_LABELS, UNIT_FILTER_CONFIG, MAP_REGIONS };`,
   )();
 
   assert.deepEqual(
-    CULTURES_BY_UNIT[2].map(({ id, labelEn }) => [id, labelEn]),
-    [
-      ['all', 'All cultures'],
-      ['ancientNearEast', 'Ancient Near East'],
-      ['egypt', 'Egypt'],
-      ['greece', 'Greece'],
-      ['etruscan', 'Etruscan'],
-      ['rome', 'Rome'],
-    ],
+    UNIT_FILTER_CONFIG,
+    {
+      1: { showCultureFilters: false, cultureIds: [] },
+      2: {
+        showCultureFilters: true,
+        cultureIds: ['ancientNearEast', 'egypt', 'greece', 'etruscan', 'rome'],
+      },
+    },
   );
-  assert.deepEqual(
-    CULTURES_BY_UNIT[2].map(({ id, labelZh }) => [id, labelZh]),
-    [
-      ['all', '全部文化'],
-      ['ancientNearEast', '古代近东'],
-      ['egypt', '埃及'],
-      ['greece', '希腊'],
-      ['etruscan', '伊特鲁里亚'],
-      ['rome', '罗马'],
-    ],
-  );
+  assert.deepEqual(TRADITION_LABELS.prehistoricNamibia, {
+    labelEn: 'Prehistoric Namibia',
+    labelZh: '史前纳米比亚',
+  });
+  assert.deepEqual(TRADITION_LABELS.lapita, {
+    labelEn: 'Lapita',
+    labelZh: '拉皮塔',
+  });
+  assert.deepEqual(TRADITION_LABELS.ancientNearEast, {
+    labelEn: 'Ancient Near East',
+    labelZh: '古代近东',
+  });
+  assert.deepEqual(TRADITION_LABELS.rome, {
+    labelEn: 'Rome',
+    labelZh: '罗马',
+  });
+  assert.deepEqual(MAP_REGIONS.africa, { nameEn: 'Africa', unitIds: [1] });
+  assert.deepEqual(MAP_REGIONS.europe, { nameEn: 'Europe', unitIds: [1] });
+  assert.deepEqual(MAP_REGIONS.americas, { nameEn: 'Americas', unitIds: [1] });
+  assert.deepEqual(MAP_REGIONS.middleEast, { nameEn: 'Middle East', unitIds: [1, 2] });
+  assert.deepEqual(MAP_REGIONS.eastAsia, { nameEn: 'East Asia', unitIds: [1] });
+  assert.deepEqual(MAP_REGIONS.oceania, { nameEn: 'Oceania', unitIds: [1] });
   assert.equal(MAP_REGIONS.middleEast?.nameEn, 'Middle East');
-  assert.equal(MAP_REGIONS.northAfrica?.nameEn, 'North Africa');
-  assert.equal(MAP_REGIONS.southernEurope?.nameEn, 'Southern Europe');
+  assert.deepEqual(MAP_REGIONS.northAfrica, { nameEn: 'North Africa', unitIds: [2] });
+  assert.deepEqual(MAP_REGIONS.southernEurope, { nameEn: 'Southern Europe', unitIds: [2] });
 });
 
 test('detail metadata resolves every supported culture without undefined labels', async () => {
@@ -539,9 +554,20 @@ test('detail metadata resolves every supported culture without undefined labels'
   const { getCultureLabel, formatArtworkMeta } = loadPureFunctions(
     html,
     ['getCultureLabel', 'formatArtworkMeta'],
-    ['const CULTURES_BY_UNIT ='],
+    ['const TRADITION_LABELS ='],
   );
   const expected = {
+    prehistoricNamibia: '史前纳米比亚',
+    paleolithicEurope: '旧石器时代欧洲',
+    prehistoricCentralMexico: '史前墨西哥中部',
+    saharanPrehistory: '史前撒哈拉',
+    prehistoricSusa: '史前苏萨',
+    arabianPrehistory: '史前阿拉伯半岛',
+    liangzhu: '良渚',
+    neolithicEurope: '新石器时代欧洲',
+    papuaNewGuineaHighlands: '巴布亚新几内亚高地',
+    tlatilco: '特拉特尔科',
+    lapita: '拉皮塔',
     ancientNearEast: '古代近东',
     egypt: '埃及',
     greece: '希腊',
@@ -560,6 +586,21 @@ test('detail metadata resolves every supported culture without undefined labels'
     assert.match(metadata, new RegExp(`· ${label} ·`));
     assert.doesNotMatch(metadata, /undefined/);
   }
+  assert.equal(getCultureLabel('unknownTradition', 'zh'), 'unknownTradition');
+  assert.equal(getCultureLabel('unknownTradition', 'en'), 'unknownTradition');
+});
+
+test('culture filter visibility follows the selected Unit configuration', async () => {
+  const html = await loadHtml();
+  const source = getFunctionSource(html, 'renderCultureFilters');
+
+  assert.match(source, /state\.unit === 'all' \? null : Number\(state\.unit\)/);
+  assert.match(source, /UNIT_FILTER_CONFIG\[unitId\]/);
+  assert.match(source, /container\.hidden = !unitConfig\?\.showCultureFilters/);
+  assert.match(source, /container\.replaceChildren\(\)/);
+  assert.match(source, /\['all',\s*\.\.\.unitConfig\.cultureIds\]/);
+  assert.match(source, /cultureId === 'all' \? 'All cultures' : getCultureLabel\(cultureId, 'en'\)/);
+  assert.match(source, /updateCultureFilterSelection\(container, state\.culture\)/);
 });
 
 test('Unit toolbar uses one accessible Unit select and an English culture group', async () => {
@@ -745,6 +786,92 @@ test('English map hierarchy labels describe units, regions, and sites', async ()
   );
 });
 
+test('Unit 1 site projections use the approved exact world coordinates', async () => {
+  const html = await loadHtml();
+  const source = getObjectDeclarationSource(html, 'const SITE_WORLD_COORDINATES =');
+  const { SITE_WORLD_COORDINATES } = Function(
+    `"use strict"; ${source}; return { SITE_WORLD_COORDINATES };`,
+  )();
+
+  assert.deepEqual(
+    Object.fromEntries([
+      'Apollo 11 Cave, Namibia',
+      'Lascaux, France',
+      'Tequixquiac, central Mexico',
+      "Tassili n'Ajjer, Algeria",
+      'Susa, Iran',
+      'Arabian Peninsula',
+      'Liangzhu, China',
+      'Wiltshire, UK',
+      'Ambum Valley, Papua New Guinea',
+      'Tlatilco, central Mexico',
+      'Reef Islands, Solomon Islands',
+    ].map((siteName) => [siteName, SITE_WORLD_COORDINATES[siteName]])),
+    {
+      'Apollo 11 Cave, Namibia': { x: 875, y: 500 },
+      'Lascaux, France': { x: 829, y: 246 },
+      'Tequixquiac, central Mexico': { x: 405, y: 380 },
+      "Tassili n'Ajjer, Algeria": { x: 850, y: 360 },
+      'Susa, Iran': { x: 1018, y: 333 },
+      'Arabian Peninsula': { x: 1010, y: 410 },
+      'Liangzhu, China': { x: 1250, y: 345 },
+      'Wiltshire, UK': { x: 812, y: 218 },
+      'Ambum Valley, Papua New Guinea': { x: 1410, y: 515 },
+      'Tlatilco, central Mexico': { x: 405, y: 382 },
+      'Reef Islands, Solomon Islands': { x: 1510, y: 560 },
+    },
+  );
+});
+
+test('configured Unit 1 hierarchy exposes only its six regions with exact counts', async () => {
+  const html = await loadHtml();
+  const artworks = parseArtworkData(html);
+  const helpers = loadPureFunctions(
+    html,
+    [
+      'toWorldCoordinates',
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'createSiteToken',
+      'groupByConfiguredRegion',
+    ],
+    ['const MAP_REGIONS =', 'const SITE_WORLD_COORDINATES ='],
+  );
+  const groups = helpers.groupByConfiguredRegion(artworks, 1);
+
+  assert.deepEqual(
+    Object.fromEntries(groups.map(({ regionId, works }) => [regionId, works.length])),
+    { africa: 2, europe: 2, americas: 2, middleEast: 2, eastAsia: 1, oceania: 2 },
+  );
+  assert.deepEqual(
+    groups.map(({ regionId }) => regionId),
+    ['africa', 'europe', 'americas', 'middleEast', 'eastAsia', 'oceania'],
+  );
+  assert.ok(groups.every(({ works }) => works.every(({ unit }) => unit === 1)));
+  assert.ok(groups.every(({ regionId }) => !['northAfrica', 'southernEurope'].includes(regionId)));
+
+  const crossUnitRows = [
+    ...artworks,
+    {
+      ...artworks.find(({ unit }) => unit === 2),
+      id: 'wrong-unit-africa',
+      region: 'africa',
+    },
+    {
+      ...artworks.find(({ unit }) => unit === 1),
+      id: 'wrong-region-for-unit',
+      region: 'northAfrica',
+    },
+  ];
+  assert.deepEqual(
+    Object.fromEntries(
+      helpers.groupByConfiguredRegion(crossUnitRows, 1)
+        .map(({ regionId, works }) => [regionId, works.length]),
+    ),
+    { africa: 2, europe: 2, americas: 2, middleEast: 2, eastAsia: 1, oceania: 2 },
+  );
+});
+
 test('configured Unit 2 hierarchy follows real region and site metadata', async () => {
   const html = await loadHtml();
   const artworks = parseArtworkData(html);
@@ -773,10 +900,13 @@ test('configured Unit 2 hierarchy follows real region and site metadata', async 
     activeUnit: null,
     activeRegion: null,
   });
-  assert.equal(overview.length, 1);
-  assert.equal(overview[0].key, 'unit-2');
-  assert.equal(overview[0].kind, 'unit');
-  assert.equal(overview[0].works.length, 36);
+  assert.deepEqual(
+    overview.map(({ key, kind, works }) => ({ key, kind, count: works.length })),
+    [
+      { key: 'unit-1', kind: 'unit', count: 11 },
+      { key: 'unit-2', kind: 'unit', count: 36 },
+    ],
+  );
 
   const regions = helpers.buildMapGroups(artworks, 1, {
     selectedUnit: '2',
@@ -1072,7 +1202,7 @@ test('Unit 2 region hierarchy remains collision-safe in a 667x375 embedded lands
 
 test('complete Unit 2 keeps the configured hierarchy below the legacy site threshold', async () => {
   const html = await loadHtml();
-  const artworks = parseArtworkData(html);
+  const artworks = parseArtworkData(html).filter(({ unit }) => unit === 2);
   const helpers = loadPureFunctions(
     html,
     [
@@ -1446,7 +1576,7 @@ test('unit to region to site branch refinement stays stable and layout-safe on m
     };
   });
   const mobileScale = (zoomScale) => (362 / 1600) * zoomScale;
-  const approvedWorks = parseArtworkData(html);
+  const approvedWorks = parseArtworkData(html).filter(({ unit }) => unit === 2);
   assert.equal(helpers.groupBySite(approvedWorks).length, 24);
   for (const zoomScale of [1, 1.5, 1.75, 2.5, 3]) {
     const approvedOverview = helpers.layoutMapGroups(
@@ -1729,7 +1859,7 @@ test('expanded pins fit every collision-safe site center at mobile scale', async
 
 test('desktop expanded pins avoid their parent target and every other site marker', async () => {
   const html = await loadHtml();
-  const artworks = parseArtworkData(html);
+  const artworks = parseArtworkData(html).filter(({ unit }) => unit === 2);
   const {
     compactApNumbers,
     formatApGroupLabel,

@@ -502,20 +502,49 @@
       Object.freeze({ id: 9, nameEn: 'The Pacific', start: 213, end: 223, requiredCount: 11 }),
       Object.freeze({ id: 10, nameEn: 'Global Contemporary', start: 224, end: 250, requiredCount: 27 }),
     ]);
-    const CULTURES_BY_UNIT = Object.freeze({
-      2: Object.freeze([
-        Object.freeze({ id: 'all', labelEn: 'All cultures', labelZh: '全部文化' }),
-        Object.freeze({ id: 'ancientNearEast', labelEn: 'Ancient Near East', labelZh: '古代近东' }),
-        Object.freeze({ id: 'egypt', labelEn: 'Egypt', labelZh: '埃及' }),
-        Object.freeze({ id: 'greece', labelEn: 'Greece', labelZh: '希腊' }),
-        Object.freeze({ id: 'etruscan', labelEn: 'Etruscan', labelZh: '伊特鲁里亚' }),
-        Object.freeze({ id: 'rome', labelEn: 'Rome', labelZh: '罗马' }),
-      ]),
+    const TRADITION_LABELS = Object.freeze({
+      prehistoricNamibia: Object.freeze({ labelEn: 'Prehistoric Namibia', labelZh: '史前纳米比亚' }),
+      paleolithicEurope: Object.freeze({ labelEn: 'Paleolithic Europe', labelZh: '旧石器时代欧洲' }),
+      prehistoricCentralMexico: Object.freeze({ labelEn: 'Prehistoric Central Mexico', labelZh: '史前墨西哥中部' }),
+      saharanPrehistory: Object.freeze({ labelEn: 'Saharan Prehistory', labelZh: '史前撒哈拉' }),
+      prehistoricSusa: Object.freeze({ labelEn: 'Prehistoric Susa', labelZh: '史前苏萨' }),
+      arabianPrehistory: Object.freeze({ labelEn: 'Arabian Prehistory', labelZh: '史前阿拉伯半岛' }),
+      liangzhu: Object.freeze({ labelEn: 'Liangzhu', labelZh: '良渚' }),
+      neolithicEurope: Object.freeze({ labelEn: 'Neolithic Europe', labelZh: '新石器时代欧洲' }),
+      papuaNewGuineaHighlands: Object.freeze({ labelEn: 'Papua New Guinea Highlands', labelZh: '巴布亚新几内亚高地' }),
+      tlatilco: Object.freeze({ labelEn: 'Tlatilco', labelZh: '特拉特尔科' }),
+      lapita: Object.freeze({ labelEn: 'Lapita', labelZh: '拉皮塔' }),
+      ancientNearEast: Object.freeze({ labelEn: 'Ancient Near East', labelZh: '古代近东' }),
+      egypt: Object.freeze({ labelEn: 'Egypt', labelZh: '埃及' }),
+      greece: Object.freeze({ labelEn: 'Greece', labelZh: '希腊' }),
+      etruscan: Object.freeze({ labelEn: 'Etruscan', labelZh: '伊特鲁里亚' }),
+      rome: Object.freeze({ labelEn: 'Rome', labelZh: '罗马' }),
+    });
+    const UNIT_FILTER_CONFIG = Object.freeze({
+      1: Object.freeze({
+        showCultureFilters: false,
+        cultureIds: Object.freeze([]),
+      }),
+      2: Object.freeze({
+        showCultureFilters: true,
+        cultureIds: Object.freeze([
+          'ancientNearEast',
+          'egypt',
+          'greece',
+          'etruscan',
+          'rome',
+        ]),
+      }),
     });
     const MAP_REGIONS = Object.freeze({
-      middleEast: Object.freeze({ nameEn: 'Middle East' }),
-      northAfrica: Object.freeze({ nameEn: 'North Africa' }),
-      southernEurope: Object.freeze({ nameEn: 'Southern Europe' }),
+      africa: Object.freeze({ nameEn: 'Africa', unitIds: Object.freeze([1]) }),
+      europe: Object.freeze({ nameEn: 'Europe', unitIds: Object.freeze([1]) }),
+      americas: Object.freeze({ nameEn: 'Americas', unitIds: Object.freeze([1]) }),
+      middleEast: Object.freeze({ nameEn: 'Middle East', unitIds: Object.freeze([1, 2]) }),
+      eastAsia: Object.freeze({ nameEn: 'East Asia', unitIds: Object.freeze([1]) }),
+      oceania: Object.freeze({ nameEn: 'Oceania', unitIds: Object.freeze([1]) }),
+      northAfrica: Object.freeze({ nameEn: 'North Africa', unitIds: Object.freeze([2]) }),
+      southernEurope: Object.freeze({ nameEn: 'Southern Europe', unitIds: Object.freeze([2]) }),
     });
     const state = {
       unit: 'all',
@@ -533,6 +562,16 @@
       transform: { x: 0, y: 0, scale: 1 }
     };
     const SITE_WORLD_COORDINATES = {
+      'Apollo 11 Cave, Namibia': { x: 875, y: 500 },
+      'Lascaux, France': { x: 829, y: 246 },
+      'Tequixquiac, central Mexico': { x: 405, y: 380 },
+      "Tassili n'Ajjer, Algeria": { x: 850, y: 360 },
+      'Arabian Peninsula': { x: 1010, y: 410 },
+      'Liangzhu, China': { x: 1250, y: 345 },
+      'Wiltshire, UK': { x: 812, y: 218 },
+      'Ambum Valley, Papua New Guinea': { x: 1410, y: 515 },
+      'Tlatilco, central Mexico': { x: 405, y: 382 },
+      'Reef Islands, Solomon Islands': { x: 1510, y: 560 },
       'Amarna (Akhetaten)': { x: 958, y: 372 },
       'Anavysos, Attica': { x: 927, y: 309 },
       'Athens': { x: 926, y: 304 },
@@ -603,9 +642,7 @@
     }
 
     function getCultureLabel(cultureId, locale = 'zh') {
-      const culture = Object.values(CULTURES_BY_UNIT)
-        .flat()
-        .find((candidate) => candidate.id === cultureId);
+      const culture = TRADITION_LABELS[cultureId];
       if (!culture) return cultureId;
       return locale === 'en' ? culture.labelEn : culture.labelZh;
     }
@@ -721,7 +758,8 @@
     function groupByConfiguredRegion(works, unitId) {
       const groups = new Map();
       works.forEach((work) => {
-        if (work.unit !== unitId || !MAP_REGIONS[work.region]) return;
+        const region = MAP_REGIONS[work.region];
+        if (!(work.unit === unitId && region?.unitIds.includes(unitId))) return;
         const key = `unit-${unitId}-region-${work.region}`;
         if (!groups.has(key)) {
           groups.set(key, {
@@ -742,32 +780,34 @@
         group.worldXTotal += point.x;
         group.worldYTotal += point.y;
       });
-      return Object.keys(MAP_REGIONS).flatMap((regionId) => {
-        const group = groups.get(`unit-${unitId}-region-${regionId}`);
-        if (!group) return [];
-        const sortedWorks = group.works.slice().sort(
-          (first, second) => first.apNumber - second.apNumber || first.id.localeCompare(second.id)
-        );
-        const cultures = [...new Set(sortedWorks.map((work) => work.culture))].sort();
-        const apGroupLabel = formatApGroupLabel(sortedWorks);
-        return [{
-          key: group.key,
-          kind: group.kind,
-          regionId: group.regionId,
-          parentKey: group.parentKey,
-          unitId: group.unitId,
-          siteName: group.siteName,
-          worldX: group.worldXTotal / sortedWorks.length,
-          worldY: group.worldYTotal / sortedWorks.length,
-          culture: cultures.length === 1 ? cultures[0] : 'mixed',
-          cultures,
-          works: sortedWorks,
-          siteToken: createSiteToken([{ id:group.key }]),
-          apLabel: apGroupLabel.slice(3),
-          apGroupLabel,
-          apUnits: [unitId]
-        }];
-      });
+      return Object.keys(MAP_REGIONS)
+        .filter((regionId) => MAP_REGIONS[regionId].unitIds.includes(unitId))
+        .flatMap((regionId) => {
+          const group = groups.get(`unit-${unitId}-region-${regionId}`);
+          if (!group) return [];
+          const sortedWorks = group.works.slice().sort(
+            (first, second) => first.apNumber - second.apNumber || first.id.localeCompare(second.id)
+          );
+          const cultures = [...new Set(sortedWorks.map((work) => work.culture))].sort();
+          const apGroupLabel = formatApGroupLabel(sortedWorks);
+          return [{
+            key: group.key,
+            kind: group.kind,
+            regionId: group.regionId,
+            parentKey: group.parentKey,
+            unitId: group.unitId,
+            siteName: group.siteName,
+            worldX: group.worldXTotal / sortedWorks.length,
+            worldY: group.worldYTotal / sortedWorks.length,
+            culture: cultures.length === 1 ? cultures[0] : 'mixed',
+            cultures,
+            works: sortedWorks,
+            siteToken: createSiteToken([{ id:group.key }]),
+            apLabel: apGroupLabel.slice(3),
+            apGroupLabel,
+            apUnits: [unitId]
+          }];
+        });
     }
 
     function getMapHierarchyLevel(siteCount, zoomScale) {
@@ -1394,7 +1434,7 @@
       };
       Object.entries(expectedCounts).forEach(([culture, expected]) => {
         const actual = filterWorks(ARTWORKS, {
-          unit: 'all',
+          unit: '2',
           culture,
           period: '',
           workType: '',
@@ -1490,20 +1530,21 @@
 
     function renderCultureFilters() {
       const container = document.getElementById('cultureFilters');
-      const cultures = state.unit === 'all' ? null : CULTURES_BY_UNIT[Number(state.unit)];
+      const unitId = state.unit === 'all' ? null : Number(state.unit);
+      const unitConfig = unitId === null ? null : UNIT_FILTER_CONFIG[unitId];
+      container.hidden = !unitConfig?.showCultureFilters;
       container.replaceChildren();
-      container.hidden = !cultures;
-      if (!cultures) return;
-      cultures.forEach((culture) => {
+      if (!unitConfig?.showCultureFilters) return;
+      ['all', ...unitConfig.cultureIds].forEach((cultureId) => {
         const button = document.createElement('button');
         button.className = 'filter-pill';
         button.type = 'button';
-        button.dataset.culture = culture.id;
-        button.setAttribute('aria-pressed', String(state.culture === culture.id));
-        button.textContent = culture.labelEn;
+        button.dataset.culture = cultureId;
+        button.setAttribute('aria-pressed', String(state.culture === cultureId));
+        button.textContent = cultureId === 'all' ? 'All cultures' : getCultureLabel(cultureId, 'en');
         button.addEventListener('click', () => {
           clearHierarchyBranch();
-          state.culture = culture.id;
+          state.culture = cultureId;
           updateCultureFilterSelection(container, state.culture);
           render();
         });
