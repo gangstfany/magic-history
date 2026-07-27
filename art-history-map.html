@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AP 艺术史 · Unit 2 古代地中海</title>
+  <title>AP 艺术史互动地图 · Units 1-2</title>
   <style>
     :root {
       color-scheme:light;
@@ -169,8 +169,8 @@
     document.body.classList.toggle('is-embedded', isEmbedded);
   </script>
   <header class="page-header">
-    <h1>AP 艺术史 · Unit 2 古代地中海</h1>
-    <p class="subtitle">从地点出发，连接作品、文化与历史语境。</p>
+    <h1>AP 艺术史互动地图</h1>
+    <p class="subtitle">Units 1-2：从全球史前艺术到古代地中海，以地点连接作品、传统与历史语境。</p>
   </header>
   <div id="filterContainer" class="filter-toolbar" role="group" aria-label="作品筛选">
     <label class="filter-label">Unit<select id="unitFilter" aria-label="Unit"><option value="all">All Units</option></select></label>
@@ -180,8 +180,8 @@
     <div id="cultureFilters" class="culture-filters" role="group" aria-label="Culture"></div>
   </div>
   <main class="art-workspace">
-    <section id="mapPanel" class="map-panel" aria-label="完整世界地图；当前作品地点集中在古代地中海、埃及、希腊与罗马">
-      <svg class="map-svg" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="完整世界地图；当前艺术史作品标记集中在古代地中海、埃及、希腊与罗马地区">
+    <section id="mapPanel" class="map-panel" aria-label="完整世界地图；展示 Units 1-2 作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布">
+      <svg class="map-svg" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="AP 艺术史 Units 1-2 完整世界地图，标记全球史前艺术与古代地中海作品地点">
         <g id="mapViewport">
         <rect id="panSurface" x="0" y="0" width="1600" height="800" fill="transparent" pointer-events="all"/>
         <g class="world-geography" aria-hidden="true">
@@ -1810,7 +1810,7 @@
       const target = ARTWORKS.find((work) => work.id === comparisonId);
       if (!target) return;
       Object.assign(state, {
-        unit:'all',
+        unit:String(target.unit),
         culture:'all',
         period:'',
         workType:'',
@@ -1818,7 +1818,7 @@
         selectedId:target.id,
         selectedSiteIndex:0,
         expandedSiteToken:null,
-        activeUnit:null,
+        activeUnit:target.unit,
         activeRegion:null,
         pendingFocusParentKey:null,
         activeDetailTab:'quick'

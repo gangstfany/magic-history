@@ -147,7 +147,7 @@ test('map caption follows the selected subject and hides for coming-soon subject
   assert.match(html, /homeMapCaption\.textContent = key === 'art'/);
   assert.match(
     html,
-    /\? '36 AP works · Ancient Mediterranean · filter, compare and study'/,
+    /\? '47 AP works · Units 1-2 · filter, compare and study'/,
   );
   assert.match(html, /homeMapCaption\.hidden = !s\.live/);
 });

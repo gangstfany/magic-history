@@ -5,15 +5,16 @@ import { readFile } from 'node:fs/promises';
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const loadHtml = () => readFile(HTML_PATH, 'utf8');
 
-test('standalone document copy names Unit 2 and uses culture terminology', async () => {
+test('standalone document copy introduces the combined Units 1-2 map', async () => {
   const html = await loadHtml();
 
-  assert.match(html, /<title>AP 艺术史 · Unit 2 古代地中海<\/title>/);
-  assert.match(html, /<h1>AP 艺术史 · Unit 2 古代地中海<\/h1>/);
+  assert.match(html, /<title>AP 艺术史互动地图 · Units 1-2<\/title>/);
+  assert.match(html, /<h1>AP 艺术史互动地图<\/h1>/);
   assert.match(
     html,
-    /<p class="subtitle">从地点出发，连接作品、文化与历史语境。<\/p>/,
+    /<p class="subtitle">Units 1-2：从全球史前艺术到古代地中海，以地点连接作品、传统与历史语境。<\/p>/,
   );
+  assert.doesNotMatch(html, /AP 艺术史 · Unit 2 古代地中海/);
 });
 
 function getFunctionSource(html, functionName) {

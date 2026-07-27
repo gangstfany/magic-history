@@ -420,6 +420,27 @@ test('detail view exposes four accessible study tabs', async () => {
   }
 });
 
+test('standalone map copy and accessible map labels cover Units 1-2 worldwide', async () => {
+  const html = await loadHtml();
+
+  assert.match(html, /<h1>AP 艺术史互动地图<\/h1>/);
+  assert.doesNotMatch(html, /<h1>[^<]*Unit 2 古代地中海[^<]*<\/h1>/);
+  assert.match(
+    html,
+    /<p class="subtitle">Units 1-2：从全球史前艺术到古代地中海，以地点连接作品、传统与历史语境。<\/p>/,
+  );
+  assert.match(
+    html,
+    /<section id="mapPanel" class="map-panel" aria-label="完整世界地图；展示 Units 1-2 作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布">/,
+  );
+  assert.match(
+    html,
+    /<svg class="map-svg"[^>]+aria-label="AP 艺术史 Units 1-2 完整世界地图，标记全球史前艺术与古代地中海作品地点">/,
+  );
+  assert.doesNotMatch(html, /当前作品地点集中在古代地中海/);
+  assert.doesNotMatch(html, /当前艺术史作品标记集中在古代地中海/);
+});
+
 test('comparison navigation resolves targets without rewriting artwork data', async () => {
   const html = await loadHtml();
   const selectComparison = html.match(
@@ -435,6 +456,101 @@ test('comparison navigation resolves targets without rewriting artwork data', as
   assert.match(html, /形式：/);
   assert.match(html, /功能：/);
   assert.match(html, /语境：/);
+  assert.match(selectComparison, /unit:\s*String\(target\.unit\)/);
+  assert.match(selectComparison, /activeUnit:\s*target\.unit/);
+  assert.match(selectComparison, /focusSelectedArtworkHeading\(\)/);
+});
+
+test('comparison navigation clears conflicting filters when crossing Units 1 and 2', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const source = getFunctionSource(html, 'selectComparison');
+  const state = {};
+  const calls = { sync:0, render:0, focus:0, scroll:0 };
+  const detailPanel = {
+    scrollTo(options) {
+      calls.scroll += 1;
+      assert.deepEqual(options, { top:0, behavior:'smooth' });
+    },
+  };
+  const selectComparison = Function(
+    'ARTWORKS',
+    'state',
+    'syncFilterControls',
+    'render',
+    'focusSelectedArtworkHeading',
+    'detailPanel',
+    `"use strict";
+      ${source}
+      return selectComparison;`,
+  )(
+    artworks,
+    state,
+    () => { calls.sync += 1; },
+    () => { calls.render += 1; },
+    () => { calls.focus += 1; },
+    detailPanel,
+  );
+  const u1Target = artworks.find(({ unit }) => unit === 1);
+  const u2Target = artworks.find(({ unit }) => unit === 2);
+
+  Object.assign(state, {
+    unit:'1',
+    culture:'prehistoricNamibia',
+    period:'Paleolithic',
+    workType:'rock art',
+    search:'cave',
+    selectedId:u1Target.id,
+    selectedSiteIndex:4,
+    expandedSiteToken:'u1:africa',
+    activeUnit:1,
+    activeRegion:'africa',
+    pendingFocusParentKey:'u1:africa',
+    activeDetailTab:'compare',
+  });
+  selectComparison(u2Target.id);
+  assert.deepEqual(state, {
+    unit:'2',
+    culture:'all',
+    period:'',
+    workType:'',
+    search:'',
+    selectedId:u2Target.id,
+    selectedSiteIndex:0,
+    expandedSiteToken:null,
+    activeUnit:2,
+    activeRegion:null,
+    pendingFocusParentKey:null,
+    activeDetailTab:'quick',
+  });
+
+  Object.assign(state, {
+    culture:'rome',
+    period:'Imperial Roman',
+    workType:'architecture',
+    search:'Rome',
+    selectedSiteIndex:2,
+    expandedSiteToken:'u2:southernEurope',
+    activeRegion:'southernEurope',
+    pendingFocusParentKey:'u2:southernEurope',
+    activeDetailTab:'form',
+  });
+  selectComparison(u1Target.id);
+  assert.deepEqual(state, {
+    unit:'1',
+    culture:'all',
+    period:'',
+    workType:'',
+    search:'',
+    selectedId:u1Target.id,
+    selectedSiteIndex:0,
+    expandedSiteToken:null,
+    activeUnit:1,
+    activeRegion:null,
+    pendingFocusParentKey:null,
+    activeDetailTab:'quick',
+  });
+  assert.deepEqual(calls, { sync:2, render:2, focus:2, scroll:2 });
 });
 
 test('image dialog supports labelled media, attribution, and focus restoration', async () => {
