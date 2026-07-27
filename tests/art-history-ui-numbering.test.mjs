@@ -343,9 +343,10 @@ test('art map reuses World History typography and compact detail hierarchy', asy
   assert.match(html, /chineseTitle\.textContent = work\.titleZh/);
   assert.match(
     html,
-    /summary\.append\(heading,\s*chineseTitle,\s*meta,\s*imageButton,\s*imageCredit,\s*identity\)/,
+    /summary\.append\(heading,\s*chineseTitle,\s*meta,\s*imageButton\)/,
     'detail summary must append English heading before the Chinese subtitle and metadata',
   );
+  assert.match(html, /summary\.append\(creditHost,\s*identity\)/);
   const englishTitleCss = getCssDeclarations(html, '.work-title-en');
   assert.match(englishTitleCss, /font-size:\s*19px/);
   assert.match(englishTitleCss, /font-weight:\s*800/);
@@ -372,7 +373,7 @@ test('art map reuses World History typography and compact detail hierarchy', asy
   assert.match(html, /meta\.textContent = formatArtworkMeta\(work\)/);
   assert.match(
     html,
-    /imageButton\.setAttribute\('aria-label',\s*`Open \$\{work\.titleEn\}（\$\{work\.titleZh\}）大图`\)/,
+    /`Open \$\{work\.titleEn\}（\$\{work\.titleZh\}）· \$\{media\.label\} 大图`/,
   );
   assert.match(html, /<dialog id="imageDialog"[^>]*aria-labelledby="dialogTitle"/);
   assert.match(
@@ -2213,9 +2214,9 @@ test('artwork images and modal preserve labels, complete-image space, fallback, 
   const dialogImageCss = getCssDeclarations(html, '.dialog-media img');
   const dialogMediaCss = getCssDeclarations(html, '.dialog-media');
 
-  assert.match(renderDetailsSource, /image\.alt = work\.imageAlt/);
+  assert.match(renderDetailsSource, /image\.alt = media\.imageAlt/);
   assert.match(renderDetailsSource, /installImageFallback\(image, work\)/);
-  assert.match(openDialogSource, /image\.alt = work\.imageAlt/);
+  assert.match(openDialogSource, /image\.alt = media\.imageAlt/);
   assert.match(openDialogSource, /installImageFallback\(image, work\)/);
   assert.match(fallbackSource, /image\.addEventListener\('error'/);
   assert.match(fallbackSource, /image\.replaceWith\(fallback\)/);
@@ -2240,6 +2241,33 @@ test('artwork images and modal preserve labels, complete-image space, fallback, 
     /if \(focusedDetailImageButton\) detailPanel\.querySelector\('\.artwork-image-button'\)\?\.focus\(\{ preventScroll:true \}\)/,
   );
   assert.doesNotMatch(html, /class=["'][^"']*gallery|createGallery|renderGallery/i);
+});
+
+test('Stonehenge image view switcher matches aligned controls and stays touch accessible', async () => {
+  const html = await loadHtml();
+  const switcherCss = getCssDeclarations(html, '.image-view-switcher');
+  const buttonCss = getCssDeclarations(html, '.image-view-switcher button');
+  const pressedCss = getCssDeclarations(html, '.image-view-switcher button[aria-pressed="true"]');
+
+  assert.match(switcherCss, /display:\s*flex/);
+  assert.match(switcherCss, /gap:\s*6px/);
+  assert.match(switcherCss, /margin:\s*8px 0 0/);
+  assert.match(buttonCss, /min-height:\s*30px/);
+  assert.match(buttonCss, /padding:\s*5px 10px/);
+  assert.match(buttonCss, /border:\s*1px solid var\(--line\)/);
+  assert.match(buttonCss, /border-radius:\s*999px/);
+  assert.match(buttonCss, /background:\s*var\(--paper\)/);
+  assert.match(buttonCss, /color:\s*var\(--ink-soft\)/);
+  assert.match(buttonCss, /font:\s*inherit/);
+  assert.match(buttonCss, /font-size:\s*12px/);
+  assert.match(buttonCss, /font-weight:\s*600/);
+  assert.match(pressedCss, /background:\s*var\(--ink\)/);
+  assert.match(pressedCss, /border-color:\s*var\(--ink\)/);
+  assert.match(pressedCss, /color:\s*#fff/);
+
+  const narrowCss = getMediaQuerySource(html, '(max-width:520px)');
+  const narrowButtonCss = getCssDeclarations(narrowCss, '.image-view-switcher button');
+  assert.match(narrowButtonCss, /min-height:\s*44px/);
 });
 
 test('motion preferences and map gesture alternatives remain accessible', async () => {

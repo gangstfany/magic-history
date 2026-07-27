@@ -82,6 +82,9 @@
     .work-meta { font-size:12px; font-weight:600; }
     .artwork-image-button { display:grid; place-items:center; box-sizing:border-box; width:100%; height:300px; max-height:300px; padding:10px; overflow:hidden; border:1px solid var(--line-strong); border-radius:10px; background:var(--surface-sunken); cursor:zoom-in; }
     .artwork-image-button img { display:block; width:100%; height:278px; max-width:100%; max-height:278px; object-fit:contain; object-position:center; }
+    .image-view-switcher { display:flex; gap:6px; margin:8px 0 0; }
+    .image-view-switcher button { min-height:30px; padding:5px 10px; border:1px solid var(--line); border-radius:999px; background:var(--paper); color:var(--ink-soft); font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
+    .image-view-switcher button[aria-pressed="true"] { background:var(--ink); border-color:var(--ink); color:#fff; }
     .image-fallback { min-height:150px; display:grid; place-items:center; padding:20px; color:var(--ink-soft); background:linear-gradient(135deg,#eadfce,#f8f0e5); text-align:center; }
     .identity-list { display:grid; gap:5px; margin:0; }
     .identity-row { display:grid; grid-template-columns:5.3em minmax(0,1fr); gap:7px; line-height:1.5; }
@@ -133,6 +136,7 @@
       .filter-label:has(#searchInput) { width:100%; }
       #searchInput { width:100%; }
       .map-controls button { width:44px; height:44px; min-width:44px; min-height:44px; }
+      .image-view-switcher button { min-height:44px; }
       body.is-embedded .filter-toolbar { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:end; }
       body.is-embedded .filter-label { min-width:0; width:auto; }
       body.is-embedded select, body.is-embedded #searchInput { width:100%; }
@@ -1717,8 +1721,23 @@
       return block;
     }
 
-    function createImageCredit(work) {
-      const credit = IMAGE_CREDITS[work.id];
+    function getArtworkImages(work) {
+      if (Array.isArray(work.images)) return work.images;
+      return [{
+        label:'Primary view',
+        imageUrl:work.imageUrl,
+        imageAlt:work.imageAlt,
+        imageSourceName:work.imageSourceName,
+        imageSourceUrl:work.imageSourceUrl
+      }];
+    }
+
+    function getArtworkImageCredits(work) {
+      const credits = IMAGE_CREDITS[work.id];
+      return Array.isArray(credits) ? credits : [credits];
+    }
+
+    function createImageCredit(media, credit) {
       const line = document.createElement('p');
       line.className = 'image-credit';
       line.append(document.createTextNode(`图片：${credit.creatorOrInstitution} · `));
@@ -1728,6 +1747,13 @@
       license.rel = 'noopener noreferrer';
       license.textContent = credit.licenseName;
       line.append(license);
+      line.append(document.createTextNode(' · '));
+      const source = document.createElement('a');
+      source.href = media.imageSourceUrl;
+      source.target = '_blank';
+      source.rel = 'noopener noreferrer';
+      source.textContent = media.imageSourceName;
+      line.append(source);
       return line;
     }
 
@@ -1752,24 +1778,23 @@
       ].join('');
     }
 
-    function openImageDialog(work, trigger) {
+    function openImageDialog(work, media, credit, trigger) {
       imageDialogTrigger = trigger;
       const image = document.createElement('img');
       image.id = 'dialogImage';
-      image.src = work.imageUrl;
-      image.alt = work.imageAlt;
+      image.src = media.imageUrl;
+      image.alt = media.imageAlt;
       installImageFallback(image, work);
       document.getElementById('dialogMedia').replaceChildren(image);
       document.getElementById('dialogTitle').textContent = `${work.titleEn} · ${work.titleZh}`;
-      document.getElementById('dialogCaption').textContent = work.imageAlt;
-      const credit = IMAGE_CREDITS[work.id];
+      document.getElementById('dialogCaption').textContent = media.imageAlt;
       document.getElementById('dialogCredit').textContent = `图片：${credit.creatorOrInstitution}`;
       const license = document.getElementById('dialogLicense');
       license.href = credit.licenseUrl;
-      license.textContent = `许可：${credit.licenseName}`;
+      license.textContent = credit.licenseName;
       const source = document.getElementById('dialogSource');
-      source.href = work.imageSourceUrl;
-      source.textContent = `来源页：${work.imageSourceName}（查看原始文件）`;
+      source.href = media.imageSourceUrl;
+      source.textContent = media.imageSourceName;
       imageDialog.showModal();
       document.getElementById('dialogClose').focus();
     }
@@ -1819,17 +1844,53 @@
       meta.className = 'work-meta';
       meta.textContent = formatArtworkMeta(work);
 
+      const mediaItems = getArtworkImages(work);
+      const credits = getArtworkImageCredits(work);
+      let activeMediaIndex = 0;
       const imageButton = document.createElement('button');
       imageButton.type = 'button';
       imageButton.className = 'artwork-image-button';
-      imageButton.setAttribute('aria-label', `Open ${work.titleEn}（${work.titleZh}）大图`);
-      const image = document.createElement('img');
-      image.src = work.imageUrl;
-      image.alt = work.imageAlt;
-      installImageFallback(image, work);
-      imageButton.append(image);
-      imageButton.addEventListener('click', () => openImageDialog(work, imageButton));
-      const imageCredit = createImageCredit(work);
+      const creditHost = document.createElement('div');
+      creditHost.className = 'image-credit-host';
+      let viewButtons = [];
+
+      function renderActiveArtworkImage(mediaIndex) {
+        activeMediaIndex = mediaIndex;
+        const media = mediaItems[activeMediaIndex];
+        const credit = credits[activeMediaIndex];
+        const image = document.createElement('img');
+        image.src = media.imageUrl;
+        image.alt = media.imageAlt;
+        installImageFallback(image, work);
+        imageButton.replaceChildren(image);
+        imageButton.setAttribute(
+          'aria-label',
+          `Open ${work.titleEn}（${work.titleZh}）· ${media.label} 大图`
+        );
+        imageButton.onclick = () => openImageDialog(work, media, credit, imageButton);
+        creditHost.replaceChildren(createImageCredit(media, credit));
+        viewButtons.forEach((button, index) => {
+          button.setAttribute('aria-pressed', String(index === activeMediaIndex));
+        });
+      }
+
+      let imageViewSwitcher = null;
+      if (mediaItems.length > 1) {
+        imageViewSwitcher = document.createElement('div');
+        imageViewSwitcher.className = 'image-view-switcher';
+        imageViewSwitcher.setAttribute('role', 'group');
+        imageViewSwitcher.setAttribute('aria-label', 'Choose artwork image view');
+        viewButtons = mediaItems.map((media, mediaIndex) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = media.label;
+          button.setAttribute('aria-pressed', 'false');
+          button.addEventListener('click', () => renderActiveArtworkImage(mediaIndex));
+          imageViewSwitcher.append(button);
+          return button;
+        });
+      }
+      renderActiveArtworkImage(0);
 
       const identity = document.createElement('dl');
       identity.className = 'identity-list';
@@ -1850,7 +1911,9 @@
         row.append(term, description);
         identity.append(row);
       });
-      summary.append(heading, chineseTitle, meta, imageButton, imageCredit, identity);
+      summary.append(heading, chineseTitle, meta, imageButton);
+      if (imageViewSwitcher) summary.append(imageViewSwitcher);
+      summary.append(creditHost, identity);
 
       if (group.works.length > 1) {
         const cycle = document.createElement('div');
