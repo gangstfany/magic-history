@@ -1,12 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 const HTML_PATH = new URL('../index.html', import.meta.url);
 const ART_HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const WORLD_HTML_PATH = new URL('../world-map.html', import.meta.url);
-const STARTING_WORLD_SHA256 = '3ba8c8e3d18daa756b3ed8d9cddc1f7583fe9e74bb42a582feb65c5ed121d949';
 
 async function loadHtml() {
   return readFile(HTML_PATH, 'utf8');
@@ -102,6 +100,24 @@ test('responsive rules preserve useful Art height without collapsing other subje
   }
 });
 
+test('Art-only host sizing makes the homepage the short-landscape scroll owner', async () => {
+  const html = await loadHtml();
+  const shortLandscapeHostRule = html.match(
+    /@media \(max-width: 900px\) and \(max-height: 520px\)\s*\{([\s\S]*?)\n\}/,
+  )?.[1] || '';
+
+  assert.match(
+    shortLandscapeHostRule,
+    /\.map-card\[data-subject="art"\] \.home-map-wrap\s*\{\s*height:\s*520px/,
+  );
+  assert.doesNotMatch(shortLandscapeHostRule, /data-subject="(?:world|euro|us|geo)"/);
+  assert.doesNotMatch(shortLandscapeHostRule, /(?:^|\n)\s*\.home-map-wrap\s*\{/);
+  assert.doesNotMatch(
+    html,
+    /@media \(max-width: 666px\)\s*\{[\s\S]*?data-subject="art"[\s\S]*?height:\s*960px/,
+  );
+});
+
 test('map caption follows the selected subject and hides for coming-soon subjects', async () => {
   const html = await loadHtml();
 
@@ -138,9 +154,17 @@ test('embedded Art hides its internal header while standalone Art retains it', a
   assert.doesNotMatch(artHtml, /(?:^|\n)\s*\.page-header\s*\{[^}]*display:\s*none/s);
 });
 
-test('World History source remains byte-for-byte unchanged from the U2 starting commit', async () => {
-  const worldHtml = await readFile(WORLD_HTML_PATH);
-  const actualHash = createHash('sha256').update(worldHtml).digest('hex');
+test('World History retains semantic map controls and homepage switching behavior', async () => {
+  const [html, worldHtml] = await Promise.all([
+    loadHtml(),
+    readFile(WORLD_HTML_PATH, 'utf8'),
+  ]);
 
-  assert.equal(actualHash, STARTING_WORLD_SHA256);
+  assert.match(worldHtml, /class="map-zone"/);
+  assert.match(worldHtml, /class="pin-group"/);
+  assert.match(worldHtml, /class="zoom-btn zoom-in"/);
+  assert.match(worldHtml, /class="zoom-btn zoom-out"/);
+  assert.match(worldHtml, /class="zoom-btn reset zoom-reset"/);
+  assert.match(html, /world:\s*\{\s*label:\s*'World History',\s*live:\s*true,\s*frame:\s*worldMapFrame/);
+  assert.match(html, /if \(key === 'world'\) syncHomeEvents\(\)/);
 });

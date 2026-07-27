@@ -182,14 +182,12 @@ test('art map exposes a query-driven embedded presentation mode', async () => {
     'embedded rules must precede the responsive media query',
   );
   const narrowEmbeddedCss = getMediaQuerySource(html, '(max-width:520px)');
-  const narrowBodyCss = getCssDeclarations(narrowEmbeddedCss, 'body.is-embedded');
+  const stackedEmbeddedCss = getMediaQuerySource(html, '(max-width:664px)');
+  const narrowBodyCss = getCssDeclarations(stackedEmbeddedCss, 'body.is-embedded');
   assert.match(narrowBodyCss, /height:\s*auto/);
   assert.match(narrowBodyCss, /min-height:\s*100vh/);
   assert.match(narrowBodyCss, /overflow:\s*auto/);
-  const narrowWorkspaceCss = getCssDeclarations(
-    narrowEmbeddedCss,
-    'body.is-embedded .art-workspace',
-  );
+  const narrowWorkspaceCss = getCssDeclarations(html, 'body.is-embedded .art-workspace');
   assert.match(narrowWorkspaceCss, /width:\s*100%/);
   assert.match(narrowWorkspaceCss, /max-width:\s*none/);
   assert.match(narrowWorkspaceCss, /height:\s*auto/);
@@ -202,6 +200,8 @@ test('art map exposes a query-driven embedded presentation mode', async () => {
 test('compact desktop controls recover 44px touch targets on narrow screens', async () => {
   const html = await loadHtml();
   const narrowCss = getMediaQuerySource(html, '(max-width:520px)');
+  const stackedCss = getMediaQuerySource(html, '(max-width:664px)');
+  const stackedEmbeddedBody = getCssDeclarations(stackedCss, 'body.is-embedded');
 
   const narrowControls = getCssDeclarations(narrowCss, '.map-controls button');
   assert.match(narrowControls, /width:\s*44px/);
@@ -224,16 +224,15 @@ test('compact desktop controls recover 44px touch targets on narrow screens', as
   assert.match(desktopUnitFilter, /font-weight:\s*600/);
   assert.match(desktopUnitFilter, /min-height:\s*34px/);
 
-  const narrowEmbeddedBody = getCssDeclarations(narrowCss, 'body.is-embedded');
-  assert.match(narrowEmbeddedBody, /height:\s*auto/);
-  assert.match(narrowEmbeddedBody, /min-height:\s*100vh/);
-  assert.match(narrowEmbeddedBody, /overflow:\s*auto/);
+  assert.match(stackedEmbeddedBody, /height:\s*auto/);
+  assert.match(stackedEmbeddedBody, /min-height:\s*100vh/);
+  assert.match(stackedEmbeddedBody, /overflow:\s*auto/);
   assert.match(
     getCssDeclarations(narrowCss, 'body.is-embedded .filter-toolbar'),
     /padding:\s*8px 12px/,
   );
 
-  const narrowWorkspace = getCssDeclarations(narrowCss, 'body.is-embedded .art-workspace');
+  const narrowWorkspace = getCssDeclarations(html, 'body.is-embedded .art-workspace');
   assert.match(narrowWorkspace, /width:\s*100%/);
   assert.match(narrowWorkspace, /max-width:\s*none/);
   assert.match(narrowWorkspace, /height:\s*auto/);
@@ -241,11 +240,16 @@ test('compact desktop controls recover 44px touch targets on narrow screens', as
   assert.match(narrowWorkspace, /margin:\s*0/);
   assert.match(narrowWorkspace, /border:\s*0/);
   assert.match(narrowWorkspace, /border-radius:\s*0/);
+  assert.match(
+    getCssDeclarations(stackedCss, '.art-workspace'),
+    /grid-template-columns:\s*1fr/,
+  );
 });
 
 test('responsive toolbar and workspace rules cannot force horizontal overflow at 375px', async () => {
   const html = await loadHtml();
   const narrowCss = getMediaQuerySource(html, '(max-width:520px)');
+  const stackedCss = getMediaQuerySource(html, '(max-width:664px)');
 
   assert.match(getCssDeclarations(html, 'body'), /min-width:\s*0/);
   assert.match(getCssDeclarations(html, '.filter-toolbar'), /flex-wrap:\s*wrap/);
@@ -267,10 +271,27 @@ test('responsive toolbar and workspace rules cannot force horizontal overflow at
     /width:\s*100%/,
   );
   assert.match(getCssDeclarations(narrowCss, '#searchInput'), /width:\s*100%/);
-  const narrowWorkspace = getCssDeclarations(narrowCss, '.art-workspace');
+  const narrowWorkspace = getCssDeclarations(stackedCss, '.art-workspace');
   assert.match(narrowWorkspace, /width:\s*calc\(100% - 24px\)/);
   assert.match(narrowWorkspace, /grid-template-columns:\s*1fr/);
   assert.doesNotMatch(narrowCss, /min-width:\s*(?:[4-9]\d\d|\d{4,})px/);
+});
+
+test('workspace stays stacked through 664px and opens a usable two-column map at 665px', async () => {
+  const html = await loadHtml();
+  const stackedCss = getMediaQuerySource(html, '(max-width:664px)');
+  const stackedWorkspace = getCssDeclarations(stackedCss, '.art-workspace');
+  const stackedMap = getCssDeclarations(stackedCss, '.map-panel');
+
+  assert.match(stackedWorkspace, /grid-template-columns:\s*1fr/);
+  assert.match(stackedWorkspace, /grid-template-rows:\s*auto auto/);
+  assert.match(stackedMap, /grid-template-rows:\s*minmax\(330px,55vh\) auto/);
+  assert.match(getCssDeclarations(stackedCss, '.map-svg'), /min-height:\s*330px/);
+
+  const standaloneWorkspaceAt665 = 665 - 40;
+  const detailColumn = 275;
+  assert.equal(standaloneWorkspaceAt665 - detailColumn, 350);
+  assert.doesNotMatch(html, /@media \(max-width:52[1-9]px\)[\s\S]*grid-template-columns:\s*1fr/);
 });
 
 test('art map reuses World History typography and compact detail hierarchy', async () => {
@@ -964,10 +985,7 @@ test('marker metrics stay readable and touchable on a 390px viewport', async () 
 test('Unit 2 region hierarchy remains collision-safe in a 667x375 embedded landscape map', async () => {
   const html = await loadHtml();
   const artworks = parseArtworkData(html);
-  const shortLandscapeCss = getMediaQuerySource(
-    html,
-    '(max-height:520px) and (min-width:521px)',
-  );
+  const shortLandscapeCss = getMediaQuerySource(html, '(max-height:520px)');
   const helpers = loadPureFunctions(
     html,
     [
@@ -998,17 +1016,11 @@ test('Unit 2 region hierarchy remains collision-safe in a 667x375 embedded lands
     ['const AP_UNITS =', 'const MAP_REGIONS =', 'const SITE_WORLD_COORDINATES ='],
   );
   const shortEmbeddedBody = getCssDeclarations(shortLandscapeCss, 'body.is-embedded');
-  const shortEmbeddedWorkspace = getCssDeclarations(
-    shortLandscapeCss,
-    'body.is-embedded .art-workspace',
-  );
-  assert.match(shortEmbeddedBody, /height:\s*auto/);
-  assert.match(shortEmbeddedBody, /min-height:\s*100vh/);
-  assert.match(shortEmbeddedBody, /overflow:\s*auto/);
-  assert.match(shortEmbeddedWorkspace, /flex:\s*0 0 360px/);
-  assert.match(shortEmbeddedWorkspace, /min-height:\s*360px/);
+  assert.match(shortEmbeddedBody, /height:\s*100vh/);
+  assert.match(shortEmbeddedBody, /min-height:\s*0/);
+  assert.match(shortEmbeddedBody, /overflow:\s*hidden/);
 
-  const landscapeScale = helpers.getMapScreenScale(390, 360, 1);
+  const landscapeScale = helpers.getMapScreenScale(390, 430, 1);
   const branch = { selectedUnit: '2', activeUnit: null, activeRegion: null };
 
   assert.equal(landscapeScale, 0.24375);
@@ -2067,20 +2079,27 @@ test('motion preferences and map gesture alternatives remain accessible', async 
   assert.match(html, /<button id="resetView"[^>]+aria-label="还原地图"/);
 });
 
-test('hierarchy meaning is conveyed by English text and marker shape, not color alone', async () => {
+test('hierarchy keeps textual accessible cues plus an individual-versus-group shape cue', async () => {
   const html = await loadHtml();
   const renderSource = getFunctionSource(html, 'render');
+  const groupTextSource = getFunctionSource(html, 'getMapGroupText');
 
   assert.match(renderSource, /marker\.dataset\.groupKind = group\.kind/);
   assert.match(renderSource, /titleLabel\.textContent = groupText\.title/);
   assert.match(renderSource, /subtitleLabel\.textContent = groupText\.subtitle/);
   assert.match(
     renderSource,
+    /marker\.setAttribute\('aria-label', `\$\{groupText\.title\} · \$\{groupText\.subtitle\}`\)/,
+  );
+  assert.match(
+    renderSource,
     /isSingleWorkSiteGroup\(group\) \? 'circle' : 'rect'/,
   );
   assert.match(getCssDeclarations(html, '.site-marker[data-group-kind="unit"] .marker-label-bg'), /fill:\s*var\(--unit-marker\)/);
   assert.match(
-    getFunctionSource(html, 'getMapGroupText'),
+    groupTextSource,
     /title:\s*`U\$\{unit\.id\}`[\s\S]*subtitle:\s*`\$\{unit\.nameEn\} · \$\{formatPieceCount\(group\.works\.length\)\}`/,
   );
+  assert.match(groupTextSource, /title:\s*MAP_REGIONS\[group\.regionId\]\?\.nameEn/);
+  assert.match(groupTextSource, /title:\s*group\.siteName/);
 });

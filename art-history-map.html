@@ -124,9 +124,7 @@
     body.is-embedded .filter-toolbar { flex:0 0 auto; width:100%; max-width:none; margin:0; padding:8px 12px; border-bottom:1px solid var(--line); background:var(--card); }
     body.is-embedded .art-workspace { flex:1 1 auto; width:100%; max-width:none; height:auto; min-height:0; margin:0; border:0; border-radius:0; box-shadow:none; }
     @media (max-width:520px) {
-      body.is-embedded { height:auto; min-height:100vh; overflow:auto; }
       body.is-embedded .filter-toolbar { padding:8px 12px; }
-      body.is-embedded .art-workspace { width:100%; max-width:none; height:auto; min-height:0; margin:0; border:0; border-radius:0; }
       .page-header, .filter-toolbar { padding-left:12px; padding-right:12px; }
       .filter-toolbar > * { max-width:100%; }
       .culture-filters { gap:8px; }
@@ -135,15 +133,17 @@
       .filter-label:has(#searchInput) { width:100%; }
       #searchInput { width:100%; }
       .map-controls button { width:44px; height:44px; min-width:44px; min-height:44px; }
+    }
+    @media (max-width:664px) {
+      body.is-embedded { height:auto; min-height:100vh; overflow:auto; }
       .art-workspace { width:calc(100% - 24px); height:auto; min-height:0; grid-template-columns:1fr; grid-template-rows:auto auto; }
       .map-panel { display:grid; grid-template-rows:minmax(330px,55vh) auto; overflow:visible; }
       .map-svg { grid-row:1; min-height:330px; }
       .map-panel.has-compact-list { grid-template-rows:minmax(330px,55vh) auto; overflow:visible; }
       .detail-panel { max-height:360px; border-left:0; border-top:1px solid var(--line); }
     }
-    @media (max-height:520px) and (min-width:521px) {
-      body.is-embedded { height:auto; min-height:100vh; overflow:auto; }
-      body.is-embedded .art-workspace { flex:0 0 360px; min-height:360px; }
+    @media (max-height:520px) {
+      body.is-embedded { height:100vh; min-height:0; overflow:hidden; }
     }
     @media (prefers-reduced-motion:reduce) { *, *::before, *::after { scroll-behavior:auto!important; transition-duration:.01ms!important; animation-duration:.01ms!important; animation-iteration-count:1!important; } }
   </style>
