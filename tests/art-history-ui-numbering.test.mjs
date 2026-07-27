@@ -243,6 +243,36 @@ test('compact desktop controls recover 44px touch targets on narrow screens', as
   assert.match(narrowWorkspace, /border-radius:\s*0/);
 });
 
+test('responsive toolbar and workspace rules cannot force horizontal overflow at 375px', async () => {
+  const html = await loadHtml();
+  const narrowCss = getMediaQuerySource(html, '(max-width:520px)');
+
+  assert.match(getCssDeclarations(html, 'body'), /min-width:\s*0/);
+  assert.match(getCssDeclarations(html, '.filter-toolbar'), /flex-wrap:\s*wrap/);
+  assert.match(
+    getCssDeclarations(html, 'select, input[type="search"]'),
+    /max-width:\s*100%/,
+  );
+  assert.match(getCssDeclarations(html, '.art-workspace'), /width:\s*calc\(100% - 40px\)/);
+  assert.match(
+    getCssDeclarations(html, '.art-workspace'),
+    /grid-template-columns:\s*minmax\(0,2fr\) minmax\(275px,1fr\)/,
+  );
+  assert.match(getCssDeclarations(html, '.map-panel'), /min-width:\s*0/);
+  assert.match(getCssDeclarations(html, '.detail-panel'), /min-width:\s*0/);
+
+  assert.match(getCssDeclarations(narrowCss, '.filter-toolbar > *'), /max-width:\s*100%/);
+  assert.match(
+    getCssDeclarations(narrowCss, '.filter-label:has(#searchInput)'),
+    /width:\s*100%/,
+  );
+  assert.match(getCssDeclarations(narrowCss, '#searchInput'), /width:\s*100%/);
+  const narrowWorkspace = getCssDeclarations(narrowCss, '.art-workspace');
+  assert.match(narrowWorkspace, /width:\s*calc\(100% - 24px\)/);
+  assert.match(narrowWorkspace, /grid-template-columns:\s*1fr/);
+  assert.doesNotMatch(narrowCss, /min-width:\s*(?:[4-9]\d\d|\d{4,})px/);
+});
+
 test('art map reuses World History typography and compact detail hierarchy', async () => {
   const html = await loadHtml();
   assert.match(
@@ -929,6 +959,63 @@ test('marker metrics stay readable and touchable on a 390px viewport', async () 
   assert.ok(metrics.hitHeight * renderedScale >= 44);
   assert.ok(metrics.hitWidth * renderedScale >= 44);
   assert.ok(metrics.visualWidth < metrics.hitWidth);
+});
+
+test('Unit 2 region hierarchy remains collision-safe in a 667x375 embedded landscape map', async () => {
+  const html = await loadHtml();
+  const artworks = parseArtworkData(html);
+  const shortLandscapeCss = getMediaQuerySource(
+    html,
+    '(max-height:520px) and (min-width:521px)',
+  );
+  const helpers = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'formatPieceCount',
+      'createSiteToken',
+      'getUnitById',
+      'getMapGroupText',
+      'getApUnitNumber',
+      'toWorldCoordinates',
+      'groupBySite',
+      'groupByConfiguredRegion',
+      'getMapHierarchyLevel',
+      'groupByRegionGrid',
+      'buildMapGroups',
+      'buildMapGroupCandidates',
+      'getMapScreenScale',
+      'getMarkerMetrics',
+      'getMarkerBounds',
+      'markerBoundsOverlap',
+      'expandMarkerBounds',
+      'createSpatialHash',
+      'findNearestAvailableMarkerSlot',
+      'layoutSiteMarkers',
+      'layoutMapGroups',
+    ],
+    ['const AP_UNITS =', 'const MAP_REGIONS =', 'const SITE_WORLD_COORDINATES ='],
+  );
+  const shortEmbeddedBody = getCssDeclarations(shortLandscapeCss, 'body.is-embedded');
+  const shortEmbeddedWorkspace = getCssDeclarations(
+    shortLandscapeCss,
+    'body.is-embedded .art-workspace',
+  );
+  assert.match(shortEmbeddedBody, /height:\s*auto/);
+  assert.match(shortEmbeddedBody, /min-height:\s*100vh/);
+  assert.match(shortEmbeddedBody, /overflow:\s*auto/);
+  assert.match(shortEmbeddedWorkspace, /flex:\s*0 0 360px/);
+  assert.match(shortEmbeddedWorkspace, /min-height:\s*360px/);
+
+  const landscapeScale = helpers.getMapScreenScale(390, 360, 1);
+  const branch = { selectedUnit: '2', activeUnit: null, activeRegion: null };
+
+  assert.equal(landscapeScale, 0.24375);
+  assert.doesNotThrow(
+    () => helpers.layoutMapGroups(artworks, 1, landscapeScale, branch),
+    'all three English Unit 2 region capsules must fit without leaving a stale marker layer',
+  );
 });
 
 test('complete Unit 2 keeps the configured hierarchy below the legacy site threshold', async () => {
@@ -1885,4 +1972,115 @@ test('detail images show the complete artwork without cover cropping', async () 
   assert.match(imageButtonCss, /(?:^|;)\s*max-height:\s*300px/);
   assert.match(imageButtonCss, /(?:^|;)\s*padding:\s*10px/);
   assert.match(imageButtonCss, /(?:^|;)\s*border:\s*1px\s+solid/);
+});
+
+test('marker, tab, dialog, and comparison interactions retain visible keyboard focus', async () => {
+  const html = await loadHtml();
+  const focusCss = getCssDeclarations(html, ':focus-visible');
+
+  assert.match(focusCss, /outline:\s*3px solid #28708a/);
+  assert.match(focusCss, /outline-offset:\s*3px/);
+  for (const selector of [
+    '.filter-pill',
+    '.clear-button',
+    '.map-controls button',
+    '.site-marker',
+    '.expanded-work-pin',
+    '.detail-tab',
+    '.dialog-close',
+    '.comparison-card',
+  ]) {
+    assert.ok(html.includes(selector), `missing focusable ${selector} control`);
+  }
+  assert.match(getFunctionSource(html, 'render'), /marker\.setAttribute\('tabindex', '0'\)/);
+  assert.match(
+    getFunctionSource(html, 'renderExpandedWorkPins'),
+    /pin\.setAttribute\('tabindex', '0'\)/,
+  );
+});
+
+test('all custom map markers expose button semantics, descriptive names, and keyboard activation', async () => {
+  const html = await loadHtml();
+  const renderSource = getFunctionSource(html, 'render');
+  const expandedSource = getFunctionSource(html, 'renderExpandedWorkPins');
+  const compactSource = getFunctionSource(html, 'renderCompactExpandedList');
+
+  assert.match(renderSource, /marker\.setAttribute\('role', 'button'\)/);
+  assert.match(renderSource, /marker\.setAttribute\('tabindex', '0'\)/);
+  assert.match(
+    renderSource,
+    /marker\.setAttribute\('aria-label', `\$\{groupText\.title\} · \$\{groupText\.subtitle\}`\)/,
+  );
+  assert.match(renderSource, /event\.key !== 'Enter' && event\.key !== ' '/);
+  assert.match(renderSource, /event\.preventDefault\(\);\s*expandSiteGroup\(group, true\)/);
+
+  for (const source of [expandedSource, compactSource]) {
+    assert.match(source, /`AP \$\{work\.apNumber\} · \$\{work\.titleEn\} · \$\{group\.siteName\}`/);
+    assert.match(source, /selectArtwork\(work\.id,\s*group\.siteToken/);
+  }
+  assert.match(expandedSource, /pin\.setAttribute\('role', 'button'\)/);
+  assert.match(expandedSource, /event\.key !== 'Enter' && event\.key !== ' '/);
+  assert.match(compactSource, /button\.type = 'button'/);
+});
+
+test('artwork images and modal preserve labels, complete-image space, fallback, and trigger focus', async () => {
+  const html = await loadHtml();
+  const renderDetailsSource = getFunctionSource(html, 'renderArtworkDetails');
+  const openDialogSource = getFunctionSource(html, 'openImageDialog');
+  const fallbackSource = getFunctionSource(html, 'installImageFallback');
+  const dialogImageCss = getCssDeclarations(html, '.dialog-media img');
+  const dialogMediaCss = getCssDeclarations(html, '.dialog-media');
+
+  assert.match(renderDetailsSource, /image\.alt = work\.imageAlt/);
+  assert.match(renderDetailsSource, /installImageFallback\(image, work\)/);
+  assert.match(openDialogSource, /image\.alt = work\.imageAlt/);
+  assert.match(openDialogSource, /installImageFallback\(image, work\)/);
+  assert.match(fallbackSource, /image\.addEventListener\('error'/);
+  assert.match(fallbackSource, /image\.replaceWith\(fallback\)/);
+  assert.match(dialogMediaCss, /min-height:\s*200px/);
+  assert.match(dialogImageCss, /object-fit:\s*contain/);
+  assert.match(html, /<dialog id="imageDialog" aria-labelledby="dialogTitle">/);
+  assert.match(openDialogSource, /imageDialogTrigger = trigger/);
+  assert.match(openDialogSource, /imageDialog\.showModal\(\)/);
+  assert.match(openDialogSource, /getElementById\('dialogClose'\)\.focus\(\)/);
+  assert.match(
+    html,
+    /imageDialog\.addEventListener\('close', \(\) => \{\s*imageDialogTrigger\?\.focus\(\)/,
+  );
+  assert.doesNotMatch(html, /class=["'][^"']*gallery|createGallery|renderGallery/i);
+});
+
+test('motion preferences and map gesture alternatives remain accessible', async () => {
+  const html = await loadHtml();
+  const reducedMotionCss = getMediaQuerySource(html, '(prefers-reduced-motion:reduce)');
+  const panCss = getCssDeclarations(html, '#panSurface');
+
+  assert.match(reducedMotionCss, /transition-duration:\s*\.01ms!important/);
+  assert.match(reducedMotionCss, /animation-duration:\s*\.01ms!important/);
+  assert.match(reducedMotionCss, /animation-iteration-count:\s*1!important/);
+  assert.match(panCss, /touch-action:\s*none/);
+  assert.match(html, /panSurface\.addEventListener\('pointerdown'/);
+  assert.match(html, /panSurface\.addEventListener\('pointermove'/);
+  assert.doesNotMatch(html, /(?:mapPanel|mapSvg|document)\.addEventListener\('pointer(?:down|move)'/);
+  assert.match(html, /<button id="zoomIn"[^>]+aria-label="放大地图"/);
+  assert.match(html, /<button id="zoomOut"[^>]+aria-label="缩小地图"/);
+  assert.match(html, /<button id="resetView"[^>]+aria-label="还原地图"/);
+});
+
+test('hierarchy meaning is conveyed by English text and marker shape, not color alone', async () => {
+  const html = await loadHtml();
+  const renderSource = getFunctionSource(html, 'render');
+
+  assert.match(renderSource, /marker\.dataset\.groupKind = group\.kind/);
+  assert.match(renderSource, /titleLabel\.textContent = groupText\.title/);
+  assert.match(renderSource, /subtitleLabel\.textContent = groupText\.subtitle/);
+  assert.match(
+    renderSource,
+    /isSingleWorkSiteGroup\(group\) \? 'circle' : 'rect'/,
+  );
+  assert.match(getCssDeclarations(html, '.site-marker[data-group-kind="unit"] .marker-label-bg'), /fill:\s*var\(--unit-marker\)/);
+  assert.match(
+    getFunctionSource(html, 'getMapGroupText'),
+    /title:\s*`U\$\{unit\.id\}`[\s\S]*subtitle:\s*`\$\{unit\.nameEn\} · \$\{formatPieceCount\(group\.works\.length\)\}`/,
+  );
 });

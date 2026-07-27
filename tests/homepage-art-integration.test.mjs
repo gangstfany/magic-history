@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 const HTML_PATH = new URL('../index.html', import.meta.url);
+const ART_HTML_PATH = new URL('../art-history-map.html', import.meta.url);
+const WORLD_HTML_PATH = new URL('../world-map.html', import.meta.url);
+const STARTING_WORLD_SHA256 = '3ba8c8e3d18daa756b3ed8d9cddc1f7583fe9e74bb42a582feb65c5ed121d949';
 
 async function loadHtml() {
   return readFile(HTML_PATH, 'utf8');
@@ -35,6 +39,14 @@ test('subject switching exposes one live frame accessibly and preserves both fra
   assert.match(html, /\.setAttribute\('aria-hidden',\s*String\(!isSelected\)\)/);
   assert.match(html, /mapCard\.dataset\.subject\s*=\s*key/);
   assert.doesNotMatch(html, /\.src\s*=\s*['"](?:world-map|art-history-map)\.html/);
+  assert.match(
+    html,
+    /subjPills\.forEach\(p => p\.addEventListener\('click', \(\) => selectSubject\(p\.dataset\.subj\)\)\)/,
+  );
+  assert.match(
+    html,
+    /querySelectorAll\('\.navlinks li, \.subject-item, \.today-pick, \.feature-clickable, \.back-link, \.subj-pill'\)[\s\S]*e\.key === 'Enter' \|\| e\.key === ' '/,
+  );
 });
 
 test('initial World subject uses the bounded live-frame loading flow', async () => {
@@ -105,4 +117,30 @@ test('world-only integrations target worldMapFrame and art mode uses the full ma
   assert.match(html, /\.map-card\[data-subject="art"\] \.home-map-wrap/);
   assert.match(html, /\.map-card\[data-subject="art"\] \.home-events\s*\{\s*display:\s*none/);
   assert.doesNotMatch(html, /const homeMapFrame\s*=/);
+});
+
+test('embedded Art hides its internal header while standalone Art retains it', async () => {
+  const artHtml = await readFile(ART_HTML_PATH, 'utf8');
+
+  assert.match(artHtml, /<header class="page-header">/);
+  assert.match(
+    artHtml,
+    /new URLSearchParams\(window\.location\.search\)\.get\('embed'\) === '1'/,
+  );
+  assert.match(
+    artHtml,
+    /document\.body\.classList\.toggle\('is-embedded', isEmbedded\)/,
+  );
+  assert.match(
+    artHtml,
+    /body\.is-embedded \.page-header\s*\{\s*display:\s*none/,
+  );
+  assert.doesNotMatch(artHtml, /(?:^|\n)\s*\.page-header\s*\{[^}]*display:\s*none/s);
+});
+
+test('World History source remains byte-for-byte unchanged from the U2 starting commit', async () => {
+  const worldHtml = await readFile(WORLD_HTML_PATH);
+  const actualHash = createHash('sha256').update(worldHtml).digest('hex');
+
+  assert.equal(actualHash, STARTING_WORLD_SHA256);
 });
