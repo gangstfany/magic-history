@@ -16,22 +16,22 @@ const ORIGINAL_ARTWORK_IDS = [
   'ap20-temple-of-amun-re-karnak',
   'ap21-mortuary-temple-hatshepsut',
   'ap22-akhenaten-nefertiti-daughters',
-  'ap23-tutankhamun-funerary-mask',
+  'ap23-tutankhamun-innermost-coffin',
   'ap24-last-judgment-of-hunefer',
-  'ap26-athenian-acropolis',
+  'ap26-athenian-agora',
   'ap27-anavysos-kouros',
   'ap28-peplos-kore',
   'ap33-niobides-krater',
   'ap34-doryphoros',
-  'ap35-athenian-agora',
+  'ap35-athenian-acropolis',
   'ap36-grave-stele-hegeso',
   'ap37-winged-victory-samothrace',
   'ap38-great-altar-pergamon',
   'ap39-house-of-the-vettii',
   'ap40-alexander-mosaic',
-  'ap41-old-market-woman',
-  'ap42-seated-boxer',
-  'ap43-head-of-a-roman-patrician',
+  'ap41-seated-boxer',
+  'ap42-head-of-a-roman-patrician',
+  'ap43-augustus-prima-porta',
   'ap44-colosseum',
   'ap45-forum-of-trajan',
   'ap46-pantheon',
@@ -99,11 +99,11 @@ const EXPECTED_NEW_ARTWORK_MEDIA = {
     licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
   },
   'ap31-temple-minerva-apollo': {
-    imageUrl: 'https://www.worldhistory.org/image/5528/apollo-of-veii/download/',
-    imageSourceUrl: 'https://www.worldhistory.org/image/5528/apollo-of-veii/',
-    creatorOrInstitution: '摄影：Carole Raddato；来源机构：World History Encyclopedia / Museo Nazionale Etrusco di Villa Giulia',
-    licenseName: 'CC BY-NC-SA 4.0',
-    licenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Reconstruction_of_the_Apollo_temple_from_the_Portonaccio_sanctuary.jpg',
+    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Reconstruction_of_the_Apollo_temple_from_the_Portonaccio_sanctuary.jpg',
+    creatorOrInstitution: '作者：unknown；来源机构：Wikimedia Commons / tDAR',
+    licenseName: 'Public domain (PD-ineligible)',
+    licenseUrl: 'https://commons.wikimedia.org/wiki/File:Reconstruction_of_the_Apollo_temple_from_the_Portonaccio_sanctuary.jpg',
   },
   'ap32-tomb-of-the-triclinium': {
     imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Pittore_forse_attico,_affreschi_della_tomba_del_triclinio,_500-475_ac_ca,_01.jpg',
@@ -117,15 +117,16 @@ const EXPECTED_SOURCE_WORKSHEET_ROWS = [
   {
     ap: '12',
     id: '`ap12-white-temple-ziggurat`',
-    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, p. 6<br>[Smarthistory — White Temple and ziggurat](https://smarthistory.org/white-temple-and-ziggurat-uruk/)',
+    study: '`APAH notes.pdf`, p. 6<br>[Smarthistory — White Temple and ziggurat](https://smarthistory.org/white-temple-and-ziggurat-uruk/)',
     image: '[Uncropped White Temple and ziggurat view](https://commons.wikimedia.org/wiki/File:Uruk_(3).jpg)',
     creator: 'tobeytravels / Wikimedia Commons',
     license: '[CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/)',
+    visual: 'complete subject visible; identity cross-checked with CED and Smarthistory',
   },
   {
     ap: '14',
     id: '`ap14-statues-votive-figures`',
-    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, p. 7<br>[Smarthistory — Standing Male Worshipper (Tell Asmar)](https://smarthistory.org/standing-male-worshipper-from-the-square-temple-at-eshnunna-tell-asmar/)',
+    study: '`APAH notes.pdf`, p. 7<br>[Smarthistory — Standing Male Worshipper (Tell Asmar)](https://smarthistory.org/standing-male-worshipper-from-the-square-temple-at-eshnunna-tell-asmar/)',
     image: '[Tell Asmar votive figures](https://commons.wikimedia.org/wiki/File:Sumerian_Status_from_Tell_Asmar,_part_of_the_Tell_Asmar_Hoard.jpg)',
     creator: 'Osama Shukir Muhammed Amin FRCP(Glasg) / Wikimedia Commons',
     license: '[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)',
@@ -133,7 +134,7 @@ const EXPECTED_SOURCE_WORKSHEET_ROWS = [
   {
     ap: '16',
     id: '`ap16-standard-of-ur`',
-    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, pp. 8–9<br>[Smarthistory — Standard of Ur](https://smarthistory.org/standard-of-ur-2/)',
+    study: '`APAH notes.pdf`, pp. 8–9<br>[Smarthistory — Standard of Ur](https://smarthistory.org/standard-of-ur-2/)',
     image: '[Standard of Ur — complete object view](https://commons.wikimedia.org/wiki/File:Denis_Bourez_-_British_Museum,_London_(8747049029)_(2).jpg)',
     creator: 'Denis Bourez / Wikimedia Commons / British Museum',
     license: '[CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)',
@@ -141,7 +142,7 @@ const EXPECTED_SOURCE_WORKSHEET_ROWS = [
   {
     ap: '19',
     id: '`ap19-code-of-hammurabi`',
-    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, pp. 10–11<br>[Smarthistory — Law Code Stele of King Hammurabi](https://smarthistory.org/hammurabi-2/)',
+    study: '`APAH notes.pdf`, pp. 10–11<br>[Smarthistory — Law Code Stele of King Hammurabi](https://smarthistory.org/hammurabi-2/)',
     image: '[Code of Hammurabi](https://www.worldhistory.org/image/14341/code-of-hammurabi/)',
     creator: 'Larry Koester / World History Encyclopedia / Louvre Museum',
     license: '[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)',
@@ -149,7 +150,7 @@ const EXPECTED_SOURCE_WORKSHEET_ROWS = [
   {
     ap: '25',
     id: '`ap25-lamassu-sargon-ii`',
-    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, pp. 14–15<br>[Smarthistory — Lamassu from the citadel of Sargon II](https://smarthistory.org/lamassu-from-the-citadel-of-sargon-ii/)',
+    study: '`APAH notes.pdf`, pp. 14–15<br>[Smarthistory — Lamassu from the citadel of Sargon II](https://smarthistory.org/lamassu-from-the-citadel-of-sargon-ii/)',
     image: '[Lamassu from Sargon II’s palace](https://commons.wikimedia.org/wiki/File:Lamassu_%28Winged_Bull%29_of_Throne_Room_of_Palace_of_Sargon_II,_Khorsabad,_Assyria_%2828218791021%29.jpg)',
     creator: 'Gary Todd / Wikimedia Commons / Louvre Museum',
     license: '[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)',
@@ -157,7 +158,7 @@ const EXPECTED_SOURCE_WORKSHEET_ROWS = [
   {
     ap: '29',
     id: '`ap29-sarcophagus-of-the-spouses`',
-    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, p. 16<br>[Smarthistory — Sarcophagus of the Spouses (Rome)](https://smarthistory.org/sarcophagus-of-the-spouses-rome/)',
+    study: '`APAH notes.pdf`, p. 16<br>[Smarthistory — Sarcophagus of the Spouses (Rome)](https://smarthistory.org/sarcophagus-of-the-spouses-rome/)',
     image: '[Sarcophagus of the Spouses](https://commons.wikimedia.org/wiki/File:Sarcofago_degli_Sposi_Villa_Giulia.jpg)',
     creator: 'Tutorialwiki / Wikimedia Commons / Museo Nazionale Etrusco di Villa Giulia',
     license: '[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)',
@@ -165,7 +166,7 @@ const EXPECTED_SOURCE_WORKSHEET_ROWS = [
   {
     ap: '30',
     id: '`ap30-apadana-darius-xerxes`',
-    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, p. 17<br>[Smarthistory — Persepolis: The Audience Hall of Darius and Xerxes](https://smarthistory.org/persepolis-the-audience-hall-of-darius-and-xerxes/)',
+    study: '`APAH notes.pdf`, p. 17<br>[Smarthistory — Persepolis: The Audience Hall of Darius and Xerxes](https://smarthistory.org/persepolis-the-audience-hall-of-darius-and-xerxes/)',
     image: '[Persepolis — Apadana](https://commons.wikimedia.org/wiki/File:Persepolis_-_Apadana_01.jpg)',
     creator: 'Bernard Gagnon / Wikimedia Commons',
     license: '[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)',
@@ -173,15 +174,16 @@ const EXPECTED_SOURCE_WORKSHEET_ROWS = [
   {
     ap: '31',
     id: '`ap31-temple-minerva-apollo`',
-    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, pp. 17–18<br>[Smarthistory — Temple of Minerva and the sculpture of Apollo (Veii)](https://smarthistory.org/temple-of-minerva-and-the-sculpture-of-apollo-veii/)',
-    image: '[Apollo of Veii](https://www.worldhistory.org/image/5528/apollo-of-veii/)',
-    creator: 'Carole Raddato / World History Encyclopedia / Museo Nazionale Etrusco di Villa Giulia',
-    license: '[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)',
+    study: '`APAH notes.pdf`, pp. 17–18<br>[Smarthistory — Temple of Minerva and the sculpture of Apollo (Veii)](https://smarthistory.org/temple-of-minerva-and-the-sculpture-of-apollo-veii/)',
+    image: '[Portonaccio Apollo temple reconstruction](https://commons.wikimedia.org/wiki/File:Reconstruction_of_the_Apollo_temple_from_the_Portonaccio_sanctuary.jpg)',
+    creator: 'unknown / Wikimedia Commons / tDAR',
+    license: '[Public domain (PD-ineligible)](https://commons.wikimedia.org/wiki/File:Reconstruction_of_the_Apollo_temple_from_the_Portonaccio_sanctuary.jpg)',
+    visual: 'temple architecture and rooftop Apollo ensemble visible in one image',
   },
   {
     ap: '32',
     id: '`ap32-tomb-of-the-triclinium`',
-    study: '`/Users/tiffanyxu/Desktop/AP ARTHIS/APAH notes.pdf`, pp. 18–19<br>[Smarthistory — Tomb of the Triclinium](https://smarthistory.org/tomb-of-the-triclinium/)',
+    study: '`APAH notes.pdf`, pp. 18–19<br>[Smarthistory — Tomb of the Triclinium](https://smarthistory.org/tomb-of-the-triclinium/)',
     image: '[Tomb of the Triclinium frescoes](https://commons.wikimedia.org/wiki/File:Pittore_forse_attico,_affreschi_della_tomba_del_triclinio,_500-475_ac_ca,_01.jpg)',
     creator: 'Sailko / Wikimedia Commons / Museo Archeologico Nazionale di Tarquinia',
     license: '[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/); Italian cultural-heritage rules permit personal/study use, but require further authorization for other uses, especially commercial reuse ([Commons warning](https://commons.wikimedia.org/wiki/File:Pittore_forse_attico,_affreschi_della_tomba_del_triclinio,_500-475_ac_ca,_01.jpg))',
@@ -205,10 +207,12 @@ function parseSourceWorksheet(markdown) {
     .split('\n')
     .filter((line) => /^\|\s*\d+\s*\|/.test(line))
     .map((line) => {
-      const [ap, id, identifying, study, image, creator, license, visual] = line
+      const cells = line
         .slice(1, -1)
         .split('|')
         .map((cell) => cell.trim());
+      assert.equal(cells.length, 8, `worksheet row must have exactly 8 cells: ${line}`);
+      const [ap, id, identifying, study, image, creator, license, visual] = cells;
       return { ap, id, identifying, study, image, creator, license, visual };
     });
 }
@@ -318,14 +322,31 @@ test('Unit 2 source worksheet has nine exact verified rows and study links', asy
     assert.equal(row.image, expected.image, `${expected.id} image source`);
     assert.equal(row.creator, expected.creator, `${expected.id} creator`);
     assert.equal(row.license, expected.license, `${expected.id} license`);
-    assert.equal(row.visual, 'complete subject visible', `${expected.id} visual check`);
+    assert.equal(
+      row.visual,
+      expected.visual ?? 'complete subject visible',
+      `${expected.id} visual check`,
+    );
     assert.match(row.study, /https:\/\/smarthistory\.org\//, `${expected.id} Smarthistory URL`);
     assert.ok(row.image, `${expected.id} needs an image source`);
     assert.ok(row.license, `${expected.id} needs a license`);
   }
 });
 
-test('preserves the original 27 ids and gives all 36 works one credited image', async () => {
+test('source worksheet parser rejects rows with missing or extra cells', () => {
+  const valid = '| 12 | id | identifying | study | image | creator | license | visual |';
+  assert.equal(parseSourceWorksheet(valid).length, 1);
+  assert.throws(
+    () => parseSourceWorksheet(`${valid} extra |`),
+    /exactly 8 cells/,
+  );
+  assert.throws(
+    () => parseSourceWorksheet('| 12 | id | identifying | study | image | creator | license |'),
+    /exactly 8 cells/,
+  );
+});
+
+test('keeps the complete official 36-work id set and one credit per image', async () => {
   const html = await loadHtml();
   const artworks = parseJsonBlock(html, 'artwork-data');
   const credits = parseJsonBlock(html, 'image-credit-data');

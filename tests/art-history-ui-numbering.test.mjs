@@ -9,7 +9,18 @@ function getFunctionSource(html, functionName) {
   const signature = `function ${functionName}(`;
   const start = html.indexOf(signature);
   assert.notEqual(start, -1, `missing ${functionName}()`);
-  const openBrace = html.indexOf('{', start);
+  const openParenthesis = html.indexOf('(', start);
+  let parenthesisDepth = 0;
+  let openBrace = -1;
+  for (let index = openParenthesis; index < html.length; index += 1) {
+    if (html[index] === '(') parenthesisDepth += 1;
+    if (html[index] === ')') parenthesisDepth -= 1;
+    if (parenthesisDepth === 0) {
+      openBrace = html.indexOf('{', index);
+      break;
+    }
+  }
+  assert.notEqual(openBrace, -1, `missing ${functionName}() body`);
   let depth = 0;
   let end = -1;
   for (let index = openBrace; index < html.length; index += 1) {
@@ -68,6 +79,50 @@ function parseArtworkData(html) {
   );
   assert.ok(match, 'missing artwork data');
   return JSON.parse(match[1]);
+}
+
+function loadStartupAssertions(html) {
+  const functionNames = [
+    'toWorldCoordinates',
+    'normalize',
+    'filterWorks',
+    'compactApNumbers',
+    'formatApGroupLabel',
+    'createSiteToken',
+    'getApUnitNumber',
+    'groupBySite',
+    'getMapHierarchyLevel',
+    'groupByRegionGrid',
+    'buildMapGroups',
+    'buildMapGroupCandidates',
+    'getMapScreenScale',
+    'getMarkerMetrics',
+    'getMarkerBounds',
+    'markerBoundsOverlap',
+    'expandMarkerBounds',
+    'createSpatialHash',
+    'findNearestAvailableMarkerSlot',
+    'layoutSiteMarkers',
+    'layoutMapGroups',
+    'assert',
+    'clampTransform',
+    'cycleIndex',
+    'zoomAroundPoint',
+    'clientDeltaToViewBox',
+    'runDevelopmentAssertions',
+  ];
+  const sources = [
+    `const ARTWORKS = ${JSON.stringify(parseArtworkData(html))};`,
+    getObjectDeclarationSource(html, 'const AP_UNITS ='),
+    getObjectDeclarationSource(html, 'const state ='),
+    getObjectDeclarationSource(html, 'const SITE_WORLD_COORDINATES ='),
+    ...functionNames.map((name) => getFunctionSource(html, name)),
+  ].join('\n');
+  return Function(
+    'document',
+    'getComputedStyle',
+    `"use strict"; ${sources}; return runDevelopmentAssertions;`,
+  );
 }
 
 function getCssDeclarations(html, selector) {
@@ -226,10 +281,7 @@ test('art map reuses World History typography and compact detail hierarchy', asy
     getCssDeclarations(html, '.instruction p, .empty-state p'),
     /line-height:\s*1\.55/,
   );
-  assert.match(
-    html,
-    /meta\.textContent = `AP #\$\{work\.apNumber\} · \$\{civilizations\[work\.civilization\]\} · \$\{work\.period\} · \$\{work\.date\}`/,
-  );
+  assert.match(html, /meta\.textContent = formatArtworkMeta\(work\)/);
   assert.match(
     html,
     /imageButton\.setAttribute\('aria-label',\s*`Open \$\{work\.titleEn\}（\$\{work\.titleZh\}）大图`\)/,
@@ -273,6 +325,35 @@ test('compact AP number helpers preserve gaps and merge consecutive ranges', asy
   assert.equal(
     formatApGroupLabel([{ apNumber: 40 }, { apNumber: 39 }, { apNumber: 35 }]),
     'AP 35, 39–40',
+  );
+});
+
+test('the real development startup assertions use collision fallback at narrow scales', async () => {
+  const html = await loadHtml();
+  const createStartupAssertions = loadStartupAssertions(html);
+  const geography = { classList: { contains: (name) => name === 'world-geography' } };
+  const worldSvg = {
+    getAttribute: (name) => (name === 'viewBox' ? '0 0 1600 800' : null),
+    querySelectorAll: () => Array.from({ length: 100 }),
+  };
+  const document = {
+    querySelector(selector) {
+      if (selector === '.map-svg') return worldSvg;
+      if (selector === '.world-geography') return geography;
+      return null;
+    },
+    getElementById(id) {
+      return id === 'panSurface' ? { nextElementSibling: geography } : null;
+    },
+  };
+  const runDevelopmentAssertions = createStartupAssertions(
+    document,
+    () => ({ pointerEvents: 'none' }),
+  );
+
+  assert.doesNotThrow(
+    () => runDevelopmentAssertions(),
+    'startup assertions must exercise the same hierarchical collision fallback as render()',
   );
 });
 
@@ -349,9 +430,48 @@ test('Unit 2 culture labels and map regions expose the migration interfaces', as
       ['rome', 'Rome'],
     ],
   );
+  assert.deepEqual(
+    CULTURES_BY_UNIT[2].map(({ id, labelZh }) => [id, labelZh]),
+    [
+      ['all', '全部文化'],
+      ['ancientNearEast', '古代近东'],
+      ['egypt', '埃及'],
+      ['greece', '希腊'],
+      ['etruscan', '伊特鲁里亚'],
+      ['rome', '罗马'],
+    ],
+  );
   assert.equal(MAP_REGIONS.middleEast?.nameEn, 'Middle East');
   assert.equal(MAP_REGIONS.northAfrica?.nameEn, 'North Africa');
   assert.equal(MAP_REGIONS.southernEurope?.nameEn, 'Southern Europe');
+});
+
+test('detail metadata resolves every supported culture without undefined labels', async () => {
+  const html = await loadHtml();
+  const { getCultureLabel, formatArtworkMeta } = loadPureFunctions(
+    html,
+    ['getCultureLabel', 'formatArtworkMeta'],
+    ['const CULTURES_BY_UNIT ='],
+  );
+  const expected = {
+    ancientNearEast: '古代近东',
+    egypt: '埃及',
+    greece: '希腊',
+    etruscan: '伊特鲁里亚',
+    rome: '罗马',
+  };
+
+  for (const [culture, label] of Object.entries(expected)) {
+    assert.equal(getCultureLabel(culture, 'zh'), label);
+    const metadata = formatArtworkMeta({
+      apNumber: 12,
+      culture,
+      period: 'Test period',
+      date: 'Test date',
+    });
+    assert.match(metadata, new RegExp(`· ${label} ·`));
+    assert.doesNotMatch(metadata, /undefined/);
+  }
 });
 
 test('Unit toolbar uses one accessible Unit select and an English culture group', async () => {
