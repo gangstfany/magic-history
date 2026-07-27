@@ -472,6 +472,10 @@ test('validator enforces exact media-aligned HTTPS image credit manifests', asyn
       ...credits,
       [stonehengeId]: [credits[stonehengeId][0]],
     },
+    {
+      ...credits,
+      [stonehengeId]: credits[stonehengeId][0],
+    },
   ];
 
   for (const [index, fixtureCredits] of invalidCredits.entries()) {
@@ -481,6 +485,32 @@ test('validator enforces exact media-aligned HTTPS image credit manifests', asyn
       `invalid credit fixture ${index + 1}`,
     );
   }
+});
+
+test('validator rejects a one-element credit array for a single-media Unit 2 work', async () => {
+  const { artworks, credits } = await loadCompleteFixture();
+  const id = 'ap12-white-temple-ziggurat';
+
+  assert.throws(
+    () => validateImageCredits({
+      ...credits,
+      [id]: [credits[id]],
+    }, artworks),
+    /credit.*(?:single|object|array|shape)/i,
+  );
+});
+
+test('validator rejects a one-element credit array for a single-media Unit 1 work', async () => {
+  const { artworks, credits } = await loadCompleteFixture();
+  const id = 'ap1-apollo-11-stones';
+
+  assert.throws(
+    () => validateImageCredits({
+      ...credits,
+      [id]: [credits[id]],
+    }, artworks),
+    /credit.*(?:single|object|array|shape)/i,
+  );
 });
 
 test('validator accepts a complete Units 1-2 fixture with legacy and array media', async () => {

@@ -305,6 +305,12 @@ export function validateImageCredits(credits, artworks) {
   for (const artwork of artworks) {
     const media = normalizeArtworkMedia(artwork);
     const rawCredit = credits[artwork.id];
+    if (media.length === 1 && Array.isArray(rawCredit)) {
+      fail(`${artwork.id} single-media image credit must be an object, not an array`);
+    }
+    if (media.length > 1 && !Array.isArray(rawCredit)) {
+      fail(`${artwork.id} multi-media image credits must be an array`);
+    }
     const creditEntries = Array.isArray(rawCredit) ? rawCredit : [rawCredit];
     if (creditEntries.length !== media.length) {
       fail(`${artwork.id} image credit count must match its ${media.length} media views`);
