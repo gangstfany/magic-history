@@ -58,6 +58,9 @@ export const BOUNDARY_VIEWPORTS = Object.freeze([
 ]);
 
 const PROJECT_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const NINE_IMPORTED_WORKS = Object.freeze(JSON.parse(
+  await readFile(join(PROJECT_ROOT, 'tests', 'fixtures', 'u2-imported-browser.json'), 'utf8'),
+));
 const IMAGE_FIXTURE = Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480"><rect width="640" height="480" fill="#d8c5a7"/><circle cx="320" cy="240" r="120" fill="#8f553f"/></svg>',
 );
@@ -190,18 +193,24 @@ export async function startStaticServer(root = PROJECT_ROOT) {
   };
 }
 
-function installErrorCollection(page, label) {
+function installErrorCollection(page, label, { includeWarnings = false } = {}) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(`${label} pageerror: ${error.message}`));
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(`${label} console: ${message.text()}`);
+    if (
+      message.type() === 'error'
+      || (includeWarnings && message.type() === 'warning')
+    ) {
+      errors.push(`${label} console ${message.type()}: ${message.text()}`);
+    }
   });
   return errors;
 }
 
-async function mockRemoteImages(page) {
+async function mockRemoteImages(page, onImageRequest = () => {}) {
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/, async (route) => {
     if (route.request().resourceType() === 'image') {
+      onImageRequest(route.request().url());
       await route.fulfill({
         status: 200,
         contentType: 'image/svg+xml',
@@ -435,6 +444,10 @@ async function verifyStandalone(browser, baseUrl, viewport, full) {
     await mockRemoteImages(page);
     await page.goto(`${baseUrl}/art-history-map.html`, { waitUntil: 'load' });
     await waitForArt(page);
+    assert.equal(
+      (await page.locator('.page-header h1').textContent()).trim(),
+      'AP 艺术史 · Unit 2 古代地中海',
+    );
     const initial = await page.locator('.site-marker').allTextContents();
     assert.equal(initial.length, 1);
     assert.match(initial[0], /U2Ancient Mediterranean · 36 pieces/);
@@ -483,6 +496,12 @@ async function selectArtAndFrame(page, useKeyboard = false) {
   } else {
     await artPill.click();
   }
+  const caption = page.locator('#homeMapCaption');
+  await caption.waitFor({ state: 'visible' });
+  assert.equal(
+    (await caption.textContent()).trim(),
+    '36 AP works · Ancient Mediterranean · filter, compare and study',
+  );
   const iframe = page.locator('#artMapFrame');
   await iframe.waitFor({ state: 'visible' });
   await page.waitForFunction(() => (
@@ -558,6 +577,216 @@ async function verifyEmbedded(browser, baseUrl, viewport, full) {
   });
 }
 
+async function fillSearchThroughUi(searchInput, value, label) {
+  let actualValue = await searchInput.inputValue();
+  for (let attempt = 0; actualValue !== value && attempt < 5; attempt += 1) {
+    await searchInput.fill(value);
+    actualValue = await searchInput.inputValue();
+  }
+  assert.equal(actualValue, value, label);
+}
+
+async function resetAndActivateImportedWork(page, frame, work) {
+  const unitFilter = frame.locator('#unitFilter');
+  const searchInput = frame.locator('#searchInput');
+  const resultCount = frame.locator('.result-count');
+  await fillSearchThroughUi(searchInput, '', `AP ${work.apNumber} reset search`);
+  await unitFilter.selectOption('all');
+  assert.equal(await unitFilter.inputValue(), 'all', `AP ${work.apNumber} reset Unit`);
+  assert.equal(await searchInput.inputValue(), '', `AP ${work.apNumber} Unit reset retains search`);
+  assert.equal(
+    (await resultCount.textContent()).trim(),
+    '当前显示 36 件作品',
+    `AP ${work.apNumber} search reset result`,
+  );
+  await frame.locator('#resetView').click();
+  assert.equal(
+    (await resultCount.textContent()).trim(),
+    '当前显示 36 件作品',
+    `AP ${work.apNumber} hierarchy reset result`,
+  );
+
+  await fillSearchThroughUi(searchInput, work.titleEn, `AP ${work.apNumber} exact search`);
+  assert.equal((await resultCount.textContent()).trim(), '当前显示 1 件作品');
+
+  const unit = frame.locator('.site-marker[data-group-kind="unit"]');
+  assert.equal(await unit.count(), 1, `AP ${work.apNumber} exact search should expose one Unit`);
+  await unit.focus();
+  await page.keyboard.press('Enter');
+
+  const region = frame.locator('.site-marker[data-group-kind="region"]');
+  await region.waitFor();
+  assert.equal(await region.count(), 1, `AP ${work.apNumber} should expose one region`);
+  await region.focus();
+  await page.keyboard.press('Enter');
+
+  const site = frame.locator('.site-marker[data-group-kind="site"]');
+  await site.waitFor();
+  assert.equal(await site.count(), 1, `AP ${work.apNumber} should expose one site`);
+  await site.focus();
+  await page.keyboard.press('Space');
+
+  const heading = frame.locator('[data-selected-artwork-title]');
+  await heading.waitFor();
+  assert.equal((await heading.textContent()).trim(), work.titleEn);
+}
+
+async function waitForLoadedImage(image) {
+  await image.waitFor();
+  await image.evaluate((element) => (
+    element.complete && element.naturalWidth > 0
+      ? undefined
+      : new Promise((resolve, reject) => {
+        element.addEventListener('load', resolve, { once: true });
+        element.addEventListener('error', reject, { once: true });
+      })
+  ));
+  assert.ok(await image.evaluate((element) => element.complete && element.naturalWidth > 0));
+}
+
+async function verifyNineImportedWorks(page, frame, imageRequests, mode) {
+  const verified = [];
+  for (const work of NINE_IMPORTED_WORKS) {
+    imageRequests.length = 0;
+    await resetAndActivateImportedWork(page, frame, work);
+
+    const summary = frame.locator('.selected-summary');
+    assert.equal((await summary.locator('.work-title-en').textContent()).trim(), work.titleEn);
+    assert.equal((await summary.locator('.work-title-zh').textContent()).trim(), work.titleZh);
+    const meta = (await summary.locator('.work-meta').textContent()).trim();
+    assert.equal(meta.split(' · ')[0], `AP #${work.apNumber}`);
+
+    const imageButtons = summary.locator('.artwork-image-button');
+    assert.equal(await imageButtons.count(), 1, `${mode} AP ${work.apNumber} detail image button`);
+    assert.equal(await summary.locator('img').count(), 1, `${mode} AP ${work.apNumber} detail image`);
+    assert.equal(await summary.locator('[class*="gallery"]').count(), 0);
+    const imageButton = imageButtons.first();
+    const image = imageButton.locator('img');
+    await waitForLoadedImage(image);
+    assert.equal(await image.getAttribute('alt'), work.imageAlt);
+
+    const imageCredit = summary.locator('.image-credit');
+    assert.equal(await imageCredit.isVisible(), true);
+    assert.equal(
+      (await imageCredit.textContent()).trim(),
+      `图片：${work.credit.creatorOrInstitution} · ${work.credit.licenseName}`,
+    );
+    const inlineLicense = imageCredit.locator('a');
+    assert.equal(await inlineLicense.getAttribute('href'), work.credit.licenseUrl);
+    assert.equal((await inlineLicense.textContent()).trim(), work.credit.licenseName);
+
+    assert.ok(imageRequests.length >= 1, `${mode} AP ${work.apNumber} should request its image`);
+    assert.deepEqual(
+      [...new Set(imageRequests)],
+      [work.imageUrl],
+      `${mode} AP ${work.apNumber} requested image URL`,
+    );
+
+    await imageButton.focus();
+    await page.keyboard.press('Enter');
+    const dialog = frame.locator('#imageDialog');
+    await dialog.waitFor({ state: 'visible' });
+    assert.equal(await frame.evaluate(() => document.activeElement?.id), 'dialogClose');
+    assert.equal((await frame.locator('#dialogTitle').textContent()).trim(), `${work.titleEn} · ${work.titleZh}`);
+    assert.equal(await dialog.locator('img').count(), 1);
+    const dialogImage = frame.locator('#dialogImage');
+    await waitForLoadedImage(dialogImage);
+    assert.equal(await dialogImage.getAttribute('alt'), work.imageAlt);
+    assert.equal((await frame.locator('#dialogCredit').textContent()).trim(), `图片：${work.credit.creatorOrInstitution}`);
+
+    const dialogLicense = frame.locator('#dialogLicense');
+    assert.equal(await dialogLicense.isVisible(), true);
+    assert.equal(await dialogLicense.getAttribute('href'), work.credit.licenseUrl);
+    assert.equal((await dialogLicense.textContent()).trim(), `许可：${work.credit.licenseName}`);
+    const dialogSource = frame.locator('#dialogSource');
+    assert.equal(await dialogSource.isVisible(), true);
+    assert.equal(await dialogSource.getAttribute('href'), work.imageSourceUrl);
+    assert.equal(
+      (await dialogSource.textContent()).trim(),
+      `来源页：${work.imageSourceName}（查看原始文件）`,
+    );
+
+    assert.deepEqual(
+      [...new Set(imageRequests)],
+      [work.imageUrl],
+      `${mode} AP ${work.apNumber} dialog must retain the audited image URL`,
+    );
+    await page.keyboard.press('Enter');
+    await dialog.waitFor({ state: 'hidden' });
+    await frame.waitForFunction(() => (
+      document.activeElement === document.querySelector('.artwork-image-button')
+    ));
+    assert.equal(
+      await frame.evaluate(() => (
+        document.activeElement === document.querySelector('.artwork-image-button')
+      )),
+      true,
+      `${mode} AP ${work.apNumber} should restore focus to the current detail image button`,
+    );
+    verified.push({
+      apNumber: work.apNumber,
+      imageUrl: work.imageUrl,
+      imageRequestCount: imageRequests.length,
+    });
+  }
+  return verified;
+}
+
+async function verifyImportedWorksStandalone(browser, baseUrl) {
+  const viewport = { width: 1440, height: 900 };
+  return withBrowserContext(browser, { viewport, reducedMotion: 'reduce' }, async (context) => {
+    const page = await context.newPage();
+    const issues = installErrorCollection(page, 'nine works standalone', { includeWarnings: true });
+    const imageRequests = [];
+    await mockRemoteImages(page, (url) => imageRequests.push(url));
+    await page.goto(`${baseUrl}/art-history-map.html`, { waitUntil: 'load' });
+    await waitForArt(page);
+    assert.equal(
+      (await page.locator('.page-header h1').textContent()).trim(),
+      'AP 艺术史 · Unit 2 古代地中海',
+    );
+    const works = await verifyNineImportedWorks(page, page, imageRequests, 'standalone');
+    assert.deepEqual(issues, []);
+    return { viewport, works };
+  });
+}
+
+async function verifyImportedWorksEmbedded(browser, baseUrl) {
+  const viewport = { width: 1024, height: 768 };
+  return withBrowserContext(browser, { viewport, reducedMotion: 'reduce' }, async (context) => {
+    const page = await context.newPage();
+    const issues = installErrorCollection(page, 'nine works embedded', { includeWarnings: true });
+    const imageRequests = [];
+    await mockRemoteImages(page, (url) => imageRequests.push(url));
+    await page.goto(`${baseUrl}/index.html`, { waitUntil: 'load' });
+    await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => (
+      document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
+    ));
+    const { frame } = await selectArtAndFrame(page, true);
+    const works = await verifyNineImportedWorks(page, frame, imageRequests, 'embedded');
+    assert.deepEqual(issues, []);
+    return { viewport, works };
+  });
+}
+
+export async function runFocusedImportedVerification() {
+  const playwright = await discoverPlaywright();
+  const executablePath = await discoverBrowser(playwright.chromium);
+  return runManagedVerification({
+    startServer: () => startStaticServer(),
+    launchBrowser: () => playwright.chromium.launch({
+      executablePath,
+      headless: true,
+      args: ['--disable-gpu', '--no-sandbox'],
+    }),
+    verify: async ({ server, browser }) => ({
+      standalone: await verifyImportedWorksStandalone(browser, server.baseUrl),
+      embedded: await verifyImportedWorksEmbedded(browser, server.baseUrl),
+    }),
+  });
+}
+
 export async function withBrowserContext(browser, options, verify) {
   const context = await browser.newContext(options);
   let result;
@@ -622,6 +851,13 @@ export async function runVerification() {
         const embedded = await verifyEmbedded(browser, server.baseUrl, viewport, false);
         report.push({ viewport, kind: 'boundary', standalone, embedded });
       }
+      const standaloneImported = await verifyImportedWorksStandalone(browser, server.baseUrl);
+      const embeddedImported = await verifyImportedWorksEmbedded(browser, server.baseUrl);
+      report.push({
+        kind: 'nine-imported-works',
+        standalone: standaloneImported,
+        embedded: embeddedImported,
+      });
       return report;
     },
   });
@@ -631,7 +867,10 @@ const isMain = process.argv[1]
   && fileURLToPath(import.meta.url) === normalize(process.argv[1]);
 
 if (isMain) {
-  runVerification()
+  const verification = process.argv.includes('--imported-only')
+    ? runFocusedImportedVerification()
+    : runVerification();
+  verification
     .then((report) => {
       process.stdout.write(`${JSON.stringify({ ok: true, cases: report }, null, 2)}\n`);
     })

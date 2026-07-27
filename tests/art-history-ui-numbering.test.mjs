@@ -5,6 +5,17 @@ import { readFile } from 'node:fs/promises';
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const loadHtml = () => readFile(HTML_PATH, 'utf8');
 
+test('standalone document copy names Unit 2 and uses culture terminology', async () => {
+  const html = await loadHtml();
+
+  assert.match(html, /<title>AP 艺术史 · Unit 2 古代地中海<\/title>/);
+  assert.match(html, /<h1>AP 艺术史 · Unit 2 古代地中海<\/h1>/);
+  assert.match(
+    html,
+    /<p class="subtitle">从地点出发，连接作品、文化与历史语境。<\/p>/,
+  );
+});
+
 function getFunctionSource(html, functionName) {
   const signature = `function ${functionName}(`;
   const start = html.indexOf(signature);
@@ -2086,7 +2097,17 @@ test('artwork images and modal preserve labels, complete-image space, fallback, 
   assert.match(openDialogSource, /getElementById\('dialogClose'\)\.focus\(\)/);
   assert.match(
     html,
-    /imageDialog\.addEventListener\('close', \(\) => \{\s*imageDialogTrigger\?\.focus\(\)/,
+    /imageDialog\.addEventListener\('close', \(\) => \{\s*const focusTarget = imageDialogTrigger\?\.isConnected/,
+  );
+  assert.match(html, /detailPanel\.querySelector\('\.artwork-image-button'\)/);
+  assert.match(html, /focusTarget\?\.focus\(\)/);
+  assert.match(
+    html,
+    /const focusedDetailImageButton = document\.activeElement\?\.classList\?\.contains\('artwork-image-button'\)/,
+  );
+  assert.match(
+    html,
+    /if \(focusedDetailImageButton\) detailPanel\.querySelector\('\.artwork-image-button'\)\?\.focus\(\{ preventScroll:true \}\)/,
   );
   assert.doesNotMatch(html, /class=["'][^"']*gallery|createGallery|renderGallery/i);
 });

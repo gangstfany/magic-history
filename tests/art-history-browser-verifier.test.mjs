@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises';
 
 const VERIFIER_URL = new URL('../scripts/verify-art-history-browser.mjs', import.meta.url);
 const RELEASE_VERIFIER_URL = new URL('../scripts/verify-art-history-release.mjs', import.meta.url);
+const NINE_WORKS_URL = new URL('./fixtures/u2-imported-browser.json', import.meta.url);
+const SOURCE_FIXTURE_URL = new URL('./fixtures/u2-corrected-and-imported.json', import.meta.url);
 
 test('browser verifier exposes required and responsive-boundary viewport matrices', async () => {
   const verifier = await import(VERIFIER_URL.href);
@@ -75,6 +77,33 @@ test('browser verifier discovers its runtime and browser without machine-specifi
   assert.match(source, /No supported Playwright runtime found/);
   assert.match(source, /No supported Chromium or Chrome executable found/);
   assert.doesNotMatch(source, /\/Users\/|tiffanyxu/);
+});
+
+test('nine-work browser fixture is canonical and independently matches source fixtures', async () => {
+  const [browserFixture, sourceFixture, verifierSource] = await Promise.all([
+    readFile(NINE_WORKS_URL, 'utf8').then(JSON.parse),
+    readFile(SOURCE_FIXTURE_URL, 'utf8').then(JSON.parse),
+    readFile(VERIFIER_URL, 'utf8'),
+  ]);
+  const apNumbers = [12, 14, 16, 19, 25, 29, 30, 31, 32];
+  const expected = sourceFixture.artworks
+    .filter(({ apNumber }) => apNumbers.includes(apNumber))
+    .map((work) => ({
+      id: work.id,
+      apNumber: work.apNumber,
+      titleEn: work.titleEn,
+      titleZh: work.titleZh,
+      imageUrl: work.imageUrl,
+      imageAlt: work.imageAlt,
+      imageSourceName: work.imageSourceName,
+      imageSourceUrl: work.imageSourceUrl,
+      credit: sourceFixture.credits[work.id],
+    }));
+
+  assert.deepEqual(browserFixture, expected);
+  assert.deepEqual(browserFixture.map(({ apNumber }) => apNumber), apNumbers);
+  assert.match(verifierSource, /u2-imported-browser\.json/);
+  assert.match(verifierSource, /verifyNineImportedWorks/);
 });
 
 test('verification lifecycle closes the server when browser launch rejects', async () => {

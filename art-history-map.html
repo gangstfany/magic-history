@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AP 艺术史 · 古代地中海与埃及</title>
+  <title>AP 艺术史 · Unit 2 古代地中海</title>
   <style>
     :root {
       color-scheme:light;
@@ -165,8 +165,8 @@
     document.body.classList.toggle('is-embedded', isEmbedded);
   </script>
   <header class="page-header">
-    <h1>AP 艺术史 · 古代地中海与埃及</h1>
-    <p class="subtitle">从地点出发，连接作品、文明与历史语境。</p>
+    <h1>AP 艺术史 · Unit 2 古代地中海</h1>
+    <p class="subtitle">从地点出发，连接作品、文化与历史语境。</p>
   </header>
   <div id="filterContainer" class="filter-toolbar" role="group" aria-label="作品筛选">
     <label class="filter-label">Unit<select id="unitFilter" aria-label="Unit"><option value="all">All Units</option></select></label>
@@ -2019,6 +2019,7 @@
         ? document.activeElement.dataset.siteToken
         : null;
       const focusedWorkId = document.activeElement?.dataset?.workId || null;
+      const focusedDetailImageButton = document.activeElement?.classList?.contains('artwork-image-button');
       const visibleWorks = filterWorks(ARTWORKS, state);
       if (state.selectedId && !visibleWorks.some((work) => work.id === state.selectedId)) {
         state.selectedId = null;
@@ -2206,6 +2207,7 @@
         instruction.append(heading, copy, legend);
         detailPanel.append(instruction);
       }
+      if (focusedDetailImageButton) detailPanel.querySelector('.artwork-image-button')?.focus({ preventScroll:true });
     }
 
     function clearFilters() {
@@ -2344,7 +2346,10 @@
       if (event.target === imageDialog) imageDialog.close();
     });
     imageDialog.addEventListener('close', () => {
-      imageDialogTrigger?.focus();
+      const focusTarget = imageDialogTrigger?.isConnected
+        ? imageDialogTrigger
+        : detailPanel.querySelector('.artwork-image-button');
+      focusTarget?.focus();
       imageDialogTrigger = null;
     });
 

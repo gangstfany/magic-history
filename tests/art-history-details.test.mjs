@@ -256,7 +256,9 @@ test('image dialog supports labelled media, attribution, and focus restoration',
   assert.match(html, /id="dialogCredit"/);
   assert.match(html, /id="dialogLicense"/);
   assert.match(html, /function openImageDialog\(/);
-  assert.match(html, /imageDialogTrigger\?\.focus\(\)/);
+  assert.match(html, /imageDialogTrigger\?\.isConnected/);
+  assert.match(html, /detailPanel\.querySelector\('\.artwork-image-button'\)/);
+  assert.match(html, /focusTarget\?\.focus\(\)/);
 });
 
 test('AP 15 uses the Louvre E 3023 Seated Scribe image and matching credit', async () => {

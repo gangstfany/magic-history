@@ -145,6 +145,10 @@ test('map caption follows the selected subject and hides for coming-soon subject
 
   assert.match(html, /id="homeMapCaption"/);
   assert.match(html, /homeMapCaption\.textContent = key === 'art'/);
+  assert.match(
+    html,
+    /\? '36 AP works · Ancient Mediterranean · filter, compare and study'/,
+  );
   assert.match(html, /homeMapCaption\.hidden = !s\.live/);
 });
 
