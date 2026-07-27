@@ -466,10 +466,11 @@ test('comparison navigation clears conflicting filters when crossing Units 1 and
   const artworks = parseJsonBlock(html, 'artwork-data');
   const source = getFunctionSource(html, 'selectComparison');
   const state = {};
-  const calls = { sync:0, render:0, focus:0, scroll:0 };
+  const calls = [];
+  let renderedSelectedId = null;
   const detailPanel = {
     scrollTo(options) {
-      calls.scroll += 1;
+      calls.push('scroll');
       assert.deepEqual(options, { top:0, behavior:'smooth' });
     },
   };
@@ -486,9 +487,19 @@ test('comparison navigation clears conflicting filters when crossing Units 1 and
   )(
     artworks,
     state,
-    () => { calls.sync += 1; },
-    () => { calls.render += 1; },
-    () => { calls.focus += 1; },
+    () => { calls.push('sync'); },
+    () => {
+      renderedSelectedId = state.selectedId;
+      calls.push('render');
+    },
+    () => {
+      assert.equal(
+        renderedSelectedId,
+        state.selectedId,
+        'focus must run after render creates the newly selected artwork title',
+      );
+      calls.push('focus');
+    },
     detailPanel,
   );
   const u1Target = artworks.find(({ unit }) => unit === 1);
@@ -523,7 +534,10 @@ test('comparison navigation clears conflicting filters when crossing Units 1 and
     pendingFocusParentKey:null,
     activeDetailTab:'quick',
   });
+  assert.deepEqual(calls, ['sync', 'render', 'focus', 'scroll']);
 
+  calls.length = 0;
+  renderedSelectedId = null;
   Object.assign(state, {
     culture:'rome',
     period:'Imperial Roman',
@@ -550,7 +564,7 @@ test('comparison navigation clears conflicting filters when crossing Units 1 and
     pendingFocusParentKey:null,
     activeDetailTab:'quick',
   });
-  assert.deepEqual(calls, { sync:2, render:2, focus:2, scroll:2 });
+  assert.deepEqual(calls, ['sync', 'render', 'focus', 'scroll']);
 });
 
 test('image dialog supports labelled media, attribution, and focus restoration', async () => {
