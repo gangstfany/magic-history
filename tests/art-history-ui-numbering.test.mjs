@@ -1158,6 +1158,111 @@ test('250-work map falls back to a collision-safe hierarchy at every mobile zoom
   assert.equal(getMapHierarchyLevel(250, 3), 'site');
 });
 
+test('250 configured works keep deterministic collision-safe hierarchy fallbacks on mobile', async () => {
+  const html = await loadHtml();
+  const helpers = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'formatPieceCount',
+      'createSiteToken',
+      'getUnitById',
+      'getMapGroupText',
+      'getApUnitNumber',
+      'toWorldCoordinates',
+      'groupBySite',
+      'groupByConfiguredRegion',
+      'getMapHierarchyLevel',
+      'groupByRegionGrid',
+      'buildMapGroups',
+      'buildMapGroupCandidates',
+      'getMarkerMetrics',
+      'getMarkerBounds',
+      'markerBoundsOverlap',
+      'expandMarkerBounds',
+      'createSpatialHash',
+      'findNearestAvailableMarkerSlot',
+      'layoutSiteMarkers',
+      'layoutMapGroups',
+    ],
+    ['const AP_UNITS =', 'const MAP_REGIONS =', 'const SITE_WORLD_COORDINATES ='],
+  );
+  const regionIds = ['middleEast', 'northAfrica', 'southernEurope'];
+  const artworks = Array.from({ length: 250 }, (_, index) => {
+    const apNumber = index + 1;
+    return {
+      id: `configured-ap-${apNumber}`,
+      apNumber,
+      unit: helpers.getApUnitNumber(apNumber),
+      region: regionIds[index % regionIds.length],
+      siteName: `Configured Site ${apNumber}`,
+      coordinates: { x: 0, y: 0 },
+      culture: ['egypt', 'greece', 'rome'][index % 3],
+      titleEn: `Configured Work ${apNumber}`,
+    };
+  });
+  const branches = [
+    { selectedUnit: 'all', activeUnit: null, activeRegion: null },
+    { selectedUnit: '2', activeUnit: 2, activeRegion: null },
+    {
+      selectedUnit: '2',
+      activeUnit: 2,
+      activeRegion: 'unit-2-region-middleEast',
+    },
+  ];
+
+  for (const zoomScale of [1, 1.5]) {
+    const screenScale = (362 / 1600) * zoomScale;
+    for (const branch of branches) {
+      const candidates = helpers.buildMapGroupCandidates(artworks, zoomScale, branch);
+      assert.ok(candidates.length > 1, `${zoomScale}x configured branch needs a fallback`);
+      assert.ok(
+        candidates[0].every((group) => !group.isGridFallback),
+        'approved configured hierarchy must remain the first candidate',
+      );
+      assert.ok(
+        candidates.slice(1).some((groups) => groups.every((group) => group.isGridFallback)),
+        'configured hierarchy needs an explicitly compact fallback',
+      );
+      assert.deepEqual(
+        helpers.buildMapGroupCandidates(artworks, zoomScale, branch)
+          .map((groups) => groups.map((group) => group.key)),
+        candidates.map((groups) => groups.map((group) => group.key)),
+        `${zoomScale}x configured candidate order must be deterministic`,
+      );
+      assert.doesNotThrow(
+        () => helpers.layoutSiteMarkers(candidates[1], screenScale),
+        `${zoomScale}x compact configured candidate must be independently layout-safe`,
+      );
+      const laidOut = helpers.layoutMapGroups(artworks, zoomScale, screenScale, branch);
+      assert.doesNotThrow(() => helpers.layoutSiteMarkers(laidOut, screenScale));
+      assert.deepEqual(
+        helpers.layoutMapGroups(artworks, zoomScale, screenScale, branch)
+          .map((group) => group.key),
+        laidOut.map((group) => group.key),
+        `${zoomScale}x configured fallback must be deterministic`,
+      );
+      for (let index = 0; index < laidOut.length; index += 1) {
+        const group = laidOut[index];
+        assert.ok(group.bounds.left >= 0 && group.bounds.right <= 1600);
+        assert.ok(group.bounds.top >= 0 && group.bounds.bottom <= 800);
+        for (let otherIndex = index + 1; otherIndex < laidOut.length; otherIndex += 1) {
+          assert.equal(
+            helpers.markerBoundsOverlap(group.bounds, laidOut[otherIndex].bounds),
+            false,
+            `${group.key} overlaps ${laidOut[otherIndex].key}`,
+          );
+        }
+      }
+    }
+  }
+
+  const compactOverview = helpers.buildMapGroupCandidates(artworks, 1, branches[0])[1];
+  assert.equal(compactOverview[0].kind, 'unit');
+  assert.match(helpers.getMapGroupText(compactOverview[0]).subtitle, / · \d+ pieces$/);
+});
+
 test('unit to region to site branch refinement stays stable and layout-safe on mobile', async () => {
   const html = await loadHtml();
   const helpers = loadPureFunctions(

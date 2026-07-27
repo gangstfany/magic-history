@@ -863,7 +863,13 @@
         && works.length > 0 && works.every((work) => (
         Number.isInteger(work.unit) && MAP_REGIONS[work.region]
       ));
-      if (usesConfiguredRegions) return [configuredGroups];
+      if (usesConfiguredRegions) {
+        const compactConfiguredGroups = configuredGroups.map((group) => ({
+          ...group,
+          isGridFallback: true
+        }));
+        return [configuredGroups, compactConfiguredGroups];
+      }
       const siteGroups = groupBySite(works);
       if (activeBranch.activeUnit || activeBranch.activeRegion) {
         return [buildMapGroups(works, zoomScale, activeBranch)];
