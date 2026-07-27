@@ -294,6 +294,19 @@ test('workspace stays stacked through 664px and opens a usable two-column map at
   assert.doesNotMatch(html, /@media \(max-width:52[1-9]px\)[\s\S]*grid-template-columns:\s*1fr/);
 });
 
+test('expanded short-host iframe keeps its stacked embedded child non-scrolling', async () => {
+  const html = await loadHtml();
+  const expandedHostCss = getMediaQuerySource(
+    html,
+    '(max-width:664px) and (min-height:900px)',
+  );
+  const embeddedBody = getCssDeclarations(expandedHostCss, 'body.is-embedded');
+
+  assert.match(embeddedBody, /height:\s*100vh/);
+  assert.match(embeddedBody, /min-height:\s*0/);
+  assert.match(embeddedBody, /overflow:\s*hidden/);
+});
+
 test('art map reuses World History typography and compact detail hierarchy', async () => {
   const html = await loadHtml();
   assert.match(
@@ -985,7 +998,10 @@ test('marker metrics stay readable and touchable on a 390px viewport', async () 
 test('Unit 2 region hierarchy remains collision-safe in a 667x375 embedded landscape map', async () => {
   const html = await loadHtml();
   const artworks = parseArtworkData(html);
-  const shortLandscapeCss = getMediaQuerySource(html, '(max-height:520px)');
+  const shortLandscapeCss = getMediaQuerySource(
+    html,
+    '(min-width:665px) and (max-height:520px)',
+  );
   const helpers = loadPureFunctions(
     html,
     [

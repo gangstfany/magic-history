@@ -25,6 +25,24 @@ export const BOUNDARY_VIEWPORTS = Object.freeze([
   { width: 641, height: 700 },
   { width: 664, height: 700 },
   { width: 665, height: 700 },
+  { width: 639, height: 519 },
+  { width: 639, height: 520 },
+  { width: 639, height: 521 },
+  { width: 640, height: 519 },
+  { width: 640, height: 520 },
+  { width: 640, height: 521 },
+  { width: 641, height: 519 },
+  { width: 641, height: 520 },
+  { width: 641, height: 521 },
+  { width: 663, height: 519 },
+  { width: 663, height: 520 },
+  { width: 663, height: 521 },
+  { width: 664, height: 519 },
+  { width: 664, height: 520 },
+  { width: 664, height: 521 },
+  { width: 665, height: 519 },
+  { width: 665, height: 520 },
+  { width: 665, height: 521 },
   { width: 667, height: 519 },
   { width: 667, height: 520 },
   { width: 667, height: 521 },
@@ -196,6 +214,7 @@ async function geometry(frame) {
     const workspace = document.querySelector('.art-workspace').getBoundingClientRect();
     const map = document.querySelector('.map-panel').getBoundingClientRect();
     const detail = document.querySelector('.detail-panel').getBoundingClientRect();
+    const toolbar = document.querySelector('.filter-toolbar').getBoundingClientRect();
     const bodyStyle = getComputedStyle(document.body);
     return {
       innerWidth,
@@ -204,13 +223,35 @@ async function geometry(frame) {
       pageScroll: document.documentElement.scrollHeight - document.documentElement.clientHeight,
       bodyOverflowY: bodyStyle.overflowY,
       workspace: { width: workspace.width, height: workspace.height },
+      toolbar: { top: toolbar.top, bottom: toolbar.bottom, height: toolbar.height },
       map: { x: map.x, y: map.y, width: map.width, height: map.height },
       detail: { x: detail.x, y: detail.y, width: detail.width, height: detail.height },
+      contentBottom: Math.max(toolbar.bottom, map.bottom, detail.bottom),
+      scrollHeight: document.documentElement.scrollHeight,
       stacked: detail.y >= map.y + map.height - 1,
       detailScroll: document.querySelector('.detail-panel').scrollHeight
         - document.querySelector('.detail-panel').clientHeight,
     };
   });
+}
+
+function assertReachability(metrics, mode, viewport) {
+  const fitsFrame = metrics.contentBottom <= metrics.innerHeight + 1;
+  const childCanScroll = metrics.pageScroll > 0 && (
+    mode === 'standalone'
+    || ['auto', 'scroll'].includes(metrics.bodyOverflowY)
+  );
+  assert.ok(
+    fitsFrame || childCanScroll,
+    `${mode} ${viewport.width}x${viewport.height} content bottom ${metrics.contentBottom}`
+      + ` is clipped by ${metrics.innerHeight}px frame with ${metrics.bodyOverflowY} overflow`,
+  );
+  if (metrics.bodyOverflowY === 'hidden') {
+    assert.ok(
+      fitsFrame,
+      `${mode} ${viewport.width}x${viewport.height} hidden child clips content`,
+    );
+  }
 }
 
 async function assertCommonLayout(frame, mode, viewport) {
@@ -237,6 +278,7 @@ async function assertCommonLayout(frame, mode, viewport) {
     controls.every(({ width, height }) => width >= 30 && height >= 30),
     `${mode} ${viewport.width} control sizes ${JSON.stringify(controls)}`,
   );
+  assertReachability(metrics, mode, viewport);
   return metrics;
 }
 
@@ -269,7 +311,32 @@ async function assertKeyboardAndFilters(page, frame) {
   ]);
   for (const [culture, count] of expected) {
     const button = frame.locator(`[data-culture="${culture}"]`);
-    await button.click();
+    if (culture === 'ancientNearEast') {
+      await frame.locator('[data-culture="all"]').focus();
+      await page.keyboard.press('Tab');
+      assert.equal(
+        await frame.evaluate(() => document.activeElement?.dataset?.culture),
+        'ancientNearEast',
+      );
+      const semantics = await button.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          tagName: element.tagName,
+          tabIndex: element.tabIndex,
+          ariaPressed: element.getAttribute('aria-pressed'),
+          outlineStyle: style.outlineStyle,
+          outlineWidth: parseFloat(style.outlineWidth),
+        };
+      });
+      assert.equal(semantics.tagName, 'BUTTON');
+      assert.equal(semantics.tabIndex, 0);
+      assert.equal(semantics.ariaPressed, 'false');
+      assert.notEqual(semantics.outlineStyle, 'none');
+      assert.ok(semantics.outlineWidth >= 2);
+      await page.keyboard.press('Space');
+    } else {
+      await button.click();
+    }
     assert.match(await frame.locator('.result-count').textContent(), new RegExp(`\\b${count}\\b`));
     assert.equal(await button.getAttribute('aria-pressed'), 'true');
     assert.equal(await frame.evaluate(() => document.activeElement?.dataset?.culture), culture);
@@ -331,37 +398,63 @@ async function assertHierarchyAndDialog(page, frame) {
 }
 
 async function verifyStandalone(browser, baseUrl, viewport, full) {
-  const context = await browser.newContext({
+  return withBrowserContext(browser, {
     viewport,
     reducedMotion: 'reduce',
+  }, async (context) => {
+    const page = await context.newPage();
+    const errors = installErrorCollection(page, `standalone ${viewport.width}x${viewport.height}`);
+    await mockRemoteImages(page);
+    await page.goto(`${baseUrl}/art-history-map.html`, { waitUntil: 'load' });
+    await waitForArt(page);
+    const initial = await page.locator('.site-marker').allTextContents();
+    assert.equal(initial.length, 1);
+    assert.match(initial[0], /U2Ancient Mediterranean · 36 pieces/);
+    let metrics = await assertCommonLayout(page, 'standalone', viewport);
+    if (full) {
+      await assertKeyboardAndFilters(page, page);
+      await assertHierarchyAndDialog(page, page);
+      assert.match(
+        await page.evaluate(() => getComputedStyle(document.querySelector('.marker-visual')).transitionDuration),
+        /^(?:0\.01ms|1e-05s)$/,
+      );
+    } else {
+      await page.locator('#unitFilter').selectOption('2');
+      metrics = await assertCommonLayout(page, 'standalone', viewport);
+    }
+    assert.deepEqual(errors, []);
+    return metrics;
   });
-  const page = await context.newPage();
-  const errors = installErrorCollection(page, `standalone ${viewport.width}x${viewport.height}`);
-  await mockRemoteImages(page);
-  await page.goto(`${baseUrl}/art-history-map.html`, { waitUntil: 'load' });
-  await waitForArt(page);
-  const initial = await page.locator('.site-marker').allTextContents();
-  assert.equal(initial.length, 1);
-  assert.match(initial[0], /U2Ancient Mediterranean · 36 pieces/);
-  const metrics = await assertCommonLayout(page, 'standalone', viewport);
-  if (full) {
-    await assertKeyboardAndFilters(page, page);
-    await assertHierarchyAndDialog(page, page);
-    assert.match(
-      await page.evaluate(() => getComputedStyle(document.querySelector('.marker-visual')).transitionDuration),
-      /^(?:0\.01ms|1e-05s)$/,
-    );
-  } else {
-    await page.locator('#unitFilter').selectOption('2');
-  }
-  assert.deepEqual(errors, []);
-  await context.close();
-  return metrics;
 }
 
-async function selectArtAndFrame(page) {
+async function selectArtAndFrame(page, useKeyboard = false) {
   const artPill = page.locator('.subj-pill[data-subj="art"]');
-  await artPill.click();
+  if (useKeyboard) {
+    await artPill.focus();
+    const semantics = await artPill.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        role: element.getAttribute('role'),
+        tabIndex: element.tabIndex,
+        ariaPressed: element.getAttribute('aria-pressed'),
+        outlineStyle: style.outlineStyle,
+        outlineWidth: parseFloat(style.outlineWidth),
+      };
+    });
+    assert.equal(semantics.role, 'button');
+    assert.equal(semantics.tabIndex, 0);
+    assert.equal(semantics.ariaPressed, 'false');
+    assert.notEqual(semantics.outlineStyle, 'none');
+    assert.ok(semantics.outlineWidth >= 2);
+    await page.keyboard.press('Enter');
+    assert.equal(await artPill.getAttribute('aria-pressed'), 'true');
+    assert.equal(
+      await page.evaluate(() => document.activeElement?.dataset?.subj),
+      'art',
+    );
+  } else {
+    await artPill.click();
+  }
   const iframe = page.locator('#artMapFrame');
   await iframe.waitFor({ state: 'visible' });
   await page.waitForFunction(() => (
@@ -374,86 +467,136 @@ async function selectArtAndFrame(page) {
 }
 
 async function verifyEmbedded(browser, baseUrl, viewport, full) {
-  const context = await browser.newContext({
+  return withBrowserContext(browser, {
     viewport,
     reducedMotion: 'reduce',
-  });
-  const page = await context.newPage();
-  const errors = installErrorCollection(page, `embedded ${viewport.width}x${viewport.height}`);
-  await mockRemoteImages(page);
-  await page.goto(`${baseUrl}/index.html`, { waitUntil: 'load' });
-  await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
-  await page.waitForFunction(() => (
-    document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
-  ));
-  const worldFrame = page.frames().find((candidate) => candidate.url().includes('world-map.html'));
-  assert.ok(worldFrame, 'World iframe was not attached');
-  await worldFrame.locator('.map-zone').waitFor();
-  assert.ok(await worldFrame.locator('.pin-group').count() > 0);
-  const { frame, iframe } = await selectArtAndFrame(page);
-  const metrics = await assertCommonLayout(frame, 'embedded', viewport);
-  const host = await page.evaluate(() => {
-    const wrap = document.querySelector('.map-card[data-subject="art"] .home-map-wrap');
-    const rect = wrap.getBoundingClientRect();
-    return {
-      wrapHeight: rect.height,
-      pageScroll: document.documentElement.scrollHeight - document.documentElement.clientHeight,
-      horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    };
-  });
-  assert.ok(host.horizontalOverflow <= 1);
-  const shortLandscape = viewport.width <= 900 && viewport.height <= 520;
-  if (shortLandscape) {
-    assert.ok(Math.abs(host.wrapHeight - 520) <= 1, `short host height ${host.wrapHeight}`);
-    assert.ok(host.pageScroll > 0, 'homepage should own short-landscape scrolling');
-    assert.ok(metrics.pageScroll <= 1, 'embedded child should not page-scroll in short landscape');
-    assert.equal(metrics.bodyOverflowY, 'hidden');
-  } else if (viewport.width <= 900) {
-    const approved = Math.min(720, viewport.height * 0.78);
-    assert.ok(Math.abs(host.wrapHeight - approved) <= 1, `approved host height ${host.wrapHeight}`);
-    if (metrics.stacked) {
-      assert.ok(metrics.pageScroll > 0, 'stacked portrait content should remain reachable by child scroll');
-      assert.equal(metrics.bodyOverflowY, 'auto');
+  }, async (context) => {
+    const page = await context.newPage();
+    const errors = installErrorCollection(page, `embedded ${viewport.width}x${viewport.height}`);
+    await mockRemoteImages(page);
+    await page.goto(`${baseUrl}/index.html`, { waitUntil: 'load' });
+    await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => (
+      document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
+    ));
+    const worldFrame = page.frames().find((candidate) => candidate.url().includes('world-map.html'));
+    assert.ok(worldFrame, 'World iframe was not attached');
+    await worldFrame.locator('.map-zone').waitFor();
+    assert.ok(await worldFrame.locator('.pin-group').count() > 0);
+    const { frame, iframe } = await selectArtAndFrame(page, full);
+    let metrics = await assertCommonLayout(frame, 'embedded', viewport);
+    const host = await page.evaluate(() => {
+      const wrap = document.querySelector('.map-card[data-subject="art"] .home-map-wrap');
+      const rect = wrap.getBoundingClientRect();
+      return {
+        wrapHeight: rect.height,
+        pageScroll: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+        horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+    assert.ok(host.horizontalOverflow <= 1);
+    const shortStacked = viewport.width <= 666 && viewport.height <= 520;
+    const shortTwoColumn = viewport.width >= 667
+      && viewport.width <= 900
+      && viewport.height <= 520;
+    if (shortStacked) {
+      assert.ok(Math.abs(host.wrapHeight - 960) <= 1, `stacked short host height ${host.wrapHeight}`);
+      assert.ok(host.pageScroll > 0, 'homepage should own stacked short scrolling');
+      assert.ok(metrics.pageScroll <= 1, 'stacked short child should not page-scroll');
+      assert.equal(metrics.bodyOverflowY, 'hidden');
+    } else if (shortTwoColumn) {
+      assert.ok(Math.abs(host.wrapHeight - 520) <= 1, `two-column short host height ${host.wrapHeight}`);
+      assert.ok(host.pageScroll > 0, 'homepage should own two-column short scrolling');
+      assert.ok(metrics.pageScroll <= 1, 'two-column short child should not page-scroll');
+      assert.equal(metrics.bodyOverflowY, 'hidden');
+    } else if (viewport.width <= 900) {
+      const approved = Math.min(720, viewport.height * 0.78);
+      assert.ok(Math.abs(host.wrapHeight - approved) <= 1, `approved host height ${host.wrapHeight}`);
+      if (metrics.stacked) {
+        assert.ok(metrics.pageScroll > 0, 'stacked portrait content should remain reachable by child scroll');
+        assert.equal(metrics.bodyOverflowY, 'auto');
+      }
     }
+    assert.equal(await iframe.getAttribute('aria-hidden'), 'false');
+    if (full) {
+      await assertKeyboardAndFilters(page, frame);
+      await assertHierarchyAndDialog(page, frame);
+    } else {
+      await frame.locator('#unitFilter').selectOption('2');
+      metrics = await assertCommonLayout(frame, 'embedded', viewport);
+    }
+    assert.deepEqual(errors, []);
+    return { ...metrics, host };
+  });
+}
+
+export async function withBrowserContext(browser, options, verify) {
+  const context = await browser.newContext(options);
+  let result;
+  let operationError;
+  try {
+    result = await verify(context);
+  } catch (error) {
+    operationError = error;
   }
-  assert.equal(await iframe.getAttribute('aria-hidden'), 'false');
-  if (full) {
-    await assertKeyboardAndFilters(page, frame);
-    await assertHierarchyAndDialog(page, frame);
-  } else {
-    await frame.locator('#unitFilter').selectOption('2');
+  const [cleanup] = await Promise.allSettled([context.close()]);
+  if (operationError) throw operationError;
+  if (cleanup.status === 'rejected') throw cleanup.reason;
+  return result;
+}
+
+export async function runManagedVerification({ startServer, launchBrowser, verify }) {
+  let server;
+  let browser;
+  let result;
+  let operationError;
+  try {
+    server = await startServer();
+    browser = await launchBrowser(server);
+    result = await verify({ server, browser });
+  } catch (error) {
+    operationError = error;
   }
-  assert.deepEqual(errors, []);
-  await context.close();
-  return { ...metrics, host };
+  const cleanupResults = await Promise.allSettled([
+    browser?.close?.(),
+    server?.close?.(),
+  ]);
+  if (operationError) throw operationError;
+  const cleanupErrors = cleanupResults
+    .filter(({ status }) => status === 'rejected')
+    .map(({ reason }) => reason);
+  if (cleanupErrors.length === 1) throw cleanupErrors[0];
+  if (cleanupErrors.length > 1) {
+    throw new AggregateError(cleanupErrors, 'Browser verification cleanup failed');
+  }
+  return result;
 }
 
 export async function runVerification() {
   const playwright = await discoverPlaywright();
   const executablePath = await discoverBrowser(playwright.chromium);
-  const server = await startStaticServer();
-  const browser = await playwright.chromium.launch({
-    executablePath,
-    headless: true,
-    args: ['--disable-gpu', '--no-sandbox'],
+  return runManagedVerification({
+    startServer: () => startStaticServer(),
+    launchBrowser: () => playwright.chromium.launch({
+      executablePath,
+      headless: true,
+      args: ['--disable-gpu', '--no-sandbox'],
+    }),
+    verify: async ({ server, browser }) => {
+      const report = [];
+      for (const viewport of REQUIRED_VIEWPORTS) {
+        const standalone = await verifyStandalone(browser, server.baseUrl, viewport, true);
+        const embedded = await verifyEmbedded(browser, server.baseUrl, viewport, true);
+        report.push({ viewport, kind: 'required', standalone, embedded });
+      }
+      for (const viewport of BOUNDARY_VIEWPORTS) {
+        const standalone = await verifyStandalone(browser, server.baseUrl, viewport, false);
+        const embedded = await verifyEmbedded(browser, server.baseUrl, viewport, false);
+        report.push({ viewport, kind: 'boundary', standalone, embedded });
+      }
+      return report;
+    },
   });
-  const report = [];
-  try {
-    for (const viewport of REQUIRED_VIEWPORTS) {
-      const standalone = await verifyStandalone(browser, server.baseUrl, viewport, true);
-      const embedded = await verifyEmbedded(browser, server.baseUrl, viewport, true);
-      report.push({ viewport, kind: 'required', standalone, embedded });
-    }
-    for (const viewport of BOUNDARY_VIEWPORTS) {
-      const standalone = await verifyStandalone(browser, server.baseUrl, viewport, false);
-      const embedded = await verifyEmbedded(browser, server.baseUrl, viewport, false);
-      report.push({ viewport, kind: 'boundary', standalone, embedded });
-    }
-  } finally {
-    await browser.close();
-    await server.close();
-  }
-  return report;
 }
 
 const isMain = process.argv[1]

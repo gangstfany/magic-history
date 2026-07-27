@@ -100,21 +100,43 @@ test('responsive rules preserve useful Art height without collapsing other subje
   }
 });
 
-test('Art-only host sizing makes the homepage the short-landscape scroll owner', async () => {
+test('Art-only host sizing gives stacked and two-column short maps separate heights', async () => {
   const html = await loadHtml();
-  const shortLandscapeHostRule = html.match(
-    /@media \(max-width: 900px\) and \(max-height: 520px\)\s*\{([\s\S]*?)\n\}/,
+  const stackedShortRule = html.match(
+    /@media \(max-width: 666px\) and \(max-height: 520px\)\s*\{([\s\S]*?)\n\}/,
+  )?.[1] || '';
+  const twoColumnShortRule = html.match(
+    /@media \(min-width: 667px\) and \(max-width: 900px\) and \(max-height: 520px\)\s*\{([\s\S]*?)\n\}/,
   )?.[1] || '';
 
   assert.match(
-    shortLandscapeHostRule,
+    stackedShortRule,
+    /\.map-card\[data-subject="art"\] \.home-map-wrap\s*\{\s*height:\s*960px/,
+  );
+  assert.match(
+    twoColumnShortRule,
     /\.map-card\[data-subject="art"\] \.home-map-wrap\s*\{\s*height:\s*520px/,
   );
-  assert.doesNotMatch(shortLandscapeHostRule, /data-subject="(?:world|euro|us|geo)"/);
-  assert.doesNotMatch(shortLandscapeHostRule, /(?:^|\n)\s*\.home-map-wrap\s*\{/);
+  for (const rule of [stackedShortRule, twoColumnShortRule]) {
+    assert.doesNotMatch(rule, /data-subject="(?:world|euro|us|geo)"/);
+    assert.doesNotMatch(rule, /(?:^|\n)\s*\.home-map-wrap\s*\{/);
+  }
   assert.doesNotMatch(
     html,
-    /@media \(max-width: 666px\)\s*\{[\s\S]*?data-subject="art"[\s\S]*?height:\s*960px/,
+    /@media \(max-width: 900px\) and \(max-height: 520px\)/,
+  );
+});
+
+test('homepage subject pills expose keyboard button semantics', async () => {
+  const html = await loadHtml();
+  const artPill = html.match(/<span class="subj-pill"[^>]*data-subj="art"[^>]*>/)?.[0] || '';
+
+  assert.match(artPill, /role="button"/);
+  assert.match(artPill, /tabindex="0"/);
+  assert.match(artPill, /aria-pressed="false"/);
+  assert.match(
+    html,
+    /querySelectorAll\([^)]*\.subj-pill[^)]*\)[\s\S]*el\.addEventListener\('keydown',[\s\S]*e\.key === 'Enter'[\s\S]*e\.key === ' '/,
   );
 });
 
