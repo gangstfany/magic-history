@@ -16,7 +16,21 @@ const execFileAsync = promisify(execFile);
 const VALIDATOR_PATH = fileURLToPath(new URL('../scripts/validate-art-history-data.mjs', import.meta.url));
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const MANIFEST_PATH = new URL('../data/ap-art-history-unit-2-manifest.json', import.meta.url);
+const U1_MANIFEST_PATH = new URL('../data/ap-art-history-unit-1-manifest.json', import.meta.url);
 const EXPECTED_AP_NUMBERS = Array.from({ length: 36 }, (_, index) => index + 12);
+const EXPECTED_U1_MANIFEST = [
+  '1|ap1-apollo-11-stones|Apollo 11 stones',
+  '2|ap2-great-hall-bulls|Great Hall of the Bulls',
+  '3|ap3-camelid-sacrum-canine|Camelid sacrum in the shape of a canine',
+  '4|ap4-running-horned-woman|Running horned woman',
+  '5|ap5-beaker-ibex-motifs|Beaker with ibex motifs',
+  '6|ap6-anthropomorphic-stele|Anthropomorphic stele',
+  '7|ap7-jade-cong|Jade cong',
+  '8|ap8-stonehenge|Stonehenge',
+  '9|ap9-ambum-stone|The Ambum stone',
+  '10|ap10-tlatilco-female-figurine|Tlatilco female figurine',
+  '11|ap11-terra-cotta-fragment|Terra cotta fragment',
+];
 const EXPECTED_OFFICIAL_MANIFEST = [
   '12|ap12-white-temple-ziggurat|White Temple and its ziggurat',
   '13|ap13-palette-of-king-narmer|Palette of King Narmer',
@@ -133,6 +147,16 @@ const EXPECTED_NEW_WORKS = [
 async function loadManifest() {
   return JSON.parse(await readFile(MANIFEST_PATH, 'utf8'));
 }
+
+test('checked-in U1 manifest matches the official AP 1-11 sequence', async () => {
+  const manifest = JSON.parse(await readFile(U1_MANIFEST_PATH, 'utf8'));
+  assert.deepEqual(
+    Object.entries(manifest).map(
+      ([apNumber, { id, titleEn }]) => `${apNumber}|${id}|${titleEn}`,
+    ),
+    EXPECTED_U1_MANIFEST,
+  );
+});
 
 async function writeFixtureHtml(directory, artworks, credits) {
   const htmlPath = join(directory, 'fixture.html');
