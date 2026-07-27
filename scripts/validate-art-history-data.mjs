@@ -35,6 +35,10 @@ const STRING_FIELDS = REQUIRED_FIELDS.filter(
 );
 const U2_CULTURES = new Set(['ancientNearEast', 'egypt', 'greece', 'etruscan', 'rome']);
 const MAP_REGIONS = new Set(['middleEast', 'northAfrica', 'southernEurope']);
+const OFFICIAL_MANIFEST_KEYS = Array.from(
+  { length: 36 },
+  (_, index) => String(index + 12),
+);
 
 function fail(message) {
   throw new Error(`Invalid artwork data: ${message}`);
@@ -73,6 +77,13 @@ export function validateArtworks(artworks, manifest) {
   }
   if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
     fail('official Unit 2 manifest must be an object');
+  }
+  const manifestKeys = Object.keys(manifest);
+  if (
+    manifestKeys.length !== OFFICIAL_MANIFEST_KEYS.length
+    || manifestKeys.some((key, index) => key !== OFFICIAL_MANIFEST_KEYS[index])
+  ) {
+    fail('official Unit 2 manifest must contain exactly the 36 numeric keys 12..47');
   }
   if (artworks.length !== 36) {
     fail(`official Unit 2 manifest requires exactly 36 works; received ${artworks.length}`);

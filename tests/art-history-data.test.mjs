@@ -7,7 +7,10 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
-import { loadAndValidate } from '../scripts/validate-art-history-data.mjs';
+import {
+  loadAndValidate,
+  validateArtworks,
+} from '../scripts/validate-art-history-data.mjs';
 
 const execFileAsync = promisify(execFile);
 const VALIDATOR_PATH = fileURLToPath(new URL('../scripts/validate-art-history-data.mjs', import.meta.url));
@@ -200,6 +203,43 @@ test('matches the exact official AP 12–47 Unit 2 id and title manifest', async
     ),
     manifest,
   );
+});
+
+test('validator rejects an injected AP 48 manifest entry with unchanged official artworks', async () => {
+  const [{ artworks }, manifest] = await Promise.all([
+    loadDocumentData(),
+    loadManifest(),
+  ]);
+
+  assert.throws(
+    () => validateArtworks(artworks, {
+      ...manifest,
+      48: {
+        id: 'ap48-extra',
+        titleEn: 'Extra',
+      },
+    }),
+    /official Unit 2 manifest.*(?:keys|12\.\.47|36)/i,
+  );
+});
+
+test('validator requires the exact numeric manifest keyset 12 through 47', async () => {
+  const [{ artworks }, manifest] = await Promise.all([
+    loadDocumentData(),
+    loadManifest(),
+  ]);
+  const { 12: omitted, ...missingAp12 } = manifest;
+
+  for (const invalidManifest of [
+    missingAp12,
+    { ...manifest, extra: { id: 'extra', titleEn: 'Extra' } },
+    { ...manifest, '12.0': manifest[12] },
+  ]) {
+    assert.throws(
+      () => validateArtworks(artworks, invalidManifest),
+      /official Unit 2 manifest.*(?:keys|12\.\.47|36)/i,
+    );
+  }
 });
 
 test('validator rejects incomplete, mismatched, duplicate, and extra manifest entries', async () => {
