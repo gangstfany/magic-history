@@ -366,6 +366,7 @@ test('assigns every current work to Unit 2 with culture and region metadata', as
     assert.ok(artwork.culture.trim(), `${artwork.id} must have a non-empty culture`);
     assert.equal(typeof artwork.region, 'string', `${artwork.id} must have a region`);
     assert.ok(artwork.region.trim(), `${artwork.id} must have a non-empty region`);
+    assert.equal('civilization' in artwork, false, `${artwork.id} must not retain civilization`);
   }
 });
 

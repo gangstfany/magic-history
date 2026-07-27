@@ -66,7 +66,6 @@ const COMPLETE_ARTWORK_FIELDS = [
   'unit',
   'culture',
   'region',
-  'civilization',
   'period',
   'date',
   'artistCulture',
@@ -237,7 +236,7 @@ test('live source ledger matches all 36 canonical AP 12–47 records', async () 
       apNumber,
       id,
       title,
-      civilization,
+      culture,
       officialSource,
       notesSource,
       imageSource,
@@ -248,7 +247,7 @@ test('live source ledger matches all 36 canonical AP 12–47 records', async () 
     assert.equal(Number(apNumber), artwork.apNumber);
     assert.equal(id, `\`${artwork.id}\``);
     assert.equal(title, artwork.titleEn);
-    assert.equal(civilization, artwork.civilization);
+    assert.equal(culture, artwork.culture);
     assert.match(officialSource, /College Board.*CED/);
     assert.equal(notesSource, EXPECTED_NOTES_REFERENCES[index]);
     assert.equal(markdownLinkUrl(imageSource), artwork.imageSourceUrl);

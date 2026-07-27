@@ -491,6 +491,16 @@ test('Unit toolbar uses one accessible Unit select and an English culture group'
   assert.match(html, /<label class="filter-label">搜索<input id="searchInput" type="search" placeholder="标题、地点或关键词"><\/label>/);
 });
 
+test('detail instruction explains the English hierarchy without a culture color legend', async () => {
+  const html = await loadHtml();
+  const renderSource = getFunctionSource(html, 'render');
+
+  assert.match(renderSource, /Select a Unit, then a region, then a site/);
+  assert.doesNotMatch(renderSource, /\['埃及','#[0-9a-f]+'\]/i);
+  assert.doesNotMatch(renderSource, /\['希腊','#[0-9a-f]+'\]/i);
+  assert.doesNotMatch(renderSource, /\['罗马','#[0-9a-f]+'\]/i);
+});
+
 test('filterWorks combines Unit, culture, exact filters, and bilingual free search', async () => {
   const html = await loadHtml();
   const { normalize, filterWorks } = loadPureFunctions(html, ['normalize', 'filterWorks']);
@@ -588,7 +598,7 @@ test('site works sort by numeric AP number before id', async () => {
   const shared = {
     siteName: 'Synthetic Shared Site',
     coordinates: { x: 10, y: 20 },
-    civilization: 'greece',
+    culture: 'greece',
   };
   const group = groupBySite([
     { ...shared, id: 'alphabetically-first', apNumber: 10 },
@@ -598,23 +608,166 @@ test('site works sort by numeric AP number before id', async () => {
   assert.deepEqual(group.works.map((work) => work.apNumber), [2, 10]);
 });
 
-test('map markers display AP numbers with circles for works and capsules for groups', async () => {
+test('English map hierarchy labels describe units, regions, and sites', async () => {
+  const html = await loadHtml();
+  const {
+    compactApNumbers,
+    formatApGroupLabel,
+    formatPieceCount,
+    getUnitById,
+    getMapGroupText,
+  } = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'formatPieceCount',
+      'getUnitById',
+      'getMapGroupText',
+    ],
+    ['const AP_UNITS =', 'const MAP_REGIONS ='],
+  );
+
+  assert.equal(formatPieceCount(1), '1 piece');
+  assert.equal(formatPieceCount(0), '0 pieces');
+  assert.equal(formatPieceCount(36), '36 pieces');
+  assert.deepEqual(
+    getMapGroupText({
+      kind: 'unit',
+      apUnits: [2],
+      works: Array.from({ length: 36 }),
+    }),
+    { title: 'U2', subtitle: 'Ancient Mediterranean · 36 pieces' },
+  );
+  assert.deepEqual(
+    getMapGroupText({
+      kind: 'region',
+      regionId: 'middleEast',
+      works: Array.from({ length: 6 }),
+    }),
+    { title: 'Middle East', subtitle: '6 pieces' },
+  );
+  assert.deepEqual(
+    getMapGroupText({
+      kind: 'site',
+      siteName: 'Rome',
+      works: Array.from({ length: 7 }, (_, index) => ({ apNumber: 41 + index })),
+    }),
+    { title: 'Rome', subtitle: 'AP 41–47 · 7 pieces' },
+  );
+});
+
+test('configured Unit 2 hierarchy follows real region and site metadata', async () => {
+  const html = await loadHtml();
+  const artworks = parseArtworkData(html);
+  const helpers = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'formatPieceCount',
+      'createSiteToken',
+      'getUnitById',
+      'getApUnitNumber',
+      'toWorldCoordinates',
+      'groupBySite',
+      'groupByConfiguredRegion',
+      'getMapHierarchyLevel',
+      'groupByRegionGrid',
+      'buildMapGroups',
+      'buildMapGroupCandidates',
+    ],
+    ['const AP_UNITS =', 'const MAP_REGIONS =', 'const SITE_WORLD_COORDINATES ='],
+  );
+
+  const overview = helpers.buildMapGroups(artworks, 1, {
+    selectedUnit: 'all',
+    activeUnit: null,
+    activeRegion: null,
+  });
+  assert.equal(overview.length, 1);
+  assert.equal(overview[0].key, 'unit-2');
+  assert.equal(overview[0].kind, 'unit');
+  assert.equal(overview[0].works.length, 36);
+
+  const regions = helpers.buildMapGroups(artworks, 1, {
+    selectedUnit: '2',
+    activeUnit: 2,
+    activeRegion: null,
+  });
+  assert.deepEqual(
+    regions.map(({ key, regionId, parentKey, works }) => ({
+      key,
+      regionId,
+      parentKey,
+      count: works.length,
+    })),
+    [
+      { key: 'unit-2-region-middleEast', regionId: 'middleEast', parentKey: 'unit-2', count: 6 },
+      { key: 'unit-2-region-northAfrica', regionId: 'northAfrica', parentKey: 'unit-2', count: 9 },
+      { key: 'unit-2-region-southernEurope', regionId: 'southernEurope', parentKey: 'unit-2', count: 21 },
+    ],
+  );
+  for (const region of regions) {
+    const expectedPoint = region.works
+      .map(helpers.toWorldCoordinates)
+      .reduce(
+        (total, point) => ({ x: total.x + point.x, y: total.y + point.y }),
+        { x: 0, y: 0 },
+      );
+    assert.equal(region.worldX, expectedPoint.x / region.works.length);
+    assert.equal(region.worldY, expectedPoint.y / region.works.length);
+    assert.equal(region.unitId, 2);
+    assert.equal(region.apGroupLabel, helpers.formatApGroupLabel(region.works));
+  }
+
+  const southernEurope = regions.find(({ regionId }) => regionId === 'southernEurope');
+  const sites = helpers.buildMapGroups(artworks, 1, {
+    selectedUnit: '2',
+    activeUnit: 2,
+    activeRegion: southernEurope.key,
+  });
+  assert.equal(sites.length, 10);
+  assert.ok(sites.every(({ kind }) => kind === 'site'));
+  assert.ok(sites.every(({ parentKey }) => parentKey === southernEurope.key));
+  assert.equal(sites.find(({ siteName }) => siteName === 'Rome').works.length, 7);
+  assert.equal(sites.find(({ siteName }) => siteName === 'Athens').works.length, 4);
+  assert.equal(sites.find(({ siteName }) => siteName === 'Pompeii').works.length, 3);
+  assert.ok(
+    sites
+      .filter(({ works }) => works.length === 1)
+      .every(({ apLabel, works }) => apLabel === String(works[0].apNumber)),
+  );
+});
+
+test('map markers use circular AP pins and two-line English hierarchy capsules', async () => {
   const html = await loadHtml();
 
   assert.match(html, /works\.map\(\(work\) => work\.apNumber\)/);
   assert.match(html, /classList\.add\('marker-label-bg'\)/);
   assert.match(html, /classList\.add\('marker-ap-label'\)/);
+  assert.match(html, /classList\.add\('marker-title-label'\)/);
+  assert.match(html, /classList\.add\('marker-subtitle-label'\)/);
   assert.match(
     html,
     /createElementNS\([^;]*group\.works\.length === 1 \? 'circle' : 'rect'\s*\)/,
   );
-  assert.match(html, /label\.textContent = group\.apLabel/);
+  assert.match(html, /titleLabel\.textContent = groupText\.title/);
+  assert.match(html, /subtitleLabel\.textContent = groupText\.subtitle/);
+  assert.match(
+    html,
+    /marker\.setAttribute\('aria-label', `\$\{groupText\.title\} · \$\{groupText\.subtitle\}`\)/,
+  );
   assert.doesNotMatch(html, /count\.textContent = (?:String\()?group\.works\.length/);
   assert.match(getCssDeclarations(html, '.site-marker .marker-label-bg'), /filter:\s*drop-shadow/);
   assert.match(
     getCssDeclarations(html, '.site-marker .marker-ap-label'),
     /dominant-baseline:\s*central/,
   );
+  assert.match(getCssDeclarations(html, '.site-marker .marker-title-label'), /fill:\s*#fff/);
+  assert.match(getCssDeclarations(html, '.site-marker .marker-title-label'), /font-weight:\s*700/);
+  assert.match(getCssDeclarations(html, '.site-marker .marker-subtitle-label'), /fill:\s*#fff/);
+  assert.match(getCssDeclarations(html, '.site-marker .marker-subtitle-label'), /font-weight:\s*600/);
   assert.doesNotMatch(
     getCssDeclarations(html, '.site-marker .marker-label-bg'),
     /transition:[^;]*\br\b/,
@@ -647,8 +800,19 @@ test('marker visuals match World pins while hit targets stay touchable', async (
   assert.equal(child.visualDiameter, 22);
   assert.equal(child.hitWidth, 44);
   assert.equal(child.hitHeight, 44);
+  const capsule = getMarkerMetrics(
+    { title: 'Ancient Mediterranean', subtitle: '36 pieces' },
+    false,
+    1,
+  );
+  assert.equal(capsule.titleFontSize, 11);
+  assert.equal(capsule.subtitleFontSize, 10);
+  assert.ok(capsule.visualHeight > single.visualHeight);
+  assert.ok(capsule.visualWidth > 120);
+  assert.ok(capsule.hitHeight >= 44);
   assert.match(getCssDeclarations(html, '.site-marker .marker-label-bg'), /stroke-width:\s*2/);
   assert.match(getCssDeclarations(html, '.expanded-work-pin .expanded-pin-bg'), /stroke-width:\s*2/);
+  assert.doesNotMatch(html, /data-civilization/);
 });
 
 test('desktop map controls use the World History 30px vertical stack', async () => {
@@ -683,7 +847,7 @@ test('marker metrics stay readable and touchable on a 390px viewport', async () 
   assert.ok(metrics.visualWidth < metrics.hitWidth);
 });
 
-test('complete Unit 2 uses the existing grid fallback when mobile cannot fit all sites', async () => {
+test('complete Unit 2 keeps the configured hierarchy below the legacy site threshold', async () => {
   const html = await loadHtml();
   const artworks = parseArtworkData(html);
   const helpers = loadPureFunctions(
@@ -691,10 +855,13 @@ test('complete Unit 2 uses the existing grid fallback when mobile cannot fit all
     [
       'compactApNumbers',
       'formatApGroupLabel',
+      'formatPieceCount',
       'createSiteToken',
+      'getUnitById',
       'getApUnitNumber',
       'toWorldCoordinates',
       'groupBySite',
+      'groupByConfiguredRegion',
       'getMapHierarchyLevel',
       'groupByRegionGrid',
       'buildMapGroups',
@@ -708,23 +875,35 @@ test('complete Unit 2 uses the existing grid fallback when mobile cannot fit all
       'layoutSiteMarkers',
       'layoutMapGroups',
     ],
-    ['const AP_UNITS =', 'const SITE_WORLD_COORDINATES ='],
+    ['const AP_UNITS =', 'const MAP_REGIONS =', 'const SITE_WORLD_COORDINATES ='],
   );
   const screenScale = 362 / 1600;
   const siteGroups = helpers.groupBySite(artworks);
 
   assert.equal(artworks.length, 36);
   assert.equal(siteGroups.length, 24);
-  const laidOut = helpers.layoutMapGroups(artworks, 1, screenScale, {});
-  assert.ok(laidOut.length < siteGroups.length);
-  assert.ok(laidOut.every((group) => group.kind === 'region'));
+  const overview = helpers.layoutMapGroups(artworks, 1, screenScale, {
+    selectedUnit: 'all',
+    activeUnit: null,
+    activeRegion: null,
+  });
+  assert.equal(overview.length, 1);
+  assert.equal(overview[0].kind, 'unit');
 
-  const selectedRegion = laidOut[0];
+  const laidOut = helpers.layoutMapGroups(artworks, 1, screenScale, {
+    selectedUnit: '2',
+    activeUnit: 2,
+    activeRegion: null,
+  });
+  assert.equal(laidOut.length, 3);
+  assert.ok(laidOut.every((group) => group.kind === 'region'));
+  const selectedRegion = laidOut.find(({ regionId }) => regionId === 'southernEurope');
   const regionSites = helpers.layoutMapGroups(
     artworks,
-    2.5,
-    screenScale * 2.5,
+    1,
+    screenScale,
     {
+      selectedUnit: '2',
       activeUnit: selectedRegion.apUnits[0],
       activeRegion: selectedRegion.key,
     },
@@ -834,10 +1013,13 @@ test('250-work map falls back to a collision-safe hierarchy at every mobile zoom
     [
       'compactApNumbers',
       'formatApGroupLabel',
+      'formatPieceCount',
       'createSiteToken',
+      'getUnitById',
       'getApUnitNumber',
       'toWorldCoordinates',
       'groupBySite',
+      'groupByConfiguredRegion',
       'getMapHierarchyLevel',
       'groupByRegionGrid',
       'buildMapGroups',
@@ -851,7 +1033,7 @@ test('250-work map falls back to a collision-safe hierarchy at every mobile zoom
       'layoutSiteMarkers',
       'layoutMapGroups',
     ],
-    ['const AP_UNITS =', 'const SITE_WORLD_COORDINATES ='],
+    ['const AP_UNITS =', 'const MAP_REGIONS =', 'const SITE_WORLD_COORDINATES ='],
   );
   const artworks = Array.from({ length: 250 }, (_, index) => {
     const apNumber = index + 1;
@@ -863,7 +1045,7 @@ test('250-work map falls back to a collision-safe hierarchy at every mobile zoom
         x: -1200 + (index % 25) * 100,
         y: -500 + Math.floor(index / 25) * 100,
       },
-      civilization: ['egypt', 'greece', 'rome'][index % 3],
+      culture: ['egypt', 'greece', 'rome'][index % 3],
       titleEn: `Synthetic Work ${apNumber}`,
     };
   });
@@ -899,10 +1081,13 @@ test('unit to region to site branch refinement stays stable and layout-safe on m
     [
       'compactApNumbers',
       'formatApGroupLabel',
+      'formatPieceCount',
       'createSiteToken',
+      'getUnitById',
       'getApUnitNumber',
       'toWorldCoordinates',
       'groupBySite',
+      'groupByConfiguredRegion',
       'getMapHierarchyLevel',
       'groupByRegionGrid',
       'buildMapGroups',
@@ -916,7 +1101,7 @@ test('unit to region to site branch refinement stays stable and layout-safe on m
       'layoutSiteMarkers',
       'layoutMapGroups',
     ],
-    ['const AP_UNITS =', 'const SITE_WORLD_COORDINATES ='],
+    ['const AP_UNITS =', 'const MAP_REGIONS =', 'const SITE_WORLD_COORDINATES ='],
   );
   const artworks = Array.from({ length: 250 }, (_, index) => {
     const apNumber = index + 1;
@@ -928,7 +1113,7 @@ test('unit to region to site branch refinement stays stable and layout-safe on m
         x: -1200 + (index % 25) * 100,
         y: -500 + Math.floor(index / 25) * 100,
       },
-      civilization: ['egypt', 'greece', 'rome'][index % 3],
+      culture: ['egypt', 'greece', 'rome'][index % 3],
       titleEn: `Synthetic Work ${apNumber}`,
     };
   });
@@ -936,19 +1121,22 @@ test('unit to region to site branch refinement stays stable and layout-safe on m
   const approvedWorks = parseArtworkData(html);
   assert.equal(helpers.groupBySite(approvedWorks).length, 24);
   for (const zoomScale of [1, 1.5, 1.75, 2.5, 3]) {
-    const approvedLayout = helpers.layoutMapGroups(
+    const approvedOverview = helpers.layoutMapGroups(
       approvedWorks,
       zoomScale,
       mobileScale(zoomScale),
-      {},
+      { selectedUnit:'all', activeUnit:null, activeRegion:null },
     );
-    if (zoomScale === 1) {
-      assert.equal(approvedLayout.length, 3);
-      assert.ok(approvedLayout.every((group) => group.kind === 'region'));
-    } else {
-      assert.equal(approvedLayout.length, 24);
-      assert.ok(approvedLayout.every((group) => group.kind === 'site'));
-    }
+    assert.equal(approvedOverview.length, 1);
+    assert.equal(approvedOverview[0].kind, 'unit');
+    const approvedRegions = helpers.layoutMapGroups(
+      approvedWorks,
+      zoomScale,
+      mobileScale(zoomScale),
+      { selectedUnit:'2', activeUnit:2, activeRegion:null },
+    );
+    assert.equal(approvedRegions.length, 3);
+    assert.ok(approvedRegions.every((group) => group.kind === 'region'));
   }
   const overview = helpers.layoutMapGroups(artworks, 1, mobileScale(1), {});
   assert.ok(overview.every((group) => group.kind === 'unit'));
@@ -1023,7 +1211,11 @@ test('hierarchy keyboard activation focuses a stable child after rerender', asyn
   assert.match(expandSource, /state\.activeRegion = group\.key/);
   assert.match(
     expandSource,
-    /restoreFocus[\s\S]*state\.pendingFocusParentKey = group\.key/,
+    /group\.kind === 'unit'[\s\S]*state\.pendingFocusParentKey = group\.key[\s\S]*group\.kind === 'region'[\s\S]*state\.pendingFocusParentKey = group\.key/,
+  );
+  assert.doesNotMatch(
+    expandSource,
+    /if \(restoreFocus\) state\.pendingFocusParentKey = group\.key/,
   );
   assert.match(focusSource, /focusSiteMarker\(childToken\)/);
   assert.match(

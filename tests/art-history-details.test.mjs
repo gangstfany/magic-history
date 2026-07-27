@@ -387,12 +387,12 @@ test('comparison navigation moves focus to the newly selected title', async () =
   assert.match(html, /document\.activeElement !== heading/);
 });
 
-test('group marker labels concisely name the site and complete AP range', async () => {
+test('group marker accessible labels include both English hierarchy lines', async () => {
   const html = await loadHtml();
 
   assert.match(
     html,
-    /marker\.setAttribute\('aria-label', `\$\{group\.siteName\}；\$\{group\.apGroupLabel\}`\)/,
+    /marker\.setAttribute\('aria-label', `\$\{groupText\.title\} · \$\{groupText\.subtitle\}`\)/,
   );
   assert.doesNotMatch(html, /marker\.setAttribute\('aria-label',[^\n]*artworkNames/);
   assert.match(html, /marker\.setAttribute\('role', 'button'\)/);

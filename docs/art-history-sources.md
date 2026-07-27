@@ -1,10 +1,10 @@
 # AP 艺术史 Unit 2（古代地中海）作品来源台账
 
-本台账覆盖 College Board AP Art History CED 官方 Unit 2 清单的全部 36 件作品（AP 12–47），并按官方编号顺序排列。ID、官方英文标题、文明分类、图片来源、直接图片 URL 与署名许可均与 `art-history-map.html` 中的 `artwork-data` 和 `image-credit-data` 一一对应；中文学习提要参考 `APAH notes.pdf`。
+本台账覆盖 College Board AP Art History CED 官方 Unit 2 清单的全部 36 件作品（AP 12–47），并按官方编号顺序排列。ID、官方英文标题、文化分类、图片来源、直接图片 URL 与署名许可均与 `art-history-map.html` 中的 `artwork-data` 和 `image-credit-data` 一一对应；中文学习提要参考 `APAH notes.pdf`。
 
 图片许可与署名以所列来源页为准。CC BY/CC BY-SA 条目须按对应版本署名；CC0 与 Public Domain 条目按来源页标示使用。AP 32 另受来源页所列意大利文化遗产再利用授权限制。建筑与建筑群当前各选一张代表图。
 
-| AP | ID | 官方英文标题 | 文明 | 官方身份来源 | 本地笔记 | 公共图片/来源页 | 直接图片 URL | 署名与许可 |
+| AP | ID | 官方英文标题 | 文化 | 官方身份来源 | 本地笔记 | 公共图片/来源页 | 直接图片 URL | 署名与许可 |
 |---:|---|---|---|---|---|---|---|---|
 | 12 | `ap12-white-temple-ziggurat` | White Temple and its ziggurat | ancientNearEast | [College Board AP Art History CED](https://apcentral.collegeboard.org/media/pdf/ap-art-history-course-and-exam-description.pdf) | APAH notes.pdf, p. 6 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Uruk_(3).jpg) | [direct](https://commons.wikimedia.org/wiki/Special:Redirect/file/Uruk_(3).jpg) | 摄影：tobeytravels；来源机构：Wikimedia Commons；[CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/) |
 | 13 | `ap13-palette-of-king-narmer` | Palette of King Narmer | egypt | [College Board AP Art History CED](https://apcentral.collegeboard.org/media/pdf/ap-art-history-course-and-exam-description.pdf) | APAH notes.pdf, pp. 6–7 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Narmer_Palette.jpg) | [direct](https://commons.wikimedia.org/wiki/Special:Redirect/file/Narmer_Palette.jpg) | 作者：anonymous；来源机构：Wikimedia Commons；[Public Domain Mark 1.0](https://creativecommons.org/publicdomain/mark/1.0/) |
