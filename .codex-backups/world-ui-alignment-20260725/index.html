@@ -216,21 +216,13 @@ nav.topnav {
   .home-map-wrap { flex: none; height: 300px; border-right: none; border-bottom: 1px solid var(--line); }
   .home-events { flex: none; height: 46vh; overflow-y: auto; }
   .map-card[data-subject="art"] .map-events-split { height: auto; }
-  .map-card[data-subject="art"] .home-map-wrap { flex: 0 0 auto; height: min(720px, 78vh); }
+  .map-card[data-subject="art"] .home-map-wrap { flex: 0 0 auto; height: 300px; }
   .map-card[data-subject="euro"] .map-events-split,
   .map-card[data-subject="us"] .map-events-split,
   .map-card[data-subject="geo"] .map-events-split { height: 300px; }
   .map-card[data-subject="euro"] .home-map-wrap,
   .map-card[data-subject="us"] .home-map-wrap,
   .map-card[data-subject="geo"] .home-map-wrap { height: 100%; }
-}
-
-@media (max-width: 666px) and (max-height: 520px) {
-  .map-card[data-subject="art"] .home-map-wrap { height: 960px; }
-}
-
-@media (min-width: 667px) and (max-width: 900px) and (max-height: 520px) {
-  .map-card[data-subject="art"] .home-map-wrap { height: 520px; }
 }
 
 .features {
@@ -332,11 +324,11 @@ nav.topnav {
       <div class="today-pick" id="todayPick" style="display:none"></div>
 
       <div class="subject-switcher" id="subjectSwitcher">
-        <span class="subj-pill active" data-subj="world" style="--pdot:var(--gold)" role="button" tabindex="0" aria-pressed="true"><span class="dot"></span>World History</span>
-        <span class="subj-pill" data-subj="euro" style="--pdot:var(--sage)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Euro History <span class="soon">soon</span></span>
-        <span class="subj-pill" data-subj="us" style="--pdot:var(--pink)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>US History <span class="soon">soon</span></span>
-        <span class="subj-pill" data-subj="geo" style="--pdot:var(--blue)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Human Geo <span class="soon">soon</span></span>
-        <span class="subj-pill" data-subj="art" style="--pdot:var(--terracotta)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Art History</span>
+        <span class="subj-pill active" data-subj="world" style="--pdot:var(--gold)" aria-pressed="true"><span class="dot"></span>World History</span>
+        <span class="subj-pill" data-subj="euro" style="--pdot:var(--sage)" aria-pressed="false"><span class="dot"></span>Euro History <span class="soon">soon</span></span>
+        <span class="subj-pill" data-subj="us" style="--pdot:var(--pink)" aria-pressed="false"><span class="dot"></span>US History <span class="soon">soon</span></span>
+        <span class="subj-pill" data-subj="geo" style="--pdot:var(--blue)" aria-pressed="false"><span class="dot"></span>Human Geo <span class="soon">soon</span></span>
+        <span class="subj-pill" data-subj="art" style="--pdot:var(--terracotta)" aria-pressed="false"><span class="dot"></span>Art History</span>
       </div>
 
       <div class="map-card" data-subject="world">
@@ -344,7 +336,7 @@ nav.topnav {
         <div class="map-events-split">
           <div class="home-map-wrap" id="home-map-embed">
             <iframe id="worldMapFrame" class="subject-map-frame active" src="world-map.html" title="Interactive world history map" loading="lazy" aria-hidden="false"></iframe>
-            <iframe id="artMapFrame" class="subject-map-frame" src="art-history-map.html?embed=1" title="Interactive AP art history map" loading="lazy" hidden aria-hidden="true"></iframe>
+            <iframe id="artMapFrame" class="subject-map-frame" src="art-history-map.html" title="Interactive AP art history map" loading="lazy" hidden aria-hidden="true"></iframe>
             <div class="map-overlay map-skeleton" id="mapSkeleton">
               <div class="sk-label" id="skLabel">正在加载地图…</div>
               <div class="sk-bar"></div>
@@ -719,7 +711,7 @@ nav.topnav {
     if (mapCardHead) mapCardHead.textContent = key === 'art' ? 'AP Art History Map' : 'History World Map';
     if (homeMapCaption) {
       homeMapCaption.textContent = key === 'art'
-        ? '36 AP works · Ancient Mediterranean · filter, compare and study'
+        ? '27 AP works · Egypt, Greece & Rome · filter, compare and study'
         : '5 regions · 233 events · 104 pins · 6 trade routes';
       homeMapCaption.hidden = !s.live;
     }

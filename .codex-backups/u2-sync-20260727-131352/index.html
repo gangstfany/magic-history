@@ -225,14 +225,6 @@ nav.topnav {
   .map-card[data-subject="geo"] .home-map-wrap { height: 100%; }
 }
 
-@media (max-width: 666px) and (max-height: 520px) {
-  .map-card[data-subject="art"] .home-map-wrap { height: 960px; }
-}
-
-@media (min-width: 667px) and (max-width: 900px) and (max-height: 520px) {
-  .map-card[data-subject="art"] .home-map-wrap { height: 520px; }
-}
-
 .features {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
   padding: 30px clamp(20px, 4vw, 52px) 40px;
@@ -332,11 +324,11 @@ nav.topnav {
       <div class="today-pick" id="todayPick" style="display:none"></div>
 
       <div class="subject-switcher" id="subjectSwitcher">
-        <span class="subj-pill active" data-subj="world" style="--pdot:var(--gold)" role="button" tabindex="0" aria-pressed="true"><span class="dot"></span>World History</span>
-        <span class="subj-pill" data-subj="euro" style="--pdot:var(--sage)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Euro History <span class="soon">soon</span></span>
-        <span class="subj-pill" data-subj="us" style="--pdot:var(--pink)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>US History <span class="soon">soon</span></span>
-        <span class="subj-pill" data-subj="geo" style="--pdot:var(--blue)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Human Geo <span class="soon">soon</span></span>
-        <span class="subj-pill" data-subj="art" style="--pdot:var(--terracotta)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Art History</span>
+        <span class="subj-pill active" data-subj="world" style="--pdot:var(--gold)" aria-pressed="true"><span class="dot"></span>World History</span>
+        <span class="subj-pill" data-subj="euro" style="--pdot:var(--sage)" aria-pressed="false"><span class="dot"></span>Euro History <span class="soon">soon</span></span>
+        <span class="subj-pill" data-subj="us" style="--pdot:var(--pink)" aria-pressed="false"><span class="dot"></span>US History <span class="soon">soon</span></span>
+        <span class="subj-pill" data-subj="geo" style="--pdot:var(--blue)" aria-pressed="false"><span class="dot"></span>Human Geo <span class="soon">soon</span></span>
+        <span class="subj-pill" data-subj="art" style="--pdot:var(--terracotta)" aria-pressed="false"><span class="dot"></span>Art History</span>
       </div>
 
       <div class="map-card" data-subject="world">
@@ -719,7 +711,7 @@ nav.topnav {
     if (mapCardHead) mapCardHead.textContent = key === 'art' ? 'AP Art History Map' : 'History World Map';
     if (homeMapCaption) {
       homeMapCaption.textContent = key === 'art'
-        ? '36 AP works · Ancient Mediterranean · filter, compare and study'
+        ? '27 AP works · Egypt, Greece & Rome · filter, compare and study'
         : '5 regions · 233 events · 104 pins · 6 trade routes';
       homeMapCaption.hidden = !s.live;
     }

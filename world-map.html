@@ -177,6 +177,11 @@ h1 .en { color: var(--accent); }
   border: 6px solid transparent; border-top-color: var(--ink);
 }
 .first-click-hint.show { opacity: 1; animation: hint-bounce 1.6s ease-in-out infinite; }
+/* 窄屏:气泡原本从 58% 处单行外扩会冲出右边缘;改成两边留边+可换行(动画占用了 transform,所以用 left/right 而不是 translateX 居中) */
+@media (max-width: 720px) {
+  .first-click-hint { left: 14px; right: 14px; top: 26%; white-space: normal; text-align: center; }
+  .first-click-hint::after { left: 50%; margin-left: -6px; }
+}
 @keyframes hint-bounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
@@ -1486,7 +1491,7 @@ h1 .en { color: var(--accent); }
 <div class="trig"><span class="hl">Idi Amin</span>'乌干达屠夫'— 1972驱逐6万印度裔、夺其产业,滥杀致多达50万人死</div>
 </div>
 <div class="entry alt">
-<div class="entry-top"><span class="citynum" style="background:#1e8f6f">17</span><span class="yr">1975–1979</span><span class="city2" style="color:#1e8f6f">Phnom</span></div>
+<div class="entry-top"><span class="citynum" style="background:#1e8f6f">17</span><span class="yr">1975–1979</span><span class="city2" style="color:#1e8f6f">Phnom Penh</span></div>
 <div class="trig"><span class="hl">Khmer Rouge</span> — 屠杀 200 万</div>
 </div>
 <div class="entry">
@@ -2093,7 +2098,9 @@ h1 .en { color: var(--accent); }
   }
 
   // 3. 给地图上每个编号圆点绑定交互(圆点后面紧跟着编号文字)
-  const BASE_R = 11, HOVER_R = 14;
+  const BASE_R = 11, HOVER_R = 14, HIT_R = 20; // HIT_R:透明热区半径,放大可点/可触范围,不改变视觉圆点
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  // querySelectorAll 返回静态列表,循环里插入的透明热区圆不会被再次遍历(不会无限循环)
   svg.querySelectorAll('circle').forEach(c => {
     const text = c.nextElementSibling;
     if (!text || text.tagName.toLowerCase() !== 'text') return;
@@ -2102,15 +2109,32 @@ h1 .en { color: var(--accent); }
     c.classList.add('pin-dot');
     c.style.cursor = 'pointer';
 
-    c.addEventListener('mouseenter', () => c.setAttribute('r', HOVER_R));
-    c.addEventListener('mouseleave', () => c.setAttribute('r', BASE_R));
-    c.addEventListener('click', (e) => {
+    const enter = () => c.setAttribute('r', HOVER_R);
+    const leave = () => c.setAttribute('r', BASE_R);
+    const activate = (e) => {
       e.stopPropagation();
       renderEventPanel(num, c.getAttribute('fill'));
       // 路线动画(如果这一站在某条路线上)已经在 renderEventPanel → showRoutesFor 里排好队了;
       // 这里再点一次聚光灯,保证"点哪个标点,哪个国家立刻深色"就算它不在任何路线上也成立
       spotlightPin(num);
-    });
+    };
+
+    // 透明大热区圆:铺在可见圆点下层、同坐标,把可点区从 ~14px 提到 ~44px(触摸友好);
+    // 它跟圆点同在 .pin-group 里,会一起随 pinScale 缩放,所以各级缩放下热区大小稳定
+    const hit = document.createElementNS(SVGNS, 'circle');
+    hit.setAttribute('cx', c.getAttribute('cx'));
+    hit.setAttribute('cy', c.getAttribute('cy'));
+    hit.setAttribute('r', HIT_R);
+    hit.setAttribute('fill', 'transparent');
+    hit.style.cursor = 'pointer';
+    c.parentNode.insertBefore(hit, c); // 插在可见圆点前面 => 圆点仍绘制在最上层,不被热区遮住
+
+    c.addEventListener('mouseenter', enter);
+    c.addEventListener('mouseleave', leave);
+    c.addEventListener('click', activate);
+    hit.addEventListener('mouseenter', enter);
+    hit.addEventListener('mouseleave', leave);
+    hit.addEventListener('click', activate);
   });
 
   // 4. 地块(国家轮廓)交互:悬浮预览颜色+区域名,点击固定颜色并显示该区域的标点
