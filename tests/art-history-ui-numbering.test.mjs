@@ -307,6 +307,19 @@ test('expanded short-host iframe keeps its stacked embedded child non-scrolling'
   assert.match(embeddedBody, /overflow:\s*hidden/);
 });
 
+test('embedded 520px structure reserves a safe map and meaningful detail height', async () => {
+  const html = await loadHtml();
+  const narrowCss = getMediaQuerySource(html, '(max-width:520px)');
+  const workspace = getCssDeclarations(narrowCss, 'body.is-embedded .art-workspace');
+  const mapPanel = getCssDeclarations(narrowCss, 'body.is-embedded .map-panel');
+  const detailPanel = getCssDeclarations(narrowCss, 'body.is-embedded .detail-panel');
+
+  assert.match(workspace, /flex:\s*0 0 auto/);
+  assert.match(workspace, /min-height:\s*550px/);
+  assert.match(mapPanel, /grid-template-rows:\s*330px auto/);
+  assert.match(detailPanel, /min-height:\s*220px/);
+});
+
 test('art map reuses World History typography and compact detail hierarchy', async () => {
   const html = await loadHtml();
   assert.match(

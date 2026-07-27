@@ -133,6 +133,14 @@
       .filter-label:has(#searchInput) { width:100%; }
       #searchInput { width:100%; }
       .map-controls button { width:44px; height:44px; min-width:44px; min-height:44px; }
+      body.is-embedded .filter-toolbar { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:end; }
+      body.is-embedded .filter-label { min-width:0; width:auto; }
+      body.is-embedded select, body.is-embedded #searchInput { width:100%; }
+      body.is-embedded .culture-filters { grid-column:1 / -1; }
+      body.is-embedded .art-workspace { flex:0 0 auto; min-height:550px; }
+      body.is-embedded .map-panel { grid-template-rows:330px auto; }
+      body.is-embedded .map-panel.has-compact-list { grid-template-rows:330px auto; }
+      body.is-embedded .detail-panel { min-height:220px; }
     }
     @media (max-width:664px) {
       body.is-embedded { height:auto; min-height:100vh; overflow:auto; }

@@ -20,6 +20,15 @@ export const BOUNDARY_VIEWPORTS = Object.freeze([
   { width: 519, height: 700 },
   { width: 520, height: 700 },
   { width: 521, height: 700 },
+  { width: 519, height: 519 },
+  { width: 519, height: 520 },
+  { width: 519, height: 521 },
+  { width: 520, height: 519 },
+  { width: 520, height: 520 },
+  { width: 520, height: 521 },
+  { width: 521, height: 519 },
+  { width: 521, height: 520 },
+  { width: 521, height: 521 },
   { width: 639, height: 700 },
   { width: 640, height: 700 },
   { width: 641, height: 700 },
@@ -252,6 +261,17 @@ function assertReachability(metrics, mode, viewport) {
       `${mode} ${viewport.width}x${viewport.height} hidden child clips content`,
     );
   }
+  if (
+    mode === 'embedded'
+    && metrics.bodyOverflowY === 'hidden'
+    && metrics.stacked
+    && metrics.innerWidth <= 520
+  ) {
+    assert.ok(
+      metrics.detail.height >= 220,
+      `${mode} ${viewport.width}x${viewport.height} detail height ${metrics.detail.height}`,
+    );
+  }
 }
 
 async function assertCommonLayout(frame, mode, viewport) {
@@ -397,6 +417,14 @@ async function assertHierarchyAndDialog(page, frame) {
   assert.equal(await frame.evaluate(() => document.activeElement?.className), 'artwork-image-button');
 }
 
+async function selectBoundaryFilters(frame) {
+  await frame.locator('#unitFilter').selectOption('2');
+  const culture = frame.locator('[data-culture="ancientNearEast"]');
+  await culture.click();
+  assert.equal(await culture.getAttribute('aria-pressed'), 'true');
+  assert.match(await frame.locator('.result-count').textContent(), /\b6\b/);
+}
+
 async function verifyStandalone(browser, baseUrl, viewport, full) {
   return withBrowserContext(browser, {
     viewport,
@@ -419,7 +447,7 @@ async function verifyStandalone(browser, baseUrl, viewport, full) {
         /^(?:0\.01ms|1e-05s)$/,
       );
     } else {
-      await page.locator('#unitFilter').selectOption('2');
+      await selectBoundaryFilters(page);
       metrics = await assertCommonLayout(page, 'standalone', viewport);
     }
     assert.deepEqual(errors, []);
@@ -522,7 +550,7 @@ async function verifyEmbedded(browser, baseUrl, viewport, full) {
       await assertKeyboardAndFilters(page, frame);
       await assertHierarchyAndDialog(page, frame);
     } else {
-      await frame.locator('#unitFilter').selectOption('2');
+      await selectBoundaryFilters(frame);
       metrics = await assertCommonLayout(frame, 'embedded', viewport);
     }
     assert.deepEqual(errors, []);
