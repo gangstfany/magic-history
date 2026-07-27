@@ -88,6 +88,45 @@ const COMPLETE_ARTWORK_FIELDS = [
   'keywords',
 ].sort();
 
+const EXPECTED_NOTES_REFERENCES = [
+  'APAH notes.pdf, p. 6',
+  'APAH notes.pdf, pp. 6–7',
+  'APAH notes.pdf, p. 7',
+  'APAH notes.pdf, pp. 7–8',
+  'APAH notes.pdf, pp. 8–9',
+  'APAH notes.pdf, pp. 8–9',
+  'APAH notes.pdf, pp. 9–10',
+  'APAH notes.pdf, pp. 10–11',
+  'APAH notes.pdf, pp. 10–11',
+  'APAH notes.pdf, pp. 11–12',
+  'APAH notes.pdf, pp. 12–13',
+  'APAH notes.pdf, pp. 13–14',
+  'APAH notes.pdf, pp. 14–15',
+  'APAH notes.pdf, pp. 14–15',
+  'APAH notes.pdf, pp. 20–21',
+  'APAH notes.pdf, pp. 16–17',
+  'APAH notes.pdf, pp. 17–18',
+  'APAH notes.pdf, p. 16',
+  'APAH notes.pdf, p. 17',
+  'APAH notes.pdf, pp. 17–18',
+  'APAH notes.pdf, pp. 18–19',
+  'APAH notes.pdf, pp. 18–19',
+  'APAH notes.pdf, pp. 19–20',
+  'APAH notes.pdf, pp. 15–16',
+  'APAH notes.pdf, pp. 21–22',
+  'APAH notes.pdf, pp. 22–23',
+  'APAH notes.pdf, pp. 23–24',
+  'APAH notes.pdf, pp. 24–25',
+  'APAH notes.pdf, pp. 25–26',
+  'APAH notes.pdf, pp. 25–26',
+  'APAH notes.pdf, pp. 26–27',
+  'APAH notes.pdf, pp. 26–27',
+  'APAH notes.pdf, pp. 26–27',
+  'APAH notes.pdf, pp. 27–28',
+  'APAH notes.pdf, pp. 28–29',
+  'APAH notes.pdf, p. 29',
+];
+
 function parseJsonBlock(html, id) {
   const match = html.match(new RegExp(
     `<script id="${id}" type="application/json">([\\s\\S]*?)<\\/script>`,
@@ -185,6 +224,11 @@ test('live source ledger matches all 36 canonical AP 12–47 records', async () 
     ledger,
     /Golden mask|Tutankhamun mask|Old Market Woman|明确排除/,
   );
+  assert.doesNotMatch(
+    ledger,
+    /\]\(\.\.\/APAH%20notes\.pdf\)/,
+    'ledger must not link to a PDF that is not in the repository',
+  );
   rows.forEach((cells, index) => {
     assert.equal(cells.length, 9, `ledger row ${index + 1} must have 9 cells`);
     const artwork = artworks[index];
@@ -206,7 +250,7 @@ test('live source ledger matches all 36 canonical AP 12–47 records', async () 
     assert.equal(title, artwork.titleEn);
     assert.equal(civilization, artwork.civilization);
     assert.match(officialSource, /College Board.*CED/);
-    assert.match(notesSource, /APAH notes\.pdf/);
+    assert.equal(notesSource, EXPECTED_NOTES_REFERENCES[index]);
     assert.equal(markdownLinkUrl(imageSource), artwork.imageSourceUrl);
     assert.equal(markdownLinkUrl(directImage), artwork.imageUrl);
     assert.match(creditAndLicense, new RegExp(
