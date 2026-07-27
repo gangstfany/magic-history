@@ -1,1 +1,4 @@
 .DS_Store
+
+# Codex 工具的备份/在建 art-history,不入 main 库(Codex 在自己分支上追踪)
+.codex-backups/
