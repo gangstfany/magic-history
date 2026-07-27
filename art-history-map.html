@@ -892,17 +892,23 @@
       return visibleScale * zoomScale;
     }
 
-    function getMarkerMetrics(apLabel, isSingle, screenScale) {
+    function isSingleWorkSiteGroup(group) {
+      return group.kind === 'site' && group.works.length === 1;
+    }
+
+    function getMarkerMetrics(apLabel, isSingle, screenScale, isCompact = false) {
       const scale = Math.max(0.05, screenScale);
       const fontSize = 10 / scale;
       const title = typeof apLabel === 'object' ? apLabel.title : String(apLabel);
       const subtitle = typeof apLabel === 'object' ? apLabel.subtitle : '';
       const titleFontSize = 11 / scale;
       const subtitleFontSize = 10 / scale;
-      const visualHeight = (isSingle ? 22 : 38) / scale;
+      const visualHeight = (isSingle || isCompact ? 22 : 38) / scale;
       const visualWidthPx = isSingle
         ? 22
-        : Math.max(48, title.length * 6.5 + 20, subtitle.length * 5.8 + 20);
+        : isCompact
+          ? Math.max(38, Math.min(108, title.length * 6.4 + 16))
+          : Math.max(48, title.length * 6.5 + 20, subtitle.length * 5.8 + 20);
       const visualWidth = visualWidthPx / scale;
       return {
         fontSize,
@@ -1146,14 +1152,16 @@
         const markerText = typeof getMapGroupText === 'function'
           ? getMapGroupText(group)
           : { title:group.siteName, subtitle:group.apGroupLabel };
+        const isSingleWorkSite = group.kind === 'site' && group.works.length === 1;
         const usesSingleLineFallback = group.isGridFallback === true;
         return {
           ...group,
           markerText,
           markerMetrics: getMarkerMetrics(
-            group.works.length === 1 || usesSingleLineFallback ? group.apLabel : markerText,
-            group.works.length === 1,
-            scale
+            isSingleWorkSite || usesSingleLineFallback ? group.apLabel : markerText,
+            isSingleWorkSite,
+            scale,
+            usesSingleLineFallback
           )
         };
       });
@@ -1583,7 +1591,7 @@
         applyTransform();
         return;
       }
-      if (group.works.length === 1) {
+      if (isSingleWorkSiteGroup(group)) {
         selectArtwork(group.works[0].id, group.siteToken);
         if (restoreFocus) focusSiteMarker(group.siteToken);
         return;
@@ -2063,10 +2071,10 @@
         visual.classList.add('marker-visual');
         const background = document.createElementNS(
           'http://www.w3.org/2000/svg',
-          group.works.length === 1 ? 'circle' : 'rect'
+          isSingleWorkSiteGroup(group) ? 'circle' : 'rect'
         );
         background.classList.add('marker-label-bg');
-        if (group.works.length === 1) {
+        if (isSingleWorkSiteGroup(group)) {
           background.setAttribute('r', String(metrics.visualWidth / 2));
         } else {
           background.setAttribute('x', String(-metrics.visualWidth / 2));
@@ -2075,7 +2083,7 @@
           background.setAttribute('height', String(metrics.visualHeight));
           background.setAttribute('rx', String(metrics.cornerRadius));
         }
-        if (group.works.length === 1 || group.isGridFallback) {
+        if (isSingleWorkSiteGroup(group) || group.isGridFallback) {
           const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
           label.classList.add('marker-ap-label');
           label.setAttribute('font-size', String(metrics.fontSize));
@@ -2332,6 +2340,7 @@
       groupByConfiguredRegion,
       toWorldCoordinates,
       getMapScreenScale,
+      isSingleWorkSiteGroup,
       getMarkerMetrics,
       getMarkerBounds,
       markerBoundsOverlap,

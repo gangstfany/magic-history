@@ -750,7 +750,7 @@ test('map markers use circular AP pins and two-line English hierarchy capsules',
   assert.match(html, /classList\.add\('marker-subtitle-label'\)/);
   assert.match(
     html,
-    /createElementNS\([^;]*group\.works\.length === 1 \? 'circle' : 'rect'\s*\)/,
+    /createElementNS\([^;]*isSingleWorkSiteGroup\(group\) \? 'circle' : 'rect'\s*\)/,
   );
   assert.match(html, /titleLabel\.textContent = groupText\.title/);
   assert.match(html, /subtitleLabel\.textContent = groupText\.subtitle/);
@@ -779,6 +779,90 @@ test('map markers use circular AP pins and two-line English hierarchy capsules',
   assert.match(
     getCssDeclarations(html, '.site-marker.is-active .marker-visual'),
     /transform:\s*scale\((?:1\.0[5-9]|1\.1)\)/,
+  );
+});
+
+test('one-work Unit and configured region groups stay two-line hierarchy capsules', async () => {
+  const html = await loadHtml();
+  const helpers = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'formatPieceCount',
+      'getUnitById',
+      'getMapGroupText',
+      'toWorldCoordinates',
+      'getMarkerMetrics',
+      'getMarkerBounds',
+      'markerBoundsOverlap',
+      'expandMarkerBounds',
+      'createSpatialHash',
+      'findNearestAvailableMarkerSlot',
+      'layoutSiteMarkers',
+    ],
+    ['const AP_UNITS =', 'const MAP_REGIONS =', 'const SITE_WORLD_COORDINATES ='],
+  );
+  const work = {
+    id: 'filtered-ap-12',
+    apNumber: 12,
+    unit: 2,
+    region: 'middleEast',
+    siteName: 'Uruk, Iraq',
+    coordinates: { x: 905, y: 365 },
+  };
+  const groups = [
+    {
+      key: 'unit-2',
+      kind: 'unit',
+      siteName: 'AP Unit 2',
+      apUnits: [2],
+      apLabel: '12',
+      apGroupLabel: 'AP 12',
+      siteToken: 'site-unit-2',
+      worldX: 700,
+      worldY: 300,
+      works: [work],
+    },
+    {
+      key: 'unit-2-region-middleEast',
+      kind: 'region',
+      regionId: 'middleEast',
+      siteName: 'Middle East',
+      apUnits: [2],
+      apLabel: '12',
+      apGroupLabel: 'AP 12',
+      siteToken: 'site-region-middleEast',
+      worldX: 1000,
+      worldY: 350,
+      works: [work],
+    },
+  ];
+
+  const laidOut = helpers.layoutSiteMarkers(groups, 1);
+  assert.deepEqual(
+    laidOut.map(({ markerText }) => markerText),
+    [
+      { title: 'U2', subtitle: 'Ancient Mediterranean · 1 piece' },
+      { title: 'Middle East', subtitle: '1 piece' },
+    ],
+  );
+  assert.ok(laidOut.every(({ markerMetrics }) => markerMetrics.visualHeight === 38));
+  assert.ok(laidOut.every(({ markerMetrics }) => markerMetrics.titleFontSize === 11));
+  assert.ok(laidOut.every(({ markerMetrics }) => markerMetrics.subtitleFontSize === 10));
+
+  const renderSource = getFunctionSource(html, 'render');
+  assert.match(
+    renderSource,
+    /isSingleWorkSiteGroup\(group\) \? 'circle' : 'rect'/,
+  );
+  assert.match(
+    renderSource,
+    /if \(isSingleWorkSiteGroup\(group\) \|\| group\.isGridFallback\)/,
+  );
+  assert.match(
+    renderSource,
+    /marker\.setAttribute\('aria-label', `\$\{groupText\.title\} · \$\{groupText\.subtitle\}`\)/,
   );
 });
 
@@ -1587,7 +1671,7 @@ test('multi-work groups expand while single groups and child pins select exact w
   const renderSource = getFunctionSource(html, 'render');
 
   assert.match(stateSource, /expandedSiteToken:\s*null/);
-  assert.match(expandSource, /group\.works\.length === 1/);
+  assert.match(expandSource, /isSingleWorkSiteGroup\(group\)/);
   assert.match(expandSource, /selectArtwork\(group\.works\[0\]\.id,\s*group\.siteToken/);
   assert.match(
     expandSource,
