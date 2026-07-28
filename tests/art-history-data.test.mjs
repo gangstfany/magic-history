@@ -157,6 +157,66 @@ const EXPECTED_U3_REQUIRED_VIEW_IDS = {
   93: ['aerial-overview', 'facade', 'courtyard', 'hall-mirrors', 'gardens'],
   94: ['siege-belgrade-front', 'hunting-scene-reverse'],
 };
+const EXPECTED_U3_SITES = [
+  '48|Rome, Italy',
+  '49|Rome, Italy',
+  '50|Syria or Palestine',
+  '51|Ravenna, Italy',
+  '52|Constantinople (Istanbul), Turkey',
+  '53|Early medieval Europe',
+  '54|Mount Sinai, Egypt',
+  '55|Northumbria, England',
+  '56|Córdoba, Spain',
+  '57|Madinat al-Zahra, Spain',
+  '58|Conques, France',
+  '59|England or Normandy',
+  '60|Chartres, France',
+  '61|Paris, France',
+  '62|Rhineland, Germany',
+  '63|Padua, Italy',
+  '64|Barcelona, Spain',
+  '65|Granada, Spain',
+  '66|Tournai, present-day Belgium',
+  '67|Florence, Italy',
+  '68|Flanders, present-day Belgium',
+  '69|Florence, Italy',
+  '70|Florence, Italy',
+  '71|Florence, Italy',
+  '72|Florence, Italy',
+  '73|Milan, Italy',
+  '74|Nuremberg, Germany',
+  '75|Vatican City',
+  '76|Vatican City',
+  '77|Isenheim, Alsace',
+  '78|Florence, Italy',
+  '79|Wittenberg, Germany',
+  '80|Venice, Italy',
+  '81|Tenochtitlan (Mexico City), New Spain',
+  '82|Rome, Italy',
+  '83|Antwerp, present-day Belgium',
+  '84|Edirne, Turkey',
+  '85|Rome, Italy',
+  '86|Antwerp, Southern Netherlands',
+  '87|Amsterdam, Netherlands',
+  '88|Rome, Italy',
+  '89|Rome, Italy',
+  '90|Calamarca, present-day Bolivia',
+  '91|Madrid, Spain',
+  '92|Delft, Netherlands',
+  '93|Versailles, France',
+  '94|Mexico City, New Spain',
+  '95|Mexico City, New Spain',
+  '96|Amsterdam, Netherlands',
+  '97|Mexico City, New Spain',
+  '98|London, England',
+];
+const EXPECTED_U3_ENTRY_KEYS = [
+  'id',
+  'region',
+  'requiredViewIds',
+  'siteName',
+  'titleEn',
+];
 const EXPECTED_NEW_WORKS = [
   {
     apNumber: 12,
@@ -295,6 +355,31 @@ test('checked-in U3 manifest preserves approved ordered required view IDs', asyn
       work.requiredViewIds,
       EXPECTED_U3_REQUIRED_VIEW_IDS[apNumber] ?? ['primary'],
       `AP ${apNumber} required view IDs`,
+    );
+  }
+});
+
+test('checked-in U3 manifest preserves reviewed creation-context sites', async () => {
+  const manifest = JSON.parse(await readFile(U3_MANIFEST_PATH, 'utf8'));
+  const entries = Object.entries(manifest)
+    .sort(([a], [b]) => Number(a) - Number(b));
+
+  assert.deepEqual(
+    entries.map(([apNumber, work]) => `${apNumber}|${work.siteName}`),
+    EXPECTED_U3_SITES,
+  );
+});
+
+test('checked-in U3 manifest entries use the exact five-field schema', async () => {
+  const manifest = JSON.parse(await readFile(U3_MANIFEST_PATH, 'utf8'));
+  const entries = Object.entries(manifest)
+    .sort(([a], [b]) => Number(a) - Number(b));
+
+  for (const [apNumber, work] of entries) {
+    assert.deepEqual(
+      Object.keys(work).sort(),
+      EXPECTED_U3_ENTRY_KEYS,
+      `AP ${apNumber} manifest fields`,
     );
   }
 });
