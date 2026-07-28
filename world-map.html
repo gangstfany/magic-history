@@ -63,8 +63,27 @@ h1 .en { color: var(--accent); }
 .region-label .sub { display:block; font-size:8pt; font-weight:400; opacity:.75; margin-top:1px; }
 
 /* 标点默认隐藏,地块被点击激活后才淡入 */
-.pin-group { opacity: 0; pointer-events: none; transition: opacity .35s ease; }
-.pin-group.revealed { opacity: 1; pointer-events: auto; }
+/* visibility 是关键:光靠 opacity:0 的标点仍然会被 Tab 键走到(104 个空停顿),
+   visibility:hidden 才会把它们移出焦点序。
+   显示时 visibility 立刻翻(0s),隐藏时等淡出结束再翻(delay .35s)——不靠"离散插值在中点翻转"
+   那套时序,任何浏览器下行为都确定。 */
+.pin-group { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .35s ease, visibility 0s linear .35s; }
+.pin-group.revealed { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .35s ease, visibility 0s linear 0s; }
+
+/* ---- 键盘焦点环:SVG 里 outline 不可靠,用描边来画 ---- */
+.region-path:focus { outline: none; }
+.region-path:focus-visible { stroke: #28708a; stroke-width: 2.4; }
+.pin-dot:focus { outline: none; }
+.pin-dot:focus-visible { stroke: #28708a; stroke-width: 3.5; }
+
+/* ---- 尊重"减少动态效果"的系统设置:骆驼沿商路爬行那类动画对前庭敏感的人很难受 ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important; scroll-behavior: auto !important;
+  }
+  .route-vehicle, .route-line { animation: none !important; }
+}
 
 /* ---- 地图工具栏:搜索 + 分类筛选(地图上方独立一条,参考艺术史版式) ---- */
 .map-toolbar { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 11px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
@@ -650,7 +669,7 @@ h1 .en { color: var(--accent); }
 </g></svg></div></div>
 </div>
 
-<div class="event-zone" id="eventZone">
+<div class="event-zone" id="eventZone" role="region" aria-label="历史事件" aria-live="polite">
 <div class="event-empty" id="eventEmpty">先在上面地图里点一个地块,再点冒出来的编号标点 —— 这里会显示那个地方的历史事件</div>
 <div class="event-panel" id="eventPanel"></div>
 </div>
@@ -1733,9 +1752,19 @@ h1 .en { color: var(--accent); }
 
   // 平滑过渡到目标 zoom/pan —— 点开一个地区(比如标点很挤的欧洲/西非)时自动把镜头
   // 推近到刚好框住那一片标点,不用用户自己手动滚轮+拖动去找
+  // 骆驼走的是 SMIL <animateMotion>,镜头推近走的是 rAF —— 两者都不归 CSS 动画媒体查询管,
+  // 所以"减少动态效果"要在 JS 里单独挡一道。用 matchMedia 实时读,用户中途改系统设置也跟得上。
+  const reduceMotionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const prefersReducedMotion = () => reduceMotionMQ.matches;
+
   let fitAnimId = null;
   function animateTransform(targetZoom, targetPanX, targetPanY, ms) {
     if (fitAnimId) cancelAnimationFrame(fitAnimId);
+    // 减少动态效果:直接落到目标位置,该框住的还是框住,只是不做推近的过程
+    if (prefersReducedMotion()) {
+      zoom = targetZoom; panX = targetPanX; panY = targetPanY; clampPan(); applyTransform();
+      return;
+    }
     const startZoom = zoom, startPanX = panX, startPanY = panY, start = performance.now();
     function step(now) {
       const t = Math.min(1, (now - start) / ms);
@@ -2093,8 +2122,11 @@ h1 .en { color: var(--accent); }
       document.getElementById(`route-line-${route.id}`).classList.add('on');
       const vehicle = document.getElementById(`route-vehicle-${route.id}`);
       vehicle.classList.add('on');
-      const anim = vehicle.querySelector('animateMotion');
-      if (anim.beginElement) { try { anim.beginElement(); } catch (err) {} }
+      // 减少动态效果时:路线和骆驼照样显示(信息不丢),只是骆驼不再爬
+      if (!prefersReducedMotion()) {
+        const anim = vehicle.querySelector('animateMotion');
+        if (anim.beginElement) { try { anim.beginElement(); } catch (err) {} }
+      }
       scheduleRouteGlow(route);
     });
   }
@@ -2178,6 +2210,21 @@ h1 .en { color: var(--accent); }
     hit.addEventListener('mouseenter', enter);
     hit.addEventListener('mouseleave', leave);
     hit.addEventListener('click', activate);
+
+    // 键盘 / 读屏:圆点变成一个有名字的按钮。未展开的标点靠 .pin-group 的
+    // visibility:hidden 自动退出 Tab 序,所以这里不用手动管 tabindex 开关。
+    const items = index[num];
+    c.setAttribute('tabindex', '0');
+    c.setAttribute('role', 'button');
+    c.setAttribute('aria-label', `标点 ${num},${items[0].city},${items.length} 条历史事件`);
+    hit.setAttribute('aria-hidden', 'true');   // 热区只为鼠标/触摸服务,别在读屏里念两遍
+    c.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      activate(e);
+    });
+    c.addEventListener('focus', enter);
+    c.addEventListener('blur', leave);
   });
 
   // 4. 地块(国家轮廓)交互:悬浮预览颜色+区域名,点击固定颜色并显示该区域的标点
@@ -2211,6 +2258,12 @@ h1 .en { color: var(--accent); }
     });
   }
 
+  // 地区的展开状态要同步给读屏(每个地区那个代表 path 上的 aria-pressed)
+  function syncRegionPressed() {
+    Object.entries(regionAnchor).forEach(([r, { el }]) =>
+      el.setAttribute('aria-pressed', String(r === activeRegion)));
+  }
+
   function paintRegion(region, on) {
     const color = svg.querySelector(`.region-path[data-region="${region}"]`).dataset.color;
     svg.querySelectorAll(`.region-path[data-region="${region}"]`).forEach(rp => {
@@ -2225,6 +2278,7 @@ h1 .en { color: var(--accent); }
     if (!activeRegion) return;
     paintRegion(activeRegion, false);
     activeRegion = null;
+    syncRegionPressed();
     // 该地区的标点一起收起了,下方展开的事件也跟着清空
     eventPanel.classList.remove('show');
     eventPanel.innerHTML = '';
@@ -2238,6 +2292,7 @@ h1 .en { color: var(--accent); }
     if (activeRegion === region) return;
     if (activeRegion) paintRegion(activeRegion, false);
     activeRegion = region;
+    syncRegionPressed();
     paintRegion(region, true);
     eventPanel.classList.remove('show');
     eventPanel.innerHTML = '';
@@ -2248,10 +2303,50 @@ h1 .en { color: var(--accent); }
     fitToPins(Array.from(svg.querySelectorAll(`.pin-group[data-region="${region}"]`)));
   }
 
+  // ---- 键盘 / 读屏可达性 ----
+  // 地图整体先有个名字和说明,否则读屏读到的就是一坨匿名图形
+  svg.setAttribute('role', 'group');
+  svg.setAttribute('aria-label', '世界历史互动地图,按五大地区分组,展开地区后可打开各站点的历史事件');
+  if (!svg.querySelector('title')) {
+    const t = document.createElementNS(SVGNS, 'title');
+    t.textContent = '世界历史互动地图';
+    svg.insertBefore(t, svg.firstChild);
+  }
+  // 一个地区由几十块 path 拼成(非洲就有 80 块)。全部可聚焦=166 个 Tab 停顿,反而没法用;
+  // 所以每个地区只留面积最大的那块当"代表",承担焦点与语义,其余对读屏隐藏。
+  const regionAnchor = {};
+  svg.querySelectorAll('.region-path').forEach(p => {
+    const r = p.dataset.region;
+    let area;
+    // getBBox 在元素尚未布局时会抛,退回用 path 数据长度当粗略的大小代理
+    try { const b = p.getBBox(); area = b.width * b.height; }
+    catch (err) { area = (p.getAttribute('d') || '').length; }
+    if (!regionAnchor[r] || area > regionAnchor[r].area) regionAnchor[r] = { el: p, area };
+  });
+  svg.querySelectorAll('.region-path').forEach(p => p.setAttribute('aria-hidden', 'true'));
+  Object.entries(regionAnchor).forEach(([r, { el }]) => {
+    const info = REGION_INFO[r];
+    const pinCount = svg.querySelectorAll(`.pin-group[data-region="${r}"]`).length;
+    el.removeAttribute('aria-hidden');
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-pressed', 'false');
+    el.setAttribute('aria-label', `${info.name},${pinCount} 个地点。展开后可查看各地点的历史事件`);
+  });
+
   svg.querySelectorAll('.region-path').forEach(p => {
     const region = p.dataset.region;
     const color = p.dataset.color;
     const info = REGION_INFO[region];
+
+    // 回车/空格 = 点击,让键盘用户也能展开地区
+    p.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      dismissFirstClickHint();
+      if (region === activeRegion) deactivateRegion();
+      else activateRegion(region);
+    });
 
     p.addEventListener('mouseenter', (e) => {
       if (region !== activeRegion) {
