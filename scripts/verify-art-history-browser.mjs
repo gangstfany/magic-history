@@ -58,6 +58,9 @@ export const BOUNDARY_VIEWPORTS = Object.freeze([
 ]);
 
 const PROJECT_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const U1_WORKS = Object.freeze(JSON.parse(
+  await readFile(join(PROJECT_ROOT, 'tests', 'fixtures', 'u1-browser.json'), 'utf8'),
+));
 const NINE_IMPORTED_WORKS = Object.freeze(JSON.parse(
   await readFile(join(PROJECT_ROOT, 'tests', 'fixtures', 'u2-imported-browser.json'), 'utf8'),
 ));
@@ -324,6 +327,25 @@ async function assertKeyboardAndFilters(page, frame) {
   assert.notEqual(focusStyle.outlineStyle, 'none');
   assert.ok(focusStyle.outlineWidth >= 2);
 
+  await unitFilter.selectOption('1');
+  assert.equal(await unitFilter.inputValue(), '1');
+  assert.equal(await frame.evaluate(() => document.activeElement?.id), 'unitFilter');
+  assert.match(await frame.locator('.result-count').textContent(), /\b11\b/);
+  const cultureFilters = frame.locator('#cultureFilters');
+  assert.equal(await cultureFilters.isHidden(), true);
+  assert.equal(await cultureFilters.locator('[data-culture]').count(), 0);
+  const u1RegionLabels = await frame
+    .locator('.site-marker[data-group-kind="region"]')
+    .evaluateAll((markers) => markers.map((marker) => marker.getAttribute('aria-label')).sort());
+  assert.deepEqual(u1RegionLabels, [
+    'Africa · 2 pieces',
+    'Americas · 2 pieces',
+    'East Asia · 1 piece',
+    'Europe · 2 pieces',
+    'Middle East · 2 pieces',
+    'Oceania · 2 pieces',
+  ]);
+
   await unitFilter.selectOption('2');
   assert.equal(await unitFilter.inputValue(), '2');
   assert.equal(await frame.evaluate(() => document.activeElement?.id), 'unitFilter');
@@ -372,6 +394,15 @@ async function assertKeyboardAndFilters(page, frame) {
   }
   await frame.locator('[data-culture="all"]').click();
   return unitFilter;
+}
+
+async function assertInitialHierarchy(frame) {
+  const initial = await frame
+    .locator('.site-marker[data-group-kind="unit"]')
+    .allTextContents();
+  assert.equal(initial.length, 2);
+  assert.ok(initial.some((text) => /U1Global Prehistory · 11 pieces/.test(text)));
+  assert.ok(initial.some((text) => /U2Ancient Mediterranean · 36 pieces/.test(text)));
 }
 
 async function assertHierarchyAndDialog(page, frame) {
@@ -452,11 +483,9 @@ async function verifyStandalone(
     await waitForArt(page);
     assert.equal(
       (await page.locator('.page-header h1').textContent()).trim(),
-      'AP 艺术史 · Unit 2 古代地中海',
+      'AP 艺术史互动地图',
     );
-    const initial = await page.locator('.site-marker').allTextContents();
-    assert.equal(initial.length, 1);
-    assert.match(initial[0], /U2Ancient Mediterranean · 36 pieces/);
+    await assertInitialHierarchy(page);
     let metrics = await assertCommonLayout(page, 'standalone', viewport);
     if (full) {
       await assertKeyboardAndFilters(page, page);
@@ -509,7 +538,7 @@ async function selectArtAndFrame(page, useKeyboard = false) {
   await caption.waitFor({ state: 'visible' });
   assert.equal(
     (await caption.textContent()).trim(),
-    '36 AP works · Ancient Mediterranean · filter, compare and study',
+    '47 AP works · Units 1-2 · filter, compare and study',
   );
   const iframe = page.locator('#artMapFrame');
   await iframe.waitFor({ state: 'visible' });
@@ -540,6 +569,7 @@ async function verifyEmbedded(browser, baseUrl, viewport, full) {
     await worldFrame.locator('.map-zone').waitFor();
     assert.ok(await worldFrame.locator('.pin-group').count() > 0);
     const { frame, iframe } = await selectArtAndFrame(page, full);
+    await assertInitialHierarchy(frame);
     let metrics = await assertCommonLayout(frame, 'embedded', viewport);
     const host = await page.evaluate(() => {
       const wrap = document.querySelector('.map-card[data-subject="art"] .home-map-wrap');
@@ -595,7 +625,7 @@ async function fillSearchThroughUi(searchInput, value, label) {
   assert.equal(actualValue, value, label);
 }
 
-async function resetAndActivateImportedWork(page, frame, work) {
+async function resetAndActivateWork(page, frame, work) {
   const unitFilter = frame.locator('#unitFilter');
   const searchInput = frame.locator('#searchInput');
   const resultCount = frame.locator('.result-count');
@@ -605,13 +635,13 @@ async function resetAndActivateImportedWork(page, frame, work) {
   assert.equal(await searchInput.inputValue(), '', `AP ${work.apNumber} Unit reset retains search`);
   assert.equal(
     (await resultCount.textContent()).trim(),
-    '当前显示 36 件作品',
+    '当前显示 47 件作品',
     `AP ${work.apNumber} search reset result`,
   );
   await frame.locator('#resetView').click();
   assert.equal(
     (await resultCount.textContent()).trim(),
-    '当前显示 36 件作品',
+    '当前显示 47 件作品',
     `AP ${work.apNumber} hierarchy reset result`,
   );
 
@@ -666,7 +696,7 @@ async function verifyNineImportedWorks(page, frame, imageRequests, mode) {
   const verified = [];
   for (const work of NINE_IMPORTED_WORKS) {
     imageRequests.length = 0;
-    await resetAndActivateImportedWork(page, frame, work);
+    await resetAndActivateWork(page, frame, work);
 
     const summary = frame.locator('.selected-summary');
     assert.equal((await summary.locator('.work-title-en').textContent()).trim(), work.titleEn);
@@ -687,11 +717,14 @@ async function verifyNineImportedWorks(page, frame, imageRequests, mode) {
     assert.equal(await imageCredit.isVisible(), true);
     assert.equal(
       (await imageCredit.textContent()).trim(),
-      `图片：${work.credit.creatorOrInstitution} · ${work.credit.licenseName}`,
+      `图片：${work.credit.creatorOrInstitution} · ${work.credit.licenseName} · ${work.imageSourceName}`,
     );
-    const inlineLicense = imageCredit.locator('a');
+    const inlineLicense = imageCredit.locator('a').nth(0);
     assert.equal(await inlineLicense.getAttribute('href'), work.credit.licenseUrl);
     assert.equal((await inlineLicense.textContent()).trim(), work.credit.licenseName);
+    const inlineSource = imageCredit.locator('a').nth(1);
+    assert.equal(await inlineSource.getAttribute('href'), work.imageSourceUrl);
+    assert.equal((await inlineSource.textContent()).trim(), work.imageSourceName);
 
     assertSingleImageRequest(imageRequests, work, `${mode} detail`);
 
@@ -712,14 +745,11 @@ async function verifyNineImportedWorks(page, frame, imageRequests, mode) {
     const dialogLicense = frame.locator('#dialogLicense');
     assert.equal(await dialogLicense.isVisible(), true);
     assert.equal(await dialogLicense.getAttribute('href'), work.credit.licenseUrl);
-    assert.equal((await dialogLicense.textContent()).trim(), `许可：${work.credit.licenseName}`);
+    assert.equal((await dialogLicense.textContent()).trim(), work.credit.licenseName);
     const dialogSource = frame.locator('#dialogSource');
     assert.equal(await dialogSource.isVisible(), true);
     assert.equal(await dialogSource.getAttribute('href'), work.imageSourceUrl);
-    assert.equal(
-      (await dialogSource.textContent()).trim(),
-      `来源页：${work.imageSourceName}（查看原始文件）`,
-    );
+    assert.equal((await dialogSource.textContent()).trim(), work.imageSourceName);
 
     assertSingleImageRequest(imageRequests, work, `${mode} open dialog`);
 
@@ -768,6 +798,130 @@ async function verifyNineImportedWorks(page, frame, imageRequests, mode) {
   return verified;
 }
 
+async function verifyU1Works(page, frame, imageRequests, mode) {
+  const results = [];
+  for (const work of U1_WORKS) {
+    imageRequests.clear();
+    await resetAndActivateWork(page, frame, work);
+
+    const summary = frame.locator('.selected-summary');
+    assert.equal(
+      (await summary.locator('[data-selected-artwork-title]').textContent()).trim(),
+      work.titleEn,
+    );
+    assert.equal((await summary.locator('.work-title-zh').textContent()).trim(), work.titleZh);
+    const viewButtons = summary.locator('.image-view-switcher button');
+    assert.equal(
+      await viewButtons.count(),
+      work.images.length === 2 ? 2 : 0,
+      `${mode} AP ${work.apNumber} view button count`,
+    );
+
+    for (let imageIndex = 0; imageIndex < work.images.length; imageIndex += 1) {
+      if (work.images.length === 2) await viewButtons.nth(imageIndex).click();
+      const expected = work.images[imageIndex];
+      const imageButton = summary.locator('.artwork-image-button');
+      const image = imageButton.locator('img');
+      await waitForLoadedImage(image);
+      assert.equal(await image.getAttribute('src'), expected.imageUrl);
+      assert.equal(await image.getAttribute('alt'), expected.imageAlt);
+
+      const creditHost = summary.locator('.image-credit-host');
+      assert.match(
+        (await creditHost.textContent()).trim(),
+        new RegExp(expected.licenseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+      );
+      assert.equal(
+        await creditHost.locator(`a[href="${expected.licenseUrl}"]`).count(),
+        1,
+      );
+      assert.equal(
+        await creditHost.locator(`a[href="${expected.imageSourceUrl}"]`).count(),
+        1,
+      );
+
+      await imageButton.click();
+      const dialog = frame.locator('#imageDialog');
+      await dialog.waitFor({ state: 'visible' });
+      assert.equal(await frame.evaluate(() => document.activeElement?.id), 'dialogClose');
+      const dialogImage = frame.locator('#dialogImage');
+      await waitForLoadedImage(dialogImage);
+      assert.equal(await dialogImage.getAttribute('src'), expected.imageUrl);
+      assert.equal(await dialogImage.getAttribute('alt'), expected.imageAlt);
+      assert.equal(await frame.locator('#dialogSource').getAttribute('href'), expected.imageSourceUrl);
+      assert.equal(await frame.locator('#dialogLicense').getAttribute('href'), expected.licenseUrl);
+
+      await frame.locator('#dialogClose').click();
+      await dialog.waitFor({ state: 'hidden' });
+      assert.equal(
+        await frame.evaluate(() => (
+          document.activeElement?.classList.contains('artwork-image-button')
+        )),
+        true,
+        `${mode} AP ${work.apNumber} view ${imageIndex + 1} focus restoration`,
+      );
+      assert.equal(
+        imageRequests.get(expected.imageUrl),
+        1,
+        `${mode} AP ${work.apNumber} view ${imageIndex + 1} image request count`,
+      );
+    }
+
+    assert.equal(
+      imageRequests.size,
+      work.images.length,
+      `${mode} AP ${work.apNumber} should request only its expected image URLs`,
+    );
+    results.push({
+      apNumber: work.apNumber,
+      mode,
+      images: work.images.map(({ imageUrl }) => ({
+        imageUrl,
+        imageRequestCount: imageRequests.get(imageUrl),
+      })),
+    });
+  }
+  return results;
+}
+
+async function verifyU1Standalone(browser, baseUrl) {
+  const viewport = { width: 1440, height: 900 };
+  return withBrowserContext(browser, { viewport, reducedMotion: 'reduce' }, async (context) => {
+    const page = await context.newPage();
+    const issues = installErrorCollection(page, 'U1 eleven works standalone');
+    const imageRequests = new Map();
+    await mockRemoteImages(page, (url) => {
+      imageRequests.set(url, (imageRequests.get(url) || 0) + 1);
+    });
+    await page.goto(`${baseUrl}/art-history-map.html`, { waitUntil: 'load' });
+    await waitForArt(page);
+    const works = await verifyU1Works(page, page, imageRequests, 'standalone');
+    assert.deepEqual(issues, []);
+    return { viewport, works };
+  });
+}
+
+async function verifyU1Embedded(browser, baseUrl) {
+  const viewport = { width: 1024, height: 768 };
+  return withBrowserContext(browser, { viewport, reducedMotion: 'reduce' }, async (context) => {
+    const page = await context.newPage();
+    const issues = installErrorCollection(page, 'U1 eleven works embedded');
+    const imageRequests = new Map();
+    await mockRemoteImages(page, (url) => {
+      imageRequests.set(url, (imageRequests.get(url) || 0) + 1);
+    });
+    await page.goto(`${baseUrl}/index.html`, { waitUntil: 'load' });
+    await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => (
+      document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
+    ));
+    const { frame } = await selectArtAndFrame(page, true);
+    const works = await verifyU1Works(page, frame, imageRequests, 'embedded');
+    assert.deepEqual(issues, []);
+    return { viewport, works };
+  });
+}
+
 async function verifyImportedWorksStandalone(browser, baseUrl) {
   const viewport = { width: 1440, height: 900 };
   return withBrowserContext(browser, { viewport, reducedMotion: 'reduce' }, async (context) => {
@@ -779,7 +933,7 @@ async function verifyImportedWorksStandalone(browser, baseUrl) {
     await waitForArt(page);
     assert.equal(
       (await page.locator('.page-header h1').textContent()).trim(),
-      'AP 艺术史 · Unit 2 古代地中海',
+      'AP 艺术史互动地图',
     );
     const works = await verifyNineImportedWorks(page, page, imageRequests, 'standalone');
     assert.deepEqual(issues, []);
@@ -920,6 +1074,13 @@ export async function runVerification() {
         const embedded = await verifyEmbedded(browser, server.baseUrl, viewport, false);
         report.push({ viewport, kind: 'boundary', standalone, embedded });
       }
+      const u1Standalone = await verifyU1Standalone(browser, server.baseUrl);
+      const u1Embedded = await verifyU1Embedded(browser, server.baseUrl);
+      report.push({
+        kind: 'u1-eleven-works',
+        standalone: u1Standalone,
+        embedded: u1Embedded,
+      });
       const standaloneImported = await verifyImportedWorksStandalone(browser, server.baseUrl);
       const embeddedImported = await verifyImportedWorksEmbedded(browser, server.baseUrl);
       report.push({
