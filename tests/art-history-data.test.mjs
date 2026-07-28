@@ -537,6 +537,16 @@ async function loadCompleteUnits123Fixture() {
   };
 }
 
+function patchAlignedUnit3Credit(fixture, mediaKey, patch) {
+  const [artworkId, viewId] = mediaKey.split('::');
+  const artwork = fixture.artworks.find(({ id }) => id === artworkId);
+  const viewIndex = artwork.images.findIndex(({ id }) => id === viewId);
+  const rawCredit = fixture.credits[artworkId];
+  const credit = Array.isArray(rawCredit) ? rawCredit[viewIndex] : rawCredit;
+  Object.assign(credit, patch);
+  Object.assign(fixture.rights[mediaKey], patch);
+}
+
 async function loadValidatedLiveUnits12() {
   const [{ artworks, credits }, manifests] = await Promise.all([
     loadDocumentData(),
@@ -545,6 +555,19 @@ async function loadValidatedLiveUnits12() {
   validateArtworks(artworks, manifests);
   validateImageCredits(credits, artworks);
   return artworks;
+}
+
+function assertInvalidArtworkError(operation, patterns, label) {
+  assert.throws(
+    operation,
+    (error) => {
+      assert.match(error.message, /^Invalid artwork data:/, `${label}: branded error`);
+      for (const pattern of patterns) {
+        assert.match(error.message, pattern, `${label}: diagnostic context`);
+      }
+      return true;
+    },
+  );
 }
 
 test('normalizes both explicit image arrays and legacy single-image fields', () => {
@@ -617,6 +640,14 @@ test('loads exactly AP 1–47 in official order while preserving the AP 12–47 
         .map(({ apNumber, id, titleEn }) => [apNumber, { id, titleEn }]),
     ),
     manifest,
+  );
+});
+
+test('Task 4 transition: strict live loader rejects the current 47-work document as incomplete', async () => {
+  // Task 4 must flip this assertion to expect AP 1–98 success before importing U3.
+  await assert.rejects(
+    loadAndValidate(),
+    /Invalid artwork data:.*exactly 98 works.*received 47/i,
   );
 });
 
@@ -867,6 +898,90 @@ test('validator requires the exact Unit 3 manifest keyset 48 through 98', async 
   }
 });
 
+test('validator rejects malformed Unit 3 manifest entries with branded AP and field context', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const cases = [
+    {
+      label: 'null entry',
+      mutate: (manifest) => {
+        manifest[60] = null;
+      },
+      fieldPattern: /entry|object/i,
+    },
+    {
+      label: 'null required views',
+      mutate: (manifest) => {
+        manifest[60].requiredViewIds = null;
+      },
+      fieldPattern: /requiredViewIds/i,
+    },
+    {
+      label: 'non-array required views',
+      mutate: (manifest) => {
+        manifest[60].requiredViewIds = 'west-facade';
+      },
+      fieldPattern: /requiredViewIds/i,
+    },
+    {
+      label: 'empty required views',
+      mutate: (manifest) => {
+        manifest[60].requiredViewIds = [];
+      },
+      fieldPattern: /requiredViewIds/i,
+    },
+    {
+      label: 'duplicate required view ids',
+      mutate: (manifest) => {
+        manifest[60].requiredViewIds[1] = manifest[60].requiredViewIds[0];
+      },
+      fieldPattern: /requiredViewIds.*duplicate|duplicate.*requiredViewIds/i,
+    },
+    {
+      label: 'extra manifest entry field',
+      mutate: (manifest) => {
+        manifest[60].unexpected = 'extra';
+      },
+      fieldPattern: /unexpected|extra/i,
+    },
+    {
+      label: 'missing manifest entry field',
+      mutate: (manifest) => {
+        delete manifest[60].siteName;
+      },
+      fieldPattern: /siteName|missing/i,
+    },
+  ];
+
+  for (const { label, mutate, fieldPattern } of cases) {
+    const manifests = structuredClone(fixture.manifests);
+    mutate(manifests[3]);
+    assertInvalidArtworkError(
+      () => validateArtworks(fixture.artworks, manifests),
+      [/Unit 3/i, /AP 60/i, fieldPattern],
+      label,
+    );
+  }
+});
+
+test('validator reports exact manifest key differences', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const missing = structuredClone(fixture.manifests);
+  delete missing[3][48];
+  assertInvalidArtworkError(
+    () => validateArtworks(fixture.artworks, missing),
+    [/Unit 3/i, /missing/i, /\b48\b/],
+    'missing Unit 3 manifest key',
+  );
+
+  const extra = structuredClone(fixture.manifests);
+  extra[3][99] = structuredClone(extra[3][98]);
+  assertInvalidArtworkError(
+    () => validateArtworks(fixture.artworks, extra),
+    [/Unit 3/i, /extra/i, /\b99\b/],
+    'extra Unit 3 manifest key',
+  );
+});
+
 test('validator enforces every Unit 3 manifest identity and creation-site field', async () => {
   const fixture = await loadCompleteUnits123Fixture();
   const cases = [
@@ -1036,6 +1151,24 @@ test('validator rejects duplicate Unit 3 view ids and exact Chartres view drift'
   }
 });
 
+test('validator reports the first mismatched Unit 3 view key with AP context', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const artworks = structuredClone(fixture.artworks);
+  const chartres = artworks.find(({ apNumber }) => apNumber === 60);
+  [chartres.images[0], chartres.images[1]] = [chartres.images[1], chartres.images[0]];
+
+  assertInvalidArtworkError(
+    () => validateArtworks(artworks, fixture.manifests),
+    [
+      /AP 60/i,
+      /index 0|first mismatch/i,
+      /expected.*west-facade/i,
+      /received.*nave/i,
+    ],
+    'Chartres first view mismatch',
+  );
+});
+
 test('validator requires HTTPS and distinct Unit 3 media URLs and alt text', async () => {
   const fixture = await loadCompleteUnits123Fixture();
   const cases = [
@@ -1073,6 +1206,29 @@ test('validator requires HTTPS and distinct Unit 3 media URLs and alt text', asy
     const copy = structuredClone(fixture.artworks);
     mutate(copy.find(({ apNumber }) => apNumber === 60).images);
     assert.throws(() => validateArtworks(copy, fixture.manifests), pattern, label);
+  }
+});
+
+test('validator rejects Unit 3 media identity reuse across different artworks', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const owner = fixture.artworks.find(({ apNumber }) => apNumber === 60).images[0];
+  const conflictingMediaKey = 'ap61-bibles-moralisees::dedication-page';
+  const ownerMediaKey = 'ap60-chartres-cathedral::west-facade';
+  const cases = [
+    ['imageUrl', /imageUrl/i],
+    ['imageSourceUrl', /imageSourceUrl/i],
+    ['imageAlt', /imageAlt/i],
+  ];
+
+  for (const [field, fieldPattern] of cases) {
+    const artworks = structuredClone(fixture.artworks);
+    const conflict = artworks.find(({ apNumber }) => apNumber === 61).images[0];
+    conflict[field] = owner[field];
+    assertInvalidArtworkError(
+      () => validateArtworks(artworks, fixture.manifests),
+      [fieldPattern, new RegExp(ownerMediaKey), new RegExp(conflictingMediaKey)],
+      `cross-work ${field}`,
+    );
   }
 });
 
@@ -1129,12 +1285,175 @@ test('validator requires exact artwork-level credit keys through AP 98', async (
     'ap99-extra': fixture.credits['ap98-tete-a-tete'],
   };
 
-  for (const credits of [missing, extra]) {
-    assert.throws(
-      () => validateImageCredits(credits, fixture.artworks, fixture.rights),
-      /image credit ids.*artwork ids.*exactly/i,
+  assertInvalidArtworkError(
+    () => validateImageCredits(missing, fixture.artworks, fixture.rights),
+    [/image credit/i, /missing/i, /ap48-catacomb-priscilla/i],
+    'missing artwork credit key',
+  );
+  assertInvalidArtworkError(
+    () => validateImageCredits(extra, fixture.artworks, fixture.rights),
+    [/image credit/i, /extra/i, /ap99-extra/i],
+    'extra artwork credit key',
+  );
+});
+
+test('validator binds every reviewed release class and license name to approved URLs', async () => {
+  const base = await loadCompleteUnits123Fixture();
+  const cases = [
+    {
+      label: 'public-domain mark on an unrelated host',
+      mediaKey: 'ap48-catacomb-priscilla::greek-chapel',
+      patch: { licenseUrl: 'https://example.com/not-a-license' },
+    },
+    {
+      label: 'CC name paired with the wrong canonical CC path',
+      mediaKey: 'ap49-santa-sabina::interior',
+      patch: {
+        licenseName: 'CC BY-SA 4.0',
+        licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      },
+    },
+    {
+      label: 'Commons public-domain template name paired with another template',
+      mediaKey: 'ap49-santa-sabina::exterior',
+      patch: {
+        licenseUrl: 'https://commons.wikimedia.org/wiki/Template:PD-anon-70-EU',
+      },
+    },
+    {
+      label: 'Louvre terms paired with LACMA terms',
+      mediaKey: 'ap53-merovingian-fibulae::primary',
+      patch: { licenseUrl: 'https://www.lacma.org/terms-use' },
+    },
+    {
+      label: 'noncommercial credit on an unrelated host',
+      mediaKey: 'ap55-lindisfarne-gospels::st-luke-portrait',
+      patch: { licenseUrl: 'https://example.com/not-a-license' },
+    },
+  ];
+
+  for (const { label, mediaKey, patch } of cases) {
+    const fixture = structuredClone(base);
+    patchAlignedUnit3Credit(fixture, mediaKey, patch);
+    assertInvalidArtworkError(
+      () => validateImageCredits(fixture.credits, fixture.artworks, fixture.rights),
+      [new RegExp(mediaKey), /licenseName|licenseUrl|release.*policy/i],
+      label,
     );
   }
+});
+
+test('validator pins noncommercial and institutional policies to reviewed media keys', async () => {
+  const base = await loadCompleteUnits123Fixture();
+  const cases = [
+    {
+      label: 'move AP55 noncommercial policy to AP48',
+      mutate: (fixture) => {
+        patchAlignedUnit3Credit(
+          fixture,
+          'ap48-catacomb-priscilla::greek-chapel',
+          {
+            licenseName: 'CC BY-NC-SA 4.0',
+            licenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+          },
+        );
+        fixture.rights['ap48-catacomb-priscilla::greek-chapel'].releaseClass = 'noncommercial';
+        patchAlignedUnit3Credit(
+          fixture,
+          'ap55-lindisfarne-gospels::st-luke-portrait',
+          {
+            licenseName: 'Public Domain Mark 1.0',
+            licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/',
+          },
+        );
+        fixture.rights['ap55-lindisfarne-gospels::st-luke-portrait'].releaseClass = 'open';
+      },
+      pattern: /ap48-catacomb-priscilla::greek-chapel|ap55-lindisfarne-gospels::st-luke-portrait/i,
+    },
+    {
+      label: 'swap Louvre and LACMA institutional policies',
+      mutate: (fixture) => {
+        patchAlignedUnit3Credit(
+          fixture,
+          'ap53-merovingian-fibulae::primary',
+          {
+            licenseName: 'LACMA collection image; reuse subject to museum terms',
+            licenseUrl: 'https://www.lacma.org/terms-use',
+          },
+        );
+        patchAlignedUnit3Credit(
+          fixture,
+          'ap95-virgin-guadalupe::primary',
+          {
+            licenseName: 'Louvre educational-use terms; commercial permission required',
+            licenseUrl: 'https://collections.louvre.fr/en/page/cgu',
+          },
+        );
+      },
+      pattern: /ap53-merovingian-fibulae::primary|ap95-virgin-guadalupe::primary/i,
+    },
+  ];
+
+  for (const { label, mutate, pattern } of cases) {
+    const fixture = structuredClone(base);
+    mutate(fixture);
+    assertInvalidArtworkError(
+      () => validateImageCredits(fixture.credits, fixture.artworks, fixture.rights),
+      [pattern, /reviewed media|release.*policy/i],
+      label,
+    );
+  }
+});
+
+test('validator accepts an equivalent Unit 3 rights audit regardless of key insertion order', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const reorderedRights = Object.fromEntries(
+    Object.entries(fixture.rights).reverse(),
+  );
+
+  assert.equal(
+    validateImageCredits(fixture.credits, fixture.artworks, reorderedRights),
+    fixture.credits,
+  );
+});
+
+test('validator reports exact missing and extra Unit 3 rights media keys', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const missingKey = Object.keys(fixture.rights)[0];
+  const missing = structuredClone(fixture.rights);
+  delete missing[missingKey];
+  assertInvalidArtworkError(
+    () => validateImageCredits(fixture.credits, fixture.artworks, missing),
+    [/rights audit/i, /missing/i, new RegExp(missingKey)],
+    'missing rights media key',
+  );
+
+  const extraKey = 'ap99-extra::primary';
+  const extra = {
+    ...fixture.rights,
+    [extraKey]: structuredClone(fixture.rights[missingKey]),
+  };
+  assertInvalidArtworkError(
+    () => validateImageCredits(fixture.credits, fixture.artworks, extra),
+    [/rights audit/i, /extra/i, new RegExp(extraKey)],
+    'extra rights media key',
+  );
+});
+
+test('validator enforces the exact reviewed Unit 3 release-class distribution', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const mediaKey = 'ap48-catacomb-priscilla::greek-chapel';
+  patchAlignedUnit3Credit(fixture, mediaKey, {
+    licenseName: 'CC BY-NC-SA 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+  });
+  fixture.rights[mediaKey].releaseClass = 'noncommercial';
+
+  assertInvalidArtworkError(
+    () => validateImageCredits(fixture.credits, fixture.artworks, fixture.rights),
+    [/release class distribution/i, /99 open/i, /2 noncommercial/i],
+    'release distribution mismatch',
+  );
 });
 
 test('validator rejects incomplete, mismatched, unknown, and restricted U3 rights audits', async () => {
@@ -1145,7 +1464,6 @@ test('validator rejects incomplete, mismatched, unknown, and restricted U3 right
   );
 
   const firstKey = Object.keys(fixture.rights)[0];
-  const secondKey = Object.keys(fixture.rights)[1];
   const cases = [
     {
       label: 'missing media key',
@@ -1179,13 +1497,6 @@ test('validator rejects incomplete, mismatched, unknown, and restricted U3 right
         rights[firstKey].releaseClass = 'restricted';
       },
       pattern: /restricted.*(?:release|media)|release.*restricted/i,
-    },
-    {
-      label: 'release distribution mismatch',
-      mutate: (rights) => {
-        rights[secondKey].releaseClass = 'noncommercial';
-      },
-      pattern: /release class distribution|99 open|noncommercial.*2/i,
     },
   ];
 

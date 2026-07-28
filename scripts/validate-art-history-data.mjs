@@ -11,6 +11,17 @@ const U3_RIGHTS_URL = new URL(
   '../data/ap-art-history-unit-3-rights.json',
   import.meta.url,
 );
+const U3_REGION_COUNTS = Object.freeze({
+  italyVatican: 18,
+  france: 5,
+  iberianPeninsula: 5,
+  britishIsles: 3,
+  lowCountries: 7,
+  centralEurope: 4,
+  easternMediterranean: 4,
+  colonialAmericas: 5,
+});
+const U3_REGIONS = new Set(Object.keys(U3_REGION_COUNTS));
 const UNIT_RULES = Object.freeze({
   1: Object.freeze({
     start: 1,
@@ -28,27 +39,8 @@ const UNIT_RULES = Object.freeze({
     start: 48,
     end: 98,
     count: 51,
-    regions: new Set([
-      'italyVatican',
-      'france',
-      'iberianPeninsula',
-      'britishIsles',
-      'lowCountries',
-      'centralEurope',
-      'easternMediterranean',
-      'colonialAmericas',
-    ]),
+    regions: U3_REGIONS,
   }),
-});
-const U3_REGION_COUNTS = Object.freeze({
-  italyVatican: 18,
-  france: 5,
-  iberianPeninsula: 5,
-  britishIsles: 3,
-  lowCountries: 7,
-  centralEurope: 4,
-  easternMediterranean: 4,
-  colonialAmericas: 5,
 });
 const REQUIRED_FIELDS = [
   'id',
@@ -85,53 +77,6 @@ const MEDIA_FIELDS = [
 ];
 const LEGACY_MEDIA_FIELDS = MEDIA_FIELDS.filter((field) => field !== 'label');
 const U2_CULTURES = new Set(['ancientNearEast', 'egypt', 'greece', 'etruscan', 'rome']);
-const U3_CULTURES = new Set([
-  'andeanColonialBaroque',
-  'britishRococoSatire',
-  'byzantineConstantinople',
-  'byzantineRavenna',
-  'byzantineSinai',
-  'colonialMexicaManuscript',
-  'dutchBaroque',
-  'dutchBaroqueStillLife',
-  'earlyByzantineManuscript',
-  'earlyChristianRome',
-  'earlyNetherlandish',
-  'flemishBaroque',
-  'florentineEarlyRenaissance',
-  'florentineRenaissance',
-  'frenchBaroqueAbsolutism',
-  'frenchGothic',
-  'frenchGothicManuscript',
-  'germanGothicDevotional',
-  'highRenaissanceItaly',
-  'insularHibernoSaxon',
-  'italianBaroque',
-  'italianMannerism',
-  'merovingianMetalwork',
-  'nasridAndalusia',
-  'newSpainCasta',
-  'newSpainEnconchado',
-  'newSpainGuadalupe',
-  'normanRomanesque',
-  'northernRenaissanceFlemish',
-  'northernRenaissanceGermany',
-  'ottomanIslamic',
-  'protestantReformationGermany',
-  'protoRenaissanceItaly',
-  'romanBaroqueJesuit',
-  'romanesquePilgrimage',
-  'sephardicJewishManuscript',
-  'spanishBaroque',
-  'umayyadIberia',
-  'venetianRenaissance',
-]);
-const U3_TRADITION_GROUPS = new Set([
-  'lateAntiqueByzantine',
-  'medievalIslamic',
-  'renaissanceMannerism',
-  'baroqueColonial',
-]);
 const U3_CLASSIFICATIONS = new Map([
   [48, ['earlyChristianRome', 'lateAntiqueByzantine']],
   [49, ['earlyChristianRome', 'lateAntiqueByzantine']],
@@ -185,6 +130,12 @@ const U3_CLASSIFICATIONS = new Map([
   [97, ['newSpainCasta', 'baroqueColonial']],
   [98, ['britishRococoSatire', 'baroqueColonial']],
 ]);
+const U3_CULTURES = new Set(
+  [...U3_CLASSIFICATIONS.values()].map(([culture]) => culture),
+);
+const U3_TRADITION_GROUPS = new Set(
+  [...U3_CLASSIFICATIONS.values()].map(([, traditionGroup]) => traditionGroup),
+);
 const U3_PROVENANCE_QUALIFIERS = new Map([
   [
     'ap50-vienna-genesis',
@@ -231,19 +182,58 @@ const U3_RELEASE_CLASS_COUNTS = Object.freeze({
   noncommercial: 2,
   institutionalEducational: 2,
 });
-const OPEN_LICENSE_NAMES = new Set([
-  'CC BY 2.0',
-  'CC BY 4.0',
-  'CC BY-SA 2.0',
-  'CC BY-SA 2.5',
-  'CC BY-SA 3.0',
-  'CC BY-SA 4.0',
-  'CC0 1.0',
-  'Free Art License 1.3',
-  'No known copyright restrictions',
-  'Public domain (anonymous EU work)',
-  'Public domain (self-dedicated)',
-  'Public Domain Mark 1.0',
+const U3_RELEASE_POLICY = new Map([
+  ['CC BY 2.0', ['https://creativecommons.org/licenses/by/2.0/', 'open']],
+  ['CC BY 4.0', ['https://creativecommons.org/licenses/by/4.0/', 'open']],
+  ['CC BY-NC-SA 4.0', ['https://creativecommons.org/licenses/by-nc-sa/4.0/', 'noncommercial']],
+  ['CC BY-SA 2.0', ['https://creativecommons.org/licenses/by-sa/2.0/', 'open']],
+  ['CC BY-SA 2.5', ['https://creativecommons.org/licenses/by-sa/2.5/', 'open']],
+  ['CC BY-SA 3.0', ['https://creativecommons.org/licenses/by-sa/3.0/', 'open']],
+  ['CC BY-SA 4.0', ['https://creativecommons.org/licenses/by-sa/4.0/', 'open']],
+  ['CC0 1.0', ['https://creativecommons.org/publicdomain/zero/1.0/', 'open']],
+  ['Free Art License 1.3', ['https://artlibre.org/licence/lal/en/', 'open']],
+  [
+    'LACMA collection image; reuse subject to museum terms',
+    ['https://www.lacma.org/terms-use', 'institutionalEducational'],
+  ],
+  [
+    'Louvre educational-use terms; commercial permission required',
+    ['https://collections.louvre.fr/en/page/cgu', 'institutionalEducational'],
+  ],
+  [
+    'No known copyright restrictions',
+    [
+      'https://commons.wikimedia.org/wiki/Commons:Copyright_rules_by_subject_matter#Photographs_of_old_artworks',
+      'open',
+    ],
+  ],
+  ['Public Domain Mark 1.0', ['https://creativecommons.org/publicdomain/mark/1.0/', 'open']],
+  [
+    'Public domain (anonymous EU work)',
+    ['https://commons.wikimedia.org/wiki/Template:PD-anon-70-EU', 'open'],
+  ],
+  [
+    'Public domain (self-dedicated)',
+    ['https://commons.wikimedia.org/wiki/Template:PD-self', 'open'],
+  ],
+]);
+const U3_LIMITED_RELEASE_MEDIA = new Map([
+  [
+    'ap53-merovingian-fibulae::primary',
+    'Louvre educational-use terms; commercial permission required',
+  ],
+  [
+    'ap55-lindisfarne-gospels::st-luke-portrait',
+    'CC BY-NC-SA 4.0',
+  ],
+  [
+    'ap95-virgin-guadalupe::primary',
+    'LACMA collection image; reuse subject to museum terms',
+  ],
+  [
+    'ap97-spaniard-indian-mestizo::primary',
+    'CC BY-NC-SA 4.0',
+  ],
 ]);
 
 function fail(message) {
@@ -285,12 +275,34 @@ function validateStringArray(
   }
 }
 
-function validateExactKeys(actualKeys, expectedKeys, message) {
+function validateExactKeys(
+  actualKeys,
+  expectedKeys,
+  message,
+  { orderSensitive = true } = {},
+) {
+  const actualSet = new Set(actualKeys);
+  const expectedSet = new Set(expectedKeys);
+  const missing = expectedKeys.filter((key) => !actualSet.has(key));
+  const extra = actualKeys.filter((key) => !expectedSet.has(key));
+  const mismatchIndex = orderSensitive
+    ? expectedKeys.findIndex((key, index) => actualKeys[index] !== key)
+    : -1;
   if (
-    actualKeys.length !== expectedKeys.length
-    || actualKeys.some((key, index) => key !== expectedKeys[index])
+    missing.length > 0
+    || extra.length > 0
+    || actualKeys.length !== expectedKeys.length
+    || mismatchIndex !== -1
   ) {
-    fail(message);
+    const details = [];
+    if (missing.length > 0) details.push(`missing keys [${missing.join(', ')}]`);
+    if (extra.length > 0) details.push(`extra keys [${extra.join(', ')}]`);
+    if (mismatchIndex !== -1) {
+      details.push(
+        `first mismatch at index ${mismatchIndex}: expected ${expectedKeys[mismatchIndex] ?? '<none>'}; received ${actualKeys[mismatchIndex] ?? '<none>'}`,
+      );
+    }
+    fail(`${message}${details.length > 0 ? `; ${details.join('; ')}` : ''}`);
   }
 }
 
@@ -325,7 +337,44 @@ function validateManifests(manifests) {
       Object.keys(manifest),
       expectedKeys,
       `official Unit ${unit} manifest must contain exactly the ${rule.count} numeric keys ${rule.start}..${rule.end}`,
+      { orderSensitive: false },
     );
+
+    const entryFields = unit === 3
+      ? ['id', 'titleEn', 'region', 'siteName', 'requiredViewIds']
+      : ['id', 'titleEn'];
+    for (const apNumber of expectedKeys) {
+      const entry = manifest[apNumber];
+      const context = `official Unit ${unit} manifest AP ${apNumber}`;
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+        fail(`${context} entry must be an object`);
+      }
+      validateExactKeys(
+        Object.keys(entry),
+        entryFields,
+        `${context} entry must use the exact manifest schema`,
+        { orderSensitive: false },
+      );
+      for (const field of entryFields.filter((field) => field !== 'requiredViewIds')) {
+        if (typeof entry[field] !== 'string' || entry[field].trim() === '') {
+          fail(`${context}.${field} must be a non-empty string`);
+        }
+      }
+      if (unit === 3) {
+        if (
+          !Array.isArray(entry.requiredViewIds)
+          || entry.requiredViewIds.length === 0
+          || entry.requiredViewIds.some(
+            (viewId) => typeof viewId !== 'string' || viewId.trim() === '',
+          )
+        ) {
+          fail(`${context}.requiredViewIds must be a non-empty array of non-empty strings`);
+        }
+        if (new Set(entry.requiredViewIds).size !== entry.requiredViewIds.length) {
+          fail(`${context}.requiredViewIds must not contain duplicate view ids`);
+        }
+      }
+    }
   }
   return activeUnits;
 }
@@ -351,7 +400,7 @@ function normalizedMediaIds(artwork) {
     : ['primary'];
 }
 
-function validateArtworkMedia(artwork, label, expectedManifest) {
+function validateArtworkMedia(artwork, label, expectedManifest, u3MediaOwners) {
   if (Array.isArray(artwork.images)) {
     if (artwork.images.length === 0) {
       fail(`${label}.images must not be empty`);
@@ -399,6 +448,16 @@ function validateArtworkMedia(artwork, label, expectedManifest) {
         fail(`${label} contains duplicate view id ${viewId}`);
       }
       viewIds.add(viewId);
+      const mediaKey = `${artwork.id}::${viewId}`;
+      for (const field of ['imageUrl', 'imageSourceUrl', 'imageAlt']) {
+        const owner = u3MediaOwners[field].get(item[field]);
+        if (owner) {
+          fail(
+            `Unit 3 duplicate ${field} across media views; ${mediaKey} conflicts with ${owner}`,
+          );
+        }
+        u3MediaOwners[field].set(item[field], mediaKey);
+      }
     }
     if (!(artwork.unit === 3 ? isHttpsUrl(item.imageUrl) : isHttpUrl(item.imageUrl))) {
       fail(`${label}.media[${index}].imageUrl must be an ${artwork.unit === 3 ? 'HTTPS' : 'HTTP(S)'} URL`);
@@ -453,6 +512,9 @@ export function validateArtworks(artworks, manifests) {
   const apNumbers = new Set();
   const u3RegionCounts = Object.fromEntries(
     Object.keys(U3_REGION_COUNTS).map((region) => [region, 0]),
+  );
+  const u3MediaOwners = Object.fromEntries(
+    ['imageUrl', 'imageSourceUrl', 'imageAlt'].map((field) => [field, new Map()]),
   );
 
   for (const [index, artwork] of artworks.entries()) {
@@ -596,7 +658,7 @@ export function validateArtworks(artworks, manifests) {
       label,
       { minimum: artwork.unit === 3 ? 3 : 1 },
     );
-    validateArtworkMedia(artwork, label, expected);
+    validateArtworkMedia(artwork, label, expected, u3MediaOwners);
   }
 
   validateExactKeys(
@@ -629,18 +691,6 @@ export function validateArtworks(artworks, manifests) {
   return artworks;
 }
 
-function expectedReleaseClass(licenseName) {
-  if (OPEN_LICENSE_NAMES.has(licenseName)) return 'open';
-  if (licenseName === 'CC BY-NC-SA 4.0') return 'noncommercial';
-  if (
-    licenseName === 'Louvre educational-use terms; commercial permission required'
-    || licenseName === 'LACMA collection image; reuse subject to museum terms'
-  ) {
-    return 'institutionalEducational';
-  }
-  return 'restricted';
-}
-
 function validateUnit3RightsAudit(rightsAudit, artworks, credits) {
   if (!rightsAudit || typeof rightsAudit !== 'object' || Array.isArray(rightsAudit)) {
     fail('Unit 3 rights audit must be an object');
@@ -663,11 +713,13 @@ function validateUnit3RightsAudit(rightsAudit, artworks, credits) {
     Object.keys(rightsAudit),
     expectedEntries.map(([key]) => key),
     'Unit 3 rights audit media keys must match all 103 reviewed views exactly',
+    { orderSensitive: false },
   );
 
   const releaseClassCounts = Object.fromEntries(
     [...U3_RELEASE_CLASSES].map((releaseClass) => [releaseClass, 0]),
   );
+  const limitedReleaseMismatches = [];
   for (const [mediaKey, canonicalCredit] of expectedEntries) {
     const entry = rightsAudit[mediaKey];
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
@@ -692,6 +744,28 @@ function validateUnit3RightsAudit(rightsAudit, artworks, credits) {
     if (entry.releaseClass === 'restricted') {
       fail(`Unit 3 release is blocked by restricted media ${mediaKey}`);
     }
+    const policy = U3_RELEASE_POLICY.get(entry.licenseName);
+    if (!policy) {
+      fail(`Unit 3 rights audit ${mediaKey}.licenseName is not in the approved release policy`);
+    }
+    const [approvedLicenseUrl, approvedReleaseClass] = policy;
+    if (entry.licenseUrl !== approvedLicenseUrl) {
+      fail(
+        `Unit 3 rights audit ${mediaKey}.licenseUrl does not match the approved policy for ${entry.licenseName}`,
+      );
+    }
+    if (entry.releaseClass !== approvedReleaseClass) {
+      fail(
+        `Unit 3 rights audit ${mediaKey}.releaseClass does not match the approved policy for ${entry.licenseName}`,
+      );
+    }
+    const reviewedLimitedLicense = U3_LIMITED_RELEASE_MEDIA.get(mediaKey);
+    if (
+      (reviewedLimitedLicense && entry.licenseName !== reviewedLimitedLicense)
+      || (!reviewedLimitedLicense && entry.releaseClass !== 'open')
+    ) {
+      limitedReleaseMismatches.push(mediaKey);
+    }
     for (const field of CREDIT_FIELDS) {
       if (entry[field] !== canonicalCredit[field]) {
         fail(`Unit 3 rights audit ${mediaKey}.${field} credit mismatch`);
@@ -709,13 +783,10 @@ function validateUnit3RightsAudit(rightsAudit, artworks, credits) {
       `Unit 3 release class distribution must be exactly 99 open, 2 noncommercial, 2 institutionalEducational, and 0 restricted`,
     );
   }
-
-  for (const [mediaKey] of expectedEntries) {
-    const entry = rightsAudit[mediaKey];
-    const expectedClass = expectedReleaseClass(entry.licenseName);
-    if (entry.releaseClass !== expectedClass) {
-      fail(`Unit 3 rights audit ${mediaKey}.releaseClass does not match audited license policy`);
-    }
+  if (limitedReleaseMismatches.length > 0) {
+    fail(
+      `Unit 3 rights audit ${limitedReleaseMismatches[0]} does not match its reviewed media release policy`,
+    );
   }
 }
 
@@ -723,12 +794,13 @@ export function validateImageCredits(credits, artworks, rightsAudit) {
   if (!credits || typeof credits !== 'object' || Array.isArray(credits)) {
     fail('image-credit-data must be an object');
   }
-  const artworkIds = artworks.map(({ id }) => id).sort();
-  const creditIds = Object.keys(credits).sort();
+  const artworkIds = artworks.map(({ id }) => id);
+  const creditIds = Object.keys(credits);
   validateExactKeys(
     creditIds,
     artworkIds,
     'image credit ids must match artwork ids exactly',
+    { orderSensitive: false },
   );
 
   for (const artwork of artworks) {
