@@ -8,7 +8,19 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Magic History — AP 世界历史互动地图">
 <meta property="og:description" content="悬浮、点开、跟着商队一路走——每一个地方都有它自己的故事。AMSCO 页码可查,按 AP CED 五大主题分类。">
-<!-- og:image 需要域名确定后填绝对 URL(如 https://yourdomain.com/share-cover.png)才能在微信/社交显示封面图 -->
+<!-- 分享封面。相对路径在 Twitter/Facebook 能解析,但微信等抓取器只认绝对 URL ——
+     域名确定后把 og:image / twitter:image 换成 https://<域名>/og-cover.png,并把 og:url 那行的注释打开。 -->
+<meta property="og:image" content="og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Magic History —— 世界地图底纹上的站名与标语">
+<meta property="og:site_name" content="Magic History">
+<meta property="og:locale" content="zh_CN">
+<!-- <meta property="og:url" content="https://<域名>/"> -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Magic History — AP 世界历史互动地图">
+<meta name="twitter:description" content="悬浮、点开、跟着商队一路走——每一个地方都有它自己的故事。AMSCO 页码可查,按 AP CED 五大主题分类。">
+<meta name="twitter:image" content="og-cover.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>">
 <style>
 :root {

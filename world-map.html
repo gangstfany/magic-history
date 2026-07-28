@@ -2306,14 +2306,20 @@ h1 .en { color: var(--accent); }
     const allCats = new Set(cats.map(c => c.abbr));
     let activeCats = new Set(allCats);
     let query = '';
+    let tokens = [];          // query 按空格切出来的词,全部命中才算命中
     let onCountChange = null; // 首页父页面订阅计数变化
 
     const norm = s => (s || '').toLowerCase();
     const plain = it => norm(it.city + ' ' + it.yr + ' ' + it.catFull + ' ' + it.catAbbr + ' ' + (it.trigHTML || '').replace(/<[^>]*>/g, ''));
-    const eventPass = it => activeCats.has(it.catAbbr) && (!query || plain(it).includes(query));
+    // 按空格切词、每个词都要命中(AND):"Mali gold"、"trans saharan" 这类打法才不会整个落空;
+    // 顺带把首尾空格吃掉,所以 " mali " 和 "mali" 等价
+    const matchesQuery = it => { if (!tokens.length) return true; const p = plain(it); return tokens.every(t => p.includes(t)); };
+    const eventPass = it => activeCats.has(it.catAbbr) && matchesQuery(it);
     const pinGroups = () => Array.from(svg.querySelectorAll('.pin-group'));
     const pinNum = g => { const t = g.querySelector('text'); return t ? t.textContent.trim() : ''; };
-    const filterActive = () => query !== '' || activeCats.size < allCats.size;
+    const filterActive = () => tokens.length > 0 || activeCats.size < allCats.size;
+    // 只更新内部状态,不回写输入框(用户正在里面打字)
+    function takeQuery(raw) { query = norm(raw); tokens = query.split(/\s+/).filter(Boolean); }
 
     function syncPills() {
       if (!catsBox) return;
@@ -2406,14 +2412,14 @@ h1 .en { color: var(--accent); }
       if (card) { e.preventDefault(); openHit(card.dataset.pin, card.dataset.region); }
     });
 
-    function setQuery(q) { query = norm(q); if (searchInput) searchInput.value = q; apply(); }
+    function setQuery(q) { takeQuery(q); if (searchInput) searchInput.value = q; apply(); }
     function toggleCat(abbr) {
       if (activeCats.has(abbr)) activeCats.delete(abbr); else activeCats.add(abbr);
       if (activeCats.size === 0) activeCats = new Set(allCats); // 一个都不选=视为全选
       syncPills(); apply();
       return new Set(activeCats);                               // 首页工具栏据此回刷自己的药丸状态
     }
-    function reset() { query = ''; if (searchInput) searchInput.value = ''; activeCats = new Set(allCats); syncPills(); apply(); }
+    function reset() { takeQuery(''); if (searchInput) searchInput.value = ''; activeCats = new Set(allCats); syncPills(); apply(); }
 
     // 内部工具栏(标准版用;首页嵌入时会被隐藏,改用父页面满宽工具栏经 API 驱动)
     if (catsBox) cats.forEach(c => {
@@ -2423,7 +2429,7 @@ h1 .en { color: var(--accent); }
       btn.addEventListener('click', () => toggleCat(c.abbr));
       catsBox.appendChild(btn);
     });
-    if (searchInput) { let t; searchInput.addEventListener('input', () => { query = norm(searchInput.value.trim()); clearTimeout(t); t = setTimeout(apply, 120); }); }
+    if (searchInput) { let t; searchInput.addEventListener('input', () => { takeQuery(searchInput.value); clearTimeout(t); t = setTimeout(apply, 120); }); }
     if (clearBtn) clearBtn.addEventListener('click', () => { setQuery(''); if (searchInput) searchInput.focus(); });
 
     // 对外 API:首页(父页面)满宽工具栏调它来驱动搜索/筛选
