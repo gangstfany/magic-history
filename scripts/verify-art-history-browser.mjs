@@ -810,15 +810,33 @@ async function verifyU1Works(page, frame, imageRequests, mode) {
       work.titleEn,
     );
     assert.equal((await summary.locator('.work-title-zh').textContent()).trim(), work.titleZh);
+    const meta = (await summary.locator('.work-meta').textContent()).trim();
+    assert.equal(meta.split(' · ')[0], `AP #${work.apNumber}`);
     const viewButtons = summary.locator('.image-view-switcher button');
     assert.equal(
       await viewButtons.count(),
       work.images.length === 2 ? 2 : 0,
       `${mode} AP ${work.apNumber} view button count`,
     );
+    if (work.images.length === 2) {
+      assert.deepEqual(
+        await viewButtons.allTextContents(),
+        work.images.map(({ label }) => label),
+        `${mode} AP ${work.apNumber} view button labels`,
+      );
+    }
 
     for (let imageIndex = 0; imageIndex < work.images.length; imageIndex += 1) {
-      if (work.images.length === 2) await viewButtons.nth(imageIndex).click();
+      if (work.images.length === 2) {
+        await viewButtons.nth(imageIndex).click();
+        assert.deepEqual(
+          await viewButtons.evaluateAll((buttons) => (
+            buttons.map((button) => button.getAttribute('aria-pressed'))
+          )),
+          work.images.map((image, index) => String(index === imageIndex)),
+          `${mode} AP ${work.apNumber} view ${imageIndex + 1} pressed state`,
+        );
+      }
       const expected = work.images[imageIndex];
       const imageButton = summary.locator('.artwork-image-button');
       const image = imageButton.locator('img');
@@ -827,18 +845,23 @@ async function verifyU1Works(page, frame, imageRequests, mode) {
       assert.equal(await image.getAttribute('alt'), expected.imageAlt);
 
       const creditHost = summary.locator('.image-credit-host');
-      assert.match(
-        (await creditHost.textContent()).trim(),
-        new RegExp(expected.licenseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
-      );
+      const imageCredit = creditHost.locator('.image-credit');
       assert.equal(
-        await creditHost.locator(`a[href="${expected.licenseUrl}"]`).count(),
-        1,
+        (await imageCredit.textContent()).trim(),
+        `图片：${expected.creatorOrInstitution} · ${expected.licenseName} · ${expected.imageSourceName}`,
       );
+      const inlineLinks = imageCredit.locator('a');
+      assert.equal(await inlineLinks.count(), 2);
       assert.equal(
-        await creditHost.locator(`a[href="${expected.imageSourceUrl}"]`).count(),
-        1,
+        await inlineLinks.nth(0).getAttribute('href'),
+        expected.licenseUrl,
       );
+      assert.equal((await inlineLinks.nth(0).textContent()).trim(), expected.licenseName);
+      assert.equal(
+        await inlineLinks.nth(1).getAttribute('href'),
+        expected.imageSourceUrl,
+      );
+      assert.equal((await inlineLinks.nth(1).textContent()).trim(), expected.imageSourceName);
 
       await imageButton.click();
       const dialog = frame.locator('#imageDialog');
@@ -848,8 +871,21 @@ async function verifyU1Works(page, frame, imageRequests, mode) {
       await waitForLoadedImage(dialogImage);
       assert.equal(await dialogImage.getAttribute('src'), expected.imageUrl);
       assert.equal(await dialogImage.getAttribute('alt'), expected.imageAlt);
-      assert.equal(await frame.locator('#dialogSource').getAttribute('href'), expected.imageSourceUrl);
-      assert.equal(await frame.locator('#dialogLicense').getAttribute('href'), expected.licenseUrl);
+      assert.equal(
+        (await frame.locator('#dialogTitle').textContent()).trim(),
+        `${work.titleEn} · ${work.titleZh}`,
+      );
+      assert.equal((await frame.locator('#dialogCaption').textContent()).trim(), expected.imageAlt);
+      assert.equal(
+        (await frame.locator('#dialogCredit').textContent()).trim(),
+        `图片：${expected.creatorOrInstitution}`,
+      );
+      const dialogLicense = frame.locator('#dialogLicense');
+      assert.equal(await dialogLicense.getAttribute('href'), expected.licenseUrl);
+      assert.equal((await dialogLicense.textContent()).trim(), expected.licenseName);
+      const dialogSource = frame.locator('#dialogSource');
+      assert.equal(await dialogSource.getAttribute('href'), expected.imageSourceUrl);
+      assert.equal((await dialogSource.textContent()).trim(), expected.imageSourceName);
 
       await frame.locator('#dialogClose').click();
       await dialog.waitFor({ state: 'hidden' });
@@ -884,6 +920,121 @@ async function verifyU1Works(page, frame, imageRequests, mode) {
   return results;
 }
 
+async function verifyU1StudyTabsAndComparison(page, frame, mode) {
+  const sourceWork = U1_WORKS.find(({ id }) => id === 'ap2-great-hall-bulls');
+  assert.ok(sourceWork, `${mode} AP 2 study-tab source fixture`);
+  await resetAndActivateWork(page, frame, sourceWork);
+
+  const expectedTabs = [
+    { id: 'quick', label: '速览', headings: ['核心功能', '识别锚点'] },
+    { id: 'form', label: '形式', headings: ['形式', '内容'] },
+    { id: 'context', label: '语境', headings: ['历史语境', '图像内容'] },
+    { id: 'compare', label: '比较', headings: [] },
+  ];
+  const tabs = frame.locator('.detail-tab');
+  assert.equal(await tabs.count(), expectedTabs.length, `${mode} AP 2 study tab count`);
+  assert.deepEqual(
+    await tabs.allTextContents(),
+    expectedTabs.map(({ label }) => label),
+    `${mode} AP 2 study tab labels`,
+  );
+
+  let comparisonIds = [];
+  for (let tabIndex = 0; tabIndex < expectedTabs.length; tabIndex += 1) {
+    const expected = expectedTabs[tabIndex];
+    await tabs.nth(tabIndex).click();
+    assert.deepEqual(
+      await tabs.evaluateAll((buttons) => buttons.map((button) => ({
+        selected: button.getAttribute('aria-selected'),
+        tabIndex: button.getAttribute('tabindex'),
+      }))),
+      expectedTabs.map((tab, index) => ({
+        selected: String(index === tabIndex),
+        tabIndex: index === tabIndex ? '0' : '-1',
+      })),
+      `${mode} AP 2 ${expected.label} tab state`,
+    );
+
+    const panel = frame.locator('#detail-tabpanel');
+    assert.equal(await panel.getAttribute('aria-labelledby'), `detail-tab-${expected.id}`);
+    const panelText = (await panel.textContent()).trim();
+    assert.ok(panelText.length > 8, `${mode} AP 2 ${expected.label} panel content`);
+    assert.deepEqual(
+      await panel.locator('h3').allTextContents(),
+      expected.headings,
+      `${mode} AP 2 ${expected.label} panel headings`,
+    );
+
+    if (expected.id === 'compare') {
+      const cards = panel.locator('.comparison-card');
+      comparisonIds = await cards.evaluateAll((elements) => (
+        elements.map((element) => element.dataset.comparisonId)
+      ));
+      assert.deepEqual(comparisonIds, [
+        'ap1-apollo-11-stones',
+        'ap4-running-horned-woman',
+        'ap24-last-judgment-of-hunefer',
+      ]);
+      assert.ok(
+        (await cards.allTextContents()).every((text) => text.trim().length > 20),
+        `${mode} AP 2 comparison card content`,
+      );
+    }
+  }
+
+  const crossUnitCard = frame.locator(
+    '.comparison-card[data-comparison-id="ap24-last-judgment-of-hunefer"]',
+  );
+  assert.equal(await crossUnitCard.count(), 1, `${mode} AP 2 cross-Unit comparison card`);
+  await crossUnitCard.click();
+  const targetHeading = frame.locator('[data-selected-artwork-title]');
+  await targetHeading.waitFor();
+  assert.equal(
+    (await targetHeading.textContent()).trim(),
+    'Last judgment of Hunefer, from his tomb (page from the Book of the Dead)',
+  );
+  assert.equal((await frame.locator('.work-title-zh').textContent()).trim(), '胡内弗《末日审判》');
+  assert.equal(
+    (await frame.locator('.work-meta').textContent()).trim().split(' · ')[0],
+    'AP #24',
+  );
+  assert.equal(await frame.locator('#unitFilter').inputValue(), '2');
+  assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 36 件作品');
+  assert.equal(await frame.locator('#searchInput').inputValue(), '');
+  await frame.waitForFunction(() => (
+    document.activeElement === document.querySelector('[data-selected-artwork-title]')
+  ));
+  assert.equal(
+    await frame.evaluate(() => (
+      document.activeElement === document.querySelector('[data-selected-artwork-title]')
+    )),
+    true,
+    `${mode} AP 24 comparison target focus`,
+  );
+
+  await resetAndActivateWork(page, frame, sourceWork);
+  assert.equal(await frame.locator('#unitFilter').inputValue(), '1');
+  assert.equal(
+    (await frame.locator('[data-selected-artwork-title]').textContent()).trim(),
+    sourceWork.titleEn,
+  );
+  assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 1 件作品');
+  await frame.locator('#detail-tab-form').click();
+  assert.equal(await frame.locator('#detail-tab-form').getAttribute('aria-selected'), 'true');
+  assert.deepEqual(
+    await frame.locator('#detail-tabpanel h3').allTextContents(),
+    ['形式', '内容'],
+  );
+
+  return {
+    sourceApNumber: sourceWork.apNumber,
+    tabs: expectedTabs.map(({ id, label }) => ({ id, label })),
+    comparisonIds,
+    crossUnitTarget: 24,
+    resetToSource: true,
+  };
+}
+
 async function verifyU1Standalone(browser, baseUrl) {
   const viewport = { width: 1440, height: 900 };
   return withBrowserContext(browser, { viewport, reducedMotion: 'reduce' }, async (context) => {
@@ -896,8 +1047,9 @@ async function verifyU1Standalone(browser, baseUrl) {
     await page.goto(`${baseUrl}/art-history-map.html`, { waitUntil: 'load' });
     await waitForArt(page);
     const works = await verifyU1Works(page, page, imageRequests, 'standalone');
+    const study = await verifyU1StudyTabsAndComparison(page, page, 'standalone');
     assert.deepEqual(issues, []);
-    return { viewport, works };
+    return { viewport, works, study };
   });
 }
 
@@ -917,8 +1069,9 @@ async function verifyU1Embedded(browser, baseUrl) {
     ));
     const { frame } = await selectArtAndFrame(page, true);
     const works = await verifyU1Works(page, frame, imageRequests, 'embedded');
+    const study = await verifyU1StudyTabsAndComparison(page, frame, 'embedded');
     assert.deepEqual(issues, []);
-    return { viewport, works };
+    return { viewport, works, study };
   });
 }
 

@@ -205,6 +205,49 @@ test('U1 traversal verifies both Stonehenge views, request exactness, and focus 
   assert.match(source, /document\.activeElement\?\.classList\.contains\('artwork-image-button'\)/);
 });
 
+test('U1 traversal verifies exact inline, dialog, metadata, and view-button semantics', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  const traversal = source.slice(
+    source.indexOf('async function verifyU1Works'),
+    source.indexOf('async function verifyU1Standalone'),
+  );
+
+  assert.match(traversal, /\.work-meta/);
+  assert.match(traversal, /`AP #\$\{work\.apNumber\}`/);
+  assert.match(traversal, /work\.images\.map\(\(\{ label \}\) => label\)/);
+  assert.match(traversal, /getAttribute\('aria-pressed'\)/);
+  assert.match(traversal, /expected\.creatorOrInstitution/);
+  assert.match(traversal, /expected\.licenseName/);
+  assert.match(traversal, /expected\.licenseUrl/);
+  assert.match(traversal, /expected\.imageSourceName/);
+  assert.match(traversal, /expected\.imageSourceUrl/);
+  assert.match(traversal, /#dialogTitle/);
+  assert.match(traversal, /#dialogCaption/);
+  assert.match(traversal, /#dialogCredit/);
+});
+
+test('U1 standalone and embedded traversals exercise all study tabs and cross-Unit comparison', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+
+  assert.match(source, /async function verifyU1StudyTabsAndComparison\(/);
+  assert.equal(
+    source.match(/await verifyU1StudyTabsAndComparison\(page,\s*(?:page|frame),\s*'[^']+'\)/g)?.length,
+    2,
+  );
+  assert.match(source, /\{ id: 'quick', label: '速览'/);
+  assert.match(source, /\{ id: 'form', label: '形式'/);
+  assert.match(source, /\{ id: 'context', label: '语境'/);
+  assert.match(source, /\{ id: 'compare', label: '比较'/);
+  assert.match(source, /ap2-great-hall-bulls/);
+  assert.match(source, /ap24-last-judgment-of-hunefer/);
+  assert.match(source, /当前显示 36 件作品/);
+  assert.match(source, /Last judgment of Hunefer, from his tomb/);
+  assert.match(
+    source,
+    /document\.activeElement === document\.querySelector\('\[data-selected-artwork-title\]'\)/,
+  );
+});
+
 test('browser copy and release labels target the complete 47-work Units 1-2 map', async () => {
   const [browserSource, releaseSource] = await Promise.all([
     readFile(VERIFIER_URL, 'utf8'),
