@@ -1,5 +1,13 @@
 # AP 艺术史 Unit 2（古代地中海）作品来源台账
 
+## Unit 1: Global Prehistory
+
+- Official AP #1-11 contract: `data/ap-art-history-unit-1-manifest.json`
+- Audited identification, study, image, creator, and license ledger:
+  `docs/data-sources/u1-source-ledger.md`
+- College Board authority: current AP Art History Course and Exam Description,
+  Unit 1, Global Prehistory, AP #1-11
+
 本台账覆盖 College Board AP Art History CED 官方 Unit 2 清单的全部 36 件作品（AP 12–47），并按官方编号顺序排列。ID、官方英文标题、文化分类、图片来源、直接图片 URL 与署名许可均与 `art-history-map.html` 中的 `artwork-data` 和 `image-credit-data` 一一对应；中文学习提要参考 `APAH notes.pdf`。
 
 图片许可与署名以所列来源页为准。CC BY/CC BY-SA 条目须按对应版本署名；CC0 与 Public Domain 条目按来源页标示使用。AP 32 另受来源页所列意大利文化遗产再利用授权限制。建筑与建筑群当前各选一张代表图。

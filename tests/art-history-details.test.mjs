@@ -202,6 +202,197 @@ function parseJsonBlock(html, id) {
   return JSON.parse(match[1]);
 }
 
+function getFunctionSource(html, functionName) {
+  const signature = `function ${functionName}(`;
+  const start = html.indexOf(signature);
+  assert.notEqual(start, -1, `missing ${functionName}()`);
+  const openBrace = html.indexOf('{', html.indexOf(')', start));
+  let depth = 0;
+  for (let index = openBrace; index < html.length; index += 1) {
+    if (html[index] === '{') depth += 1;
+    if (html[index] === '}') depth -= 1;
+    if (depth === 0) return html.slice(start, index + 1);
+  }
+  assert.fail(`unterminated ${functionName}()`);
+}
+
+class FakeNode {
+  constructor(tagName = '#text', ownerDocument = null, value = '') {
+    this.tagName = tagName.toUpperCase();
+    this.ownerDocument = ownerDocument;
+    this.children = [];
+    this.attributes = {};
+    this.dataset = {};
+    this.listeners = {};
+    this.parentNode = null;
+    this.className = '';
+    this.id = '';
+    this._textContent = value;
+  }
+
+  get textContent() {
+    return this.children.length
+      ? this.children.map((child) => child.textContent).join('')
+      : this._textContent;
+  }
+
+  set textContent(value) {
+    this.children = [];
+    this._textContent = String(value);
+  }
+
+  append(...nodes) {
+    for (const node of nodes) {
+      const child = typeof node === 'string'
+        ? new FakeNode('#text', this.ownerDocument, node)
+        : node;
+      child.parentNode = this;
+      this.children.push(child);
+    }
+  }
+
+  replaceChildren(...nodes) {
+    this.children = [];
+    this._textContent = '';
+    this.append(...nodes);
+  }
+
+  replaceWith(node) {
+    if (!this.parentNode) return;
+    const index = this.parentNode.children.indexOf(this);
+    this.parentNode.children.splice(index, 1, node);
+    node.parentNode = this.parentNode;
+  }
+
+  setAttribute(name, value) {
+    this.attributes[name] = String(value);
+  }
+
+  getAttribute(name) {
+    return this.attributes[name] ?? null;
+  }
+
+  addEventListener(type, listener) {
+    (this.listeners[type] ||= []).push(listener);
+  }
+
+  click() {
+    this.onclick?.({ target:this });
+    for (const listener of this.listeners.click ?? []) listener({ target:this });
+  }
+
+  focus() {
+    this.ownerDocument.activeElement = this;
+  }
+
+  get classList() {
+    return {
+      contains: (name) => this.className.split(/\s+/).includes(name),
+    };
+  }
+
+  querySelectorAll(selector) {
+    const matches = [];
+    const visit = (node) => {
+      const className = selector.startsWith('.') ? selector.slice(1) : null;
+      const role = selector.match(/^\[role="([^"]+)"\]$/)?.[1];
+      const tagName = /^[a-z]+$/i.test(selector) ? selector.toUpperCase() : null;
+      if (
+        (className && node.classList.contains(className))
+        || (role && node.getAttribute('role') === role)
+        || (tagName && node.tagName === tagName)
+      ) matches.push(node);
+      node.children.forEach(visit);
+    };
+    this.children.forEach(visit);
+    return matches;
+  }
+
+  querySelector(selector) {
+    const dataTab = selector.match(/^\[data-tab="([^"]+)"\]$/)?.[1];
+    if (dataTab) {
+      return this.find((node) => node.dataset.tab === dataTab);
+    }
+    return this.querySelectorAll(selector)[0] ?? null;
+  }
+
+  find(predicate) {
+    if (predicate(this)) return this;
+    for (const child of this.children) {
+      const result = child.find?.(predicate);
+      if (result) return result;
+    }
+    return null;
+  }
+}
+
+function createDetailHarness(html, artworks, credits) {
+  const elements = new Map();
+  const document = {
+    activeElement:null,
+    createElement(tagName) {
+      return new FakeNode(tagName, document);
+    },
+    createTextNode(value) {
+      return new FakeNode('#text', document, value);
+    },
+    getElementById(id) {
+      return elements.get(id);
+    },
+  };
+  for (const [id, tagName] of [
+    ['dialogMedia', 'div'],
+    ['dialogTitle', 'h2'],
+    ['dialogCaption', 'p'],
+    ['dialogCredit', 'p'],
+    ['dialogLicense', 'a'],
+    ['dialogSource', 'a'],
+    ['dialogClose', 'button'],
+  ]) {
+    const element = document.createElement(tagName);
+    element.id = id;
+    elements.set(id, element);
+  }
+  const imageDialog = document.createElement('dialog');
+  imageDialog.showModal = () => {
+    imageDialog.open = true;
+  };
+  const state = { activeDetailTab:'quick', selectedSiteIndex:0 };
+  const sources = [
+    getFunctionSource(html, 'installImageFallback'),
+    getFunctionSource(html, 'getArtworkImages'),
+    getFunctionSource(html, 'getArtworkImageCredits'),
+    getFunctionSource(html, 'createImageCredit'),
+    getFunctionSource(html, 'openImageDialog'),
+    getFunctionSource(html, 'renderArtworkDetails'),
+  ].join('\n');
+  return Function(
+    'document',
+    'IMAGE_CREDITS',
+    'ARTWORKS',
+    'imageDialog',
+    'state',
+    `"use strict";
+      let imageDialogTrigger = null;
+      const formatArtworkMeta = () => 'meta';
+      const createStudyBlock = (title, ...paragraphs) => {
+        const block = document.createElement('section');
+        block.textContent = [title, ...paragraphs].join(' ');
+        return block;
+      };
+      const cycleSite = () => {};
+      const createComparisonAngle = () => '';
+      const selectComparison = () => {};
+      ${sources}
+      return {
+        getArtworkImages,
+        getArtworkImageCredits,
+        renderArtworkDetails,
+        getDialogTrigger: () => imageDialogTrigger,
+      };`,
+  )(document, credits, artworks, imageDialog, state);
+}
+
 function parseSourceWorksheet(markdown) {
   return markdown
     .split('\n')
@@ -229,6 +420,27 @@ test('detail view exposes four accessible study tabs', async () => {
   }
 });
 
+test('standalone map copy and accessible map labels cover Units 1-2 worldwide', async () => {
+  const html = await loadHtml();
+
+  assert.match(html, /<h1>AP 艺术史互动地图<\/h1>/);
+  assert.doesNotMatch(html, /<h1>[^<]*Unit 2 古代地中海[^<]*<\/h1>/);
+  assert.match(
+    html,
+    /<p class="subtitle">Units 1-2：从全球史前艺术到古代地中海，以地点连接作品、传统与历史语境。<\/p>/,
+  );
+  assert.match(
+    html,
+    /<section id="mapPanel" class="map-panel" aria-label="完整世界地图；展示 Units 1-2 作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布">/,
+  );
+  assert.match(
+    html,
+    /<svg class="map-svg"[^>]+aria-label="AP 艺术史 Units 1-2 完整世界地图，标记全球史前艺术与古代地中海作品地点">/,
+  );
+  assert.doesNotMatch(html, /当前作品地点集中在古代地中海/);
+  assert.doesNotMatch(html, /当前艺术史作品标记集中在古代地中海/);
+});
+
 test('comparison navigation resolves targets without rewriting artwork data', async () => {
   const html = await loadHtml();
   const selectComparison = html.match(
@@ -244,6 +456,115 @@ test('comparison navigation resolves targets without rewriting artwork data', as
   assert.match(html, /形式：/);
   assert.match(html, /功能：/);
   assert.match(html, /语境：/);
+  assert.match(selectComparison, /unit:\s*String\(target\.unit\)/);
+  assert.match(selectComparison, /activeUnit:\s*target\.unit/);
+  assert.match(selectComparison, /focusSelectedArtworkHeading\(\)/);
+});
+
+test('comparison navigation clears conflicting filters when crossing Units 1 and 2', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const source = getFunctionSource(html, 'selectComparison');
+  const state = {};
+  const calls = [];
+  let renderedSelectedId = null;
+  const detailPanel = {
+    scrollTo(options) {
+      calls.push('scroll');
+      assert.deepEqual(options, { top:0, behavior:'smooth' });
+    },
+  };
+  const selectComparison = Function(
+    'ARTWORKS',
+    'state',
+    'syncFilterControls',
+    'render',
+    'focusSelectedArtworkHeading',
+    'detailPanel',
+    `"use strict";
+      ${source}
+      return selectComparison;`,
+  )(
+    artworks,
+    state,
+    () => { calls.push('sync'); },
+    () => {
+      renderedSelectedId = state.selectedId;
+      calls.push('render');
+    },
+    () => {
+      assert.equal(
+        renderedSelectedId,
+        state.selectedId,
+        'focus must run after render creates the newly selected artwork title',
+      );
+      calls.push('focus');
+    },
+    detailPanel,
+  );
+  const u1Target = artworks.find(({ unit }) => unit === 1);
+  const u2Target = artworks.find(({ unit }) => unit === 2);
+
+  Object.assign(state, {
+    unit:'1',
+    culture:'prehistoricNamibia',
+    period:'Paleolithic',
+    workType:'rock art',
+    search:'cave',
+    selectedId:u1Target.id,
+    selectedSiteIndex:4,
+    expandedSiteToken:'u1:africa',
+    activeUnit:1,
+    activeRegion:'africa',
+    pendingFocusParentKey:'u1:africa',
+    activeDetailTab:'compare',
+  });
+  selectComparison(u2Target.id);
+  assert.deepEqual(state, {
+    unit:'2',
+    culture:'all',
+    period:'',
+    workType:'',
+    search:'',
+    selectedId:u2Target.id,
+    selectedSiteIndex:0,
+    expandedSiteToken:null,
+    activeUnit:2,
+    activeRegion:null,
+    pendingFocusParentKey:null,
+    activeDetailTab:'quick',
+  });
+  assert.deepEqual(calls, ['sync', 'render', 'focus', 'scroll']);
+
+  calls.length = 0;
+  renderedSelectedId = null;
+  Object.assign(state, {
+    culture:'rome',
+    period:'Imperial Roman',
+    workType:'architecture',
+    search:'Rome',
+    selectedSiteIndex:2,
+    expandedSiteToken:'u2:southernEurope',
+    activeRegion:'southernEurope',
+    pendingFocusParentKey:'u2:southernEurope',
+    activeDetailTab:'form',
+  });
+  selectComparison(u1Target.id);
+  assert.deepEqual(state, {
+    unit:'1',
+    culture:'all',
+    period:'',
+    workType:'',
+    search:'',
+    selectedId:u1Target.id,
+    selectedSiteIndex:0,
+    expandedSiteToken:null,
+    activeUnit:1,
+    activeRegion:null,
+    pendingFocusParentKey:null,
+    activeDetailTab:'quick',
+  });
+  assert.deepEqual(calls, ['sync', 'render', 'focus', 'scroll']);
 });
 
 test('image dialog supports labelled media, attribution, and focus restoration', async () => {
@@ -259,6 +580,101 @@ test('image dialog supports labelled media, attribution, and focus restoration',
   assert.match(html, /imageDialogTrigger\?\.isConnected/);
   assert.match(html, /detailPanel\.querySelector\('\.artwork-image-button'\)/);
   assert.match(html, /focusTarget\?\.focus\(\)/);
+});
+
+test('normalizes legacy single images and preserves explicit image arrays', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const harness = createDetailHarness(html, artworks, credits);
+  const stonehenge = artworks.find(({ id }) => id === 'ap8-stonehenge');
+  const single = artworks.find(({ unit }) => unit === 2);
+
+  assert.strictEqual(harness.getArtworkImages(stonehenge), stonehenge.images);
+  assert.equal(harness.getArtworkImages(stonehenge).length, 2);
+  assert.deepEqual(harness.getArtworkImages(single), [{
+    label:'Primary view',
+    imageUrl:single.imageUrl,
+    imageAlt:single.imageAlt,
+    imageSourceName:single.imageSourceName,
+    imageSourceUrl:single.imageSourceUrl,
+  }]);
+  assert.deepEqual(harness.getArtworkImageCredits(stonehenge), credits[stonehenge.id]);
+  assert.deepEqual(harness.getArtworkImageCredits(single), [credits[single.id]]);
+});
+
+test('Stonehenge view buttons synchronize image, attribution, dialog, and pressed state', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const harness = createDetailHarness(html, artworks, credits);
+  const stonehenge = artworks.find(({ id }) => id === 'ap8-stonehenge');
+  const summary = harness.renderArtworkDetails(stonehenge, { works:[stonehenge] });
+  const imageButton = summary.querySelector('.artwork-image-button');
+  const switcher = summary.querySelector('.image-view-switcher');
+  const creditHost = summary.querySelector('.image-credit-host');
+  const viewButtons = switcher.querySelectorAll('button');
+
+  assert.equal(switcher.getAttribute('role'), 'group');
+  assert.equal(switcher.getAttribute('aria-label'), 'Choose artwork image view');
+  assert.deepEqual(viewButtons.map(({ textContent }) => textContent), [
+    'Aerial overview',
+    'Ground-level view',
+  ]);
+  assert.equal(viewButtons[0].getAttribute('aria-pressed'), 'true');
+  assert.equal(viewButtons[1].getAttribute('aria-pressed'), 'false');
+  assert.equal(imageButton.children[0].src, stonehenge.images[0].imageUrl);
+
+  viewButtons[1].click();
+  assert.equal(viewButtons[0].getAttribute('aria-pressed'), 'false');
+  assert.equal(viewButtons[1].getAttribute('aria-pressed'), 'true');
+  assert.equal(imageButton.children[0].src, stonehenge.images[1].imageUrl);
+  assert.equal(imageButton.children[0].alt, stonehenge.images[1].imageAlt);
+  assert.match(imageButton.getAttribute('aria-label'), /Stonehenge.*Ground-level view/);
+  assert.match(creditHost.textContent, new RegExp(credits[stonehenge.id][1].creatorOrInstitution));
+  const creditLinks = creditHost.querySelectorAll('a');
+  assert.equal(creditLinks[0].href, credits[stonehenge.id][1].licenseUrl);
+  assert.equal(creditLinks[1].href, stonehenge.images[1].imageSourceUrl);
+  assert.equal(creditLinks[1].textContent, stonehenge.images[1].imageSourceName);
+
+  imageButton.click();
+  assert.equal(harness.getDialogTrigger(), imageButton);
+  assert.equal(imageButton.ownerDocument.getElementById('dialogMedia').children[0].src, stonehenge.images[1].imageUrl);
+  assert.equal(imageButton.ownerDocument.getElementById('dialogMedia').children[0].alt, stonehenge.images[1].imageAlt);
+  assert.equal(imageButton.ownerDocument.getElementById('dialogCaption').textContent, stonehenge.images[1].imageAlt);
+  assert.match(
+    imageButton.ownerDocument.getElementById('dialogCredit').textContent,
+    new RegExp(credits[stonehenge.id][1].creatorOrInstitution),
+  );
+  assert.equal(
+    imageButton.ownerDocument.getElementById('dialogLicense').href,
+    credits[stonehenge.id][1].licenseUrl,
+  );
+  assert.equal(
+    imageButton.ownerDocument.getElementById('dialogSource').href,
+    stonehenge.images[1].imageSourceUrl,
+  );
+  assert.equal(
+    imageButton.ownerDocument.getElementById('dialogSource').textContent,
+    stonehenge.images[1].imageSourceName,
+  );
+  assert.equal(
+    imageButton.ownerDocument.activeElement,
+    imageButton.ownerDocument.getElementById('dialogClose'),
+  );
+});
+
+test('single-image Unit 2 details preserve one image and render no empty view switcher', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const harness = createDetailHarness(html, artworks, credits);
+  const single = artworks.find(({ unit }) => unit === 2);
+  const summary = harness.renderArtworkDetails(single, { works:[single] });
+
+  assert.equal(summary.querySelectorAll('.artwork-image-button').length, 1);
+  assert.equal(summary.querySelector('.image-view-switcher'), null);
+  assert.equal(summary.querySelectorAll('.image-credit-host').length, 1);
 });
 
 test('AP 15 uses the Louvre E 3023 Seated Scribe image and matching credit', async () => {
@@ -348,13 +764,13 @@ test('source worksheet parser rejects rows with missing or extra cells', () => {
   );
 });
 
-test('keeps the complete official 36-work id set and one credit per image', async () => {
+test('keeps all 47 loaded works, the complete Unit 2 id set, and one credit per image', async () => {
   const html = await loadHtml();
   const artworks = parseJsonBlock(html, 'artwork-data');
   const credits = parseJsonBlock(html, 'image-credit-data');
   const artworkIds = artworks.map(({ id }) => id);
 
-  assert.equal(artworks.length, 36);
+  assert.equal(artworks.length, 47);
   for (const id of ORIGINAL_ARTWORK_IDS) {
     assert.ok(artworkIds.includes(id), `missing original artwork ${id}`);
   }
@@ -364,17 +780,26 @@ test('keeps the complete official 36-work id set and one credit per image', asyn
 
   assert.deepEqual(Object.keys(credits).sort(), artworks.map(({ id }) => id).sort());
   for (const artwork of artworks) {
-    assert.equal(typeof artwork.imageUrl, 'string', `${artwork.id} needs one image URL`);
-    assert.ok(artwork.imageUrl.trim(), `${artwork.id} needs a non-empty image URL`);
-    assert.equal(
-      Object.hasOwn(artwork, 'images'),
-      false,
-      `${artwork.id} must not introduce an image gallery`,
-    );
-    const credit = credits[artwork.id];
-    assert.ok(credit.creatorOrInstitution, `${artwork.id} missing creator or institution`);
-    assert.ok(credit.licenseName, `${artwork.id} missing license name`);
-    assert.match(credit.licenseUrl, /^https:\/\//, `${artwork.id} needs a linked license`);
+    const mediaItems = artwork.images ?? [artwork];
+    const creditItems = Array.isArray(credits[artwork.id])
+      ? credits[artwork.id]
+      : [credits[artwork.id]];
+    assert.equal(creditItems.length, mediaItems.length, `${artwork.id} needs one credit per image`);
+    mediaItems.forEach((media, index) => {
+      assert.equal(typeof media.imageUrl, 'string', `${artwork.id} image ${index + 1} needs a URL`);
+      assert.ok(media.imageUrl.trim(), `${artwork.id} image ${index + 1} needs a non-empty URL`);
+      const credit = creditItems[index];
+      assert.ok(credit.creatorOrInstitution, `${artwork.id} missing creator or institution`);
+      assert.ok(credit.licenseName, `${artwork.id} missing license name`);
+      assert.match(credit.licenseUrl, /^https:\/\//, `${artwork.id} needs a linked license`);
+    });
+    if (artwork.unit === 2) {
+      assert.equal(
+        Object.hasOwn(artwork, 'images'),
+        false,
+        `${artwork.id} must preserve the Unit 2 single-image model`,
+      );
+    }
   }
 
   assert.match(html, /function createImageCredit\(/);

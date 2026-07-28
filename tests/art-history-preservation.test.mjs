@@ -7,6 +7,10 @@ const SOURCE_LEDGER_PATH = new URL(
   '../docs/art-history-sources.md',
   import.meta.url,
 );
+const U1_SOURCE_LEDGER_PATH = new URL(
+  '../docs/data-sources/u1-source-ledger.md',
+  import.meta.url,
+);
 const UNAFFECTED_FIXTURE_PATH = new URL(
   './fixtures/u2-unaffected-legacy.json',
   import.meta.url,
@@ -200,6 +204,17 @@ function markdownLinkUrl(cell) {
   return cell.match(/\]\((https:\/\/.*)\)$/)?.[1] ?? '';
 }
 
+test('live Unit 2 remains the exact AP 12–47 sequence', async () => {
+  const { artworks } = await loadActualData();
+  const liveU2 = artworks.filter(({ unit }) => unit === 2);
+
+  assert.equal(liveU2.length, 36);
+  assert.deepEqual(
+    liveU2.map(({ apNumber }) => apNumber),
+    Array.from({ length: 36 }, (_, index) => index + 12),
+  );
+});
+
 test('unaffected legacy records and credits stay field-for-field preserved', async () => {
   await assertFixtureMatches(UNAFFECTED_FIXTURE_PATH, UNAFFECTED_IDS);
 });
@@ -216,8 +231,10 @@ test('live source ledger matches all 36 canonical AP 12–47 records', async () 
     loadActualData(),
     readFile(SOURCE_LEDGER_PATH, 'utf8'),
   ]);
+  const u2 = artworks.filter(({ unit }) => unit === 2);
   const rows = parseLedger(ledger);
 
+  assert.equal(u2.length, 36);
   assert.equal(rows.length, 36);
   assert.doesNotMatch(
     ledger,
@@ -230,7 +247,7 @@ test('live source ledger matches all 36 canonical AP 12–47 records', async () 
   );
   rows.forEach((cells, index) => {
     assert.equal(cells.length, 9, `ledger row ${index + 1} must have 9 cells`);
-    const artwork = artworks[index];
+    const artwork = u2[index];
     const credit = credits[artwork.id];
     const [
       apNumber,
@@ -260,4 +277,73 @@ test('live source ledger matches all 36 canonical AP 12–47 records', async () 
     ));
     assert.equal(markdownLinkUrl(creditAndLicense), credit.licenseUrl);
   });
+});
+
+test('U1 source ledger matches all 11 records and 12 media views', async () => {
+  const [{ artworks, credits }, ledger] = await Promise.all([
+    loadActualData(),
+    readFile(U1_SOURCE_LEDGER_PATH, 'utf8'),
+  ]);
+  const u1 = artworks.filter(({ unit }) => unit === 1);
+  const rows = parseLedger(ledger);
+  assert.equal(u1.length, 11);
+  assert.equal(rows.length, 12);
+  assert.ok(rows.every((cells) => cells.length === 11));
+
+  const expected = u1.flatMap((work) => {
+    const media = Array.isArray(work.images)
+      ? work.images
+      : [{
+          label: 'Primary view',
+          imageUrl: work.imageUrl,
+          imageAlt: work.imageAlt,
+          imageSourceName: work.imageSourceName,
+          imageSourceUrl: work.imageSourceUrl,
+        }];
+    const workCredits = Array.isArray(credits[work.id])
+      ? credits[work.id]
+      : [credits[work.id]];
+    return media.map((image, index) => ({
+      work,
+      image,
+      credit: workCredits[index],
+    }));
+  });
+
+  assert.equal(expected.length, 12);
+  rows.forEach((cells, index) => {
+    const { work, image, credit } = expected[index];
+    const [
+      apNumber,
+      view,
+      officialTitle,
+      identificationSource,
+      studySource,
+      imageUrl,
+      sourcePage,
+      creator,
+      license,
+      licenseUrl,
+      identityCheck,
+    ] = cells;
+    assert.equal(Number(apNumber), work.apNumber);
+    assert.equal(view, image.label);
+    assert.equal(officialTitle, work.titleEn);
+    assert.match(identificationSource, /College Board.*CED/);
+    assert.ok(studySource.length > 10);
+    assert.equal(markdownLinkUrl(imageUrl), image.imageUrl);
+    assert.equal(markdownLinkUrl(sourcePage), image.imageSourceUrl);
+    assert.match(creator, new RegExp(
+      credit.creatorOrInstitution.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    ));
+    assert.equal(license, credit.licenseName);
+    assert.equal(markdownLinkUrl(licenseUrl), credit.licenseUrl);
+    assert.ok(identityCheck.length > 20);
+  });
+
+  const stonehengeRows = rows.filter(([apNumber]) => Number(apNumber) === 8);
+  assert.deepEqual(
+    stonehengeRows.map(([, view]) => view),
+    ['Aerial overview', 'Ground-level view'],
+  );
 });

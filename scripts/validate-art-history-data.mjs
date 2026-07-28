@@ -2,7 +2,24 @@ import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
 const DEFAULT_HTML_PATH = new URL('../art-history-map.html', import.meta.url);
-const MANIFEST_PATH = new URL('../data/ap-art-history-unit-2-manifest.json', import.meta.url);
+const MANIFEST_PATHS = Object.freeze({
+  1: new URL('../data/ap-art-history-unit-1-manifest.json', import.meta.url),
+  2: new URL('../data/ap-art-history-unit-2-manifest.json', import.meta.url),
+});
+const UNIT_RULES = Object.freeze({
+  1: Object.freeze({
+    start: 1,
+    end: 11,
+    count: 11,
+    regions: new Set(['africa', 'europe', 'americas', 'middleEast', 'eastAsia', 'oceania']),
+  }),
+  2: Object.freeze({
+    start: 12,
+    end: 47,
+    count: 36,
+    regions: new Set(['middleEast', 'northAfrica', 'southernEurope']),
+  }),
+});
 const REQUIRED_FIELDS = [
   'id',
   'apNumber',
@@ -24,21 +41,24 @@ const REQUIRED_FIELDS = [
   'context',
   'recognitionAnchors',
   'comparisonIds',
-  'imageUrl',
-  'imageAlt',
-  'imageSourceName',
-  'imageSourceUrl',
   'keywords',
 ];
 const STRING_FIELDS = REQUIRED_FIELDS.filter(
   (field) => !['apNumber', 'unit', 'coordinates', 'recognitionAnchors', 'comparisonIds', 'keywords'].includes(field),
 );
+const MEDIA_FIELDS = [
+  'label',
+  'imageUrl',
+  'imageAlt',
+  'imageSourceName',
+  'imageSourceUrl',
+];
+const LEGACY_MEDIA_FIELDS = MEDIA_FIELDS.filter((field) => field !== 'label');
 const U2_CULTURES = new Set(['ancientNearEast', 'egypt', 'greece', 'etruscan', 'rome']);
-const MAP_REGIONS = new Set(['middleEast', 'northAfrica', 'southernEurope']);
-const OFFICIAL_MANIFEST_KEYS = Array.from(
-  { length: 36 },
-  (_, index) => String(index + 12),
-);
+const BROAD_PROVENANCE_ARTWORK_IDS = Object.freeze(new Set([
+  'ap6-anthropomorphic-stele',
+]));
+const OFFICIAL_AP_NUMBERS = Array.from({ length: 47 }, (_, index) => index + 1);
 
 function fail(message) {
   throw new Error(`Invalid artwork data: ${message}`);
@@ -71,22 +91,116 @@ function validateStringArray(value, field, id, { allowEmpty = false } = {}) {
   }
 }
 
-export function validateArtworks(artworks, manifest) {
+function validateExactKeys(actualKeys, expectedKeys, message) {
+  if (
+    actualKeys.length !== expectedKeys.length
+    || actualKeys.some((key, index) => key !== expectedKeys[index])
+  ) {
+    fail(message);
+  }
+}
+
+function validateManifests(manifests) {
+  if (!manifests || typeof manifests !== 'object' || Array.isArray(manifests)) {
+    fail('official Units 1-2 manifests must be an object');
+  }
+
+  for (const unit of [1, 2]) {
+    const manifest = manifests[unit];
+    const rule = UNIT_RULES[unit];
+    if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+      fail(`official Unit ${unit} manifest must be an object`);
+    }
+    const expectedKeys = Array.from(
+      { length: rule.count },
+      (_, index) => String(rule.start + index),
+    );
+    validateExactKeys(
+      Object.keys(manifest),
+      expectedKeys,
+      `official Unit ${unit} manifest must contain exactly the ${rule.count} numeric keys ${rule.start}..${rule.end}`,
+    );
+  }
+}
+
+export function normalizeArtworkMedia(work) {
+  if (Array.isArray(work.images)) {
+    return work.images.map((media) => Object.fromEntries(
+      MEDIA_FIELDS.map((field) => [field, media?.[field]]),
+    ));
+  }
+  return [{
+    label: 'Primary view',
+    imageUrl: work.imageUrl,
+    imageAlt: work.imageAlt,
+    imageSourceName: work.imageSourceName,
+    imageSourceUrl: work.imageSourceUrl,
+  }];
+}
+
+function validateArtworkMedia(artwork, label) {
+  if (Array.isArray(artwork.images)) {
+    if (artwork.images.length === 0) {
+      fail(`${label}.images must not be empty`);
+    }
+  } else {
+    for (const field of LEGACY_MEDIA_FIELDS) {
+      if (typeof artwork[field] !== 'string' || artwork[field].trim() === '') {
+        fail(`${label}.${field} must be a non-empty string when images is not provided`);
+      }
+    }
+  }
+
+  const media = normalizeArtworkMedia(artwork);
+  const expectedMediaCount = artwork.unit === 1 && artwork.apNumber === 8 ? 2 : 1;
+  if (media.length !== expectedMediaCount) {
+    fail(`${label} must have exactly ${expectedMediaCount} media view${expectedMediaCount === 1 ? '' : 's'}`);
+  }
+
+  const imageUrls = new Set();
+  const imageAlts = new Set();
+  const imageSourceUrls = new Set();
+  for (const [index, item] of media.entries()) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      fail(`${label}.media[${index}] must be an object`);
+    }
+    for (const field of MEDIA_FIELDS) {
+      if (typeof item[field] !== 'string' || item[field].trim() === '') {
+        fail(`${label}.media[${index}].${field} must be a non-empty string`);
+      }
+    }
+    if (!isHttpUrl(item.imageUrl)) {
+      fail(`${label}.media[${index}].imageUrl must be an HTTP(S) URL`);
+    }
+    if (!isHttpUrl(item.imageSourceUrl)) {
+      fail(`${label}.media[${index}].imageSourceUrl must be an HTTP(S) URL`);
+    }
+    if (imageUrls.has(item.imageUrl)) {
+      fail(`${label} contains duplicate media imageUrl ${item.imageUrl}`);
+    }
+    imageUrls.add(item.imageUrl);
+    if (artwork.unit === 1 && media.length > 1) {
+      if (imageAlts.has(item.imageAlt)) {
+        fail(`${label} contains duplicate media imageAlt ${item.imageAlt}`);
+      }
+      if (imageSourceUrls.has(item.imageSourceUrl)) {
+        fail(`${label} contains duplicate media imageSourceUrl ${item.imageSourceUrl}`);
+      }
+      imageAlts.add(item.imageAlt);
+      imageSourceUrls.add(item.imageSourceUrl);
+    }
+  }
+
+  return media;
+}
+
+export function validateArtworks(artworks, manifests) {
+  validateManifests(manifests);
   if (!Array.isArray(artworks)) {
     fail('top-level JSON must be an array');
   }
-  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
-    fail('official Unit 2 manifest must be an object');
-  }
-  const manifestKeys = Object.keys(manifest);
-  if (
-    manifestKeys.length !== OFFICIAL_MANIFEST_KEYS.length
-    || manifestKeys.some((key, index) => key !== OFFICIAL_MANIFEST_KEYS[index])
-  ) {
-    fail('official Unit 2 manifest must contain exactly the 36 numeric keys 12..47');
-  }
-  if (artworks.length !== 36) {
-    fail(`official Unit 2 manifest requires exactly 36 works; received ${artworks.length}`);
+  if (artworks.length !== OFFICIAL_AP_NUMBERS.length) {
+    fail(`official Units 1-2 manifests require exactly 47 works; received ${artworks.length}`);
   }
 
   const ids = new Set();
@@ -108,25 +222,34 @@ export function validateArtworks(artworks, manifest) {
         fail(`${label}.${field} must be a non-empty string`);
       }
     }
+    if (
+      BROAD_PROVENANCE_ARTWORK_IDS.has(artwork.id)
+      && (typeof artwork.siteQualifier !== 'string' || artwork.siteQualifier.trim() === '')
+    ) {
+      fail(`${label}.siteQualifier must be a non-empty string for broad-region placement`);
+    }
     if (!Number.isInteger(artwork.apNumber) || artwork.apNumber <= 0) {
       fail(`${label}.apNumber must be a positive integer`);
     }
-    if (artwork.unit !== 2) {
-      fail(`${label}.unit must be 2`);
+    if (!Number.isInteger(artwork.unit) || !UNIT_RULES[artwork.unit]) {
+      fail(`${label}.unit must be 1 or 2`);
     }
-    if (artwork.apNumber < 12 || artwork.apNumber > 47) {
-      fail(`${label}.apNumber must be within the current Unit 2 range (12..47)`);
+
+    const rule = UNIT_RULES[artwork.unit];
+    if (artwork.apNumber < rule.start || artwork.apNumber > rule.end) {
+      fail(`${label}.apNumber must be within the Unit ${artwork.unit} range (${rule.start}..${rule.end})`);
     }
-    if (artwork.apNumber !== index + 12) {
+    const expectedApNumber = index + 1;
+    if (artwork.apNumber !== expectedApNumber) {
       fail(
-        `official Unit 2 manifest order requires AP ${index + 12} at entry ${index}; received AP ${artwork.apNumber}`,
+        `official Units 1-2 manifest order requires AP ${expectedApNumber} at entry ${index}; received AP ${artwork.apNumber}`,
       );
     }
-    if (!U2_CULTURES.has(artwork.culture)) {
+    if (artwork.unit === 2 && !U2_CULTURES.has(artwork.culture)) {
       fail(`${label}.culture must be a valid Unit 2 culture`);
     }
-    if (!MAP_REGIONS.has(artwork.region)) {
-      fail(`${label}.region must be middleEast, northAfrica, or southernEurope`);
+    if (!rule.regions.has(artwork.region)) {
+      fail(`${label}.region must be valid for Unit ${artwork.unit}`);
     }
     if (ids.has(artwork.id)) {
       fail(`duplicate id ${artwork.id}`);
@@ -134,9 +257,10 @@ export function validateArtworks(artworks, manifest) {
     if (apNumbers.has(artwork.apNumber)) {
       fail(`duplicate AP number ${artwork.apNumber}`);
     }
-    const expected = manifest[String(artwork.apNumber)];
+
+    const expected = manifests[artwork.unit][String(artwork.apNumber)];
     if (!expected) {
-      fail(`${label}.apNumber is not in the official Unit 2 manifest`);
+      fail(`${label}.apNumber is not in the official Unit ${artwork.unit} manifest`);
     }
     if (artwork.id !== expected.id) {
       fail(`AP ${artwork.apNumber} manifest id must be ${expected.id}; received ${artwork.id}`);
@@ -157,24 +281,29 @@ export function validateArtworks(artworks, manifest) {
       || !Number.isFinite(coordinates.x)
       || !Number.isFinite(coordinates.y)
       || coordinates.x < 0
-      || coordinates.x > 1200
+      || coordinates.x > 1600
       || coordinates.y < 0
-      || coordinates.y > 700
+      || coordinates.y > 800
     ) {
-      fail(`${label}.coordinates must contain x 0..1200 and y 0..700`);
+      fail(`${label}.coordinates must contain x 0..1600 and y 0..800`);
     }
 
     validateStringArray(artwork.recognitionAnchors, 'recognitionAnchors', label);
-    validateStringArray(artwork.comparisonIds, 'comparisonIds', label, { allowEmpty: true });
+    validateStringArray(
+      artwork.comparisonIds,
+      'comparisonIds',
+      label,
+      { allowEmpty: artwork.unit !== 1 },
+    );
     validateStringArray(artwork.keywords, 'keywords', label);
-
-    if (!isHttpUrl(artwork.imageUrl)) {
-      fail(`${label}.imageUrl must be an HTTP(S) URL`);
-    }
-    if (!isHttpUrl(artwork.imageSourceUrl)) {
-      fail(`${label}.imageSourceUrl must be an HTTP(S) URL`);
-    }
+    validateArtworkMedia(artwork, label);
   }
+
+  validateExactKeys(
+    [...apNumbers].map(String).sort((first, second) => Number(first) - Number(second)),
+    OFFICIAL_AP_NUMBERS.map(String),
+    'artwork AP numbers must cover exactly 1..47',
+  );
 
   for (const artwork of artworks) {
     for (const comparisonId of artwork.comparisonIds) {
@@ -193,33 +322,68 @@ export function validateImageCredits(credits, artworks) {
   }
   const artworkIds = artworks.map(({ id }) => id).sort();
   const creditIds = Object.keys(credits).sort();
-  if (
-    artworkIds.length !== creditIds.length
-    || artworkIds.some((id, index) => id !== creditIds[index])
-  ) {
-    fail('image credit ids must match artwork ids exactly');
-  }
-  for (const id of artworkIds) {
-    const credit = credits[id];
-    if (!credit || typeof credit !== 'object' || Array.isArray(credit)) {
-      fail(`${id} image credit must be an object`);
+  validateExactKeys(
+    creditIds,
+    artworkIds,
+    'image credit ids must match artwork ids exactly',
+  );
+
+  for (const artwork of artworks) {
+    const media = normalizeArtworkMedia(artwork);
+    const rawCredit = credits[artwork.id];
+    if (media.length === 1 && Array.isArray(rawCredit)) {
+      fail(`${artwork.id} single-media image credit must be an object, not an array`);
     }
-    for (const field of ['creatorOrInstitution', 'licenseName', 'licenseUrl']) {
-      if (typeof credit[field] !== 'string' || credit[field].trim() === '') {
-        fail(`${id} image credit ${field} must be a non-empty string`);
+    if (media.length > 1 && !Array.isArray(rawCredit)) {
+      fail(`${artwork.id} multi-media image credits must be an array`);
+    }
+    const creditEntries = Array.isArray(rawCredit) ? rawCredit : [rawCredit];
+    if (creditEntries.length !== media.length) {
+      fail(`${artwork.id} image credit count must match its ${media.length} media views`);
+    }
+    const creditSignatures = new Set();
+    for (const [index, credit] of creditEntries.entries()) {
+      if (!credit || typeof credit !== 'object' || Array.isArray(credit)) {
+        fail(`${artwork.id} image credit ${index + 1} must be an object`);
       }
-    }
-    if (!isHttpsUrl(credit.licenseUrl)) {
-      fail(`${id} image credit licenseUrl must be an HTTPS URL`);
+      for (const field of ['creatorOrInstitution', 'licenseName', 'licenseUrl']) {
+        if (typeof credit[field] !== 'string' || credit[field].trim() === '') {
+          fail(`${artwork.id} image credit ${index + 1} ${field} must be a non-empty string`);
+        }
+      }
+      if (!isHttpsUrl(credit.licenseUrl)) {
+        fail(`${artwork.id} image credit ${index + 1} licenseUrl must be an HTTPS URL`);
+      }
+      if (artwork.unit === 1 && media.length > 1) {
+        const signature = JSON.stringify([
+          credit.creatorOrInstitution,
+          credit.licenseName,
+          credit.licenseUrl,
+        ]);
+        if (creditSignatures.has(signature)) {
+          fail(`${artwork.id} contains duplicate image credit metadata`);
+        }
+        creditSignatures.add(signature);
+      }
     }
   }
   return credits;
 }
 
+function parseJson(source, label) {
+  try {
+    return JSON.parse(source);
+  } catch (error) {
+    fail(`${label} contains invalid JSON (${error.message})`);
+  }
+  return null;
+}
+
 export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
-  const [html, manifestSource] = await Promise.all([
+  const [html, unit1ManifestSource, unit2ManifestSource] = await Promise.all([
     readFile(htmlPath, 'utf8'),
-    readFile(MANIFEST_PATH, 'utf8'),
+    readFile(MANIFEST_PATHS[1], 'utf8'),
+    readFile(MANIFEST_PATHS[2], 'utf8'),
   ]);
   const parseDataScript = (id) => {
     const dataScript = html.match(
@@ -231,15 +395,13 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
     if (!dataScript) {
       fail(`missing <script id="${id}" type="application/json">`);
     }
-    try {
-      return JSON.parse(dataScript[1]);
-    } catch (error) {
-      fail(`${id} contains invalid JSON (${error.message})`);
-    }
-    return null;
+    return parseJson(dataScript[1], id);
   };
-  const manifest = JSON.parse(manifestSource);
-  const artworks = validateArtworks(parseDataScript('artwork-data'), manifest);
+  const manifests = {
+    1: parseJson(unit1ManifestSource, 'official Unit 1 manifest'),
+    2: parseJson(unit2ManifestSource, 'official Unit 2 manifest'),
+  };
+  const artworks = validateArtworks(parseDataScript('artwork-data'), manifests);
   validateImageCredits(parseDataScript('image-credit-data'), artworks);
   return artworks;
 }

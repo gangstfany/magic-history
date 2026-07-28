@@ -6,6 +6,63 @@ const VERIFIER_URL = new URL('../scripts/verify-art-history-browser.mjs', import
 const RELEASE_VERIFIER_URL = new URL('../scripts/verify-art-history-release.mjs', import.meta.url);
 const NINE_WORKS_URL = new URL('./fixtures/u2-imported-browser.json', import.meta.url);
 const SOURCE_FIXTURE_URL = new URL('./fixtures/u2-corrected-and-imported.json', import.meta.url);
+const U1_BROWSER_FIXTURE = new URL('./fixtures/u1-browser.json', import.meta.url);
+const U1_CANONICAL_FIXTURE = new URL('./fixtures/u1-canonical.json', import.meta.url);
+
+function projectBrowserFixture(canonical) {
+  return canonical.artworks.map((work) => {
+    const media = Array.isArray(work.images)
+      ? work.images
+      : [{
+          label: 'Primary view',
+          imageUrl: work.imageUrl,
+          imageAlt: work.imageAlt,
+          imageSourceName: work.imageSourceName,
+          imageSourceUrl: work.imageSourceUrl,
+        }];
+    const credits = Array.isArray(canonical.credits[work.id])
+      ? canonical.credits[work.id]
+      : [canonical.credits[work.id]];
+    return {
+      apNumber: work.apNumber,
+      id: work.id,
+      titleEn: work.titleEn,
+      titleZh: work.titleZh,
+      images: media.map((image, index) => ({
+        ...image,
+        ...credits[index],
+      })),
+    };
+  });
+}
+
+test('U1 browser fixture covers AP 1-11 and exactly 12 audited views', async () => {
+  const works = JSON.parse(await readFile(U1_BROWSER_FIXTURE, 'utf8'));
+
+  assert.deepEqual(
+    works.map(({ apNumber }) => apNumber),
+    Array.from({ length: 11 }, (_, index) => index + 1),
+  );
+  assert.equal(
+    works.reduce((total, work) => total + work.images.length, 0),
+    12,
+  );
+  assert.equal(works.find(({ apNumber }) => apNumber === 8).images.length, 2);
+  assert.ok(
+    works
+      .filter(({ apNumber }) => apNumber !== 8)
+      .every(({ images }) => images.length === 1),
+  );
+});
+
+test('U1 browser fixture is projected exactly from the canonical data', async () => {
+  const [browserFixture, canonical] = await Promise.all([
+    readFile(U1_BROWSER_FIXTURE, 'utf8').then(JSON.parse),
+    readFile(U1_CANONICAL_FIXTURE, 'utf8').then(JSON.parse),
+  ]);
+
+  assert.deepEqual(browserFixture, projectBrowserFixture(canonical));
+});
 
 test('browser verifier exposes required and responsive-boundary viewport matrices', async () => {
   const verifier = await import(VERIFIER_URL.href);
@@ -106,6 +163,103 @@ test('nine-work browser fixture is canonical and independently matches source fi
   assert.match(verifierSource, /verifyNineImportedWorks/);
 });
 
+test('browser verifier loads the frozen U1 projection and traverses all eleven works', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+
+  assert.match(source, /const U1_WORKS = Object\.freeze\(JSON\.parse\(/);
+  assert.match(source, /u1-browser\.json/);
+  assert.match(source, /async function resetAndActivateWork\(/);
+  assert.match(source, /async function verifyU1Works\(/);
+  assert.match(source, /for \(const work of U1_WORKS\)/);
+  assert.doesNotMatch(source, /resetAndActivateImportedWork/);
+  assert.match(source, /kind:\s*'u1-eleven-works'/);
+  assert.match(source, /verifyU1Standalone/);
+  assert.match(source, /verifyU1Embedded/);
+});
+
+test('browser verifier locks the two-Unit hierarchy and exact U1 region contract', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+
+  assert.match(source, /U1Global Prehistory · 11 pieces/);
+  assert.match(source, /U2Ancient Mediterranean · 36 pieces/);
+  assert.match(source, /selectOption\('1'\)/);
+  assert.match(source, /cultureFilters.*isHidden/s);
+  assert.match(source, /Africa · 2 pieces/);
+  assert.match(source, /Europe · 2 pieces/);
+  assert.match(source, /Americas · 2 pieces/);
+  assert.match(source, /Middle East · 2 pieces/);
+  assert.match(source, /East Asia · 1 piece/);
+  assert.match(source, /Oceania · 2 pieces/);
+  assert.match(source, /selectOption\('2'\)/);
+});
+
+test('U1 traversal verifies both Stonehenge views, request exactness, and focus restoration', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+
+  assert.match(source, /const imageRequests = new Map\(\)/);
+  assert.match(source, /imageRequests\.clear\(\)/);
+  assert.match(source, /work\.images\.length === 2 \? 2 : 0/);
+  assert.match(source, /viewButtons\.nth\(imageIndex\)\.click\(\)/);
+  assert.match(source, /imageRequests\.get\(expected\.imageUrl\),\s*1/);
+  assert.match(source, /#dialogSource/);
+  assert.match(source, /document\.activeElement\?\.classList\.contains\('artwork-image-button'\)/);
+});
+
+test('U1 traversal verifies exact inline, dialog, metadata, and view-button semantics', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  const traversal = source.slice(
+    source.indexOf('async function verifyU1Works'),
+    source.indexOf('async function verifyU1Standalone'),
+  );
+
+  assert.match(traversal, /\.work-meta/);
+  assert.match(traversal, /`AP #\$\{work\.apNumber\}`/);
+  assert.match(traversal, /work\.images\.map\(\(\{ label \}\) => label\)/);
+  assert.match(traversal, /getAttribute\('aria-pressed'\)/);
+  assert.match(traversal, /expected\.creatorOrInstitution/);
+  assert.match(traversal, /expected\.licenseName/);
+  assert.match(traversal, /expected\.licenseUrl/);
+  assert.match(traversal, /expected\.imageSourceName/);
+  assert.match(traversal, /expected\.imageSourceUrl/);
+  assert.match(traversal, /#dialogTitle/);
+  assert.match(traversal, /#dialogCaption/);
+  assert.match(traversal, /#dialogCredit/);
+});
+
+test('U1 standalone and embedded traversals exercise all study tabs and cross-Unit comparison', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+
+  assert.match(source, /async function verifyU1StudyTabsAndComparison\(/);
+  assert.equal(
+    source.match(/await verifyU1StudyTabsAndComparison\(page,\s*(?:page|frame),\s*'[^']+'\)/g)?.length,
+    2,
+  );
+  assert.match(source, /\{ id: 'quick', label: '速览'/);
+  assert.match(source, /\{ id: 'form', label: '形式'/);
+  assert.match(source, /\{ id: 'context', label: '语境'/);
+  assert.match(source, /\{ id: 'compare', label: '比较'/);
+  assert.match(source, /ap2-great-hall-bulls/);
+  assert.match(source, /ap24-last-judgment-of-hunefer/);
+  assert.match(source, /当前显示 36 件作品/);
+  assert.match(source, /Last judgment of Hunefer, from his tomb/);
+  assert.match(
+    source,
+    /document\.activeElement === document\.querySelector\('\[data-selected-artwork-title\]'\)/,
+  );
+});
+
+test('browser copy and release labels target the complete 47-work Units 1-2 map', async () => {
+  const [browserSource, releaseSource] = await Promise.all([
+    readFile(VERIFIER_URL, 'utf8'),
+    readFile(RELEASE_VERIFIER_URL, 'utf8'),
+  ]);
+
+  assert.match(browserSource, /AP 艺术史互动地图/);
+  assert.match(browserSource, /47 AP works · Units 1-2 · filter, compare and study/);
+  assert.match(browserSource, /当前显示 47 件作品/);
+  assert.match(releaseSource, /strict 47-work Units 1-2 validator/);
+});
+
 test('responsive browser modes reject console warnings by default', async () => {
   const source = await readFile(VERIFIER_URL, 'utf8');
 
@@ -130,6 +284,20 @@ test('nine-work traversal rejects duplicate requests and forces a real trigger-r
   assert.match(source, /page\.setViewportSize\(/);
   assert.match(source, /!element\.isConnected/);
   assert.match(source, /document\.querySelector\('\.artwork-image-button'\) !== element/);
+});
+
+test('nine-work traversal verifies the inline media source added by the view-aware UI', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  const traversal = source.slice(
+    source.indexOf('async function verifyNineImportedWorks'),
+    source.indexOf('async function verifyU1Works'),
+  );
+
+  assert.match(traversal, /inlineSource/);
+  assert.match(traversal, /work\.imageSourceUrl/);
+  assert.match(traversal, /work\.imageSourceName/);
+  assert.doesNotMatch(traversal, /`许可：\$\{work\.credit\.licenseName\}`/);
+  assert.doesNotMatch(traversal, /`来源页：\$\{work\.imageSourceName\}/);
 });
 
 test('verification lifecycle closes the server when browser launch rejects', async () => {
