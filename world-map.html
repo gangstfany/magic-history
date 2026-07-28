@@ -84,6 +84,17 @@ h1 .en { color: var(--accent); }
 .mt-count { margin-left: auto; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
 .mt-count:empty { display: none; }
 
+/* ---- 搜索结果条:命中的事件直接列出来,点一条跳到地图上那一站 ---- */
+.event-card.is-result { cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
+.event-card.is-result:hover { border-color: var(--ink-soft); box-shadow: 0 3px 10px rgba(28,33,40,0.10); transform: translateY(-1px); }
+.event-card.is-result:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.ec-where { display: flex; align-items: center; gap: 7px; margin-top: 9px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11.5px; font-weight: 700; color: var(--ink-soft); }
+.ec-where .ew-pin { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 5px; background: rgba(139,26,26,0.10); color: #8b1a1a; font-size: 11px; font-variant-numeric: tabular-nums; }
+.ec-where .ew-go { margin-left: auto; color: var(--terracotta, #a8552f); white-space: nowrap; }
+.event-head .badge-search { background: #3f4a56 !important; font-size: 15px; }
+.search-none { padding: 34px 22px; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--ink-soft); line-height: 1.8; }
+.search-none span { font-size: 12px; font-weight: 600; color: var(--ink-faint, #9b9382); }
+
 /* ---- 空白事件区 & 事件卡片 ---- */
 .event-empty {
   padding: 60px 20px; text-align: center; color: var(--ink-faint);
@@ -2309,24 +2320,91 @@ h1 .en { color: var(--accent); }
       cats.forEach(cc => { const b = catsBox.querySelector(`[data-cat="${cc.abbr}"]`); if (b) b.setAttribute('aria-pressed', activeCats.has(cc.abbr) ? 'true' : 'false'); });
     }
 
+    // 命中的事件直接列进下方事件区 —— 光在地图上亮两个小圆点,人是看不见的
+    let showingResults = false;
+    function renderResults(hits) {
+      showingResults = true;
+      const pins = new Set(hits.map(h => h.num));
+      eventPanel.innerHTML = `<div class="event-head"><div class="badge badge-search">🔍</div>`
+        + `<div class="city-name">搜索结果</div>`
+        + `<div class="city-count">${hits.length} 条 · ${pins.size} 个地点</div></div>`
+        + `<div class="event-list">`
+        + hits.map(h => `<div class="event-card is-result" data-pin="${h.num}" data-region="${h.region}" role="button" tabindex="0" style="border-left-color:${h.it.catColor}">`
+          + `<div class="ec-top"><span class="ec-yr">${h.it.yr}</span>`
+          + `<span class="ec-cat">${CAT_ICON[h.it.catAbbr] || ''} ${h.it.catFull}</span></div>`
+          + `<div class="ec-trig">${h.it.trigHTML}</div>`
+          + `<div class="ec-where"><span class="ew-pin">${h.num}</span>${h.it.city}<span class="ew-go">在地图上打开 →</span></div>`
+          + `</div>`).join('')
+        + `</div>`;
+      eventEmpty.style.display = 'none';
+      eventPanel.classList.remove('show');
+      void eventPanel.offsetWidth;
+      eventPanel.classList.add('show');
+      eventZone.classList.toggle('fit-content', hits.length <= 2);
+      eventZone.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderNoResults() {
+      showingResults = true;
+      eventPanel.innerHTML = `<div class="search-none">没有匹配的地点或事件<br><span>换个关键词试试,或者把主题筛选放开</span></div>`;
+      eventEmpty.style.display = 'none';
+      eventPanel.classList.add('show');
+      eventZone.classList.add('fit-content');
+    }
+
+    // 只在"是我们铺的结果列表"时才收,免得把用户点标点看的事件卡误清掉
+    function clearResults() {
+      if (!showingResults) return;
+      showingResults = false;
+      eventPanel.classList.remove('show');
+      eventPanel.innerHTML = '';
+      eventEmpty.style.display = '';
+      eventZone.classList.remove('fit-content');
+    }
+
     function apply() {
       if (clearBtn) clearBtn.hidden = !query;
       let countText = '';
       if (!filterActive()) {                     // 恢复常态:先全隐,再按当前地区显示
         pinGroups().forEach(g => g.classList.remove('revealed'));
         if (activeRegion) paintRegion(activeRegion, true);
+        clearResults();
       } else {
-        let hitPins = 0, hitEvents = 0;
+        const hits = [];
         pinGroups().forEach(g => {
-          const passed = (index[pinNum(g)] || []).filter(eventPass).length;
-          g.classList.toggle('revealed', passed > 0);
-          if (passed > 0) { hitPins++; hitEvents += passed; }
+          const num = pinNum(g);
+          const passed = (index[num] || []).filter(eventPass);
+          g.classList.toggle('revealed', passed.length > 0);
+          passed.forEach(it => hits.push({ num, region: g.dataset.region, it }));
         });
-        countText = hitPins ? `${hitPins} 个地点 · ${hitEvents} 条` : '没有匹配';
+        const pinCount = new Set(hits.map(h => h.num)).size;
+        countText = hits.length ? `${pinCount} 个地点 · ${hits.length} 条` : '没有匹配';
+        hits.length ? renderResults(hits) : renderNoResults();
+        dismissFirstClickHint();                 // 搜索时那个"点一下试试"的气泡正好挡住命中标点
       }
       if (countBox) countBox.textContent = countText;
       if (onCountChange) onCountChange(countText);
     }
+
+    // 点结果条 => 跟手动"点地块→点标点"完全一样:高亮国家、弹事件卡、跑路线动画
+    function openHit(num, region) {
+      const regionPath = document.querySelector(`.region-path[data-region="${region}"]`);
+      if (regionPath && region !== activeRegion) regionPath.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      const g = pinGroups().find(x => pinNum(x) === num);
+      if (g) g.classList.add('revealed');        // 结果条对应的标点保持可见
+      showingResults = false;                    // 交棒给标点自己的事件卡
+      renderEventPanel(num, g && g.querySelector('circle') ? g.querySelector('circle').getAttribute('fill') : '#8b1a1a');
+      spotlightPin(num);
+    }
+    eventPanel.addEventListener('click', e => {
+      const card = e.target.closest('.event-card.is-result');
+      if (card) openHit(card.dataset.pin, card.dataset.region);
+    });
+    eventPanel.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const card = e.target.closest('.event-card.is-result');
+      if (card) { e.preventDefault(); openHit(card.dataset.pin, card.dataset.region); }
+    });
 
     function setQuery(q) { query = norm(q); if (searchInput) searchInput.value = q; apply(); }
     function toggleCat(abbr) {
@@ -2352,7 +2430,7 @@ h1 .en { color: var(--accent); }
     window.__mapFilter = {
       getCats: () => cats.map(c => ({ abbr: c.abbr, full: c.full, color: c.color, icon: c.icon })),
       getActiveCats: () => new Set(activeCats),
-      setQuery, toggleCat, reset,
+      setQuery, toggleCat, reset, openHit,
       onCountChange: fn => { onCountChange = fn; },
     };
   })();

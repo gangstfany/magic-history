@@ -226,6 +226,16 @@ nav.topnav {
 .home-events .event-card .ec-cat { font-size: 10px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .05em; margin-left: auto; white-space: nowrap; }
 .home-events .event-card .ec-trig { font-size: 13.5px; font-weight: 600; line-height: 1.55; color: var(--ink); }
 .home-events .event-card .ec-trig .hl { background: #fff3bf; padding: 1px 4px; border-radius: 3px; font-weight: 700; }
+/* 搜索结果条(从地图镜像过来的),点一条跳到地图上那一站 */
+.home-events .event-card.is-result { cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
+.home-events .event-card.is-result:hover { border-color: var(--ink-soft); box-shadow: 0 3px 10px rgba(28,33,40,0.10); transform: translateY(-1px); }
+.home-events .event-card.is-result:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.home-events .ec-where { display: flex; align-items: center; gap: 7px; margin-top: 9px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11.5px; font-weight: 700; color: var(--ink-soft); }
+.home-events .ec-where .ew-pin { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 5px; background: rgba(139,26,26,0.10); color: #8b1a1a; font-size: 11px; font-variant-numeric: tabular-nums; }
+.home-events .ec-where .ew-go { margin-left: auto; color: var(--terracotta); white-space: nowrap; }
+.home-events .event-head .badge-search { background: #3f4a56 !important; font-size: 15px; }
+.home-events .search-none { padding: 46px 22px; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--ink-soft); line-height: 1.8; }
+.home-events .search-none span { font-size: 12px; font-weight: 600; color: var(--ink-faint, #9b9382); }
 
 /* 窗口 < 900px:2:1 分栏会把事件栏压得太窄,自动改成上下叠——地图在上、事件在下,两块都固定高度,模块整体大小不随点击变 */
 @media (max-width: 900px) {
@@ -625,6 +635,26 @@ nav.topnav {
     }
   }
 
+  // 右侧面板是 innerHTML 拷过来的,iframe 里绑的监听不会跟过来,所以这边自己代理一层:
+  // 点搜索结果条 => 让地图执行"点地块→点标点",再把结果换成那一站的事件卡
+  if (homeEvents) {
+    const openHitFromHome = card => {
+      let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
+      if (!win || !win.__mapFilter) return;
+      win.__mapFilter.openHit(card.dataset.pin, card.dataset.region);
+      setTimeout(syncHomeEvents, 80);
+    };
+    homeEvents.addEventListener('click', e => {
+      const card = e.target.closest('.event-card.is-result');
+      if (card) openHitFromHome(card);
+    });
+    homeEvents.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const card = e.target.closest('.event-card.is-result');
+      if (card) { e.preventDefault(); openHitFromHome(card); }
+    });
+  }
+
   if (worldMapFrame) {
     worldMapFrame.addEventListener('load', () => {
       styleEmbeddedMap();
@@ -671,7 +701,8 @@ nav.topnav {
       clearTimeout(t); t = setTimeout(() => api.setQuery(searchInput.value.trim()), 120);
     });
     clearBtn.addEventListener('click', () => { searchInput.value = ''; clearBtn.hidden = true; api.setQuery(''); searchInput.focus(); });
-    api.onCountChange(text => { countBox.textContent = text || ''; });
+    // 地图那边一改筛选就重铺结果列表,这边跟着把它镜像到右侧事件面板
+    api.onCountChange(text => { countBox.textContent = text || ''; syncHomeEvents(); });
     updateHostToolbarVisibility();
   }
 
