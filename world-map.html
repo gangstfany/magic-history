@@ -66,6 +66,24 @@ h1 .en { color: var(--accent); }
 .pin-group { opacity: 0; pointer-events: none; transition: opacity .35s ease; }
 .pin-group.revealed { opacity: 1; pointer-events: auto; }
 
+/* ---- 地图工具栏:搜索 + 分类筛选(地图上方独立一条,参考艺术史版式) ---- */
+.map-toolbar { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 11px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.mt-field { display: flex; align-items: center; gap: 8px; }
+.mt-label { font-size: 11.5px; font-weight: 700; color: var(--ink-soft); letter-spacing: .02em; white-space: nowrap; }
+.mt-search { position: relative; display: flex; align-items: center; }
+.mt-search input { width: 220px; max-width: 52vw; height: 32px; border: 1px solid var(--line); border-radius: 8px; padding: 0 30px 0 12px; font-size: 12.5px; color: var(--ink); background: var(--card); }
+.mt-search input::placeholder { color: #9b9382; }
+.mt-search input:focus-visible { outline: 2px solid #28708a; outline-offset: 1px; }
+.mt-clear { position: absolute; right: 5px; width: 20px; height: 20px; border: none; border-radius: 50%; background: rgba(33,31,28,0.09); color: #555; font-size: 14px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.mt-clear[hidden] { display: none; }   /* display:flex 会盖掉 [hidden] 的 UA 样式,得显式关掉 */
+.mt-cats { display: flex; flex-wrap: wrap; gap: 5px; }
+.mt-cat { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font-size: 11.5px; font-weight: 700; color: var(--ink); cursor: pointer; user-select: none; transition: opacity .15s ease, border-color .15s ease; }
+.mt-cat:hover { border-color: var(--ink-soft); }
+.mt-cat .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.mt-cat[aria-pressed="false"] { opacity: 0.4; }
+.mt-count { margin-left: auto; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
+.mt-count:empty { display: none; }
+
 /* ---- 空白事件区 & 事件卡片 ---- */
 .event-empty {
   padding: 60px 20px; text-align: center; color: var(--ink-faint);
@@ -200,6 +218,20 @@ h1 .en { color: var(--accent); }
 <h1><span class="en">History World Map</span></h1>
 </header>
 
+<div class="map-toolbar" id="mapToolbar">
+  <label class="mt-field mt-field-search">
+    <span class="mt-label">搜索</span>
+    <span class="mt-search">
+      <input type="search" id="mapSearch" placeholder="地点 / 事件 / 关键词" aria-label="搜索历史地点与事件" autocomplete="off">
+      <button type="button" class="mt-clear" id="mtClear" aria-label="清除搜索" hidden>&times;</button>
+    </span>
+  </label>
+  <div class="mt-field mt-field-cats">
+    <span class="mt-label">主题</span>
+    <div class="mt-cats" id="mtCats" role="group" aria-label="按主题筛选"></div>
+  </div>
+  <div class="mt-count" id="mtCount" role="status"></div>
+</div>
 <div class="split">
 <div class="map-zone">
 <div class="mapstage"><div class="zoom-controls">
@@ -2238,6 +2270,93 @@ h1 .en { color: var(--accent); }
 
   // 第一次进来,过一小会儿冒一个"这里能点"的提示气泡,点过一次地块就永久不再出现
   const firstClickHint = document.getElementById('firstClickHint');
+  // ---- 搜索 + 分类筛选:跨地区把"命中"的标点亮出来,未命中的隐藏;清空后恢复"点地块才显示"常态 ----
+  (function initSearchFilter() {
+    const searchInput = document.getElementById('mapSearch');
+    const clearBtn = document.getElementById('mtClear');
+    const catsBox = document.getElementById('mtCats');
+    const countBox = document.getElementById('mtCount');
+
+    // 从事件面板的 panel-head 收集全部分类(缩写/全称/颜色/图标),和数据保持同步
+    const cats = [];
+    const seen = new Set();
+    document.querySelectorAll('.panel .panel-head').forEach(head => {
+      let abbr = '';
+      for (const n of head.childNodes) { if (n.nodeType === 3 && n.textContent.trim()) { abbr = n.textContent.trim(); break; } }
+      if (!abbr || seen.has(abbr)) return;
+      seen.add(abbr);
+      cats.push({
+        abbr,
+        full: head.querySelector('.full') ? head.querySelector('.full').textContent.trim() : abbr,
+        color: head.style.background || '#8b1a1a',
+        icon: head.querySelector('.picon') ? head.querySelector('.picon').textContent.trim() : '',
+      });
+    });
+    const allCats = new Set(cats.map(c => c.abbr));
+    let activeCats = new Set(allCats);
+    let query = '';
+    let onCountChange = null; // 首页父页面订阅计数变化
+
+    const norm = s => (s || '').toLowerCase();
+    const plain = it => norm(it.city + ' ' + it.yr + ' ' + it.catFull + ' ' + it.catAbbr + ' ' + (it.trigHTML || '').replace(/<[^>]*>/g, ''));
+    const eventPass = it => activeCats.has(it.catAbbr) && (!query || plain(it).includes(query));
+    const pinGroups = () => Array.from(svg.querySelectorAll('.pin-group'));
+    const pinNum = g => { const t = g.querySelector('text'); return t ? t.textContent.trim() : ''; };
+    const filterActive = () => query !== '' || activeCats.size < allCats.size;
+
+    function syncPills() {
+      if (!catsBox) return;
+      cats.forEach(cc => { const b = catsBox.querySelector(`[data-cat="${cc.abbr}"]`); if (b) b.setAttribute('aria-pressed', activeCats.has(cc.abbr) ? 'true' : 'false'); });
+    }
+
+    function apply() {
+      if (clearBtn) clearBtn.hidden = !query;
+      let countText = '';
+      if (!filterActive()) {                     // 恢复常态:先全隐,再按当前地区显示
+        pinGroups().forEach(g => g.classList.remove('revealed'));
+        if (activeRegion) paintRegion(activeRegion, true);
+      } else {
+        let hitPins = 0, hitEvents = 0;
+        pinGroups().forEach(g => {
+          const passed = (index[pinNum(g)] || []).filter(eventPass).length;
+          g.classList.toggle('revealed', passed > 0);
+          if (passed > 0) { hitPins++; hitEvents += passed; }
+        });
+        countText = hitPins ? `${hitPins} 个地点 · ${hitEvents} 条` : '没有匹配';
+      }
+      if (countBox) countBox.textContent = countText;
+      if (onCountChange) onCountChange(countText);
+    }
+
+    function setQuery(q) { query = norm(q); if (searchInput) searchInput.value = q; apply(); }
+    function toggleCat(abbr) {
+      if (activeCats.has(abbr)) activeCats.delete(abbr); else activeCats.add(abbr);
+      if (activeCats.size === 0) activeCats = new Set(allCats); // 一个都不选=视为全选
+      syncPills(); apply();
+      return new Set(activeCats);                               // 首页工具栏据此回刷自己的药丸状态
+    }
+    function reset() { query = ''; if (searchInput) searchInput.value = ''; activeCats = new Set(allCats); syncPills(); apply(); }
+
+    // 内部工具栏(标准版用;首页嵌入时会被隐藏,改用父页面满宽工具栏经 API 驱动)
+    if (catsBox) cats.forEach(c => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'mt-cat'; btn.dataset.cat = c.abbr; btn.setAttribute('aria-pressed', 'true');
+      btn.innerHTML = `<span class="dot" style="background:${c.color}"></span>${c.full}`;
+      btn.addEventListener('click', () => toggleCat(c.abbr));
+      catsBox.appendChild(btn);
+    });
+    if (searchInput) { let t; searchInput.addEventListener('input', () => { query = norm(searchInput.value.trim()); clearTimeout(t); t = setTimeout(apply, 120); }); }
+    if (clearBtn) clearBtn.addEventListener('click', () => { setQuery(''); if (searchInput) searchInput.focus(); });
+
+    // 对外 API:首页(父页面)满宽工具栏调它来驱动搜索/筛选
+    window.__mapFilter = {
+      getCats: () => cats.map(c => ({ abbr: c.abbr, full: c.full, color: c.color, icon: c.icon })),
+      getActiveCats: () => new Set(activeCats),
+      setQuery, toggleCat, reset,
+      onCountChange: fn => { onCountChange = fn; },
+    };
+  })();
+
   let firstHintTimer = setTimeout(() => firstClickHint.classList.add('show'), 1300);
   function dismissFirstClickHint() {
     clearTimeout(firstHintTimer);
