@@ -122,16 +122,41 @@ const EXPECTED_U3_MANIFEST = [
   '87|ap87-self-portrait-saskia|Self-Portrait with Saskia|lowCountries|1',
   '88|ap88-san-carlo-quattro-fontane|San Carlo alle Quattro Fontane|italyVatican|3',
   '89|ap89-ecstasy-saint-teresa|Ecstasy of Saint Teresa|italyVatican|3',
-  '90|ap90-angel-arkebus|Angel with Arquebus, Asiel Timor Dei|colonialAmericas|1',
+  '90|ap90-angel-arquebus|Angel with Arquebus, Asiel Timor Dei|colonialAmericas|1',
   '91|ap91-las-meninas|Las Meninas|iberianPeninsula|1',
   '92|ap92-woman-holding-balance|Woman Holding a Balance|lowCountries|1',
   '93|ap93-palace-versailles|The Palace at Versailles|france|5',
-  '94|ap94-screen-running-bull|Screen with the Siege of Belgrade and hunting scene|colonialAmericas|2',
-  '95|ap95-casta-painting|The Virgin of Guadalupe (Virgen de Guadalupe)|colonialAmericas|1',
-  '96|ap96-fruit-flower-insects|Fruit and Insects|lowCountries|1',
-  '97|ap97-spanish-colonial-portrait|Portrait of Sor Juana Inés de la Cruz|colonialAmericas|1',
-  "98|ap98-st-pauls-cathedral|St. Paul's Cathedral|britishIsles|1",
+  '94|ap94-screen-siege-belgrade|Screen with the Siege of Belgrade and hunting scene|colonialAmericas|2',
+  '95|ap95-virgin-guadalupe|The Virgin of Guadalupe (Virgen de Guadalupe)|colonialAmericas|1',
+  '96|ap96-fruit-insects|Fruit and Insects|lowCountries|1',
+  '97|ap97-spaniard-indian-mestizo|Spaniard and Indian Produce a Mestizo|colonialAmericas|1',
+  '98|ap98-tete-a-tete|The Tête à Tête, from Marriage à la Mode|britishIsles|1',
 ];
+const EXPECTED_U3_REQUIRED_VIEW_IDS = {
+  48: ['greek-chapel', 'orant-fresco', 'good-shepherd-fresco'],
+  49: ['exterior', 'interior', 'plan'],
+  50: ['rebecca-eliezer', 'jacob-wrestling-angel'],
+  51: ['exterior', 'interior', 'justinian-panel', 'theodora-panel', 'plan'],
+  52: ['exterior', 'interior', 'plan'],
+  55: ['st-matthew-cross-carpet', 'st-luke-portrait', 'st-luke-incipit'],
+  56: ['exterior', 'hypostyle-hall', 'mihrab-detail', 'double-tier-arches', 'plan'],
+  58: ['exterior', 'last-judgment-tympanum', 'interior', 'reliquary'],
+  59: ['narrative-overview', 'narrative-detail'],
+  60: ['west-facade', 'nave', 'plan', 'royal-portal', 'rose-window', 'stained-glass'],
+  61: ['dedication-page', 'apocalypse-scenes'],
+  63: ['chapel-interior', 'lamentation', 'chapel-exterior'],
+  64: ['plagues-egypt', 'scenes-liberation', 'preparation-passover'],
+  65: ['exterior', 'court-lions', 'hall-sisters', 'plan'],
+  67: ['exterior', 'interior'],
+  75: ['ceiling-overview', 'delphic-sibyl', 'the-flood', 'last-judgment'],
+  77: ['closed-state', 'open-state'],
+  82: ['facade', 'nave', 'triumph-name-jesus'],
+  84: ['exterior', 'interior', 'plan'],
+  88: ['facade', 'interior', 'plan'],
+  89: ['church-interior', 'cornaro-chapel', 'ecstasy-saint-teresa'],
+  93: ['aerial-overview', 'facade', 'courtyard', 'hall-mirrors', 'gardens'],
+  94: ['siege-belgrade-front', 'hunting-scene-reverse'],
+};
 const EXPECTED_NEW_WORKS = [
   {
     apNumber: 12,
@@ -258,6 +283,20 @@ test('checked-in U3 manifest matches AP 48-98 and 103 required views', async () 
     entries.reduce((sum, [, work]) => sum + work.requiredViewIds.length, 0),
     103,
   );
+});
+
+test('checked-in U3 manifest preserves approved ordered required view IDs', async () => {
+  const manifest = JSON.parse(await readFile(U3_MANIFEST_PATH, 'utf8'));
+  const entries = Object.entries(manifest)
+    .sort(([a], [b]) => Number(a) - Number(b));
+
+  for (const [apNumber, work] of entries) {
+    assert.deepEqual(
+      work.requiredViewIds,
+      EXPECTED_U3_REQUIRED_VIEW_IDS[apNumber] ?? ['primary'],
+      `AP ${apNumber} required view IDs`,
+    );
+  }
 });
 
 async function writeFixtureHtml(directory, artworks, credits) {

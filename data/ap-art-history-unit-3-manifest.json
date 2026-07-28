@@ -17,7 +17,7 @@
     "siteName": "Rome, Italy",
     "requiredViewIds": [
       "exterior",
-      "nave",
+      "interior",
       "plan"
     ]
   },
@@ -38,7 +38,7 @@
     "siteName": "Ravenna, Italy",
     "requiredViewIds": [
       "exterior",
-      "choir-mosaics",
+      "interior",
       "justinian-panel",
       "theodora-panel",
       "plan"
@@ -51,7 +51,7 @@
     "siteName": "Constantinople (Istanbul), Turkey",
     "requiredViewIds": [
       "exterior",
-      "nave",
+      "interior",
       "plan"
     ]
   },
@@ -79,9 +79,9 @@
     "region": "britishIsles",
     "siteName": "Northumbria, England",
     "requiredViewIds": [
-      "matthew-cross-carpet",
-      "luke-portrait",
-      "luke-incipit"
+      "st-matthew-cross-carpet",
+      "st-luke-portrait",
+      "st-luke-incipit"
     ]
   },
   "56": {
@@ -90,10 +90,10 @@
     "region": "iberianPeninsula",
     "siteName": "Córdoba, Spain",
     "requiredViewIds": [
+      "exterior",
       "hypostyle-hall",
-      "dome-mihrab",
-      "maqsura",
-      "mihrab",
+      "mihrab-detail",
+      "double-tier-arches",
       "plan"
     ]
   },
@@ -113,8 +113,8 @@
     "siteName": "Conques, France",
     "requiredViewIds": [
       "exterior",
-      "tympanum",
-      "church-interior",
+      "last-judgment-tympanum",
+      "interior",
       "reliquary"
     ]
   },
@@ -124,8 +124,8 @@
     "region": "britishIsles",
     "siteName": "England or Normandy",
     "requiredViewIds": [
-      "norman-invasion",
-      "oath-harold"
+      "narrative-overview",
+      "narrative-detail"
     ]
   },
   "60": {
@@ -138,8 +138,8 @@
       "nave",
       "plan",
       "royal-portal",
-      "good-samaritan-window",
-      "notre-dame-belle-verriere"
+      "rose-window",
+      "stained-glass"
     ]
   },
   "61": {
@@ -169,7 +169,7 @@
     "requiredViewIds": [
       "chapel-interior",
       "lamentation",
-      "last-judgment"
+      "chapel-exterior"
     ]
   },
   "64": {
@@ -189,9 +189,9 @@
     "region": "iberianPeninsula",
     "siteName": "Granada, Spain",
     "requiredViewIds": [
+      "exterior",
       "court-lions",
       "hall-sisters",
-      "muqarnas-dome",
       "plan"
     ]
   },
@@ -283,9 +283,9 @@
     "region": "italyVatican",
     "siteName": "Vatican City",
     "requiredViewIds": [
-      "chapel-interior",
-      "ceiling",
-      "creation-adam",
+      "ceiling-overview",
+      "delphic-sibyl",
+      "the-flood",
       "last-judgment"
     ]
   },
@@ -419,13 +419,13 @@
     "region": "italyVatican",
     "siteName": "Rome, Italy",
     "requiredViewIds": [
-      "chapel",
-      "sculpture",
-      "detail"
+      "church-interior",
+      "cornaro-chapel",
+      "ecstasy-saint-teresa"
     ]
   },
   "90": {
-    "id": "ap90-angel-arkebus",
+    "id": "ap90-angel-arquebus",
     "titleEn": "Angel with Arquebus, Asiel Timor Dei",
     "region": "colonialAmericas",
     "siteName": "Calamarca, present-day Bolivia",
@@ -458,24 +458,24 @@
     "siteName": "Versailles, France",
     "requiredViewIds": [
       "aerial-overview",
+      "facade",
+      "courtyard",
       "hall-mirrors",
-      "gardens",
-      "plan",
-      "facade"
+      "gardens"
     ]
   },
   "94": {
-    "id": "ap94-screen-running-bull",
+    "id": "ap94-screen-siege-belgrade",
     "titleEn": "Screen with the Siege of Belgrade and hunting scene",
     "region": "colonialAmericas",
     "siteName": "Mexico City, New Spain",
     "requiredViewIds": [
-      "siege-belgrade",
-      "hunting-scene"
+      "siege-belgrade-front",
+      "hunting-scene-reverse"
     ]
   },
   "95": {
-    "id": "ap95-casta-painting",
+    "id": "ap95-virgin-guadalupe",
     "titleEn": "The Virgin of Guadalupe (Virgen de Guadalupe)",
     "region": "colonialAmericas",
     "siteName": "Mexico City, New Spain",
@@ -484,7 +484,7 @@
     ]
   },
   "96": {
-    "id": "ap96-fruit-flower-insects",
+    "id": "ap96-fruit-insects",
     "titleEn": "Fruit and Insects",
     "region": "lowCountries",
     "siteName": "Amsterdam, Netherlands",
@@ -493,8 +493,8 @@
     ]
   },
   "97": {
-    "id": "ap97-spanish-colonial-portrait",
-    "titleEn": "Portrait of Sor Juana Inés de la Cruz",
+    "id": "ap97-spaniard-indian-mestizo",
+    "titleEn": "Spaniard and Indian Produce a Mestizo",
     "region": "colonialAmericas",
     "siteName": "Mexico City, New Spain",
     "requiredViewIds": [
@@ -502,8 +502,8 @@
     ]
   },
   "98": {
-    "id": "ap98-st-pauls-cathedral",
-    "titleEn": "St. Paul's Cathedral",
+    "id": "ap98-tete-a-tete",
+    "titleEn": "The Tête à Tête, from Marriage à la Mode",
     "region": "britishIsles",
     "siteName": "London, England",
     "requiredViewIds": [
