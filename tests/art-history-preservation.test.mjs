@@ -187,6 +187,80 @@ const U3_TRADITION_GROUPS = new Set([
 ]);
 
 const UNFINISHED_VALUE = /\b(?:tbd|todo|placeholder|n\/a|not available)\b|待补|待定|占位/i;
+const HAN_SCRIPT = /\p{Script=Han}/u;
+
+const U3_PROVENANCE_QUALIFIERS = new Map([
+  [
+    'ap50-vienna-genesis',
+    'Made in Syria or Palestine; the precise workshop is not securely localized.',
+  ],
+  [
+    'ap53-merovingian-fibulae',
+    'The Louvre records Jouy-le-Comte as the findspot; the manufacturing workshop is not securely localized, so the map uses a broad early medieval European anchor.',
+  ],
+  [
+    'ap55-lindisfarne-gospels',
+    'Made in Northumbria, probably at Lindisfarne; Eadfrith is the traditionally attributed scribe-artist.',
+  ],
+  [
+    'ap59-bayeux-tapestry',
+    'Probably embroidered in England for a Norman patron; the precise workshop and original display setting remain debated.',
+  ],
+  [
+    'ap62-rottgen-pieta',
+    'Made in the Rhineland; the precise workshop and original devotional setting are not securely localized.',
+  ],
+  [
+    'ap68-arnolfini-portrait',
+    'Made in Flanders, probably Bruges; the sitters’ identities and original domestic setting remain debated.',
+  ],
+]);
+
+const U3_REQUIRED_COMPARISONS = new Map([
+  ['ap49-santa-sabina', 'ap46-pantheon'],
+  ['ap52-hagia-sophia', 'ap46-pantheon'],
+  ['ap58-church-sainte-foy', 'ap23-tutankhamun-innermost-coffin'],
+  ['ap81-codex-mendoza-frontispiece', 'ap19-code-of-hammurabi'],
+  ['ap89-ecstasy-saint-teresa', 'ap46-pantheon'],
+]);
+
+const U3_INSTITUTIONAL_MEDIA = new Map([
+  [
+    'ap53-merovingian-fibulae\u0000primary',
+    {
+      imageUrl: 'https://collections.louvre.fr/media/cache/small/0000000021/0000116783/0000846601_OG.JPG',
+      sourceUrl: 'https://collections.louvre.fr/en/ark:/53355/cl010116783',
+    },
+  ],
+  [
+    'ap55-lindisfarne-gospels\u0000st-luke-portrait',
+    {
+      imageUrl: 'https://digital.libraries.psu.edu/iiif/2/arthist2:113593/full/full/0/default.jpg',
+      sourceUrl: 'https://digital.libraries.psu.edu/digital/collection/arthist2/id/113593/',
+    },
+  ],
+  [
+    'ap66-merode-altarpiece\u0000primary',
+    {
+      imageUrl: 'https://images.metmuseum.org/CRDImages/cl/original/DP273206.jpg',
+      sourceUrl: 'https://www.metmuseum.org/collection/the-collection-online/search/470304',
+    },
+  ],
+  [
+    'ap95-virgin-guadalupe\u0000primary',
+    {
+      imageUrl: 'https://collections-images.lacma.org/images/158374/158374-1-primary.webp',
+      sourceUrl: 'https://collections.lacma.org/object/158374',
+    },
+  ],
+  [
+    'ap97-spaniard-indian-mestizo\u0000primary',
+    {
+      imageUrl: 'https://images-cdn.bridgemanimages.com/api/1.0/image/600wm.BRH.7143740.7055475/470238.jpg',
+      sourceUrl: 'https://www.bridgemanimages.com/en-US/juarez/parents-with-their-children-c-1715-oil-on-canvas/oil-on-canvas/asset/470238',
+    },
+  ],
+]);
 
 function expectedU3TraditionGroup(apNumber) {
   if (apNumber <= 52) return 'lateAntiqueByzantine';
@@ -263,6 +337,44 @@ function splitLedgerRow(line) {
   return line.split('|').slice(1, -1).map((cell) => cell.trim());
 }
 
+function normalizeCommonsFilename(url, prefix) {
+  if (!url.startsWith(prefix)) return null;
+  return decodeURIComponent(url.slice(prefix.length))
+    .normalize('NFC')
+    .replaceAll('_', ' ');
+}
+
+function assertAuditedMediaPair(artworkId, viewId, imageUrl, sourceUrl) {
+  const key = `${artworkId}\u0000${viewId}`;
+  const frozen = U3_INSTITUTIONAL_MEDIA.get(key);
+  if (frozen) {
+    assert.deepEqual(
+      { imageUrl, sourceUrl },
+      frozen,
+      `${artworkId}.${viewId}: frozen institutional media pair`,
+    );
+    return;
+  }
+
+  const imageFilename = normalizeCommonsFilename(
+    imageUrl,
+    'https://commons.wikimedia.org/wiki/Special:Redirect/file/',
+  );
+  const sourceFilename = normalizeCommonsFilename(
+    sourceUrl,
+    'https://commons.wikimedia.org/wiki/File:',
+  );
+  assert.ok(
+    imageFilename && sourceFilename,
+    `${artworkId}.${viewId}: unaudited non-Commons media pair`,
+  );
+  assert.equal(
+    imageFilename,
+    sourceFilename,
+    `${artworkId}.${viewId}: Commons image/source filename mismatch`,
+  );
+}
+
 function parseLedger(markdown, contract = {}) {
   const rows = markdown
     .split('\n')
@@ -294,6 +406,46 @@ function parseLedger(markdown, contract = {}) {
       assert.ok(key, `ledger row ${index + 1} has an empty identity`);
       assert.ok(!seen.has(key), `duplicate ledger identity ${key}`);
       seen.add(key);
+    });
+  }
+
+  if (contract.httpsColumns) {
+    rows.forEach((cells, rowIndex) => {
+      contract.httpsColumns.forEach((cellIndex) => {
+        const { url } = markdownLink(cells[cellIndex]);
+        assert.match(
+          url,
+          /^https:\/\//,
+          `ledger row ${rowIndex + 1} column ${cellIndex + 1} must use HTTPS`,
+        );
+      });
+    });
+  }
+
+  if (contract.commonsIdentityColumns) {
+    const [imageIndex, sourceIndex] = contract.commonsIdentityColumns;
+    rows.forEach((cells, rowIndex) => {
+      const imageUrl = markdownLink(cells[imageIndex]).url;
+      const sourceUrl = markdownLink(cells[sourceIndex]).url;
+      const imageFilename = normalizeCommonsFilename(
+        imageUrl,
+        'https://commons.wikimedia.org/wiki/Special:Redirect/file/',
+      );
+      const sourceFilename = normalizeCommonsFilename(
+        sourceUrl,
+        'https://commons.wikimedia.org/wiki/File:',
+      );
+      if (imageFilename || sourceFilename) {
+        assert.ok(
+          imageFilename && sourceFilename,
+          `ledger row ${rowIndex + 1} has an incomplete Commons media pair`,
+        );
+        assert.equal(
+          imageFilename,
+          sourceFilename,
+          `ledger row ${rowIndex + 1} Commons image/source filename mismatch`,
+        );
+      }
     });
   }
 
@@ -493,6 +645,8 @@ test('strict ledger parser rejects missing cells, extra cells, and duplicate vie
     header: U3_LEDGER_HEADER,
     cellCount: 8,
     uniqueKey: ([, artworkId, viewId]) => `${artworkId}\u0000${viewId}`,
+    httpsColumns: [4, 5, 7],
+    commonsIdentityColumns: [4, 5],
   };
   const table = [
     `| ${U3_LEDGER_HEADER.join(' | ')} |`,
@@ -511,6 +665,91 @@ test('strict ledger parser rejects missing cells, extra cells, and duplicate vie
     () => parseLedger([...table, row, row].join('\n'), options),
     /duplicate ledger identity/,
   );
+  assert.throws(
+    () => parseLedger(
+      [...table, row.replace('https://example.com/image.jpg', 'http://example.com/image.jpg')].join('\n'),
+      options,
+    ),
+    /HTTPS/,
+  );
+  const mismatchedCommonsRow = row
+    .replace(
+      'https://example.com/image.jpg',
+      'https://commons.wikimedia.org/wiki/Special:Redirect/file/Greek_Chapel.jpg',
+    )
+    .replace(
+      'https://example.com/source',
+      'https://commons.wikimedia.org/wiki/File:Good_Shepherd.jpg',
+    );
+  assert.throws(
+    () => parseLedger([...table, mismatchedCommonsRow].join('\n'), options),
+    /filename mismatch/,
+  );
+});
+
+test('U3 study fields, recognition anchors, and keywords contain Chinese study copy', async () => {
+  const fixture = await loadFixture(U3_CANONICAL_PATH);
+  fixture.artworks.forEach((work) => {
+    for (const key of ['function', 'form', 'content', 'context']) {
+      assert.match(work[key], HAN_SCRIPT, `${work.id}.${key}`);
+    }
+    work.recognitionAnchors.forEach((anchor, index) => {
+      assert.match(anchor, HAN_SCRIPT, `${work.id}.recognitionAnchors[${index}]`);
+    });
+    assert.ok(
+      work.keywords.some((keyword) => HAN_SCRIPT.test(keyword)),
+      `${work.id}.keywords`,
+    );
+  });
+});
+
+test('U3 image alternatives describe visible content instead of using templates', async () => {
+  const fixture = await loadFixture(U3_CANONICAL_PATH);
+  fixture.artworks.forEach((work) => {
+    work.images.forEach((image) => {
+      assert.doesNotMatch(image.imageAlt, /Primary view/i, `${work.id}.${image.id}`);
+      assert.notEqual(
+        image.imageAlt,
+        `${work.titleEn} — ${image.label} (AP ${work.apNumber})`,
+        `${work.id}.${image.id}`,
+      );
+      assert.match(image.imageAlt, HAN_SCRIPT, `${work.id}.${image.id}`);
+    });
+  });
+});
+
+test('U3 disputed provenance uses the six frozen source-grounded qualifiers', async () => {
+  const fixture = await loadFixture(U3_CANONICAL_PATH);
+  const byId = new Map(fixture.artworks.map((work) => [work.id, work]));
+  U3_PROVENANCE_QUALIFIERS.forEach((qualifier, id) => {
+    assert.equal(byId.get(id)?.provenanceQualifier, qualifier, id);
+  });
+  assert.match(
+    fixture.credits['ap53-merovingian-fibulae'].creatorOrInstitution,
+    /^Anonymous\b/,
+  );
+});
+
+test('U3 institutional media pairs remain pinned to audited image records', async () => {
+  const fixture = await loadFixture(U3_CANONICAL_PATH);
+  const byId = new Map(fixture.artworks.map((work) => [work.id, work]));
+  U3_INSTITUTIONAL_MEDIA.forEach((expected, key) => {
+    const [artworkId, viewId] = key.split('\u0000');
+    const image = byId.get(artworkId)?.images.find(({ id }) => id === viewId);
+    assert.deepEqual(
+      image && { imageUrl: image.imageUrl, sourceUrl: image.imageSourceUrl },
+      expected,
+      key,
+    );
+  });
+});
+
+test('U3 frozen comparison bridges remain exact', async () => {
+  const fixture = await loadFixture(U3_CANONICAL_PATH);
+  const byId = new Map(fixture.artworks.map((work) => [work.id, work]));
+  U3_REQUIRED_COMPARISONS.forEach((comparisonId, artworkId) => {
+    assert.ok(byId.get(artworkId)?.comparisonIds.includes(comparisonId), artworkId);
+  });
 });
 
 test('U3 source ledger matches 51 canonical works and 103 media views', async () => {
@@ -540,12 +779,6 @@ test('U3 source ledger matches 51 canonical works and 103 media views', async ()
     ...liveArtworks.map(({ id }) => id),
     ...expectedIds,
   ]);
-  const broadProvenanceIds = new Set([
-    'ap50-vienna-genesis',
-    'ap53-merovingian-fibulae',
-    'ap59-bayeux-tapestry',
-  ]);
-
   fixture.artworks.forEach((work, index) => {
     const manifestWork = manifestEntries[index][1];
     const allowedFields = work.provenanceQualifier === undefined
@@ -583,9 +816,11 @@ test('U3 source ledger matches 51 canonical works and 103 media views', async ()
     ]) {
       assertFinishedString(work[key], `${work.id}.${key}`);
     }
-    if (broadProvenanceIds.has(work.id)) {
-      assertFinishedString(
+    const expectedQualifier = U3_PROVENANCE_QUALIFIERS.get(work.id);
+    if (expectedQualifier) {
+      assert.equal(
         work.provenanceQualifier,
+        expectedQualifier,
         `${work.id}.provenanceQualifier`,
       );
     }
@@ -616,6 +851,31 @@ test('U3 source ledger matches 51 canonical works and 103 media views', async ()
     work.comparisonIds.forEach((id) => {
       assert.ok(allResolvableIds.has(id), `${work.id}: unresolved comparison ${id}`);
     });
+    const requiredComparison = U3_REQUIRED_COMPARISONS.get(work.id);
+    if (requiredComparison) {
+      assert.ok(
+        work.comparisonIds.includes(requiredComparison),
+        `${work.id}: missing required comparison ${requiredComparison}`,
+      );
+    }
+    for (const key of ['function', 'form', 'content', 'context']) {
+      assert.match(
+        work[key],
+        HAN_SCRIPT,
+        `${work.id}.${key} must contain meaningful Chinese study copy`,
+      );
+    }
+    work.recognitionAnchors.forEach((anchor, anchorIndex) => {
+      assert.match(
+        anchor,
+        HAN_SCRIPT,
+        `${work.id}.recognitionAnchors[${anchorIndex}] must contain Chinese`,
+      );
+    });
+    assert.ok(
+      work.keywords.some((keyword) => HAN_SCRIPT.test(keyword)),
+      `${work.id}.keywords must include a Chinese search term`,
+    );
 
     assert.deepEqual(
       work.images.map(({ id }) => id),
@@ -647,6 +907,27 @@ test('U3 source ledger matches 51 canonical works and 103 media views', async ()
       }
       assert.match(image.imageUrl, /^https:\/\//);
       assert.match(image.imageSourceUrl, /^https:\/\//);
+      assert.doesNotMatch(
+        image.imageAlt,
+        /Primary view/i,
+        `${work.id}.${image.id}: generic primary-view alt`,
+      );
+      assert.notEqual(
+        image.imageAlt,
+        `${work.titleEn} — ${image.label} (AP ${work.apNumber})`,
+        `${work.id}.${image.id}: mechanically repeated title-label alt`,
+      );
+      assert.match(
+        image.imageAlt,
+        HAN_SCRIPT,
+        `${work.id}.${image.id}: alt must describe visible content`,
+      );
+      assertAuditedMediaPair(
+        work.id,
+        image.id,
+        image.imageUrl,
+        image.imageSourceUrl,
+      );
       assert.ok(
         !imageAlts.has(image.imageAlt),
         `${work.id}: imageAlt must be view-specific`,
@@ -671,6 +952,8 @@ test('U3 source ledger matches 51 canonical works and 103 media views', async ()
     header: U3_LEDGER_HEADER,
     cellCount: 8,
     uniqueKey: ([, artworkId, viewId]) => `${artworkId}\u0000${viewId}`,
+    httpsColumns: [4, 5, 7],
+    commonsIdentityColumns: [4, 5],
   });
   assert.equal(rows.length, 103);
   const ledgerMedia = rows.map((cells) => {

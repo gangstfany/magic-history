@@ -23,7 +23,19 @@ to the stated deed; restricted institutional images instead retain the
 institution's actual access or reuse terms. In particular, the Lindisfarne
 Gospels St. Luke portrait uses an exact Penn State teaching/research surrogate
 without an open-reuse claim, the Merovingian fibulae use the Louvre collection
-terms, and the LACMA *Virgin of Guadalupe* image retains LACMA's reuse terms.
+terms, the LACMA *Virgin of Guadalupe* image retains LACMA's reuse terms, and
+AP 97 uses the exact Breamore House work record distributed by Bridgeman
+Images, whose reuse requires a paid license. The AP 97 identification is
+cross-checked against Smarthistory's article on the same Breamore House
+painting rather than inferred from a similarly titled Commons file.
+
+Broad or disputed provenances are stated as qualifications rather than false
+precision. AP 50 remains Syria or Palestine; AP 53 records the Louvre findspot
+at Jouy-le-Comte while leaving the workshop unlocalized; AP 55 uses probable
+Lindisfarne and traditional attribution to Eadfrith; AP 59 distinguishes likely
+English embroidery from Norman patronage; AP 62 retains a broad Rhineland
+origin; and AP 68 marks both probable Bruges production and the unresolved
+identities of the sitters.
 
 ## Unit 1: Global Prehistory
 
