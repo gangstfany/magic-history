@@ -858,10 +858,151 @@ export function validateImageCredits(credits, artworks, rightsAudit) {
   return credits;
 }
 
+class DuplicateJsonObjectKeyError extends Error {}
+
+function validateNoDuplicateJsonObjectKeys(source) {
+  let index = 0;
+
+  const skipWhitespace = () => {
+    while (
+      source[index] === ' '
+      || source[index] === '\t'
+      || source[index] === '\n'
+      || source[index] === '\r'
+    ) {
+      index += 1;
+    }
+  };
+
+  const failSyntax = (message) => {
+    throw new SyntaxError(`${message} at position ${index}`);
+  };
+
+  const parseString = () => {
+    if (source[index] !== '"') failSyntax('Expected a JSON string');
+    const start = index;
+    index += 1;
+    while (index < source.length) {
+      if (source[index] === '\\') {
+        index += 2;
+        continue;
+      }
+      if (source[index] === '"') {
+        index += 1;
+        return JSON.parse(source.slice(start, index));
+      }
+      index += 1;
+    }
+    failSyntax('Unterminated JSON string');
+    return '';
+  };
+
+  const childPath = (path, key) => (
+    /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key)
+      ? `${path}.${key}`
+      : `${path}[${JSON.stringify(key)}]`
+  );
+
+  const parseValue = (path) => {
+    skipWhitespace();
+    if (source[index] === '{') {
+      parseObject(path);
+      return;
+    }
+    if (source[index] === '[') {
+      parseArray(path);
+      return;
+    }
+    if (source[index] === '"') {
+      parseString();
+      return;
+    }
+
+    const start = index;
+    while (
+      index < source.length
+      && source[index] !== ','
+      && source[index] !== ']'
+      && source[index] !== '}'
+      && source[index] !== ' '
+      && source[index] !== '\t'
+      && source[index] !== '\n'
+      && source[index] !== '\r'
+    ) {
+      index += 1;
+    }
+    if (index === start) failSyntax('Expected a JSON value');
+  };
+
+  const parseObject = (path) => {
+    index += 1;
+    skipWhitespace();
+    if (source[index] === '}') {
+      index += 1;
+      return;
+    }
+
+    const keys = new Set();
+    while (index < source.length) {
+      skipWhitespace();
+      const key = parseString();
+      if (keys.has(key)) {
+        throw new DuplicateJsonObjectKeyError(
+          `contains duplicate object key ${JSON.stringify(key)} at ${path}`,
+        );
+      }
+      keys.add(key);
+      skipWhitespace();
+      if (source[index] !== ':') failSyntax('Expected ":" after object key');
+      index += 1;
+      parseValue(childPath(path, key));
+      skipWhitespace();
+      if (source[index] === '}') {
+        index += 1;
+        return;
+      }
+      if (source[index] !== ',') failSyntax('Expected "," or "}" in object');
+      index += 1;
+    }
+    failSyntax('Unterminated JSON object');
+  };
+
+  const parseArray = (path) => {
+    index += 1;
+    skipWhitespace();
+    if (source[index] === ']') {
+      index += 1;
+      return;
+    }
+
+    let itemIndex = 0;
+    while (index < source.length) {
+      parseValue(`${path}[${itemIndex}]`);
+      itemIndex += 1;
+      skipWhitespace();
+      if (source[index] === ']') {
+        index += 1;
+        return;
+      }
+      if (source[index] !== ',') failSyntax('Expected "," or "]" in array');
+      index += 1;
+    }
+    failSyntax('Unterminated JSON array');
+  };
+
+  parseValue('$');
+  skipWhitespace();
+  if (index !== source.length) failSyntax('Unexpected trailing JSON content');
+}
+
 function parseJson(source, label) {
   try {
+    validateNoDuplicateJsonObjectKeys(source);
     return JSON.parse(source);
   } catch (error) {
+    if (error instanceof DuplicateJsonObjectKeyError) {
+      fail(`${label} ${error.message}`);
+    }
     fail(`${label} contains invalid JSON (${error.message})`);
   }
   return null;

@@ -412,6 +412,12 @@ async function writeFixtureHtml(directory, artworks, credits) {
   return htmlPath;
 }
 
+async function writeRawFixtureHtml(directory, html) {
+  const htmlPath = join(directory, 'fixture.html');
+  await writeFile(htmlPath, html, 'utf8');
+  return htmlPath;
+}
+
 async function loadDocumentData() {
   const html = await readFile(HTML_PATH, 'utf8');
   const parseBlock = (id) => JSON.parse(
@@ -421,6 +427,41 @@ async function loadDocumentData() {
     artworks: parseBlock('artwork-data'),
     credits: parseBlock('image-credit-data'),
   };
+}
+
+function assertOrderedDeepEqual(actual, expected, path = '$') {
+  if (Array.isArray(actual) || Array.isArray(expected)) {
+    assert.ok(Array.isArray(actual), `${path} must remain an array`);
+    assert.ok(Array.isArray(expected), `${path} canonical value must be an array`);
+    assert.equal(actual.length, expected.length, `${path} array length`);
+    actual.forEach((item, index) => {
+      assertOrderedDeepEqual(item, expected[index], `${path}[${index}]`);
+    });
+    return;
+  }
+
+  const actualIsObject = actual !== null && typeof actual === 'object';
+  const expectedIsObject = expected !== null && typeof expected === 'object';
+  if (actualIsObject || expectedIsObject) {
+    assert.ok(actualIsObject, `${path} must remain an object`);
+    assert.ok(expectedIsObject, `${path} canonical value must be an object`);
+    const actualKeys = Object.keys(actual);
+    const expectedKeys = Object.keys(expected);
+    assert.deepEqual(actualKeys, expectedKeys, `${path} object key order`);
+    expectedKeys.forEach((key) => {
+      assertOrderedDeepEqual(actual[key], expected[key], `${path}.${key}`);
+    });
+    return;
+  }
+
+  assert.deepEqual(actual, expected, `${path} value`);
+}
+
+function projectUnit3Credits(artworks, credits) {
+  const artworkIds = new Set(artworks.map(({ id }) => id));
+  return Object.fromEntries(
+    Object.entries(credits).filter(([id]) => artworkIds.has(id)),
+  );
 }
 
 test('live U1 records and credits match the reviewed canonical fixture', async () => {
@@ -443,13 +484,52 @@ test('live U3 records and credits match the reviewed canonical fixture', async (
     loadDocumentData(),
     readFile(U3_CANONICAL_PATH, 'utf8').then(JSON.parse),
   ]);
-  assert.deepEqual(
+  assertOrderedDeepEqual(
     artworks.filter(({ unit }) => unit === 3),
     fixture.artworks,
   );
-  assert.deepEqual(
-    Object.fromEntries(fixture.artworks.map(({ id }) => [id, credits[id]])),
+  assertOrderedDeepEqual(
+    projectUnit3Credits(fixture.artworks, credits),
     fixture.credits,
+  );
+});
+
+test('ordered U3 canonical comparison rejects artwork field-order drift recursively', async () => {
+  const fixture = JSON.parse(await readFile(U3_CANONICAL_PATH, 'utf8'));
+  const reorderedArtwork = structuredClone(fixture.artworks);
+  reorderedArtwork[0] = Object.fromEntries(
+    Object.entries(reorderedArtwork[0]).reverse(),
+  );
+  assert.throws(
+    () => assertOrderedDeepEqual(reorderedArtwork, fixture.artworks),
+    /\$\[0\].*object key order/i,
+  );
+
+  const reorderedNestedFields = structuredClone(fixture.artworks);
+  reorderedNestedFields[0].coordinates = Object.fromEntries(
+    Object.entries(reorderedNestedFields[0].coordinates).reverse(),
+  );
+  assert.throws(
+    () => assertOrderedDeepEqual(reorderedNestedFields, fixture.artworks),
+    /\$\[0\]\.coordinates.*object key order/i,
+  );
+});
+
+test('ordered U3 canonical comparison rejects top-level credit key-order drift', async () => {
+  const fixture = JSON.parse(await readFile(U3_CANONICAL_PATH, 'utf8'));
+  const entries = Object.entries(fixture.credits);
+  const reorderedCredits = Object.fromEntries([
+    entries[1],
+    entries[0],
+    ...entries.slice(2),
+  ]);
+
+  assert.throws(
+    () => assertOrderedDeepEqual(
+      projectUnit3Credits(fixture.artworks, reorderedCredits),
+      fixture.credits,
+    ),
+    /\$.*object key order/i,
   );
 });
 
@@ -561,7 +641,7 @@ function patchAlignedUnit3Credit(fixture, mediaKey, patch) {
   Object.assign(fixture.rights[mediaKey], patch);
 }
 
-async function loadValidatedLiveUnits12() {
+async function loadValidatedLiveUnits123() {
   return loadAndValidate();
 }
 
@@ -658,6 +738,44 @@ test('strict live loader accepts the complete AP 1–98 document by default', as
     artworks.map(({ apNumber }) => apNumber),
     EXPECTED_COMPLETE_AP_NUMBERS,
   );
+});
+
+test('strict live loader rejects a duplicate raw artwork property key', async () => {
+  const html = await readFile(HTML_PATH, 'utf8');
+  const original = '"id":"ap48-catacomb-priscilla","apNumber":48';
+  const duplicate = '"id":"ap48-catacomb-priscilla","id":"ap48-catacomb-priscilla","apNumber":48';
+  assert.equal(html.split(original).length - 1, 1, 'AP48 mutation target must be unique');
+
+  const directory = await mkdtemp(join(tmpdir(), 'art-history-duplicate-artwork-key-'));
+  const htmlPath = await writeRawFixtureHtml(directory, html.replace(original, duplicate));
+  try {
+    await assert.rejects(
+      loadAndValidate(htmlPath),
+      /artwork-data.*duplicate object key.*id.*\$\[47\]/i,
+    );
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test('strict live loader rejects a duplicate raw top-level image credit key', async () => {
+  const html = await readFile(HTML_PATH, 'utf8');
+  const match = html.match(/^  "ap48-catacomb-priscilla":.+$/m);
+  assert.ok(match, 'AP48 image-credit mutation target must exist');
+
+  const directory = await mkdtemp(join(tmpdir(), 'art-history-duplicate-credit-key-'));
+  const htmlPath = await writeRawFixtureHtml(
+    directory,
+    html.replace(match[0], `${match[0]}\n${match[0]}`),
+  );
+  try {
+    await assert.rejects(
+      loadAndValidate(htmlPath),
+      /image-credit-data.*duplicate object key.*ap48-catacomb-priscilla.*\$/i,
+    );
+  } finally {
+    await rm(directory, { recursive: true });
+  }
 });
 
 test('validator rejects an injected AP 48 manifest entry with unchanged official artworks', async () => {
@@ -1743,7 +1861,7 @@ test('validator enforces unit ranges, regions, AP order, coordinates, and compar
 });
 
 test('imports the exact nine missing works with approved classification metadata', async () => {
-  const artworks = await loadValidatedLiveUnits12();
+  const artworks = await loadValidatedLiveUnits123();
 
   for (const expected of EXPECTED_NEW_WORKS) {
     const artwork = artworks.find(({ id }) => id === expected.id);
@@ -1758,7 +1876,7 @@ test('imports the exact nine missing works with approved classification metadata
 });
 
 test('assigns exactly 11, 36, and 51 works to Units 1, 2, and 3', async () => {
-  const artworks = await loadValidatedLiveUnits12();
+  const artworks = await loadValidatedLiveUnits123();
 
   assert.equal(artworks.filter(({ unit }) => unit === 1).length, 11);
   assert.equal(artworks.filter(({ unit }) => unit === 2).length, 36);
@@ -1793,7 +1911,7 @@ test('keeps one image per Unit 1 work except Stonehenge with exactly two', async
 });
 
 test('uses unique artwork ids and AP numbers', async () => {
-  const artworks = await loadValidatedLiveUnits12();
+  const artworks = await loadValidatedLiveUnits123();
   const ids = artworks.map(({ id }) => id);
   const apNumbers = artworks.map(({ apNumber }) => apNumber);
 
@@ -1802,7 +1920,7 @@ test('uses unique artwork ids and AP numbers', async () => {
 });
 
 test('resolves comparison ids and keeps coordinates inside the map', async () => {
-  const artworks = await loadValidatedLiveUnits12();
+  const artworks = await loadValidatedLiveUnits123();
   const ids = new Set(artworks.map(({ id }) => id));
 
   for (const artwork of artworks) {
@@ -1815,7 +1933,7 @@ test('resolves comparison ids and keeps coordinates inside the map', async () =>
 });
 
 test('keeps the approved AP 27 source coordinates', async () => {
-  const artworks = await loadValidatedLiveUnits12();
+  const artworks = await loadValidatedLiveUnits123();
   const kouros = artworks.find(({ id }) => id === 'ap27-anavysos-kouros');
 
   assert.deepEqual(kouros?.coordinates, { x: 405, y: 285 });
