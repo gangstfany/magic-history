@@ -18,15 +18,22 @@ const execFileAsync = promisify(execFile);
 const VALIDATOR_PATH = fileURLToPath(new URL('../scripts/validate-art-history-data.mjs', import.meta.url));
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const U1_CANONICAL_PATH = new URL('./fixtures/u1-canonical.json', import.meta.url);
+const U3_CANONICAL_PATH = new URL('./fixtures/u3-canonical.json', import.meta.url);
 const U3_MANIFEST_PATH = new URL(
   '../data/ap-art-history-unit-3-manifest.json',
+  import.meta.url,
+);
+const U3_RIGHTS_PATH = new URL(
+  '../data/ap-art-history-unit-3-rights.json',
   import.meta.url,
 );
 const MANIFEST_PATHS = {
   1: new URL('../data/ap-art-history-unit-1-manifest.json', import.meta.url),
   2: new URL('../data/ap-art-history-unit-2-manifest.json', import.meta.url),
+  3: U3_MANIFEST_PATH,
 };
 const EXPECTED_AP_NUMBERS = Array.from({ length: 47 }, (_, index) => index + 1);
+const EXPECTED_COMPLETE_AP_NUMBERS = Array.from({ length: 98 }, (_, index) => index + 1);
 const EXPECTED_U2_AP_NUMBERS = Array.from({ length: 36 }, (_, index) => index + 12);
 const EXPECTED_U1_MANIFEST = [
   '1|ap1-apollo-11-stones|Apollo 11 stones',
@@ -297,10 +304,15 @@ async function loadManifest() {
 }
 
 async function loadManifests() {
-  const [unit1, unit2] = await Promise.all(
-    [1, 2].map(async (unit) => JSON.parse(await readFile(MANIFEST_PATHS[unit], 'utf8'))),
+  const [unit1, unit2, unit3] = await Promise.all(
+    [1, 2, 3].map(async (unit) => JSON.parse(await readFile(MANIFEST_PATHS[unit], 'utf8'))),
   );
-  return { 1: unit1, 2: unit2 };
+  return { 1: unit1, 2: unit2, 3: unit3 };
+}
+
+async function loadUnits12Manifests() {
+  const manifests = await loadManifests();
+  return { 1: manifests[1], 2: manifests[2] };
 }
 
 test('checked-in U1 manifest matches the official AP 1-11 sequence', async () => {
@@ -496,7 +508,7 @@ function makeUnit1Credits(artworks) {
 async function loadCompleteFixture() {
   const [{ artworks, credits }, manifests] = await Promise.all([
     loadDocumentData(),
-    loadManifests(),
+    loadUnits12Manifests(),
   ]);
   const unit2Artworks = artworks.filter(({ unit }) => unit === 2);
   const unit2Credits = Object.fromEntries(
@@ -508,6 +520,31 @@ async function loadCompleteFixture() {
     credits: { ...makeUnit1Credits(unit1Artworks), ...unit2Credits },
     manifests,
   };
+}
+
+async function loadCompleteUnits123Fixture() {
+  const [units12, unit3, rights] = await Promise.all([
+    loadCompleteFixture(),
+    readFile(U3_CANONICAL_PATH, 'utf8').then(JSON.parse),
+    readFile(U3_RIGHTS_PATH, 'utf8').then(JSON.parse),
+  ]);
+  const manifest3 = JSON.parse(await readFile(MANIFEST_PATHS[3], 'utf8'));
+  return {
+    artworks: [...units12.artworks, ...unit3.artworks],
+    credits: { ...units12.credits, ...unit3.credits },
+    manifests: { ...units12.manifests, 3: manifest3 },
+    rights,
+  };
+}
+
+async function loadValidatedLiveUnits12() {
+  const [{ artworks, credits }, manifests] = await Promise.all([
+    loadDocumentData(),
+    loadUnits12Manifests(),
+  ]);
+  validateArtworks(artworks, manifests);
+  validateImageCredits(credits, artworks);
+  return artworks;
 }
 
 test('normalizes both explicit image arrays and legacy single-image fields', () => {
@@ -559,7 +596,7 @@ test('CLI rejects an empty Units 1-2 dataset instead of reporting success', asyn
 });
 
 test('loads exactly AP 1–47 in official order while preserving the AP 12–47 manifest', async () => {
-  const artworks = await loadAndValidate();
+  const artworks = await loadValidatedLiveUnits12();
   const manifest = await loadManifest();
 
   assert.equal(artworks.length, 47);
@@ -745,6 +782,433 @@ test('validator accepts a complete Units 1-2 fixture with legacy and array media
 
   assert.equal(validateArtworks(artworks, manifests), artworks);
   assert.equal(validateImageCredits(credits, artworks), credits);
+});
+
+test('validator accepts the complete AP 1–98 fixture with exact artwork and credit keys', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+
+  assert.deepEqual(
+    fixture.artworks.map(({ apNumber }) => apNumber),
+    EXPECTED_COMPLETE_AP_NUMBERS,
+  );
+  assert.deepEqual(
+    Object.keys(fixture.credits).sort(),
+    fixture.artworks.map(({ id }) => id).sort(),
+  );
+  assert.equal(validateArtworks(fixture.artworks, fixture.manifests), fixture.artworks);
+  assert.equal(
+    validateImageCredits(fixture.credits, fixture.artworks, fixture.rights),
+    fixture.credits,
+  );
+
+  const directory = await mkdtemp(join(tmpdir(), 'art-history-validator-u3-'));
+  const htmlPath = await writeFixtureHtml(directory, fixture.artworks, fixture.credits);
+  try {
+    const loaded = await loadAndValidate(htmlPath);
+    assert.deepEqual(loaded.map(({ apNumber }) => apNumber), EXPECTED_COMPLETE_AP_NUMBERS);
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test('validator rejects missing AP 48, extra AP 99, and a duplicate AP number', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const missingAp48 = fixture.artworks.filter(({ apNumber }) => apNumber !== 48);
+  const extraAp99 = [
+    ...fixture.artworks,
+    {
+      ...structuredClone(fixture.artworks.at(-1)),
+      id: 'ap99-extra',
+      apNumber: 99,
+    },
+  ];
+  const duplicateAp48 = structuredClone(fixture.artworks);
+  duplicateAp48[48].apNumber = 48;
+
+  assert.throws(
+    () => validateArtworks(missingAp48, fixture.manifests),
+    /artwork AP numbers.*exactly 1\.\.98|missing AP 48/i,
+  );
+  assert.throws(
+    () => validateArtworks(extraAp99, fixture.manifests),
+    /AP 99|exactly 1\.\.98|Unit 3 range/i,
+  );
+  assert.throws(
+    () => validateArtworks(duplicateAp48, fixture.manifests),
+    /duplicate AP number 48/i,
+  );
+});
+
+test('validator requires the exact Unit 3 manifest keyset 48 through 98', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const { 48: omitted, ...missingAp48 } = fixture.manifests[3];
+
+  for (const invalidManifest of [
+    missingAp48,
+    {
+      ...fixture.manifests[3],
+      99: {
+        id: 'ap99-extra',
+        titleEn: 'Extra',
+        region: 'italyVatican',
+        siteName: 'Extra',
+        requiredViewIds: ['primary'],
+      },
+    },
+    { ...fixture.manifests[3], '48.0': fixture.manifests[3][48] },
+  ]) {
+    assert.throws(
+      () => validateArtworks(
+        fixture.artworks,
+        { ...fixture.manifests, 3: invalidManifest },
+      ),
+      /official Unit 3 manifest.*(?:keys|48\.\.98|51)/i,
+    );
+  }
+});
+
+test('validator enforces every Unit 3 manifest identity and creation-site field', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const cases = [
+    ['id', 'ap60-wrong-id'],
+    ['titleEn', 'Chartres'],
+    ['region', 'italyVatican'],
+    ['siteName', 'Paris, France'],
+  ];
+
+  for (const [field, value] of cases) {
+    const copy = structuredClone(fixture.artworks);
+    Object.assign(copy.find(({ apNumber }) => apNumber === 60), { [field]: value });
+    assert.throws(
+      () => validateArtworks(copy, fixture.manifests),
+      new RegExp(`AP 60.*(?:manifest )?${field === 'titleEn' ? 'title' : field}`, 'i'),
+      `AP 60 ${field}`,
+    );
+  }
+});
+
+test('validator rejects unknown Unit 3 regions and exact region-count mismatches', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const unknownRegion = structuredClone(fixture.artworks);
+  unknownRegion.find(({ apNumber }) => apNumber === 98).region = 'unknownRegion';
+  assert.throws(
+    () => validateArtworks(unknownRegion, fixture.manifests),
+    /AP 98|region.*Unit 3|unknownRegion/i,
+  );
+
+  const countMismatch = structuredClone(fixture);
+  countMismatch.artworks.find(({ apNumber }) => apNumber === 98).region = 'italyVatican';
+  countMismatch.manifests[3][98].region = 'italyVatican';
+  assert.throws(
+    () => validateArtworks(countMismatch.artworks, countMismatch.manifests),
+    /Unit 3 region counts|italyVatican.*18|britishIsles.*3/i,
+  );
+});
+
+test('validator freezes all six broad Unit 3 provenance qualifiers', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  for (const apNumber of [50, 53, 55, 59, 62, 68]) {
+    for (const qualifier of [undefined, 'Broad provenance']) {
+      const copy = structuredClone(fixture.artworks);
+      const artwork = copy.find((work) => work.apNumber === apNumber);
+      if (qualifier === undefined) {
+        delete artwork.provenanceQualifier;
+      } else {
+        artwork.provenanceQualifier = qualifier;
+      }
+      assert.throws(
+        () => validateArtworks(copy, fixture.manifests),
+        new RegExp(`AP ${apNumber}|${artwork.id}.*provenanceQualifier`, 'i'),
+        `AP ${apNumber} qualifier ${qualifier ?? 'missing'}`,
+      );
+    }
+  }
+});
+
+test('validator requires precise Unit 3 cultures, approved traditions, and complete study arrays', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const cases = [
+    {
+      label: 'precise culture',
+      mutate: (work) => {
+        work.culture = 'baroqueColonial';
+      },
+      pattern: /culture.*precise|valid Unit 3 culture/i,
+    },
+    {
+      label: 'approved tradition',
+      mutate: (work) => {
+        work.traditionGroup = 'unknownTradition';
+      },
+      pattern: /traditionGroup.*approved|valid Unit 3 tradition/i,
+    },
+    {
+      label: 'reviewed precise culture assignment',
+      mutate: (work) => {
+        work.culture = 'spanishBaroque';
+      },
+      pattern: /culture.*reviewed.*AP 60|AP 60.*culture/i,
+    },
+    {
+      label: 'reviewed broad tradition assignment',
+      mutate: (work) => {
+        work.traditionGroup = 'baroqueColonial';
+      },
+      pattern: /traditionGroup.*reviewed.*AP 60|AP 60.*tradition/i,
+    },
+    {
+      label: 'two recognition anchors',
+      mutate: (work) => {
+        work.recognitionAnchors = work.recognitionAnchors.slice(0, 1);
+      },
+      pattern: /recognitionAnchors.*(?:at least 2|two)/i,
+    },
+    {
+      label: 'one comparison',
+      mutate: (work) => {
+        work.comparisonIds = [];
+      },
+      pattern: /comparisonIds.*non-empty|at least 1/i,
+    },
+    {
+      label: 'three keywords',
+      mutate: (work) => {
+        work.keywords = work.keywords.slice(0, 2);
+      },
+      pattern: /keywords.*at least 3/i,
+    },
+  ];
+
+  for (const { label, mutate, pattern } of cases) {
+    const copy = structuredClone(fixture.artworks);
+    mutate(copy.find(({ apNumber }) => apNumber === 60));
+    assert.throws(() => validateArtworks(copy, fixture.manifests), pattern, label);
+  }
+});
+
+test('validator rejects duplicate Unit 3 view ids and exact Chartres view drift', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const duplicateViewId = structuredClone(fixture.artworks);
+  const duplicateChartres = duplicateViewId.find(({ apNumber }) => apNumber === 60);
+  duplicateChartres.images[1].id = duplicateChartres.images[0].id;
+  assert.throws(
+    () => validateArtworks(duplicateViewId, fixture.manifests),
+    /AP 60|ap60-chartres-cathedral.*duplicate.*view id/i,
+  );
+
+  const cases = [
+    {
+      label: 'missing sixth view',
+      mutate: (images) => images.pop(),
+    },
+    {
+      label: 'extra seventh view',
+      mutate: (images) => images.push({
+        ...images[0],
+        id: 'extra-view',
+        label: 'Extra view',
+        imageUrl: 'https://example.com/chartres-extra.jpg',
+        imageAlt: '沙特尔大教堂额外视图',
+        imageSourceUrl: 'https://example.com/chartres-extra-source',
+      }),
+    },
+    {
+      label: 'wrong view id',
+      mutate: (images) => {
+        images[0].id = 'wrong-view';
+      },
+    },
+    {
+      label: 'wrong view order',
+      mutate: (images) => {
+        [images[0], images[1]] = [images[1], images[0]];
+      },
+    },
+  ];
+  for (const { label, mutate } of cases) {
+    const copy = structuredClone(fixture.artworks);
+    mutate(copy.find(({ apNumber }) => apNumber === 60).images);
+    assert.throws(
+      () => validateArtworks(copy, fixture.manifests),
+      /AP 60.*(?:required views|6)|ap60-chartres-cathedral.*(?:view|media)/i,
+      label,
+    );
+  }
+});
+
+test('validator requires HTTPS and distinct Unit 3 media URLs and alt text', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const cases = [
+    {
+      label: 'HTTPS image URL',
+      mutate: (images) => {
+        images[0].imageUrl = images[0].imageUrl.replace('https:', 'http:');
+      },
+      pattern: /imageUrl.*HTTPS/i,
+    },
+    {
+      label: 'HTTPS source URL',
+      mutate: (images) => {
+        images[0].imageSourceUrl = images[0].imageSourceUrl.replace('https:', 'http:');
+      },
+      pattern: /imageSourceUrl.*HTTPS/i,
+    },
+    {
+      label: 'distinct alt',
+      mutate: (images) => {
+        images[1].imageAlt = images[0].imageAlt;
+      },
+      pattern: /duplicate.*imageAlt/i,
+    },
+    {
+      label: 'distinct source URL',
+      mutate: (images) => {
+        images[1].imageSourceUrl = images[0].imageSourceUrl;
+      },
+      pattern: /duplicate.*imageSourceUrl/i,
+    },
+  ];
+
+  for (const { label, mutate, pattern } of cases) {
+    const copy = structuredClone(fixture.artworks);
+    mutate(copy.find(({ apNumber }) => apNumber === 60).images);
+    assert.throws(() => validateArtworks(copy, fixture.manifests), pattern, label);
+  }
+});
+
+test('validator enforces exact Unit 3 credit schema, count, and view alignment', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const chartresId = 'ap60-chartres-cathedral';
+  const cases = [
+    {
+      label: 'missing credit',
+      mutate: (copy) => copy[chartresId].pop(),
+      pattern: /AP 60|ap60-chartres-cathedral.*credit count.*6|media views/i,
+    },
+    {
+      label: 'extra credit',
+      mutate: (copy) => copy[chartresId].push({ ...copy[chartresId][0] }),
+      pattern: /AP 60|ap60-chartres-cathedral.*credit count.*6|media views/i,
+    },
+    {
+      label: 'misaligned credit',
+      mutate: (copy) => {
+        [copy[chartresId][0], copy[chartresId][1]] = [
+          copy[chartresId][1],
+          copy[chartresId][0],
+        ];
+      },
+      pattern: /ap60-chartres-cathedral::west-facade.*credit mismatch|rights audit.*credit/i,
+    },
+    {
+      label: 'extra credit field',
+      mutate: (copy) => {
+        copy[chartresId][0].unexpected = 'extra';
+      },
+      pattern: /exact credit schema|credit.*unexpected/i,
+    },
+  ];
+
+  for (const { label, mutate, pattern } of cases) {
+    const credits = structuredClone(fixture.credits);
+    mutate(credits);
+    assert.throws(
+      () => validateImageCredits(credits, fixture.artworks, fixture.rights),
+      pattern,
+      label,
+    );
+  }
+});
+
+test('validator requires exact artwork-level credit keys through AP 98', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const missing = structuredClone(fixture.credits);
+  delete missing['ap48-catacomb-priscilla'];
+  const extra = {
+    ...fixture.credits,
+    'ap99-extra': fixture.credits['ap98-tete-a-tete'],
+  };
+
+  for (const credits of [missing, extra]) {
+    assert.throws(
+      () => validateImageCredits(credits, fixture.artworks, fixture.rights),
+      /image credit ids.*artwork ids.*exactly/i,
+    );
+  }
+});
+
+test('validator rejects incomplete, mismatched, unknown, and restricted U3 rights audits', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  assert.throws(
+    () => validateImageCredits(fixture.credits, fixture.artworks),
+    /Unit 3.*rights audit.*required/i,
+  );
+
+  const firstKey = Object.keys(fixture.rights)[0];
+  const secondKey = Object.keys(fixture.rights)[1];
+  const cases = [
+    {
+      label: 'missing media key',
+      mutate: (rights) => delete rights[firstKey],
+      pattern: /rights audit.*media keys.*exactly|missing.*media key/i,
+    },
+    {
+      label: 'extra media key',
+      mutate: (rights) => {
+        rights['ap99-extra::primary'] = { ...rights[firstKey] };
+      },
+      pattern: /rights audit.*media keys.*exactly|extra.*media key/i,
+    },
+    {
+      label: 'credit mismatch',
+      mutate: (rights) => {
+        rights[firstKey].creatorOrInstitution = 'Altered creator';
+      },
+      pattern: /rights audit.*credit mismatch|creatorOrInstitution.*canonical credit/i,
+    },
+    {
+      label: 'unknown release class',
+      mutate: (rights) => {
+        rights[firstKey].releaseClass = 'unknown';
+      },
+      pattern: /releaseClass.*(?:unknown|unsupported|allowed)/i,
+    },
+    {
+      label: 'restricted media',
+      mutate: (rights) => {
+        rights[firstKey].releaseClass = 'restricted';
+      },
+      pattern: /restricted.*(?:release|media)|release.*restricted/i,
+    },
+    {
+      label: 'release distribution mismatch',
+      mutate: (rights) => {
+        rights[secondKey].releaseClass = 'noncommercial';
+      },
+      pattern: /release class distribution|99 open|noncommercial.*2/i,
+    },
+  ];
+
+  for (const { label, mutate, pattern } of cases) {
+    const rights = structuredClone(fixture.rights);
+    mutate(rights);
+    assert.throws(
+      () => validateImageCredits(fixture.credits, fixture.artworks, rights),
+      pattern,
+      label,
+    );
+  }
+});
+
+test('validator resolves Unit 3 comparison targets across the complete AP 1–98 set', async () => {
+  const fixture = await loadCompleteUnits123Fixture();
+  const copy = structuredClone(fixture.artworks);
+  copy.find(({ apNumber }) => apNumber === 60).comparisonIds = ['missing-work'];
+
+  assert.throws(
+    () => validateArtworks(copy, fixture.manifests),
+    /ap60-chartres-cathedral.*comparisonIds.*unknown.*missing-work/i,
+  );
 });
 
 test('validator requires a provenance qualifier for AP6 broad-region placement', async () => {
@@ -959,7 +1423,7 @@ test('validator enforces unit ranges, regions, AP order, coordinates, and compar
 });
 
 test('imports the exact nine missing works with approved classification metadata', async () => {
-  const artworks = await loadAndValidate();
+  const artworks = await loadValidatedLiveUnits12();
 
   for (const expected of EXPECTED_NEW_WORKS) {
     const artwork = artworks.find(({ id }) => id === expected.id);
@@ -974,7 +1438,7 @@ test('imports the exact nine missing works with approved classification metadata
 });
 
 test('assigns exactly 11 works to Unit 1 and 36 works to Unit 2', async () => {
-  const artworks = await loadAndValidate();
+  const artworks = await loadValidatedLiveUnits12();
 
   assert.equal(artworks.filter(({ unit }) => unit === 1).length, 11);
   assert.equal(artworks.filter(({ unit }) => unit === 2).length, 36);
@@ -1008,7 +1472,7 @@ test('keeps one image per Unit 1 work except Stonehenge with exactly two', async
 });
 
 test('uses unique artwork ids and AP numbers', async () => {
-  const artworks = await loadAndValidate();
+  const artworks = await loadValidatedLiveUnits12();
   const ids = artworks.map(({ id }) => id);
   const apNumbers = artworks.map(({ apNumber }) => apNumber);
 
@@ -1017,7 +1481,7 @@ test('uses unique artwork ids and AP numbers', async () => {
 });
 
 test('resolves comparison ids and keeps coordinates inside the map', async () => {
-  const artworks = await loadAndValidate();
+  const artworks = await loadValidatedLiveUnits12();
   const ids = new Set(artworks.map(({ id }) => id));
 
   for (const artwork of artworks) {
@@ -1030,7 +1494,7 @@ test('resolves comparison ids and keeps coordinates inside the map', async () =>
 });
 
 test('keeps the approved AP 27 source coordinates', async () => {
-  const artworks = await loadAndValidate();
+  const artworks = await loadValidatedLiveUnits12();
   const kouros = artworks.find(({ id }) => id === 'ap27-anavysos-kouros');
 
   assert.deepEqual(kouros?.coordinates, { x: 405, y: 285 });
