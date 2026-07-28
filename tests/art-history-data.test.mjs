@@ -254,6 +254,9 @@ function makeUnit1Artworks(manifest) {
       date: 'Prehistoric',
       artistCulture: 'Unknown',
       siteName: `Site ${apNumber}`,
+      ...(apNumber === 6
+        ? { siteQualifier: 'Broad regional provenance; marker location is approximate' }
+        : {}),
       coordinates: { x: 100 + apNumber, y: 100 + apNumber },
       medium: 'Test medium',
       workType: 'test work',
@@ -262,7 +265,9 @@ function makeUnit1Artworks(manifest) {
       content: 'Test content',
       context: 'Test context',
       recognitionAnchors: ['Test anchor'],
-      comparisonIds: [],
+      comparisonIds: [
+        apNumber === 1 ? 'ap2-great-hall-bulls' : 'ap1-apollo-11-stones',
+      ],
       images: Array.from({ length: mediaCount }, (_, index) => ({
         label: mediaCount === 1 ? 'Primary view' : `View ${index + 1}`,
         imageUrl: `https://example.com/${id}-${index + 1}.jpg`,
@@ -538,6 +543,67 @@ test('validator accepts a complete Units 1-2 fixture with legacy and array media
 
   assert.equal(validateArtworks(artworks, manifests), artworks);
   assert.equal(validateImageCredits(credits, artworks), credits);
+});
+
+test('validator requires a provenance qualifier for AP6 broad-region placement', async () => {
+  const { artworks, manifests } = await loadCompleteFixture();
+  const copy = structuredClone(artworks);
+  const ap6Index = copy.findIndex(({ id }) => id === 'ap6-anthropomorphic-stele');
+  delete copy[ap6Index].siteQualifier;
+
+  assert.throws(
+    () => validateArtworks(copy, manifests),
+    /Invalid artwork data:.*ap6-anthropomorphic-stele.*siteQualifier/i,
+  );
+});
+
+test('validator requires every Unit 1 work to retain comparison targets', async () => {
+  const { artworks, manifests } = await loadCompleteFixture();
+  const copy = structuredClone(artworks);
+  copy[0] = { ...copy[0], comparisonIds: [] };
+
+  assert.throws(
+    () => validateArtworks(copy, manifests),
+    /Invalid artwork data:.*comparisonIds.*non-empty/i,
+  );
+});
+
+test('validator rejects duplicate Stonehenge image alt text across distinct views', async () => {
+  const { artworks, manifests } = await loadCompleteFixture();
+  const copy = structuredClone(artworks);
+  const stonehenge = copy.find(({ id }) => id === 'ap8-stonehenge');
+  stonehenge.images[1].imageAlt = stonehenge.images[0].imageAlt;
+
+  assert.throws(
+    () => validateArtworks(copy, manifests),
+    /Invalid artwork data:.*ap8-stonehenge.*duplicate.*imageAlt/i,
+  );
+});
+
+test('validator rejects duplicate Stonehenge source URLs across distinct views', async () => {
+  const { artworks, manifests } = await loadCompleteFixture();
+  const copy = structuredClone(artworks);
+  const stonehenge = copy.find(({ id }) => id === 'ap8-stonehenge');
+  stonehenge.images[1].imageSourceUrl = stonehenge.images[0].imageSourceUrl;
+
+  assert.throws(
+    () => validateArtworks(copy, manifests),
+    /Invalid artwork data:.*ap8-stonehenge.*duplicate.*imageSourceUrl/i,
+  );
+});
+
+test('validator rejects duplicate Stonehenge credit metadata across distinct views', async () => {
+  const { artworks, credits } = await loadCompleteFixture();
+  const copy = structuredClone(credits);
+  const stonehengeId = 'ap8-stonehenge';
+  copy[stonehengeId][1] = {
+    ...copy[stonehengeId][0],
+  };
+
+  assert.throws(
+    () => validateImageCredits(copy, artworks),
+    /Invalid artwork data:.*ap8-stonehenge.*duplicate.*credit/i,
+  );
 });
 
 test('validator enforces Unit 1 media counts and complete media fields', async () => {

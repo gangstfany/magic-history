@@ -55,6 +55,9 @@ const MEDIA_FIELDS = [
 ];
 const LEGACY_MEDIA_FIELDS = MEDIA_FIELDS.filter((field) => field !== 'label');
 const U2_CULTURES = new Set(['ancientNearEast', 'egypt', 'greece', 'etruscan', 'rome']);
+const BROAD_PROVENANCE_ARTWORK_IDS = Object.freeze(new Set([
+  'ap6-anthropomorphic-stele',
+]));
 const OFFICIAL_AP_NUMBERS = Array.from({ length: 47 }, (_, index) => index + 1);
 
 function fail(message) {
@@ -155,6 +158,8 @@ function validateArtworkMedia(artwork, label) {
   }
 
   const imageUrls = new Set();
+  const imageAlts = new Set();
+  const imageSourceUrls = new Set();
   for (const [index, item] of media.entries()) {
     if (!item || typeof item !== 'object' || Array.isArray(item)) {
       fail(`${label}.media[${index}] must be an object`);
@@ -174,6 +179,16 @@ function validateArtworkMedia(artwork, label) {
       fail(`${label} contains duplicate media imageUrl ${item.imageUrl}`);
     }
     imageUrls.add(item.imageUrl);
+    if (artwork.unit === 1 && media.length > 1) {
+      if (imageAlts.has(item.imageAlt)) {
+        fail(`${label} contains duplicate media imageAlt ${item.imageAlt}`);
+      }
+      if (imageSourceUrls.has(item.imageSourceUrl)) {
+        fail(`${label} contains duplicate media imageSourceUrl ${item.imageSourceUrl}`);
+      }
+      imageAlts.add(item.imageAlt);
+      imageSourceUrls.add(item.imageSourceUrl);
+    }
   }
 
   return media;
@@ -206,6 +221,12 @@ export function validateArtworks(artworks, manifests) {
       if (typeof artwork[field] !== 'string' || artwork[field].trim() === '') {
         fail(`${label}.${field} must be a non-empty string`);
       }
+    }
+    if (
+      BROAD_PROVENANCE_ARTWORK_IDS.has(artwork.id)
+      && (typeof artwork.siteQualifier !== 'string' || artwork.siteQualifier.trim() === '')
+    ) {
+      fail(`${label}.siteQualifier must be a non-empty string for broad-region placement`);
     }
     if (!Number.isInteger(artwork.apNumber) || artwork.apNumber <= 0) {
       fail(`${label}.apNumber must be a positive integer`);
@@ -268,7 +289,12 @@ export function validateArtworks(artworks, manifests) {
     }
 
     validateStringArray(artwork.recognitionAnchors, 'recognitionAnchors', label);
-    validateStringArray(artwork.comparisonIds, 'comparisonIds', label, { allowEmpty: true });
+    validateStringArray(
+      artwork.comparisonIds,
+      'comparisonIds',
+      label,
+      { allowEmpty: artwork.unit !== 1 },
+    );
     validateStringArray(artwork.keywords, 'keywords', label);
     validateArtworkMedia(artwork, label);
   }
@@ -315,6 +341,7 @@ export function validateImageCredits(credits, artworks) {
     if (creditEntries.length !== media.length) {
       fail(`${artwork.id} image credit count must match its ${media.length} media views`);
     }
+    const creditSignatures = new Set();
     for (const [index, credit] of creditEntries.entries()) {
       if (!credit || typeof credit !== 'object' || Array.isArray(credit)) {
         fail(`${artwork.id} image credit ${index + 1} must be an object`);
@@ -326,6 +353,17 @@ export function validateImageCredits(credits, artworks) {
       }
       if (!isHttpsUrl(credit.licenseUrl)) {
         fail(`${artwork.id} image credit ${index + 1} licenseUrl must be an HTTPS URL`);
+      }
+      if (artwork.unit === 1 && media.length > 1) {
+        const signature = JSON.stringify([
+          credit.creatorOrInstitution,
+          credit.licenseName,
+          credit.licenseUrl,
+        ]);
+        if (creditSignatures.has(signature)) {
+          fail(`${artwork.id} contains duplicate image credit metadata`);
+        }
+        creditSignatures.add(signature);
       }
     }
   }
