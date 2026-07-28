@@ -32,7 +32,6 @@ const MANIFEST_PATHS = {
   2: new URL('../data/ap-art-history-unit-2-manifest.json', import.meta.url),
   3: U3_MANIFEST_PATH,
 };
-const EXPECTED_AP_NUMBERS = Array.from({ length: 47 }, (_, index) => index + 1);
 const EXPECTED_COMPLETE_AP_NUMBERS = Array.from({ length: 98 }, (_, index) => index + 1);
 const EXPECTED_U2_AP_NUMBERS = Array.from({ length: 36 }, (_, index) => index + 12);
 const EXPECTED_U1_MANIFEST = [
@@ -439,6 +438,21 @@ test('live U1 records and credits match the reviewed canonical fixture', async (
   );
 });
 
+test('live U3 records and credits match the reviewed canonical fixture', async () => {
+  const [{ artworks, credits }, fixture] = await Promise.all([
+    loadDocumentData(),
+    readFile(U3_CANONICAL_PATH, 'utf8').then(JSON.parse),
+  ]);
+  assert.deepEqual(
+    artworks.filter(({ unit }) => unit === 3),
+    fixture.artworks,
+  );
+  assert.deepEqual(
+    Object.fromEntries(fixture.artworks.map(({ id }) => [id, credits[id]])),
+    fixture.credits,
+  );
+});
+
 function makeUnit1Artworks(manifest) {
   const regions = [
     'africa',
@@ -548,13 +562,7 @@ function patchAlignedUnit3Credit(fixture, mediaKey, patch) {
 }
 
 async function loadValidatedLiveUnits12() {
-  const [{ artworks, credits }, manifests] = await Promise.all([
-    loadDocumentData(),
-    loadUnits12Manifests(),
-  ]);
-  validateArtworks(artworks, manifests);
-  validateImageCredits(credits, artworks);
-  return artworks;
+  return loadAndValidate();
 }
 
 function assertInvalidArtworkError(operation, patterns, label) {
@@ -618,14 +626,14 @@ test('CLI rejects an empty Units 1-2 dataset instead of reporting success', asyn
   }
 });
 
-test('loads exactly AP 1–47 in official order while preserving the AP 12–47 manifest', async () => {
-  const artworks = await loadValidatedLiveUnits12();
+test('loads exactly AP 1–98 in official order while preserving the AP 12–47 manifest', async () => {
+  const artworks = await loadAndValidate();
   const manifest = await loadManifest();
 
-  assert.equal(artworks.length, 47);
+  assert.equal(artworks.length, 98);
   assert.deepEqual(
     artworks.map(({ apNumber }) => apNumber),
-    EXPECTED_AP_NUMBERS,
+    EXPECTED_COMPLETE_AP_NUMBERS,
     'artwork-data must remain in official AP order',
   );
   assert.deepEqual(
@@ -643,11 +651,12 @@ test('loads exactly AP 1–47 in official order while preserving the AP 12–47 
   );
 });
 
-test('Task 4 transition: strict live loader rejects the current 47-work document as incomplete', async () => {
-  // Task 4 must flip this assertion to expect AP 1–98 success before importing U3.
-  await assert.rejects(
-    loadAndValidate(),
-    /Invalid artwork data:.*exactly 98 works.*received 47/i,
+test('strict live loader accepts the complete AP 1–98 document by default', async () => {
+  const artworks = await loadAndValidate();
+
+  assert.deepEqual(
+    artworks.map(({ apNumber }) => apNumber),
+    EXPECTED_COMPLETE_AP_NUMBERS,
   );
 });
 
@@ -1748,13 +1757,14 @@ test('imports the exact nine missing works with approved classification metadata
   }
 });
 
-test('assigns exactly 11 works to Unit 1 and 36 works to Unit 2', async () => {
+test('assigns exactly 11, 36, and 51 works to Units 1, 2, and 3', async () => {
   const artworks = await loadValidatedLiveUnits12();
 
   assert.equal(artworks.filter(({ unit }) => unit === 1).length, 11);
   assert.equal(artworks.filter(({ unit }) => unit === 2).length, 36);
+  assert.equal(artworks.filter(({ unit }) => unit === 3).length, 51);
   for (const artwork of artworks) {
-    assert.ok([1, 2].includes(artwork.unit), `${artwork.id} must be in Unit 1 or 2`);
+    assert.ok([1, 2, 3].includes(artwork.unit), `${artwork.id} must be in Unit 1, 2, or 3`);
     assert.equal(typeof artwork.culture, 'string', `${artwork.id} must have a culture`);
     assert.ok(artwork.culture.trim(), `${artwork.id} must have a non-empty culture`);
     assert.equal(typeof artwork.region, 'string', `${artwork.id} must have a region`);

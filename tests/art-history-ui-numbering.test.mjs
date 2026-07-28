@@ -912,6 +912,7 @@ test('configured Unit 1 hierarchy exposes only its six regions with exact counts
 test('configured Unit 2 hierarchy follows real region and site metadata', async () => {
   const html = await loadHtml();
   const artworks = parseArtworkData(html);
+  const unit2Artworks = artworks.filter(({ unit }) => unit === 2);
   const helpers = loadPureFunctions(
     html,
     [
@@ -942,10 +943,11 @@ test('configured Unit 2 hierarchy follows real region and site metadata', async 
     [
       { key: 'unit-1', kind: 'unit', count: 11 },
       { key: 'unit-2', kind: 'unit', count: 36 },
+      { key: 'unit-3', kind: 'unit', count: 51 },
     ],
   );
 
-  const regions = helpers.buildMapGroups(artworks, 1, {
+  const regions = helpers.buildMapGroups(unit2Artworks, 1, {
     selectedUnit: '2',
     activeUnit: 2,
     activeRegion: null,
@@ -977,7 +979,7 @@ test('configured Unit 2 hierarchy follows real region and site metadata', async 
   }
 
   const southernEurope = regions.find(({ regionId }) => regionId === 'southernEurope');
-  const sites = helpers.buildMapGroups(artworks, 1, {
+  const sites = helpers.buildMapGroups(unit2Artworks, 1, {
     selectedUnit: '2',
     activeUnit: 2,
     activeRegion: southernEurope.key,
@@ -1840,9 +1842,9 @@ test('zoomed spider positions stay inside the currently visible world bounds', a
   );
 });
 
-test('expanded pins fit every collision-safe site center at mobile scale', async () => {
+test('Units 1-2 expanded pins fit every collision-safe site center at mobile scale', async () => {
   const html = await loadHtml();
-  const artworks = parseArtworkData(html);
+  const artworks = parseArtworkData(html).filter(({ unit }) => unit <= 2);
   const {
     compactApNumbers,
     formatApGroupLabel,
@@ -1955,9 +1957,9 @@ test('desktop expanded pins avoid their parent target and every other site marke
   });
 });
 
-test('compact mode follows actual spider capacity at embedded map scales', async () => {
+test('Units 1-2 compact mode follows actual spider capacity at embedded map scales', async () => {
   const html = await loadHtml();
-  const artworks = parseArtworkData(html);
+  const artworks = parseArtworkData(html).filter(({ unit }) => unit <= 2);
   const functionNames = [
     'compactApNumbers',
     'formatApGroupLabel',

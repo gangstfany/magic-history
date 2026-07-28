@@ -764,13 +764,13 @@ test('source worksheet parser rejects rows with missing or extra cells', () => {
   );
 });
 
-test('keeps all 47 loaded works, the complete Unit 2 id set, and one credit per image', async () => {
+test('keeps all 98 loaded works, the complete Unit 2 id set, and one credit per image', async () => {
   const html = await loadHtml();
   const artworks = parseJsonBlock(html, 'artwork-data');
   const credits = parseJsonBlock(html, 'image-credit-data');
   const artworkIds = artworks.map(({ id }) => id);
 
-  assert.equal(artworks.length, 47);
+  assert.equal(artworks.length, 98);
   for (const id of ORIGINAL_ARTWORK_IDS) {
     assert.ok(artworkIds.includes(id), `missing original artwork ${id}`);
   }
