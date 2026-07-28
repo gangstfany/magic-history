@@ -29,6 +29,12 @@ const RELEASE_CLASSES = new Set([
   'institutionalEducational',
   'restricted',
 ]);
+const EXPECTED_RELEASE_CLASS_DISTRIBUTION = {
+  open: 99,
+  noncommercial: 2,
+  institutionalEducational: 2,
+  restricted: 0,
+};
 const OPEN_LICENSES = new Set([
   'CC BY 2.0',
   'CC BY 4.0',
@@ -416,6 +422,20 @@ function assertReleaseReady(audit) {
   );
 }
 
+function assertReleaseClassDistribution(audit) {
+  const distribution = Object.fromEntries(
+    [...RELEASE_CLASSES].map((releaseClass) => [releaseClass, 0]),
+  );
+  Object.values(audit).forEach(({ releaseClass }) => {
+    distribution[releaseClass] += 1;
+  });
+  assert.deepEqual(
+    distribution,
+    EXPECTED_RELEASE_CLASS_DISTRIBUTION,
+    'U3 release class distribution',
+  );
+}
+
 test('U3 ledger parser rejects malformed rows, HTTP, duplicates, and Commons mismatches', () => {
   const row = '| 48 | `ap48-catacomb-priscilla` | greek-chapel | Greek Chapel | [direct image](https://example.com/image.jpg) | [Example](https://example.com/source) | Example institution | [Public domain](https://creativecommons.org/publicdomain/mark/1.0/) |';
   const table = [
@@ -698,6 +718,21 @@ test('U3 rights validator rejects credit, schema, URL, and release downgrades', 
 
 test('U3 release readiness rejects every restricted media view', async () => {
   assertReleaseReady(await readJson(RIGHTS_URL));
+});
+
+test('U3 release class distribution is exactly 99 open, 2 noncommercial, 2 institutional, and 0 restricted', async () => {
+  const audit = await readJson(RIGHTS_URL);
+  assertReleaseClassDistribution(audit);
+
+  const candidate = structuredClone(audit);
+  const openKey = Object.keys(candidate)
+    .find((key) => candidate[key].releaseClass === 'open');
+  assert.ok(openKey, 'expected at least one open media view');
+  candidate[openKey].releaseClass = 'noncommercial';
+  assert.throws(
+    () => assertReleaseClassDistribution(candidate),
+    /U3 release class distribution/,
+  );
 });
 
 test('U3 exact AP55 and AP97 OER replacements are noncommercial and release-ready', async () => {

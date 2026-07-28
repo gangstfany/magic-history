@@ -130,8 +130,6 @@ const EXPECTED_NOTES_REFERENCES = [
   'APAH notes.pdf, p. 29',
 ];
 
-const UNFINISHED_VALUE = /\b(?:tbd|todo|placeholder|n\/a|not available)\b|待补|待定|占位/i;
-
 function parseJsonBlock(html, id) {
   const match = html.match(new RegExp(
     `<script id="${id}" type="application/json">([\\s\\S]*?)<\\/script>`,
@@ -200,60 +198,16 @@ function splitLedgerRow(line) {
   return line.split('|').slice(1, -1).map((cell) => cell.trim());
 }
 
-function parseLedger(markdown, contract = {}) {
-  const rows = markdown
+function parseLedger(markdown) {
+  return markdown
     .split('\n')
     .filter((line) => /^\|\s*\d+\s*\|/.test(line))
     .map(splitLedgerRow);
-
-  if (contract.header) {
-    const headerLine = markdown
-      .split('\n')
-      .find((line) => line.startsWith('| AP # |'));
-    assert.ok(headerLine, 'missing exact ledger header');
-    assert.deepEqual(splitLedgerRow(headerLine), contract.header);
-  }
-
-  if (contract.cellCount) {
-    rows.forEach((cells, index) => {
-      assert.equal(
-        cells.length,
-        contract.cellCount,
-        `ledger row ${index + 1} must have exactly ${contract.cellCount} cells`,
-      );
-    });
-  }
-
-  if (contract.uniqueKey) {
-    const seen = new Set();
-    rows.forEach((cells, index) => {
-      const key = contract.uniqueKey(cells);
-      assert.ok(key, `ledger row ${index + 1} has an empty identity`);
-      assert.ok(!seen.has(key), `duplicate ledger identity ${key}`);
-      seen.add(key);
-    });
-  }
-
-
-  return rows;
 }
 
 function markdownLinkUrl(cell) {
   return cell.match(/\]\((https:\/\/.*)\)$/)?.[1] ?? '';
 }
-
-function markdownLink(cell) {
-  const match = cell.match(/^\[([^\]]+)\]\((https:\/\/[^)]+)\)$/);
-  assert.ok(match, `expected one HTTPS Markdown link, received: ${cell}`);
-  return { label: match[1], url: match[2] };
-}
-
-function assertFinishedString(value, label) {
-  assert.equal(typeof value, 'string', `${label} must be a string`);
-  assert.ok(value.trim().length > 0, `${label} must not be blank`);
-  assert.doesNotMatch(value, UNFINISHED_VALUE, `${label} is unfinished`);
-}
-
 
 test('live Unit 2 remains the exact AP 12–47 sequence', async () => {
   const { artworks } = await loadActualData();
