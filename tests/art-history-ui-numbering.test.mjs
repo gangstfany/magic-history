@@ -634,7 +634,12 @@ test('detail instruction explains the English hierarchy without a culture color 
 
 test('filterWorks combines Unit, culture, exact filters, and bilingual free search', async () => {
   const html = await loadHtml();
-  const { normalize, filterWorks } = loadPureFunctions(html, ['normalize', 'filterWorks']);
+  const { normalize, filterWorks } = loadPureFunctions(
+    html,
+    ['normalize', 'filterWorks'],
+    ['const TRADITION_LABELS =', 'const MAP_REGIONS ='],
+  );
+  const u1Works = parseArtworkData(html).filter(({ unit }) => unit === 1);
   const works = [
     {
       id: 'white-temple', unit: 2, culture: 'ancientNearEast',
@@ -671,6 +676,36 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
     filterWorks(works, { unit: '2', culture: 'all', period: 'Sumerian', workType: 'temple complex', search: 'Sumerian' })
       .map((work) => work.id),
     ['white-temple'],
+  );
+  assert.deepEqual(
+    filterWorks(u1Works, { unit: '1', culture: 'all', period: '', workType: '', search: 'East Asia' })
+      .map(({ apNumber }) => apNumber),
+    [7],
+  );
+  assert.deepEqual(
+    filterWorks(u1Works, { unit: '1', culture: 'all', period: '', workType: '', search: '4200' })
+      .map(({ apNumber }) => apNumber),
+    [5],
+  );
+  assert.deepEqual(
+    filterWorks(u1Works, { unit: '1', culture: 'all', period: '', workType: '', search: 'Sandstone' })
+      .map(({ apNumber }) => apNumber),
+    [6, 8],
+  );
+  assert.deepEqual(
+    filterWorks(u1Works, { unit: '1', culture: 'all', period: '', workType: '', search: 'megalithic monument' })
+      .map(({ apNumber }) => apNumber),
+    [8],
+  );
+  assert.deepEqual(
+    filterWorks(u1Works, { unit: '1', culture: 'all', period: '', workType: '', search: 'Liangzhu' })
+      .map(({ apNumber }) => apNumber),
+    [7],
+  );
+  assert.deepEqual(
+    filterWorks(u1Works, { unit: '1', culture: 'all', period: '', workType: '', search: '良渚' })
+      .map(({ apNumber }) => apNumber),
+    [7],
   );
 });
 

@@ -446,7 +446,7 @@
   "ap2-great-hall-bulls":{"creatorOrInstitution":"Eline13Viki+; Lascaux II","licenseName":"CC0 1.0 Universal","licenseUrl":"https://creativecommons.org/publicdomain/zero/1.0/"},
   "ap3-camelid-sacrum-canine":{"creatorOrInstitution":"Mariano Bárcena illustration / Smarthistory–LibreTexts","licenseName":"CC BY-NC-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-nc-sa/4.0/"},
   "ap4-running-horned-woman":{"creatorOrInstitution":"Unrecorded artist; Smarthistory","licenseName":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0/"},
-  "ap5-beaker-ibex-motifs":{"creatorOrInstitution":"Marie-Lan Nguyen / Wikimedia Commons; Louvre Museum, Sb 3174","licenseName":"CC BY 2.5","licenseUrl":"https://creativecommons.org/licenses/by/2.5/"},
+  "ap5-beaker-ibex-motifs":{"creatorOrInstitution":"© Marie-Lan Nguyen / Wikimedia Commons; Louvre Museum, Sb 3174","licenseName":"CC BY 2.5","licenseUrl":"https://creativecommons.org/licenses/by/2.5/"},
   "ap6-anthropomorphic-stele":{"creatorOrInstitution":"Wolfgang Sauber; National Museum, Riyadh","licenseName":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0/"},
   "ap7-jade-cong":{"creatorOrInstitution":"Gary Lee Todd; Freer-Sackler Galleries, Smithsonian","licenseName":"CC0 1.0 Universal","licenseUrl":"https://creativecommons.org/publicdomain/zero/1.0/"},
   "ap8-stonehenge":[{"creatorOrInstitution":"Royal Air Force; English Heritage source","licenseName":"Public domain (UK Government photograph)","licenseUrl":"https://commons.wikimedia.org/wiki/Template:PD-UKGov"},{"creatorOrInstitution":"Ion Tichy; Stonehenge, Wiltshire","licenseName":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0/"}],
@@ -632,12 +632,21 @@
         if (filters.period && work.period !== filters.period) return false;
         if (filters.workType && work.workType !== filters.workType) return false;
         if (!query) return true;
+        const region = MAP_REGIONS[work.region];
+        const tradition = TRADITION_LABELS[work.culture];
         const searchable = [
           work.titleEn,
           work.titleZh,
           work.siteName,
           work.artistCulture,
+          work.region,
+          region?.nameEn,
           work.period,
+          work.date,
+          work.medium,
+          work.workType,
+          tradition?.labelEn,
+          tradition?.labelZh,
           ...(work.keywords || [])
         ]
           .map(normalize).join(' ');
