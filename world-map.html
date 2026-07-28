@@ -2,6 +2,9 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<!-- 缺了这一行,手机直接打开本页会按 980px 虚拟宽度渲染、整页缩到看不清
+     (嵌在首页 iframe 里时不受影响,所以一直没被发现) -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AP World History 世界地图 视觉改进试做版5</title>
 <style>
 :root {
@@ -95,6 +98,13 @@ h1 .en { color: var(--accent); }
   color: var(--ink); background: var(--card); font-size: 13px; font-weight: 600;
 }
 .map-toolbar select { min-width: 168px; }
+/* 主题是多选药丸(时期是单选下拉),药丸行与下拉底部对齐 */
+.mt-cats { display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; align-items: center; }
+.mt-cat { display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; user-select: none; transition: opacity .15s ease, border-color .15s ease; }
+.mt-cat:hover { border-color: var(--ink-soft); }
+.mt-cat:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.mt-cat .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.mt-cat[aria-pressed="false"] { opacity: 0.4; }
 .mt-search { position: relative; display: flex; align-items: center; }
 .mt-search input { width: 232px; max-width: 52vw; padding-right: 34px; }
 .mt-search input::placeholder { color: #9b9382; font-weight: 500; }
@@ -253,7 +263,7 @@ h1 .en { color: var(--accent); }
 
 <div class="map-toolbar" id="mapToolbar" role="group" aria-label="筛选历史事件">
   <label class="mt-field">时期<select id="periodFilter" aria-label="按时期筛选"></select></label>
-  <label class="mt-field">主题<select id="themeFilter" aria-label="按主题筛选"></select></label>
+  <div class="mt-field mt-field-cats">主题<div class="mt-cats" id="mtCats" role="group" aria-label="按主题筛选(可多选)"></div></div>
   <label class="mt-field mt-field-search">搜索
     <span class="mt-search">
       <input type="search" id="mapSearch" placeholder="地点 / 事件 / 关键词" aria-label="搜索历史地点与事件" autocomplete="off">
@@ -2381,7 +2391,7 @@ h1 .en { color: var(--accent); }
     const searchInput = document.getElementById('mapSearch');
     const clearBtn = document.getElementById('mtClear');
     const periodSel = document.getElementById('periodFilter');
-    const themeSel = document.getElementById('themeFilter');
+    const catsBox = document.getElementById('mtCats');
     const countBox = document.getElementById('mtCount');
 
     // ---- AP World 四个时期。Unit 推不出来(U1/U2 共用 1200–1450、U3/U4 共用 1450–1750…),
@@ -2434,7 +2444,8 @@ h1 .en { color: var(--accent); }
         icon: head.querySelector('.picon') ? head.querySelector('.picon').textContent.trim() : '',
       });
     });
-    let activeCat = '';       // '' = 全部主题(下拉是单选,不再是多选药丸)
+    const allCats = new Set(cats.map(c => c.abbr));
+    let activeCats = new Set(allCats);   // 主题是多选药丸:默认全选,取消勾选就减掉
     let activePeriod = '';    // '' = 全部时期
     let query = '';
     let tokens = [];          // query 按空格切出来的词,全部命中才算命中
@@ -2450,10 +2461,10 @@ h1 .en { color: var(--accent); }
       const p = PERIODS.find(x => x.id === activePeriod);
       return p ? inPeriod(it, p) : true;
     };
-    const eventPass = it => (!activeCat || it.catAbbr === activeCat) && matchesPeriod(it) && matchesQuery(it);
+    const eventPass = it => activeCats.has(it.catAbbr) && matchesPeriod(it) && matchesQuery(it);
     const pinGroups = () => Array.from(svg.querySelectorAll('.pin-group'));
     const pinNum = g => { const t = g.querySelector('text'); return t ? t.textContent.trim() : ''; };
-    const filterActive = () => tokens.length > 0 || !!activeCat || !!activePeriod;
+    const filterActive = () => tokens.length > 0 || activeCats.size < allCats.size || !!activePeriod;
     // 只更新内部状态,不回写输入框(用户正在里面打字)
     function takeQuery(raw) { query = norm(raw); tokens = query.split(/\s+/).filter(Boolean); }
 
@@ -2544,12 +2555,22 @@ h1 .en { color: var(--accent); }
     });
 
     function setQuery(q) { takeQuery(q); if (searchInput) searchInput.value = q; apply(); }
-    function setCat(abbr) { activeCat = abbr || ''; if (themeSel) themeSel.value = activeCat; apply(); }
+    function toggleCat(abbr) {
+      if (activeCats.has(abbr)) activeCats.delete(abbr); else activeCats.add(abbr);
+      if (activeCats.size === 0) activeCats = new Set(allCats);  // 一个都不选 = 视为全选
+      syncPills(); apply();
+      return new Set(activeCats);                                // 首页工具栏据此回刷自己的药丸
+    }
+    function syncPills() {
+      if (!catsBox) return;
+      catsBox.querySelectorAll('.mt-cat').forEach(b =>
+        b.setAttribute('aria-pressed', activeCats.has(b.dataset.cat) ? 'true' : 'false'));
+    }
     function setPeriod(id) { activePeriod = id || ''; if (periodSel) periodSel.value = activePeriod; apply(); }
     function reset() {
       takeQuery(''); if (searchInput) searchInput.value = '';
-      activeCat = ''; activePeriod = '';
-      if (themeSel) themeSel.value = ''; if (periodSel) periodSel.value = '';
+      activeCats = new Set(allCats); activePeriod = '';
+      syncPills(); if (periodSel) periodSel.value = '';
       apply();
     }
 
@@ -2570,12 +2591,19 @@ h1 .en { color: var(--accent); }
     }
     const periodOptions = [{ value: '', label: `全部时期 (${totalEvents})` }]
       .concat(PERIODS.map(p => ({ value: p.id, label: `${p.label} (${periodCount(p)})` })));
-    const themeOptions = [{ value: '', label: `全部主题 (${totalEvents})` }]
-      .concat(cats.map(c => ({ value: c.abbr, label: `${c.full} (${catCount(c.abbr)})` })));
+
     fillSelect(periodSel, periodOptions);
-    fillSelect(themeSel, themeOptions);
     if (periodSel) periodSel.addEventListener('change', () => setPeriod(periodSel.value));
-    if (themeSel) themeSel.addEventListener('change', () => setCat(themeSel.value));
+    // 主题药丸:多选,点一下切换开关
+    if (catsBox) cats.forEach(c => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'mt-cat'; btn.dataset.cat = c.abbr;
+      btn.setAttribute('aria-pressed', 'true');
+      btn.title = `${c.full} · ${catCount(c.abbr)} 条`;
+      btn.innerHTML = `<span class="dot" style="background:${c.color}"></span>${c.full}`;
+      btn.addEventListener('click', () => toggleCat(c.abbr));
+      catsBox.appendChild(btn);
+    });
     if (searchInput) { let t; searchInput.addEventListener('input', () => { takeQuery(searchInput.value); clearTimeout(t); t = setTimeout(apply, 120); }); }
     if (clearBtn) clearBtn.addEventListener('click', () => { setQuery(''); if (searchInput) searchInput.focus(); });
 
@@ -2583,9 +2611,10 @@ h1 .en { color: var(--accent); }
     window.__mapFilter = {
       // 首页直接拿这两组选项去铺自己的下拉,选项文案和计数只有一处真源(这里)
       getPeriodOptions: () => periodOptions.slice(),
-      getThemeOptions: () => themeOptions.slice(),
-      getState: () => ({ query, cat: activeCat, period: activePeriod }),
-      setQuery, setCat, setPeriod, reset, openHit,
+      getCats: () => cats.map(c => ({ abbr: c.abbr, full: c.full, color: c.color, count: catCount(c.abbr) })),
+      getActiveCats: () => new Set(activeCats),
+      getState: () => ({ query, cats: new Set(activeCats), period: activePeriod }),
+      setQuery, toggleCat, setPeriod, reset, openHit,
       onCountChange: fn => { onCountChange = fn; },
     };
   })();

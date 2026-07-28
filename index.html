@@ -181,6 +181,13 @@ nav.topnav {
   color: var(--ink); background: var(--card); font-size: 13px; font-weight: 600;
 }
 .map-toolbar-host select { min-width: 168px; }
+/* 主题是多选药丸(时期是单选下拉),药丸行与下拉底部对齐 */
+.mth-cats { display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; align-items: center; }
+.mth-cat { display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; user-select: none; transition: opacity .15s ease, border-color .15s ease; }
+.mth-cat:hover { border-color: var(--ink-soft); }
+.mth-cat:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.mth-cat .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.mth-cat[aria-pressed="false"] { opacity: 0.4; }
 .mth-search { position: relative; display: flex; align-items: center; }
 .mth-search input { width: 232px; max-width: 46vw; padding-right: 34px; }
 .mth-search input::placeholder { color: #9b9382; font-weight: 500; }
@@ -401,7 +408,7 @@ nav.topnav {
         <!-- 满宽工具栏:搜索 + 主题筛选,驱动 iframe 内地图(由 JS 从地图的 __mapFilter 建起) -->
         <div class="map-toolbar-host" id="mapToolbarHost" role="group" aria-label="筛选历史事件" hidden>
           <label class="mth-field">时期<select id="hostPeriod" aria-label="按时期筛选"></select></label>
-          <label class="mth-field">主题<select id="hostTheme" aria-label="按主题筛选"></select></label>
+          <div class="mth-field mth-field-cats">主题<div class="mth-cats" id="hostCats" role="group" aria-label="按主题筛选(可多选)"></div></div>
           <label class="mth-field mth-field-search">搜索
             <span class="mth-search">
               <input type="search" id="hostSearch" placeholder="地点 / 事件 / 关键词" aria-label="搜索历史地点与事件" autocomplete="off">
@@ -718,7 +725,7 @@ nav.topnav {
     const searchInput = document.getElementById('hostSearch');
     const clearBtn = document.getElementById('hostClear');
     const periodSel = document.getElementById('hostPeriod');
-    const themeSel = document.getElementById('hostTheme');
+    const catsBox = document.getElementById('hostCats');
     const countBox = document.getElementById('hostCount');
 
     // 选项文案和每项的条数都由地图那边给,这边不重算一遍 —— 只有一处真源
@@ -727,7 +734,22 @@ nav.topnav {
       opts.forEach(o => { const el = document.createElement('option'); el.value = o.value; el.textContent = o.label; sel.appendChild(el); });
     };
     fill(periodSel, api.getPeriodOptions());
-    fill(themeSel, api.getThemeOptions());
+    // 主题药丸:多选。重建而非追加,免得 iframe 重载后越堆越多
+    catsBox.innerHTML = '';
+    api.getCats().forEach(c => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'mth-cat'; btn.dataset.cat = c.abbr;
+      btn.setAttribute('aria-pressed', 'true');
+      btn.title = `${c.full} · ${c.count} 条`;
+      btn.innerHTML = `<span class="dot" style="background:${c.color}"></span>${c.full}`;
+      btn.addEventListener('click', () => {
+        if (!hostApi) return;
+        const active = hostApi.toggleCat(c.abbr);
+        catsBox.querySelectorAll('.mth-cat').forEach(b =>
+          b.setAttribute('aria-pressed', active.has(b.dataset.cat) ? 'true' : 'false'));
+      });
+      catsBox.appendChild(btn);
+    });
 
     if (!hostStaticBound) {
       hostStaticBound = true;
@@ -742,11 +764,10 @@ nav.topnav {
         searchInput.focus();
       });
       periodSel.addEventListener('change', () => hostApi && hostApi.setPeriod(periodSel.value));
-      themeSel.addEventListener('change', () => hostApi && hostApi.setCat(themeSel.value));
     }
     // 地图重载后原来的筛选状态已经没了,这边的控件一起复位,免得界面显示"Period 2"但地图是全量
     searchInput.value = ''; clearBtn.hidden = true; countBox.textContent = '';
-    periodSel.value = ''; themeSel.value = '';
+    periodSel.value = '';
     // 地图那边一改筛选就重铺结果列表,这边跟着把它镜像到右侧事件面板;
     // 同时把两个下拉回同步到地图的真实状态 —— 状态若被程序改动(如 reset),控件不会显示成过期值。
     // 搜索框不在此列:它的值是用户正在敲的原文,而状态里存的是规范化后的小写版本,回写会把人家的输入改掉。
@@ -754,7 +775,8 @@ nav.topnav {
       countBox.textContent = text || '';
       const st = api.getState();
       if (periodSel.value !== st.period) periodSel.value = st.period;
-      if (themeSel.value !== st.cat) themeSel.value = st.cat;
+      catsBox.querySelectorAll('.mth-cat').forEach(b =>
+        b.setAttribute('aria-pressed', st.cats.has(b.dataset.cat) ? 'true' : 'false'));
       syncHomeEvents();
     });
     updateHostToolbarVisibility();
