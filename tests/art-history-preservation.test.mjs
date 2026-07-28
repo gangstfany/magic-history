@@ -11,6 +11,18 @@ const U1_SOURCE_LEDGER_PATH = new URL(
   '../docs/data-sources/u1-source-ledger.md',
   import.meta.url,
 );
+const U3_SOURCE_LEDGER_PATH = new URL(
+  '../docs/data-sources/u3-source-ledger.md',
+  import.meta.url,
+);
+const U3_CANONICAL_PATH = new URL(
+  './fixtures/u3-canonical.json',
+  import.meta.url,
+);
+const U3_MANIFEST_PATH = new URL(
+  '../data/ap-art-history-unit-3-manifest.json',
+  import.meta.url,
+);
 const UNAFFECTED_FIXTURE_PATH = new URL(
   './fixtures/u2-unaffected-legacy.json',
   import.meta.url,
@@ -130,6 +142,59 @@ const EXPECTED_NOTES_REFERENCES = [
   'APAH notes.pdf, p. 29',
 ];
 
+const U3_LEDGER_HEADER = [
+  'AP #',
+  'Artwork id',
+  'View id',
+  'View label',
+  'Image',
+  'Source page',
+  'Creator/institution',
+  'License/rights',
+];
+
+const U3_REQUIRED_ARTWORK_FIELDS = [
+  'id',
+  'apNumber',
+  'unit',
+  'region',
+  'culture',
+  'traditionGroup',
+  'period',
+  'titleEn',
+  'titleZh',
+  'artistCulture',
+  'siteName',
+  'coordinates',
+  'date',
+  'medium',
+  'workType',
+  'function',
+  'form',
+  'content',
+  'context',
+  'recognitionAnchors',
+  'comparisonIds',
+  'keywords',
+  'images',
+].sort();
+
+const U3_TRADITION_GROUPS = new Set([
+  'lateAntiqueByzantine',
+  'medievalIslamic',
+  'renaissanceMannerism',
+  'baroqueColonial',
+]);
+
+const UNFINISHED_VALUE = /\b(?:tbd|todo|placeholder|n\/a|not available)\b|待补|待定|占位/i;
+
+function expectedU3TraditionGroup(apNumber) {
+  if (apNumber <= 52) return 'lateAntiqueByzantine';
+  if (apNumber <= 65 || apNumber === 84) return 'medievalIslamic';
+  if (apNumber <= 80 || apNumber === 83) return 'renaissanceMannerism';
+  return 'baroqueColonial';
+}
+
 function parseJsonBlock(html, id) {
   const match = html.match(new RegExp(
     `<script id="${id}" type="application/json">([\\s\\S]*?)<\\/script>`,
@@ -193,15 +258,89 @@ async function assertFixtureMatches(path, expectedIds) {
   );
 }
 
-function parseLedger(markdown) {
-  return markdown
+function splitLedgerRow(line) {
+  assert.match(line, /^\|.*\|$/, `malformed ledger row: ${line}`);
+  return line.split('|').slice(1, -1).map((cell) => cell.trim());
+}
+
+function parseLedger(markdown, contract = {}) {
+  const rows = markdown
     .split('\n')
     .filter((line) => /^\|\s*\d+\s*\|/.test(line))
-    .map((line) => line.split('|').slice(1, -1).map((cell) => cell.trim()));
+    .map(splitLedgerRow);
+
+  if (contract.header) {
+    const headerLine = markdown
+      .split('\n')
+      .find((line) => line.startsWith('| AP # |'));
+    assert.ok(headerLine, 'missing exact ledger header');
+    assert.deepEqual(splitLedgerRow(headerLine), contract.header);
+  }
+
+  if (contract.cellCount) {
+    rows.forEach((cells, index) => {
+      assert.equal(
+        cells.length,
+        contract.cellCount,
+        `ledger row ${index + 1} must have exactly ${contract.cellCount} cells`,
+      );
+    });
+  }
+
+  if (contract.uniqueKey) {
+    const seen = new Set();
+    rows.forEach((cells, index) => {
+      const key = contract.uniqueKey(cells);
+      assert.ok(key, `ledger row ${index + 1} has an empty identity`);
+      assert.ok(!seen.has(key), `duplicate ledger identity ${key}`);
+      seen.add(key);
+    });
+  }
+
+  return rows;
 }
 
 function markdownLinkUrl(cell) {
   return cell.match(/\]\((https:\/\/.*)\)$/)?.[1] ?? '';
+}
+
+function markdownLink(cell) {
+  const match = cell.match(/^\[([^\]]+)\]\((https:\/\/[^)]+)\)$/);
+  assert.ok(match, `expected one HTTPS Markdown link, received: ${cell}`);
+  return { label: match[1], url: match[2] };
+}
+
+function assertFinishedString(value, label) {
+  assert.equal(typeof value, 'string', `${label} must be a string`);
+  assert.ok(value.trim().length > 0, `${label} must not be blank`);
+  assert.doesNotMatch(value, UNFINISHED_VALUE, `${label} is unfinished`);
+}
+
+function projectCanonicalMedia(fixture) {
+  return fixture.artworks.flatMap((work) => work.images.map((image) => ({
+    apNumber: work.apNumber,
+    artworkId: work.id,
+    viewId: image.id,
+    viewLabel: image.label,
+    imageUrl: image.imageUrl,
+    sourceName: image.imageSourceName,
+    sourceUrl: image.imageSourceUrl,
+  })));
+}
+
+function projectCanonicalCredits(fixture) {
+  return fixture.artworks.flatMap((work) => {
+    const credits = Array.isArray(fixture.credits[work.id])
+      ? fixture.credits[work.id]
+      : [fixture.credits[work.id]];
+    return credits.map((credit, index) => ({
+      artworkId: work.id,
+      viewId: work.images[index].id,
+      creatorOrInstitution: credit.creatorOrInstitution,
+      licenseName: credit.licenseName,
+      licenseUrl: credit.licenseUrl,
+    }));
+  });
 }
 
 test('live Unit 2 remains the exact AP 12–47 sequence', async () => {
@@ -346,4 +485,235 @@ test('U1 source ledger matches all 11 records and 12 media views', async () => {
     stonehengeRows.map(([, view]) => view),
     ['Aerial overview', 'Ground-level view'],
   );
+});
+
+test('strict ledger parser rejects missing cells, extra cells, and duplicate view identities', () => {
+  const row = '| 48 | `ap48-catacomb-priscilla` | greek-chapel | Greek Chapel | [direct image](https://example.com/image.jpg) | [Example](https://example.com/source) | Example institution | [Public domain](https://creativecommons.org/publicdomain/mark/1.0/) |';
+  const options = {
+    header: U3_LEDGER_HEADER,
+    cellCount: 8,
+    uniqueKey: ([, artworkId, viewId]) => `${artworkId}\u0000${viewId}`,
+  };
+  const table = [
+    `| ${U3_LEDGER_HEADER.join(' | ')} |`,
+    '| ---: | --- | --- | --- | --- | --- | --- | --- |',
+  ];
+
+  assert.throws(
+    () => parseLedger([...table, row.replace(' | Example institution', '')].join('\n'), options),
+    /exactly 8 cells/,
+  );
+  assert.throws(
+    () => parseLedger([...table, row.replace(' | Example institution', ' | unexpected | Example institution')].join('\n'), options),
+    /exactly 8 cells/,
+  );
+  assert.throws(
+    () => parseLedger([...table, row, row].join('\n'), options),
+    /duplicate ledger identity/,
+  );
+});
+
+test('U3 source ledger matches 51 canonical works and 103 media views', async () => {
+  const [fixture, manifest, ledger, { artworks: liveArtworks }] = await Promise.all([
+    loadFixture(U3_CANONICAL_PATH),
+    loadFixture(U3_MANIFEST_PATH),
+    readFile(U3_SOURCE_LEDGER_PATH, 'utf8'),
+    loadActualData(),
+  ]);
+  const manifestEntries = Object.entries(manifest);
+  const expectedIds = manifestEntries.map(([, work]) => work.id);
+  const expectedViewCount = manifestEntries.reduce(
+    (sum, [, work]) => sum + work.requiredViewIds.length,
+    0,
+  );
+
+  assert.deepEqual(Object.keys(fixture).sort(), ['artworks', 'credits']);
+  assert.equal(fixture.artworks.length, 51);
+  assert.equal(expectedViewCount, 103);
+  assert.deepEqual(
+    fixture.artworks.map(({ apNumber }) => apNumber),
+    Array.from({ length: 51 }, (_, index) => index + 48),
+  );
+  assert.deepEqual(fixture.artworks.map(({ id }) => id), expectedIds);
+
+  const allResolvableIds = new Set([
+    ...liveArtworks.map(({ id }) => id),
+    ...expectedIds,
+  ]);
+  const broadProvenanceIds = new Set([
+    'ap50-vienna-genesis',
+    'ap53-merovingian-fibulae',
+    'ap59-bayeux-tapestry',
+  ]);
+
+  fixture.artworks.forEach((work, index) => {
+    const manifestWork = manifestEntries[index][1];
+    const allowedFields = work.provenanceQualifier === undefined
+      ? U3_REQUIRED_ARTWORK_FIELDS
+      : [...U3_REQUIRED_ARTWORK_FIELDS, 'provenanceQualifier'].sort();
+    assert.deepEqual(
+      Object.keys(work).sort(),
+      allowedFields,
+      `${work.id} canonical field schema`,
+    );
+    assert.equal(work.unit, 3);
+    assert.equal(work.apNumber, index + 48);
+    assert.equal(work.id, manifestWork.id);
+    assert.equal(work.titleEn, manifestWork.titleEn);
+    assert.equal(work.region, manifestWork.region);
+    assert.equal(work.siteName, manifestWork.siteName);
+
+    for (const key of [
+      'id',
+      'region',
+      'culture',
+      'traditionGroup',
+      'period',
+      'titleEn',
+      'titleZh',
+      'artistCulture',
+      'siteName',
+      'date',
+      'medium',
+      'workType',
+      'function',
+      'form',
+      'content',
+      'context',
+    ]) {
+      assertFinishedString(work[key], `${work.id}.${key}`);
+    }
+    if (broadProvenanceIds.has(work.id)) {
+      assertFinishedString(
+        work.provenanceQualifier,
+        `${work.id}.provenanceQualifier`,
+      );
+    }
+    assert.ok(U3_TRADITION_GROUPS.has(work.traditionGroup));
+    assert.equal(
+      work.traditionGroup,
+      expectedU3TraditionGroup(work.apNumber),
+      `${work.id}: broad tradition grouping`,
+    );
+    assert.ok(!U3_TRADITION_GROUPS.has(work.culture));
+    assert.deepEqual(Object.keys(work.coordinates).sort(), ['x', 'y']);
+    assert.ok(Number.isFinite(work.coordinates.x));
+    assert.ok(Number.isFinite(work.coordinates.y));
+    assert.ok(work.coordinates.x >= 0 && work.coordinates.x <= 1600);
+    assert.ok(work.coordinates.y >= 0 && work.coordinates.y <= 800);
+
+    for (const [key, minimum] of [
+      ['recognitionAnchors', 2],
+      ['comparisonIds', 1],
+      ['keywords', 3],
+    ]) {
+      assert.ok(Array.isArray(work[key]), `${work.id}.${key} must be an array`);
+      assert.ok(work[key].length >= minimum, `${work.id}.${key} minimum`);
+      work[key].forEach((value, itemIndex) => {
+        assertFinishedString(value, `${work.id}.${key}[${itemIndex}]`);
+      });
+    }
+    work.comparisonIds.forEach((id) => {
+      assert.ok(allResolvableIds.has(id), `${work.id}: unresolved comparison ${id}`);
+    });
+
+    assert.deepEqual(
+      work.images.map(({ id }) => id),
+      manifestWork.requiredViewIds,
+      `${work.id}: exact manifest view order`,
+    );
+    const imageAlts = new Set();
+    work.images.forEach((image) => {
+      assert.deepEqual(
+        Object.keys(image).sort(),
+        [
+          'id',
+          'imageAlt',
+          'imageSourceName',
+          'imageSourceUrl',
+          'imageUrl',
+          'label',
+        ],
+      );
+      for (const key of [
+        'id',
+        'label',
+        'imageUrl',
+        'imageAlt',
+        'imageSourceName',
+        'imageSourceUrl',
+      ]) {
+        assertFinishedString(image[key], `${work.id}.${image.id}.${key}`);
+      }
+      assert.match(image.imageUrl, /^https:\/\//);
+      assert.match(image.imageSourceUrl, /^https:\/\//);
+      assert.ok(
+        !imageAlts.has(image.imageAlt),
+        `${work.id}: imageAlt must be view-specific`,
+      );
+      imageAlts.add(image.imageAlt);
+    });
+  });
+
+  assert.equal(projectCanonicalMedia(fixture).length, 103);
+  assert.deepEqual(Object.keys(fixture.credits), expectedIds);
+  fixture.artworks.forEach((work) => {
+    const credit = fixture.credits[work.id];
+    if (work.images.length === 1) {
+      assert.ok(!Array.isArray(credit), `${work.id}: single-view credit object`);
+    } else {
+      assert.ok(Array.isArray(credit), `${work.id}: multi-view credit array`);
+      assert.equal(credit.length, work.images.length);
+    }
+  });
+
+  const rows = parseLedger(ledger, {
+    header: U3_LEDGER_HEADER,
+    cellCount: 8,
+    uniqueKey: ([, artworkId, viewId]) => `${artworkId}\u0000${viewId}`,
+  });
+  assert.equal(rows.length, 103);
+  const ledgerMedia = rows.map((cells) => {
+    const [
+      apNumber,
+      artworkId,
+      viewId,
+      viewLabel,
+      imageCell,
+      sourceCell,
+    ] = cells;
+    const image = markdownLink(imageCell);
+    const source = markdownLink(sourceCell);
+    return {
+      apNumber: Number(apNumber),
+      artworkId: artworkId.replace(/^`|`$/g, ''),
+      viewId,
+      viewLabel,
+      imageUrl: image.url,
+      sourceName: source.label,
+      sourceUrl: source.url,
+    };
+  });
+  assert.deepEqual(ledgerMedia, projectCanonicalMedia(fixture));
+
+  const ledgerCredits = rows.map((cells) => {
+    const [, artworkId, viewId, , , , creatorOrInstitution, licenseCell] = cells;
+    const license = markdownLink(licenseCell);
+    return {
+      artworkId: artworkId.replace(/^`|`$/g, ''),
+      viewId,
+      creatorOrInstitution,
+      licenseName: license.label,
+      licenseUrl: license.url,
+    };
+  });
+  assert.deepEqual(ledgerCredits, projectCanonicalCredits(fixture));
+  rows.forEach((cells, index) => {
+    cells.forEach((value, cellIndex) => {
+      assertFinishedString(value, `ledger row ${index + 1} cell ${cellIndex + 1}`);
+    });
+    assert.match(markdownLinkUrl(cells[4]), /^https:\/\//);
+    assert.match(markdownLinkUrl(cells[5]), /^https:\/\//);
+    assert.match(markdownLinkUrl(cells[7]), /^https:\/\//);
+  });
 });

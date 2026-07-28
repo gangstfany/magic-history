@@ -1,4 +1,29 @@
-# AP 艺术史 Unit 2（古代地中海）作品来源台账
+# AP 艺术史作品来源索引
+
+## Unit 3: Early Europe and Colonial Americas
+
+- Official AP #48–98 contract: `data/ap-art-history-unit-3-manifest.json`
+- Canonical study-and-media fixture: `tests/fixtures/u3-canonical.json`
+- Audited 51-work / 103-view image, creator, and rights ledger:
+  `docs/data-sources/u3-source-ledger.md`
+- College Board authority: current AP Art History Course and Exam Description,
+  Unit 3, Early Europe and Colonial Americas, AP #48–98
+- Local study cross-checks: `APAH notes.pdf` and
+  `Smarthistory-guide-to-AP®-Art-History-volume-two.pdf`
+
+Unit 3 records keep the exact manifest order and distinguish specific cultural
+traditions from the four broader study filters used by the map:
+`lateAntiqueByzantine`, `medievalIslamic`, `renaissanceMannerism`, and
+`baroqueColonial`. Multi-view monuments, manuscripts, altarpieces, and
+two-sided works have one audited ledger row and one credit record per required
+view.
+
+Rights are recorded at view level. Open-license and public-domain labels link
+to the stated deed; restricted institutional images instead retain the
+institution's actual access or reuse terms. In particular, the Lindisfarne
+Gospels St. Luke portrait uses an exact Penn State teaching/research surrogate
+without an open-reuse claim, the Merovingian fibulae use the Louvre collection
+terms, and the LACMA *Virgin of Guadalupe* image retains LACMA's reuse terms.
 
 ## Unit 1: Global Prehistory
 
@@ -7,6 +32,8 @@
   `docs/data-sources/u1-source-ledger.md`
 - College Board authority: current AP Art History Course and Exam Description,
   Unit 1, Global Prehistory, AP #1-11
+
+## Unit 2: Ancient Mediterranean
 
 本台账覆盖 College Board AP Art History CED 官方 Unit 2 清单的全部 36 件作品（AP 12–47），并按官方编号顺序排列。ID、官方英文标题、文化分类、图片来源、直接图片 URL 与署名许可均与 `art-history-map.html` 中的 `artwork-data` 和 `image-credit-data` 一一对应；中文学习提要参考 `APAH notes.pdf`。
 

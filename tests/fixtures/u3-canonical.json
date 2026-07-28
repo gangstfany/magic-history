@@ -1,0 +1,3332 @@
+{
+  "artworks": [
+    {
+      "id": "ap48-catacomb-priscilla",
+      "apNumber": 48,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "earlyChristianRome",
+      "traditionGroup": "lateAntiqueByzantine",
+      "period": "Late Antique Early Christian",
+      "titleEn": "Catacomb of Priscilla",
+      "titleZh": "普里西拉地下墓穴",
+      "artistCulture": "Early Christian Roman workshop",
+      "siteName": "Rome, Italy",
+      "coordinates": {
+        "x": 854,
+        "y": 260
+      },
+      "date": "c. 200–400 C.E.",
+      "medium": "Excavated tufa and fresco",
+      "workType": "Catacomb and wall painting",
+      "function": "Burial, commemoration, and Christian worship",
+      "form": "Subterranean galleries with cubicula and economical fresco cycles",
+      "content": "Orants, the Good Shepherd, and Hebrew Bible narratives frame salvation and resurrection",
+      "context": "A Roman funerary complex adapted by early Christians before and after imperial toleration",
+      "recognitionAnchors": [
+        "Orant figure with raised arms",
+        "Good Shepherd carrying a sheep"
+      ],
+      "comparisonIds": [
+        "ap47-ludovisi-battle-sarcophagus"
+      ],
+      "keywords": [
+        "catacomb",
+        "fresco",
+        "salvation"
+      ],
+      "images": [
+        {
+          "id": "greek-chapel",
+          "label": "Greek Chapel",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Catacombe%20di%20Priscilla%2C%20Rome%20-%20Fresco%20of%20a%20Christian%20Agape%20feast%20-%20Fractio%20panis%20-%20Greek%20chapel%20-%202nd%20-%204th%20century.jpg",
+          "imageAlt": "Catacomb of Priscilla — Greek Chapel (AP 48)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Catacombe%20di%20Priscilla%2C%20Rome%20-%20Fresco%20of%20a%20Christian%20Agape%20feast%20-%20Fractio%20panis%20-%20Greek%20chapel%20-%202nd%20-%204th%20century.jpg"
+        },
+        {
+          "id": "orant-fresco",
+          "label": "Orant Fresco",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Consecrated%20Virgin%2C%20praying%20with%20Orans%20position%2C%20wearing%20dalmatic%2C%20tunic%2C%20and%20veil%2C%20from%20the%20Catacomb%20of%20Priscilla%2C%203rd%20century%20AD%20cropped.jpg",
+          "imageAlt": "Catacomb of Priscilla — Orant Fresco (AP 48)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Consecrated%20Virgin%2C%20praying%20with%20Orans%20position%2C%20wearing%20dalmatic%2C%20tunic%2C%20and%20veil%2C%20from%20the%20Catacomb%20of%20Priscilla%2C%203rd%20century%20AD%20cropped.jpg"
+        },
+        {
+          "id": "good-shepherd-fresco",
+          "label": "Good Shepherd Fresco",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Good%20shepherd%2001%20small.jpg",
+          "imageAlt": "Catacomb of Priscilla — Good Shepherd Fresco (AP 48)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Good%20shepherd%2001%20small.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap49-santa-sabina",
+      "apNumber": 49,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "earlyChristianRome",
+      "traditionGroup": "lateAntiqueByzantine",
+      "period": "Late Antique Early Christian",
+      "titleEn": "Santa Sabina",
+      "titleZh": "圣萨比娜教堂",
+      "artistCulture": "Early Christian Roman architects",
+      "siteName": "Rome, Italy",
+      "coordinates": {
+        "x": 854,
+        "y": 260
+      },
+      "date": "c. 422–432 C.E.",
+      "medium": "Brick and stone with wooden roof",
+      "workType": "Basilica church",
+      "function": "Congregational Christian liturgy",
+      "form": "Axial nave, side aisles, clerestory, and timber roof organize a longitudinal procession",
+      "content": "Spolia columns and an apse focus movement toward the altar",
+      "context": "The Roman civic basilica was recast for Christian communal worship after legalization",
+      "recognitionAnchors": [
+        "Long timber-roofed nave",
+        "Clerestory above reused columns"
+      ],
+      "comparisonIds": [
+        "ap46-pantheon"
+      ],
+      "keywords": [
+        "basilica",
+        "clerestory",
+        "spolia"
+      ],
+      "images": [
+        {
+          "id": "exterior",
+          "label": "Exterior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Santa%20Sabina%20Rome.jpg",
+          "imageAlt": "Santa Sabina — Exterior (AP 49)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Santa%20Sabina%20Rome.jpg"
+        },
+        {
+          "id": "interior",
+          "label": "Interior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Santa%20Sabina%20%28Rome%29%20-%20Interno.jpg",
+          "imageAlt": "Santa Sabina — Interior (AP 49)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Santa%20Sabina%20%28Rome%29%20-%20Interno.jpg"
+        },
+        {
+          "id": "plan",
+          "label": "Plan",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Roma.%20Basilica%20di%20Santa%20Sabina%20Plattegrond%2C%20GD005416.jpg",
+          "imageAlt": "Santa Sabina — Plan (AP 49)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Roma.%20Basilica%20di%20Santa%20Sabina%20Plattegrond%2C%20GD005416.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap50-vienna-genesis",
+      "apNumber": 50,
+      "unit": 3,
+      "region": "easternMediterranean",
+      "culture": "earlyByzantineManuscript",
+      "traditionGroup": "lateAntiqueByzantine",
+      "period": "Early Byzantine",
+      "titleEn": "Rebecca and Eliezer at the Well and Jacob Wrestling the Angel, from the Vienna Genesis",
+      "titleZh": "《维也纳创世纪》中的〈利百加与以利以谢〉及〈雅各与天使摔跤〉",
+      "artistCulture": "Early Byzantine manuscript painters",
+      "siteName": "Syria or Palestine",
+      "coordinates": {
+        "x": 958,
+        "y": 322
+      },
+      "date": "Early sixth century C.E.",
+      "medium": "Tempera, gold, and silver on purple vellum",
+      "workType": "Illuminated manuscript",
+      "function": "Elite devotional reading and display",
+      "form": "Continuous narrative unfolds in stacked scenes beneath abbreviated Greek text",
+      "content": "Genesis episodes compress sequential actions into a single pictorial field",
+      "context": "Luxury purple-dyed parchment joined classical illusionism to Christian scripture",
+      "recognitionAnchors": [
+        "Purple vellum with silver script",
+        "Repeated figures create continuous narrative"
+      ],
+      "comparisonIds": [
+        "ap24-last-judgment-of-hunefer"
+      ],
+      "keywords": [
+        "manuscript",
+        "continuous narrative",
+        "purple vellum"
+      ],
+      "images": [
+        {
+          "id": "rebecca-eliezer",
+          "label": "Rebecca Eliezer",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/ViennaGenesisPict13RebeccaEliezer.jpg",
+          "imageAlt": "Rebecca and Eliezer at the Well and Jacob Wrestling the Angel, from the Vienna Genesis — Rebecca Eliezer (AP 50)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:ViennaGenesisPict13RebeccaEliezer.jpg"
+        },
+        {
+          "id": "jacob-wrestling-angel",
+          "label": "Jacob Wrestling Angel",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/ViennGenFol12vJacob.jpg",
+          "imageAlt": "Rebecca and Eliezer at the Well and Jacob Wrestling the Angel, from the Vienna Genesis — Jacob Wrestling Angel (AP 50)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:ViennGenFol12vJacob.jpg"
+        }
+      ],
+      "provenanceQualifier": "Made in Syria or Palestine; the precise workshop is not securely localized."
+    },
+    {
+      "id": "ap51-san-vitale",
+      "apNumber": 51,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "byzantineRavenna",
+      "traditionGroup": "lateAntiqueByzantine",
+      "period": "Early Byzantine",
+      "titleEn": "San Vitale",
+      "titleZh": "圣维塔莱教堂",
+      "artistCulture": "Byzantine and Ravennate workshops",
+      "siteName": "Ravenna, Italy",
+      "coordinates": {
+        "x": 853,
+        "y": 244
+      },
+      "date": "c. 526–547 C.E.",
+      "medium": "Brick, marble, and mosaic veneer",
+      "workType": "Centrally planned church",
+      "function": "Christian liturgy and imperial representation",
+      "form": "Octagonal double-shell plan creates a vertically layered, centralized interior",
+      "content": "Justinian and Theodora process with clergy and court toward Eucharistic symbols",
+      "context": "Ravenna mosaics asserted Justinianic authority during Byzantine reconquest of Italy",
+      "recognitionAnchors": [
+        "Octagonal centralized plan",
+        "Gold-ground imperial mosaic panels"
+      ],
+      "comparisonIds": [
+        "ap52-hagia-sophia"
+      ],
+      "keywords": [
+        "mosaic",
+        "Justinian",
+        "central plan"
+      ],
+      "images": [
+        {
+          "id": "exterior",
+          "label": "Exterior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Basilica%20of%20San%20Vitale%2C%20Ravenna%2C%20Italy.jpg",
+          "imageAlt": "San Vitale — Exterior (AP 51)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica%20of%20San%20Vitale%2C%20Ravenna%2C%20Italy.jpg"
+        },
+        {
+          "id": "interior",
+          "label": "Interior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/San%20Vitale%20%28Ravenna%29.jpg",
+          "imageAlt": "San Vitale — Interior (AP 51)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:San%20Vitale%20%28Ravenna%29.jpg"
+        },
+        {
+          "id": "justinian-panel",
+          "label": "Justinian Panel",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Mosaic%20of%20Justinian%20I%20-%20San%20Vitale%20-%20Ravenna%202016.jpg",
+          "imageAlt": "San Vitale — Justinian Panel (AP 51)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Mosaic%20of%20Justinian%20I%20-%20San%20Vitale%20-%20Ravenna%202016.jpg"
+        },
+        {
+          "id": "theodora-panel",
+          "label": "Theodora Panel",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Mosaic%20of%20Theodora%20-%20Basilica%20San%20Vitale%20%28Ravenna%2C%20Italy%29.jpg",
+          "imageAlt": "San Vitale — Theodora Panel (AP 51)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Mosaic%20of%20Theodora%20-%20Basilica%20San%20Vitale%20%28Ravenna%2C%20Italy%29.jpg"
+        },
+        {
+          "id": "plan",
+          "label": "Plan",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Ravenna.%20Basilica%20di%20San%20Vitale%20Grondplan%2C%20GD003293.jpg",
+          "imageAlt": "San Vitale — Plan (AP 51)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Ravenna.%20Basilica%20di%20San%20Vitale%20Grondplan%2C%20GD003293.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap52-hagia-sophia",
+      "apNumber": 52,
+      "unit": 3,
+      "region": "easternMediterranean",
+      "culture": "byzantineConstantinople",
+      "traditionGroup": "lateAntiqueByzantine",
+      "period": "Early Byzantine",
+      "titleEn": "Hagia Sophia",
+      "titleZh": "圣索菲亚大教堂",
+      "artistCulture": "Anthemius of Tralles and Isidore of Miletus",
+      "siteName": "Constantinople (Istanbul), Turkey",
+      "coordinates": {
+        "x": 944,
+        "y": 266
+      },
+      "date": "532–537 C.E.",
+      "medium": "Brick and ceramic elements with stone and mosaic veneer",
+      "workType": "Domed basilica",
+      "function": "Imperial cathedral and Orthodox liturgy",
+      "form": "Pendentives carry a vast dome above a fused centralized and longitudinal plan",
+      "content": "Light, marble revetment, and gold mosaics dematerialize the massive structure",
+      "context": "Justinian rebuilt the cathedral after the Nika revolt as an emblem of empire and faith",
+      "recognitionAnchors": [
+        "Dome seemingly suspended on pendentives",
+        "Layered arcades flooded with light"
+      ],
+      "comparisonIds": [
+        "ap46-pantheon"
+      ],
+      "keywords": [
+        "pendentive",
+        "dome",
+        "Justinian"
+      ],
+      "images": [
+        {
+          "id": "exterior",
+          "label": "Exterior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Exterior%20of%20Hagia%20Sophia-.jpg",
+          "imageAlt": "Hagia Sophia — Exterior (AP 52)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Exterior%20of%20Hagia%20Sophia-.jpg"
+        },
+        {
+          "id": "interior",
+          "label": "Interior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Hagia%20sophia%20interior.jpg",
+          "imageAlt": "Hagia Sophia — Interior (AP 52)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Hagia%20sophia%20interior.jpg"
+        },
+        {
+          "id": "plan",
+          "label": "Plan",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Aya%20Sophia%20Floor%20Plan.jpg",
+          "imageAlt": "Hagia Sophia — Plan (AP 52)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Aya%20Sophia%20Floor%20Plan.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap53-merovingian-fibulae",
+      "apNumber": 53,
+      "unit": 3,
+      "region": "france",
+      "culture": "merovingianMetalwork",
+      "traditionGroup": "medievalIslamic",
+      "period": "Early Medieval Europe",
+      "titleEn": "Merovingian looped fibulae",
+      "titleZh": "墨洛温王朝环形腓骨饰",
+      "artistCulture": "Merovingian metalworkers",
+      "siteName": "Early medieval Europe",
+      "coordinates": {
+        "x": 817,
+        "y": 230
+      },
+      "date": "Mid-sixth century C.E.",
+      "medium": "Silver gilt worked in filigree with inlays of garnet and other stones",
+      "workType": "Pair of fibulae",
+      "function": "Fastened elite clothing and signaled rank",
+      "form": "Symmetrical looped brooches combine dense filigree with cloisonné inlay",
+      "content": "Abstract animal and geometric motifs transform the surface into portable splendor",
+      "context": "Grave goods reveal mobile wealth and cross-cultural exchange after Roman rule",
+      "recognitionAnchors": [
+        "Looped silhouette with pendant terminals",
+        "Garnet cloisonné and gold filigree"
+      ],
+      "comparisonIds": [
+        "ap57-pyxis-al-mughira"
+      ],
+      "keywords": [
+        "fibula",
+        "cloisonné",
+        "portable status"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://collections.louvre.fr/media/cache/small/0000000021/0000116783/0000846601_OG.JPG",
+          "imageAlt": "Merovingian looped fibulae — Primary view (AP 53)",
+          "imageSourceName": "Musée du Louvre Collections",
+          "imageSourceUrl": "https://collections.louvre.fr/en/ark:/53355/cl010116783"
+        }
+      ],
+      "provenanceQualifier": "Made in early medieval Europe; the precise findspot and workshop are broadly attributed."
+    },
+    {
+      "id": "ap54-virgin-theotokos-saints",
+      "apNumber": 54,
+      "unit": 3,
+      "region": "easternMediterranean",
+      "culture": "byzantineSinai",
+      "traditionGroup": "medievalIslamic",
+      "period": "Early Byzantine",
+      "titleEn": "Virgin (Theotokos) and Child between Saints Theodore and George",
+      "titleZh": "圣母子与圣徒西奥多和乔治",
+      "artistCulture": "Byzantine icon painter",
+      "siteName": "Mount Sinai, Egypt",
+      "coordinates": {
+        "x": 955,
+        "y": 340
+      },
+      "date": "Sixth or early seventh century C.E.",
+      "medium": "Encaustic on wood",
+      "workType": "Icon",
+      "function": "Devotional image and intercessory focus",
+      "form": "Frontal holy figures occupy a shallow earthly zone beneath visionary angels and the hand of God",
+      "content": "The enthroned Theotokos presents Christ between warrior saints",
+      "context": "The Sinai icon survived iconoclasm and preserves encaustic modeling with hieratic frontality",
+      "recognitionAnchors": [
+        "Enthroned frontal Virgin and Child",
+        "Upward-looking angels beneath hand of God"
+      ],
+      "comparisonIds": [
+        "ap51-san-vitale"
+      ],
+      "keywords": [
+        "icon",
+        "encaustic",
+        "Theotokos"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Mary%20%26%20Child%20Icon%20Sinai%206th%20century.jpg",
+          "imageAlt": "Virgin (Theotokos) and Child between Saints Theodore and George — Primary view (AP 54)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Mary%20%26%20Child%20Icon%20Sinai%206th%20century.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap55-lindisfarne-gospels",
+      "apNumber": 55,
+      "unit": 3,
+      "region": "britishIsles",
+      "culture": "insularHibernoSaxon",
+      "traditionGroup": "medievalIslamic",
+      "period": "Early Medieval Insular",
+      "titleEn": "Lindisfarne Gospels: St. Matthew, cross-carpet page; St. Luke portrait page; St. Luke incipit page",
+      "titleZh": "《林迪斯法恩福音书》",
+      "artistCulture": "Eadfrith, bishop of Lindisfarne",
+      "siteName": "Northumbria, England",
+      "coordinates": {
+        "x": 797,
+        "y": 206
+      },
+      "date": "c. 700 C.E.",
+      "medium": "Illuminated manuscript in ink, pigments, and gold on vellum",
+      "workType": "Gospel book",
+      "function": "Liturgical display, devotion, and monastic commemoration",
+      "form": "Carpet pages, evangelist portraits, and decorated incipits fuse dense interlace with text",
+      "content": "Matthew and Luke pages translate sacred words into intricate visual meditation",
+      "context": "A Northumbrian monastery synthesized Celtic, Germanic, Mediterranean, and Christian traditions",
+      "recognitionAnchors": [
+        "Interlace cross-carpet page",
+        "Decorated initials engulf the incipit"
+      ],
+      "comparisonIds": [
+        "ap61-bibles-moralisees"
+      ],
+      "keywords": [
+        "Insular",
+        "carpet page",
+        "interlace"
+      ],
+      "images": [
+        {
+          "id": "st-matthew-cross-carpet",
+          "label": "St Matthew Cross Carpet",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/F26v.jpg",
+          "imageAlt": "Lindisfarne Gospels: St. Matthew, cross-carpet page; St. Luke portrait page; St. Luke incipit page — St Matthew Cross Carpet (AP 55)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:F26v.jpg"
+        },
+        {
+          "id": "st-luke-portrait",
+          "label": "St Luke Portrait",
+          "imageUrl": "https://digital.libraries.psu.edu/iiif/2/arthist2:113593/full/full/0/default.jpg",
+          "imageAlt": "Lindisfarne Gospels: St. Matthew, cross-carpet page; St. Luke portrait page; St. Luke incipit page — St Luke Portrait (AP 55)",
+          "imageSourceName": "Penn State Art History Visual Resources",
+          "imageSourceUrl": "https://digital.libraries.psu.edu/digital/collection/arthist2/id/113593/"
+        },
+        {
+          "id": "st-luke-incipit",
+          "label": "St Luke Incipit",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Lindisfarne%20Gospels%20folio%20139r.jpg",
+          "imageAlt": "Lindisfarne Gospels: St. Matthew, cross-carpet page; St. Luke portrait page; St. Luke incipit page — St Luke Incipit (AP 55)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Lindisfarne%20Gospels%20folio%20139r.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap56-great-mosque-cordoba",
+      "apNumber": 56,
+      "unit": 3,
+      "region": "iberianPeninsula",
+      "culture": "umayyadIberia",
+      "traditionGroup": "medievalIslamic",
+      "period": "Islamic Iberia",
+      "titleEn": "Great Mosque",
+      "titleZh": "科尔多瓦大清真寺",
+      "artistCulture": "Umayyad patrons and Andalusi workshops",
+      "siteName": "Córdoba, Spain",
+      "coordinates": {
+        "x": 756,
+        "y": 286
+      },
+      "date": "c. 785–786 C.E.; expanded through the tenth century",
+      "medium": "Stone masonry with brick, wood, and mosaic decoration",
+      "workType": "Hypostyle mosque",
+      "function": "Congregational Friday prayer",
+      "form": "A forest of columns supports red-and-white double-tiered horseshoe arches",
+      "content": "The qibla wall and lavish mihrab direct worship toward Mecca",
+      "context": "The Córdoba emirate and caliphate proclaimed Umayyad legitimacy in al-Andalus",
+      "recognitionAnchors": [
+        "Red-and-white double-tiered arches",
+        "Mosaic-framed horseshoe mihrab"
+      ],
+      "comparisonIds": [
+        "ap49-santa-sabina"
+      ],
+      "keywords": [
+        "hypostyle",
+        "mihrab",
+        "horseshoe arch"
+      ],
+      "images": [
+        {
+          "id": "exterior",
+          "label": "Exterior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Great%20Mosque%20of%20Cordoba%2C%20exterior%2C%208th%20-%2010th%20centuries%20%2829185040314%29.jpg",
+          "imageAlt": "Great Mosque — Exterior (AP 56)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Great%20Mosque%20of%20Cordoba%2C%20exterior%2C%208th%20-%2010th%20centuries%20%2829185040314%29.jpg"
+        },
+        {
+          "id": "hypostyle-hall",
+          "label": "Hypostyle Hall",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Interior%20de%20la%20Mezquita%20de%20C%C3%B3rdoba.jpg",
+          "imageAlt": "Great Mosque — Hypostyle Hall (AP 56)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Interior%20de%20la%20Mezquita%20de%20C%C3%B3rdoba.jpg"
+        },
+        {
+          "id": "mihrab-detail",
+          "label": "Mihrab Detail",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/The%20Mihrab%20in%20La%20Mezquita.JPG",
+          "imageAlt": "Great Mosque — Mihrab Detail (AP 56)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:The%20Mihrab%20in%20La%20Mezquita.JPG"
+        },
+        {
+          "id": "double-tier-arches",
+          "label": "Double Tier Arches",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Mosque%20of%20Cordoba.jpg",
+          "imageAlt": "Great Mosque — Double Tier Arches (AP 56)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Mosque%20of%20Cordoba.jpg"
+        },
+        {
+          "id": "plan",
+          "label": "Plan",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Plano%20de%20la%20Mezquita%20de%20C%C3%B3rdoba%20%28revised%29.png",
+          "imageAlt": "Great Mosque — Plan (AP 56)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Plano%20de%20la%20Mezquita%20de%20C%C3%B3rdoba%20%28revised%29.png"
+        }
+      ]
+    },
+    {
+      "id": "ap57-pyxis-al-mughira",
+      "apNumber": 57,
+      "unit": 3,
+      "region": "iberianPeninsula",
+      "culture": "umayyadIberia",
+      "traditionGroup": "medievalIslamic",
+      "period": "Islamic Iberia",
+      "titleEn": "Pyxis of al-Mughira",
+      "titleZh": "穆吉拉王子象牙盒",
+      "artistCulture": "Workshop of Madinat al-Zahra",
+      "siteName": "Madinat al-Zahra, Spain",
+      "coordinates": {
+        "x": 756,
+        "y": 286
+      },
+      "date": "968 C.E.",
+      "medium": "Ivory",
+      "workType": "Pyxis",
+      "function": "Luxury container and courtly gift",
+      "form": "Carved medallions wrap a cylindrical ivory vessel in dense vegetal ornament",
+      "content": "Courtly figures, animals, and princely emblems carry dynastic allusions",
+      "context": "Made for al-Mughira at the Umayyad court near Córdoba amid succession politics",
+      "recognitionAnchors": [
+        "Cylindrical carved ivory box",
+        "Medallions with courtly figures and animals"
+      ],
+      "comparisonIds": [
+        "ap53-merovingian-fibulae"
+      ],
+      "keywords": [
+        "pyxis",
+        "ivory",
+        "Umayyad court"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Pyxid%20Al%20Mughira%20OA%204068.jpg",
+          "imageAlt": "Pyxis of al-Mughira — Primary view (AP 57)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Pyxid%20Al%20Mughira%20OA%204068.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap58-church-sainte-foy",
+      "apNumber": 58,
+      "unit": 3,
+      "region": "france",
+      "culture": "romanesquePilgrimage",
+      "traditionGroup": "medievalIslamic",
+      "period": "Romanesque",
+      "titleEn": "Church of Sainte-Foy",
+      "titleZh": "圣福瓦教堂与圣女福瓦圣物箱",
+      "artistCulture": "Auvergnat masons and metalworkers",
+      "siteName": "Conques, France",
+      "coordinates": {
+        "x": 809,
+        "y": 256
+      },
+      "date": "Church c. 1050–1130 C.E.; reliquary ninth century with later additions",
+      "medium": "Stone architecture; stone relief; gold, silver gilt, jewels, and enamel over wood",
+      "workType": "Pilgrimage church and reliquary",
+      "function": "Pilgrimage circulation, monastic worship, and veneration of relics",
+      "form": "Barrel-vaulted nave with radiating chapels accompanies a densely carved portal and jeweled cult statue",
+      "content": "The Last Judgment warns entrants while Saint Foy’s enthroned reliquary promises intercession",
+      "context": "Conques prospered on the pilgrimage road to Santiago through the cult of Saint Foy",
+      "recognitionAnchors": [
+        "Last Judgment tympanum over portal",
+        "Jeweled enthroned reliquary figure"
+      ],
+      "comparisonIds": [
+        "ap23-tutankhamun-innermost-coffin"
+      ],
+      "keywords": [
+        "pilgrimage",
+        "reliquary",
+        "tympanum"
+      ],
+      "images": [
+        {
+          "id": "exterior",
+          "label": "Exterior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Conques%20eglise%20face%20ter.jpg",
+          "imageAlt": "Church of Sainte-Foy — Exterior (AP 58)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Conques%20eglise%20face%20ter.jpg"
+        },
+        {
+          "id": "last-judgment-tympanum",
+          "label": "Last Judgment Tympanum",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Abbatiale%20Sainte-Foy%20de%20Conques%20-%20Tympan.jpg",
+          "imageAlt": "Church of Sainte-Foy — Last Judgment Tympanum (AP 58)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Abbatiale%20Sainte-Foy%20de%20Conques%20-%20Tympan.jpg"
+        },
+        {
+          "id": "interior",
+          "label": "Interior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/PM%20018670%20F%20Conques.jpg",
+          "imageAlt": "Church of Sainte-Foy — Interior (AP 58)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:PM%20018670%20F%20Conques.jpg"
+        },
+        {
+          "id": "reliquary",
+          "label": "Reliquary",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Reliquaire%20de%20sainte%20foy.jpg",
+          "imageAlt": "Church of Sainte-Foy — Reliquary (AP 58)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Reliquaire%20de%20sainte%20foy.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap59-bayeux-tapestry",
+      "apNumber": 59,
+      "unit": 3,
+      "region": "britishIsles",
+      "culture": "normanRomanesque",
+      "traditionGroup": "medievalIslamic",
+      "period": "Romanesque",
+      "titleEn": "Bayeux Tapestry",
+      "titleZh": "贝叶挂毯",
+      "artistCulture": "Anglo-Saxon embroiderers under Norman patronage",
+      "siteName": "England or Normandy",
+      "coordinates": {
+        "x": 792,
+        "y": 226
+      },
+      "date": "c. 1066–1080 C.E.",
+      "medium": "Embroidery on linen",
+      "workType": "Narrative textile",
+      "function": "Commemorative display and political legitimation",
+      "form": "A long horizontal frieze uses captions, borders, and continuous narrative",
+      "content": "The Norman conquest culminates in the Battle of Hastings and William’s victory",
+      "context": "The account promotes a Norman claim while preserving details of eleventh-century warfare and ritual",
+      "recognitionAnchors": [
+        "Long embroidered narrative band",
+        "Latin captions with animated horses and soldiers"
+      ],
+      "comparisonIds": [
+        "ap55-lindisfarne-gospels"
+      ],
+      "keywords": [
+        "embroidery",
+        "Hastings",
+        "continuous narrative"
+      ],
+      "images": [
+        {
+          "id": "narrative-overview",
+          "label": "Narrative Overview",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/BayeuxTapestry.jpg",
+          "imageAlt": "Bayeux Tapestry — Narrative Overview (AP 59)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:BayeuxTapestry.jpg"
+        },
+        {
+          "id": "narrative-detail",
+          "label": "Narrative Detail",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bayeux%20Tapestry%20scene23%20Harold%20oath%20William.jpg",
+          "imageAlt": "Bayeux Tapestry — Narrative Detail (AP 59)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Bayeux%20Tapestry%20scene23%20Harold%20oath%20William.jpg"
+        }
+      ],
+      "provenanceQualifier": "Probably embroidered in England for a Norman patron; exact workshop and original display remain debated."
+    },
+    {
+      "id": "ap60-chartres-cathedral",
+      "apNumber": 60,
+      "unit": 3,
+      "region": "france",
+      "culture": "frenchGothic",
+      "traditionGroup": "medievalIslamic",
+      "period": "High Gothic",
+      "titleEn": "Chartres Cathedral",
+      "titleZh": "沙特尔大教堂",
+      "artistCulture": "Chartres cathedral workshops",
+      "siteName": "Chartres, France",
+      "coordinates": {
+        "x": 809,
+        "y": 235
+      },
+      "date": "Original construction c. 1145–1155 C.E.; rebuilt c. 1194–1220 C.E.",
+      "medium": "Limestone, stained glass, and sculpture",
+      "workType": "Gothic cathedral",
+      "function": "Liturgy, pilgrimage, civic identity, and Marian devotion",
+      "form": "Rib vaults, pointed arches, flying buttresses, and a basilican plan create a tall luminous nave",
+      "content": "Portal sculpture and stained glass present Christ, Mary, saints, and salvation history",
+      "context": "Rapid rebuilding after a fire expressed episcopal authority and the town’s devotion to the Virgin",
+      "recognitionAnchors": [
+        "Asymmetrical west towers and Royal Portal",
+        "Blue-rich stained glass in a soaring nave"
+      ],
+      "comparisonIds": [
+        "ap49-santa-sabina"
+      ],
+      "keywords": [
+        "Gothic",
+        "flying buttress",
+        "stained glass"
+      ],
+      "images": [
+        {
+          "id": "west-facade",
+          "label": "West Facade",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Chartres%20cathedral%20%28West%20fa%C3%A7ade%29.jpg",
+          "imageAlt": "Chartres Cathedral — West Facade (AP 60)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Chartres%20cathedral%20%28West%20fa%C3%A7ade%29.jpg"
+        },
+        {
+          "id": "nave",
+          "label": "Nave",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Chartres%20Cath%C3%A9drale%20Notre-Dame%20de%20Chartres%20Innen%20Langhaus%20Gew%C3%B6lbe%20%26%20Westrosette.jpg",
+          "imageAlt": "Chartres Cathedral — Nave (AP 60)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Chartres%20Cath%C3%A9drale%20Notre-Dame%20de%20Chartres%20Innen%20Langhaus%20Gew%C3%B6lbe%20%26%20Westrosette.jpg"
+        },
+        {
+          "id": "plan",
+          "label": "Plan",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Plan.cathedrale.Chartres.png",
+          "imageAlt": "Chartres Cathedral — Plan (AP 60)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Plan.cathedrale.Chartres.png"
+        },
+        {
+          "id": "royal-portal",
+          "label": "Royal Portal",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Chartres%20%28Eure-et-Loir%29%20-%20Cath%C3%A9drale%20Notre-Dame%20-%20Fa%C3%A7ade%20ouest%20-%20Portail%20royal%20%2832928917517%29.jpg",
+          "imageAlt": "Chartres Cathedral — Royal Portal (AP 60)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Chartres%20%28Eure-et-Loir%29%20-%20Cath%C3%A9drale%20Notre-Dame%20-%20Fa%C3%A7ade%20ouest%20-%20Portail%20royal%20%2832928917517%29.jpg"
+        },
+        {
+          "id": "rose-window",
+          "label": "Rose Window",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Chartres%20Notre-Dame%20Windows%20WestRose%20018%202905.jpg",
+          "imageAlt": "Chartres Cathedral — Rose Window (AP 60)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Chartres%20Notre-Dame%20Windows%20WestRose%20018%202905.jpg"
+        },
+        {
+          "id": "stained-glass",
+          "label": "Stained Glass",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Notre-Dame%20de%20la%20Belle%20Verri%C3%A8re.jpg",
+          "imageAlt": "Chartres Cathedral — Stained Glass (AP 60)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Notre-Dame%20de%20la%20Belle%20Verri%C3%A8re.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap61-bibles-moralisees",
+      "apNumber": 61,
+      "unit": 3,
+      "region": "france",
+      "culture": "frenchGothicManuscript",
+      "traditionGroup": "medievalIslamic",
+      "period": "Gothic",
+      "titleEn": "Dedication Page with Blanche of Castile and King Louis IX of France, Scenes from the Apocalypse from Bibles moralisées",
+      "titleZh": "《道德化圣经》奉献页与《启示录》场景",
+      "artistCulture": "Parisian illuminators",
+      "siteName": "Paris, France",
+      "coordinates": {
+        "x": 805,
+        "y": 235
+      },
+      "date": "c. 1227–1234 C.E.",
+      "medium": "Ink, tempera, and gold leaf on vellum",
+      "workType": "Illuminated manuscript",
+      "function": "Royal instruction and devotional study",
+      "form": "Paired medallions and framed registers align biblical episodes with moral interpretations",
+      "content": "The dedication page stages royal patronage; Apocalypse scenes visualize revelation",
+      "context": "Luxury moralized Bibles trained a Capetian ruler through typological image-text pairings",
+      "recognitionAnchors": [
+        "Circular medallions in paired columns",
+        "Blanche of Castile instructs Louis IX"
+      ],
+      "comparisonIds": [
+        "ap55-lindisfarne-gospels"
+      ],
+      "keywords": [
+        "moralized Bible",
+        "typology",
+        "Capetian"
+      ],
+      "images": [
+        {
+          "id": "dedication-page",
+          "label": "Dedication Page",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Blanche%20of%20Castile%20and%20King%20Louis%20IX%20of%20France%2C%20from%20Toledo%20Moralized%20Bible%20of%20St%20Louis%2C%20circa%201227-1234%20%2848084488327%29.jpg",
+          "imageAlt": "Dedication Page with Blanche of Castile and King Louis IX of France, Scenes from the Apocalypse from Bibles moralisées — Dedication Page (AP 61)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Blanche%20of%20Castile%20and%20King%20Louis%20IX%20of%20France%2C%20from%20Toledo%20Moralized%20Bible%20of%20St%20Louis%2C%20circa%201227-1234%20%2848084488327%29.jpg"
+        },
+        {
+          "id": "apocalypse-scenes",
+          "label": "Apocalypse Scenes",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bible%20moralis%C3%A9e%20-%20Vienne%20Cod.1179%20-%20f246r.jpg",
+          "imageAlt": "Dedication Page with Blanche of Castile and King Louis IX of France, Scenes from the Apocalypse from Bibles moralisées — Apocalypse Scenes (AP 61)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Bible%20moralis%C3%A9e%20-%20Vienne%20Cod.1179%20-%20f246r.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap62-rottgen-pieta",
+      "apNumber": 62,
+      "unit": 3,
+      "region": "centralEurope",
+      "culture": "germanGothicDevotional",
+      "traditionGroup": "medievalIslamic",
+      "period": "Gothic",
+      "titleEn": "Röttgen Pietà",
+      "titleZh": "勒特根哀悼圣母像",
+      "artistCulture": "Rhineland sculptor",
+      "siteName": "Rhineland, Germany",
+      "coordinates": {
+        "x": 835,
+        "y": 225
+      },
+      "date": "c. 1300–1325 C.E.",
+      "medium": "Painted wood",
+      "workType": "Devotional sculpture",
+      "function": "Private or intimate meditation on Christ’s suffering",
+      "form": "Angular drapery and distorted scale intensify the compact mother-and-son group",
+      "content": "Mary displays Christ’s emaciated, wounded corpse on her lap",
+      "context": "The Vesperbild type cultivated empathetic piety in late medieval northern Europe",
+      "recognitionAnchors": [
+        "Emaciated Christ across Mary’s lap",
+        "Sharp angular drapery and enlarged wounds"
+      ],
+      "comparisonIds": [
+        "ap47-ludovisi-battle-sarcophagus"
+      ],
+      "keywords": [
+        "Pietà",
+        "Vesperbild",
+        "empathetic devotion"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Piet%C3%A0%20Roettgen.jpg",
+          "imageAlt": "Röttgen Pietà — Primary view (AP 62)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Piet%C3%A0%20Roettgen.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap63-arena-scrovegni-chapel",
+      "apNumber": 63,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "protoRenaissanceItaly",
+      "traditionGroup": "medievalIslamic",
+      "period": "Proto-Renaissance",
+      "titleEn": "Arena (Scrovegni) Chapel, including Lamentation",
+      "titleZh": "阿雷纳（斯克罗威尼）礼拜堂及《哀悼基督》",
+      "artistCulture": "Giotto di Bondone",
+      "siteName": "Padua, Italy",
+      "coordinates": {
+        "x": 854,
+        "y": 250
+      },
+      "date": "Chapel c. 1303 C.E.; frescoes c. 1305 C.E.",
+      "medium": "Brick architecture and fresco",
+      "workType": "Private chapel and fresco cycle",
+      "function": "Worship, family commemoration, and penitential patronage",
+      "form": "A barrel-vaulted hall carries coherent fresco registers with weighty figures in shallow space",
+      "content": "Life of Mary and Christ culminates in the Last Judgment; Lamentation focuses communal grief",
+      "context": "Enrico Scrovegni’s commission joined civic prestige to concern over usury and salvation",
+      "recognitionAnchors": [
+        "Blue-vaulted single-nave interior",
+        "Diagonal ridge drives mourners toward Christ"
+      ],
+      "comparisonIds": [
+        "ap48-catacomb-priscilla"
+      ],
+      "keywords": [
+        "Giotto",
+        "fresco cycle",
+        "Lamentation"
+      ],
+      "images": [
+        {
+          "id": "chapel-interior",
+          "label": "Chapel Interior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Cappella%20degli%20Scrovegni.jpg",
+          "imageAlt": "Arena (Scrovegni) Chapel, including Lamentation — Chapel Interior (AP 63)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Cappella%20degli%20Scrovegni.jpg"
+        },
+        {
+          "id": "lamentation",
+          "label": "Lamentation",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Giotto%20-%20Scrovegni%20-%20-36-%20-%20Lamentation%20%28The%20Mourning%20of%20Christ%29%20adj.jpg",
+          "imageAlt": "Arena (Scrovegni) Chapel, including Lamentation — Lamentation (AP 63)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Giotto%20-%20Scrovegni%20-%20-36-%20-%20Lamentation%20%28The%20Mourning%20of%20Christ%29%20adj.jpg"
+        },
+        {
+          "id": "chapel-exterior",
+          "label": "Chapel Exterior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/La%20Cappella%20degli%20Scrovegni.JPG",
+          "imageAlt": "Arena (Scrovegni) Chapel, including Lamentation — Chapel Exterior (AP 63)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:La%20Cappella%20degli%20Scrovegni.JPG"
+        }
+      ]
+    },
+    {
+      "id": "ap64-golden-haggadah",
+      "apNumber": 64,
+      "unit": 3,
+      "region": "iberianPeninsula",
+      "culture": "sephardicJewishManuscript",
+      "traditionGroup": "medievalIslamic",
+      "period": "Late Medieval Iberia",
+      "titleEn": "Golden Haggadah (The Plagues of Egypt, Scenes of Liberation, and Preparation for Passover)",
+      "titleZh": "《黄金哈加达》",
+      "artistCulture": "Jewish manuscript painters in Catalonia",
+      "siteName": "Barcelona, Spain",
+      "coordinates": {
+        "x": 790,
+        "y": 280
+      },
+      "date": "c. 1320 C.E.",
+      "medium": "Pigments and gold leaf on vellum",
+      "workType": "Illuminated Haggadah",
+      "function": "Household Passover ritual and teaching",
+      "form": "Right-to-left narrative panels use brilliant color and punched gold grounds",
+      "content": "Exodus plagues, liberation, and Passover preparation structure communal memory",
+      "context": "A wealthy Sephardic household commissioned a luxury book within cosmopolitan Barcelona",
+      "recognitionAnchors": [
+        "Four narrative panels on gold ground",
+        "Passover scenes read in Hebrew book order"
+      ],
+      "comparisonIds": [
+        "ap61-bibles-moralisees"
+      ],
+      "keywords": [
+        "Haggadah",
+        "Passover",
+        "Sephardic"
+      ],
+      "images": [
+        {
+          "id": "plagues-egypt",
+          "label": "Plagues Egypt",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Golden%20Haggadah%20-%20Plagues%20of%20Egypt.jpg",
+          "imageAlt": "Golden Haggadah (The Plagues of Egypt, Scenes of Liberation, and Preparation for Passover) — Plagues Egypt (AP 64)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Golden%20Haggadah%20-%20Plagues%20of%20Egypt.jpg"
+        },
+        {
+          "id": "scenes-liberation",
+          "label": "Scenes Liberation",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Exodus%20golden%20haggadah.jpg",
+          "imageAlt": "Golden Haggadah (The Plagues of Egypt, Scenes of Liberation, and Preparation for Passover) — Scenes Liberation (AP 64)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Exodus%20golden%20haggadah.jpg"
+        },
+        {
+          "id": "preparation-passover",
+          "label": "Preparation Passover",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Dance%20of%20Marian.%20Full%20F15%20from%20Golden%20Haggadah.jpg",
+          "imageAlt": "Golden Haggadah (The Plagues of Egypt, Scenes of Liberation, and Preparation for Passover) — Preparation Passover (AP 64)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Dance%20of%20Marian.%20Full%20F15%20from%20Golden%20Haggadah.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap65-alhambra",
+      "apNumber": 65,
+      "unit": 3,
+      "region": "iberianPeninsula",
+      "culture": "nasridAndalusia",
+      "traditionGroup": "medievalIslamic",
+      "period": "Nasrid Islamic",
+      "titleEn": "Alhambra",
+      "titleZh": "阿尔罕布拉宫",
+      "artistCulture": "Nasrid architects and artisans",
+      "siteName": "Granada, Spain",
+      "coordinates": {
+        "x": 755,
+        "y": 300
+      },
+      "date": "1354–1391 C.E.",
+      "medium": "Whitewashed adobe stucco, wood, tile, and stone",
+      "workType": "Palace-fortress",
+      "function": "Royal residence, administration, reception, and defense",
+      "form": "Courtyards, water axes, muqarnas, tile dadoes, and inscribed stucco organize intimate rooms",
+      "content": "Poetry, Qur’anic phrases, dynastic mottos, gardens, and water construct a paradisal court",
+      "context": "The Nasrid rulers fashioned a refined capital in Granada during the last Islamic dynasty in Iberia",
+      "recognitionAnchors": [
+        "Court of the Lions fountain and arcades",
+        "Muqarnas dome in Hall of the Two Sisters"
+      ],
+      "comparisonIds": [
+        "ap56-great-mosque-cordoba"
+      ],
+      "keywords": [
+        "Nasrid",
+        "muqarnas",
+        "paradise garden"
+      ],
+      "images": [
+        {
+          "id": "exterior",
+          "label": "Exterior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Alhambra%20from%20Generalife.jpg",
+          "imageAlt": "Alhambra — Exterior (AP 65)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Alhambra%20from%20Generalife.jpg"
+        },
+        {
+          "id": "court-lions",
+          "label": "Court Lions",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Court%20of%20lions%203.jpg",
+          "imageAlt": "Alhambra — Court Lions (AP 65)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Court%20of%20lions%203.jpg"
+        },
+        {
+          "id": "hall-sisters",
+          "label": "Hall Sisters",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Halloftwosisters%20alhambra%20granada.jpg",
+          "imageAlt": "Alhambra — Hall Sisters (AP 65)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Halloftwosisters%20alhambra%20granada.jpg"
+        },
+        {
+          "id": "plan",
+          "label": "Plan",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Plan%20of%20Alhambra.jpg",
+          "imageAlt": "Alhambra — Plan (AP 65)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Plan%20of%20Alhambra.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap66-merode-altarpiece",
+      "apNumber": 66,
+      "unit": 3,
+      "region": "lowCountries",
+      "culture": "earlyNetherlandish",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Northern Renaissance",
+      "titleEn": "Annunciation Triptych (Merode Altarpiece)",
+      "titleZh": "《天使报喜三联画》（梅罗德祭坛画）",
+      "artistCulture": "Workshop of Robert Campin",
+      "siteName": "Tournai, present-day Belgium",
+      "coordinates": {
+        "x": 815,
+        "y": 220
+      },
+      "date": "1427–1432 C.E.",
+      "medium": "Oil on wood",
+      "workType": "Triptych altarpiece",
+      "function": "Private devotion and donor commemoration",
+      "form": "Three hinged panels use meticulous oil glazing and steep domestic space",
+      "content": "The Annunciation occurs in a bourgeois interior beside donors and Joseph at work",
+      "context": "Sacred history enters a contemporary Netherlandish household through disguised symbolism",
+      "recognitionAnchors": [
+        "Angel and Virgin in detailed domestic room",
+        "Tiny Christ carrying a cross enters through window"
+      ],
+      "comparisonIds": [
+        "ap68-arnolfini-portrait"
+      ],
+      "keywords": [
+        "triptych",
+        "disguised symbolism",
+        "oil glazing"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://images.metmuseum.org/CRDImages/cl/original/DP273206.jpg",
+          "imageAlt": "Annunciation Triptych (Merode Altarpiece) — Primary view (AP 66)",
+          "imageSourceName": "The Metropolitan Museum of Art",
+          "imageSourceUrl": "https://www.metmuseum.org/collection/the-collection-online/search/470304"
+        }
+      ]
+    },
+    {
+      "id": "ap67-pazzi-chapel",
+      "apNumber": 67,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "florentineEarlyRenaissance",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Early Italian Renaissance",
+      "titleEn": "Pazzi Chapel",
+      "titleZh": "帕齐礼拜堂",
+      "artistCulture": "Filippo Brunelleschi",
+      "siteName": "Florence, Italy",
+      "coordinates": {
+        "x": 845,
+        "y": 260
+      },
+      "date": "c. 1429–1461 C.E.",
+      "medium": "Masonry with stucco and glazed terracotta",
+      "workType": "Chapter house and chapel",
+      "function": "Franciscan meetings, worship, and Pazzi family commemoration",
+      "form": "A modular central plan uses pietra serena, white plaster, barrel vaults, and a ribbed dome",
+      "content": "Restrained geometry frames terracotta evangelists and apostles",
+      "context": "Brunelleschi’s proportional classicism expressed Florentine humanism and elite patronage",
+      "recognitionAnchors": [
+        "Gray pietra serena against white walls",
+        "Hemispherical dome over geometric central bay"
+      ],
+      "comparisonIds": [
+        "ap46-pantheon"
+      ],
+      "keywords": [
+        "Brunelleschi",
+        "central plan",
+        "pietra serena"
+      ],
+      "images": [
+        {
+          "id": "exterior",
+          "label": "Exterior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Exterior%20of%20the%20Pazzi%20Chapel.jpg",
+          "imageAlt": "Pazzi Chapel — Exterior (AP 67)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Exterior%20of%20the%20Pazzi%20Chapel.jpg"
+        },
+        {
+          "id": "interior",
+          "label": "Interior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Pazzi%20Chapel%20Florence%20Apr%202008.jpg",
+          "imageAlt": "Pazzi Chapel — Interior (AP 67)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Pazzi%20Chapel%20Florence%20Apr%202008.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap68-arnolfini-portrait",
+      "apNumber": 68,
+      "unit": 3,
+      "region": "lowCountries",
+      "culture": "earlyNetherlandish",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Northern Renaissance",
+      "titleEn": "The Arnolfini Portrait",
+      "titleZh": "《阿尔诺芬尼夫妇像》",
+      "artistCulture": "Jan van Eyck",
+      "siteName": "Flanders, present-day Belgium",
+      "coordinates": {
+        "x": 815,
+        "y": 220
+      },
+      "date": "1434 C.E.",
+      "medium": "Oil on wood",
+      "workType": "Double portrait",
+      "function": "Commemoration of social identity and domestic union",
+      "form": "Layered oil glazes create minute textures, reflected space, and luminous color",
+      "content": "A richly dressed couple stands in a domestic chamber filled with debated symbolic details",
+      "context": "Urban mercantile wealth and Netherlandish oil technique meet in a signed, witnessed interior",
+      "recognitionAnchors": [
+        "Convex mirror reflecting two visitors",
+        "Single candle above joined hands"
+      ],
+      "comparisonIds": [
+        "ap66-merode-altarpiece"
+      ],
+      "keywords": [
+        "oil glaze",
+        "convex mirror",
+        "portrait"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Van%20Eyck%20-%20Arnolfini%20Portrait.jpg",
+          "imageAlt": "The Arnolfini Portrait — Primary view (AP 68)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Van%20Eyck%20-%20Arnolfini%20Portrait.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap69-donatello-david",
+      "apNumber": 69,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "florentineEarlyRenaissance",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Early Italian Renaissance",
+      "titleEn": "David",
+      "titleZh": "《大卫》",
+      "artistCulture": "Donatello",
+      "siteName": "Florence, Italy",
+      "coordinates": {
+        "x": 845,
+        "y": 260
+      },
+      "date": "c. 1440–1460 C.E.",
+      "medium": "Bronze",
+      "workType": "Freestanding sculpture",
+      "function": "Medici court display and civic-political symbolism",
+      "form": "A life-size nude youth stands in relaxed contrapposto over Goliath’s head",
+      "content": "The biblical victor combines vulnerability, sensuality, and triumph",
+      "context": "The first monumental freestanding male nude since antiquity revived classical form for Medici Florence",
+      "recognitionAnchors": [
+        "Nude adolescent with shepherd hat",
+        "Foot rests on Goliath’s severed head"
+      ],
+      "comparisonIds": [
+        "ap34-doryphoros"
+      ],
+      "keywords": [
+        "bronze",
+        "contrapposto",
+        "Medici"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bronze%20David%20by%20Donatello-Bargello.jpg",
+          "imageAlt": "David — Primary view (AP 69)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Bronze%20David%20by%20Donatello-Bargello.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap70-palazzo-rucellai",
+      "apNumber": 70,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "florentineEarlyRenaissance",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Early Italian Renaissance",
+      "titleEn": "Palazzo Rucellai",
+      "titleZh": "鲁切莱宫",
+      "artistCulture": "Leon Battista Alberti",
+      "siteName": "Florence, Italy",
+      "coordinates": {
+        "x": 845,
+        "y": 260
+      },
+      "date": "c. 1450 C.E.",
+      "medium": "Stone masonry",
+      "workType": "Urban palace",
+      "function": "Elite residence and family representation",
+      "form": "Three stories use superimposed classical orders, pilasters, and regular bays",
+      "content": "A disciplined all’antica façade gives mercantile wealth a civic, measured face",
+      "context": "Alberti adapted Roman architectural language to the constrained Florentine street",
+      "recognitionAnchors": [
+        "Three tiers of pilasters",
+        "Rusticated masonry organized by a proportional grid"
+      ],
+      "comparisonIds": [
+        "ap45-forum-of-trajan"
+      ],
+      "keywords": [
+        "Alberti",
+        "palazzo",
+        "classical orders"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Florencia%20Palazzo%20Rucellai%2008.JPG",
+          "imageAlt": "Palazzo Rucellai — Primary view (AP 70)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Florencia%20Palazzo%20Rucellai%2008.JPG"
+        }
+      ]
+    },
+    {
+      "id": "ap71-madonna-child-two-angels",
+      "apNumber": 71,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "florentineEarlyRenaissance",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Early Italian Renaissance",
+      "titleEn": "Madonna and Child with Two Angels",
+      "titleZh": "《圣母子与两位天使》",
+      "artistCulture": "Fra Filippo Lippi",
+      "siteName": "Florence, Italy",
+      "coordinates": {
+        "x": 845,
+        "y": 260
+      },
+      "date": "c. 1465 C.E.",
+      "medium": "Tempera on wood",
+      "workType": "Devotional panel painting",
+      "function": "Private devotion",
+      "form": "Soft modeling, linear contours, and a window-like frame humanize sacred figures",
+      "content": "Two mischievous angels lift Christ toward an elegant, melancholy Virgin",
+      "context": "Florentine devotion absorbed portrait-like naturalism and domestic tenderness",
+      "recognitionAnchors": [
+        "Smiling foreground angel looks outward",
+        "Haloed Virgin before a distant landscape"
+      ],
+      "comparisonIds": [
+        "ap54-virgin-theotokos-saints"
+      ],
+      "keywords": [
+        "tempera",
+        "Madonna",
+        "humanism"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Filippo%20Lippi%2C%20Madonna%20and%20Child%2C%20c.%201460-1465%2C%20Uffizi.jpg",
+          "imageAlt": "Madonna and Child with Two Angels — Primary view (AP 71)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Filippo%20Lippi%2C%20Madonna%20and%20Child%2C%20c.%201460-1465%2C%20Uffizi.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap72-birth-venus",
+      "apNumber": 72,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "florentineRenaissance",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Early Italian Renaissance",
+      "titleEn": "Birth of Venus",
+      "titleZh": "《维纳斯的诞生》",
+      "artistCulture": "Sandro Botticelli",
+      "siteName": "Florence, Italy",
+      "coordinates": {
+        "x": 845,
+        "y": 260
+      },
+      "date": "c. 1484–1486 C.E.",
+      "medium": "Tempera on canvas",
+      "workType": "Mythological painting",
+      "function": "Elite domestic display and humanist contemplation",
+      "form": "Elegant contour, shallow space, and rhythmic drapery privilege poetic line over naturalism",
+      "content": "Venus arrives on a shell as winds propel her toward a waiting Hora",
+      "context": "Medici-associated Neoplatonism made classical myth a vehicle for ideal beauty and spiritual ascent",
+      "recognitionAnchors": [
+        "Venus stands on a scallop shell",
+        "Wind gods blow roses across the sea"
+      ],
+      "comparisonIds": [
+        "ap71-madonna-child-two-angels"
+      ],
+      "keywords": [
+        "Venus",
+        "Neoplatonism",
+        "tempera"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Birth%20of%20Venus%20Botticelli.jpg",
+          "imageAlt": "Birth of Venus — Primary view (AP 72)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Birth%20of%20Venus%20Botticelli.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap73-last-supper",
+      "apNumber": 73,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "highRenaissanceItaly",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "High Renaissance",
+      "titleEn": "Last Supper",
+      "titleZh": "《最后的晚餐》",
+      "artistCulture": "Leonardo da Vinci",
+      "siteName": "Milan, Italy",
+      "coordinates": {
+        "x": 842,
+        "y": 250
+      },
+      "date": "c. 1494–1498 C.E.",
+      "medium": "Oil and tempera on plaster",
+      "workType": "Mural painting",
+      "function": "Monastic refectory devotion and meditation",
+      "form": "One-point perspective and balanced groups converge on a calm, triangular Christ",
+      "content": "Apostles react in waves after Christ announces that one will betray him",
+      "context": "Leonardo joined empirical psychology to Renaissance perspective, though his experimental technique deteriorated rapidly",
+      "recognitionAnchors": [
+        "Vanishing point at Christ’s head",
+        "Apostles grouped in animated threes"
+      ],
+      "comparisonIds": [
+        "ap63-arena-scrovegni-chapel"
+      ],
+      "keywords": [
+        "one-point perspective",
+        "apostles",
+        "refectory"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Leonardo%2C%20ultima%20cena%20%28restored%29%2001.jpg",
+          "imageAlt": "Last Supper — Primary view (AP 73)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Leonardo%2C%20ultima%20cena%20%28restored%29%2001.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap74-adam-eve-durer",
+      "apNumber": 74,
+      "unit": 3,
+      "region": "centralEurope",
+      "culture": "northernRenaissanceGermany",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Northern Renaissance",
+      "titleEn": "Adam and Eve",
+      "titleZh": "《亚当与夏娃》",
+      "artistCulture": "Albrecht Dürer",
+      "siteName": "Nuremberg, Germany",
+      "coordinates": {
+        "x": 837,
+        "y": 225
+      },
+      "date": "1504 C.E.",
+      "medium": "Engraving",
+      "workType": "Print",
+      "function": "Collector study and humanist display",
+      "form": "Precise burin lines model idealized bodies through dense hatching and contour",
+      "content": "Adam and Eve stand before the Fall among animals symbolizing the four humors",
+      "context": "Dürer fused Italian classical proportion with northern observation and a reproducible medium",
+      "recognitionAnchors": [
+        "Ideal nude pair flanks Tree of Knowledge",
+        "Four animals encode the bodily humors"
+      ],
+      "comparisonIds": [
+        "ap69-donatello-david"
+      ],
+      "keywords": [
+        "engraving",
+        "Dürer",
+        "four humors"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Albrecht%20D%C3%BCrer%2C%20Adam%20and%20Eve%2C%201504%2C%20Engraving.jpg",
+          "imageAlt": "Adam and Eve — Primary view (AP 74)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Albrecht%20D%C3%BCrer%2C%20Adam%20and%20Eve%2C%201504%2C%20Engraving.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap75-sistine-chapel-frescoes",
+      "apNumber": 75,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "highRenaissanceItaly",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "High Renaissance and Mannerism",
+      "titleEn": "Sistine Chapel ceiling and altar wall frescoes",
+      "titleZh": "西斯廷礼拜堂天顶画与《最后的审判》",
+      "artistCulture": "Michelangelo Buonarroti",
+      "siteName": "Vatican City",
+      "coordinates": {
+        "x": 854,
+        "y": 260
+      },
+      "date": "Ceiling 1508–1512 C.E.; altar wall 1536–1541 C.E.",
+      "medium": "Fresco",
+      "workType": "Chapel fresco cycle",
+      "function": "Papal liturgy, doctrine, and institutional authority",
+      "form": "Monumental twisting bodies inhabit painted architecture across vault and altar wall",
+      "content": "Genesis, prophets, sibyls, ancestors, and the final resurrection frame Christian salvation",
+      "context": "Julius II and Paul III commissions transformed the papal chapel amid reform and crisis",
+      "recognitionAnchors": [
+        "Ignudi frame Genesis scenes on ceiling",
+        "Apollo-like Christ commands the Last Judgment"
+      ],
+      "comparisonIds": [
+        "ap47-ludovisi-battle-sarcophagus"
+      ],
+      "keywords": [
+        "Michelangelo",
+        "fresco",
+        "Last Judgment"
+      ],
+      "images": [
+        {
+          "id": "ceiling-overview",
+          "label": "Ceiling Overview",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Sistine%20Chapel%20Ceiling%20by%20Michelangelo%20%2848466107736%29.jpg",
+          "imageAlt": "Sistine Chapel ceiling and altar wall frescoes — Ceiling Overview (AP 75)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Sistine%20Chapel%20Ceiling%20by%20Michelangelo%20%2848466107736%29.jpg"
+        },
+        {
+          "id": "delphic-sibyl",
+          "label": "Delphic Sibyl",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Michelangelo%20-%20Delphic%20Sibyl.jpg",
+          "imageAlt": "Sistine Chapel ceiling and altar wall frescoes — Delphic Sibyl (AP 75)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Michelangelo%20-%20Delphic%20Sibyl.jpg"
+        },
+        {
+          "id": "the-flood",
+          "label": "The Flood",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Deluge%2C%20Michelangelo.png",
+          "imageAlt": "Sistine Chapel ceiling and altar wall frescoes — The Flood (AP 75)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Deluge%2C%20Michelangelo.png"
+        },
+        {
+          "id": "last-judgment",
+          "label": "Last Judgment",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Last%20Judgement%20by%20Michelangelo.jpg",
+          "imageAlt": "Sistine Chapel ceiling and altar wall frescoes — Last Judgment (AP 75)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Last%20Judgement%20by%20Michelangelo.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap76-school-athens",
+      "apNumber": 76,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "highRenaissanceItaly",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "High Renaissance",
+      "titleEn": "School of Athens",
+      "titleZh": "《雅典学院》",
+      "artistCulture": "Raphael",
+      "siteName": "Vatican City",
+      "coordinates": {
+        "x": 854,
+        "y": 260
+      },
+      "date": "1509–1511 C.E.",
+      "medium": "Fresco",
+      "workType": "Wall painting",
+      "function": "Papal library decoration and humanist program",
+      "form": "Monumental classical architecture and one-point perspective order balanced figure groups",
+      "content": "Ancient philosophers gather around Plato and Aristotle, with portraits of Renaissance artists",
+      "context": "The Stanza della Segnatura aligned theology, philosophy, poetry, and law under papal patronage",
+      "recognitionAnchors": [
+        "Plato and Aristotle at vanishing point",
+        "Coffered barrel vaults frame philosophers"
+      ],
+      "comparisonIds": [
+        "ap73-last-supper"
+      ],
+      "keywords": [
+        "Raphael",
+        "philosophy",
+        "perspective"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/The%20School%20of%20Athens%20by%20Raffaello%20Sanzio%20da%20Urbino%2C%20Vatican.jpg",
+          "imageAlt": "School of Athens — Primary view (AP 76)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:The%20School%20of%20Athens%20by%20Raffaello%20Sanzio%20da%20Urbino%2C%20Vatican.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap77-isenheim-altarpiece",
+      "apNumber": 77,
+      "unit": 3,
+      "region": "centralEurope",
+      "culture": "northernRenaissanceGermany",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Northern Renaissance",
+      "titleEn": "Isenheim altarpiece",
+      "titleZh": "伊森海姆祭坛画",
+      "artistCulture": "Matthias Grünewald and Nikolaus Hagenauer",
+      "siteName": "Isenheim, Alsace",
+      "coordinates": {
+        "x": 824,
+        "y": 235
+      },
+      "date": "c. 1512–1516 C.E.",
+      "medium": "Oil on wood with gilded and polychromed sculpture",
+      "workType": "Polyptych altarpiece",
+      "function": "Hospital devotion, consolation, and liturgical transformation",
+      "form": "Multiple opening states shift from agonized painting to luminous resurrection and carved shrine",
+      "content": "Crucifixion, saints, Annunciation, Nativity, Resurrection, and healing patrons address suffering",
+      "context": "The Antonite hospital treated ergotism; Christ’s diseased flesh offered patients identification and hope",
+      "recognitionAnchors": [
+        "Tormented greenish Christ in closed state",
+        "Hinged wings reveal radiant Resurrection and carved shrine"
+      ],
+      "comparisonIds": [
+        "ap62-rottgen-pieta"
+      ],
+      "keywords": [
+        "polyptych",
+        "hospital",
+        "Grünewald"
+      ],
+      "images": [
+        {
+          "id": "closed-state",
+          "label": "Closed State",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Gruenewaldaltar.jpg",
+          "imageAlt": "Isenheim altarpiece — Closed State (AP 77)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Gruenewaldaltar.jpg"
+        },
+        {
+          "id": "open-state",
+          "label": "Open State",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Isenheim%20Altarpiece%20%E2%80%94%20FIRST%20OPENING.jpg",
+          "imageAlt": "Isenheim altarpiece — Open State (AP 77)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Isenheim%20Altarpiece%20%E2%80%94%20FIRST%20OPENING.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap78-entombment-christ-pontormo",
+      "apNumber": 78,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "italianMannerism",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Mannerism",
+      "titleEn": "Entombment of Christ",
+      "titleZh": "《基督下葬》",
+      "artistCulture": "Jacopo da Pontormo",
+      "siteName": "Florence, Italy",
+      "coordinates": {
+        "x": 845,
+        "y": 260
+      },
+      "date": "1525–1528 C.E.",
+      "medium": "Oil on wood",
+      "workType": "Altarpiece",
+      "function": "Capponi Chapel devotion and funerary commemoration",
+      "form": "Weightless interlocking bodies, acidic color, and ambiguous space destabilize the composition",
+      "content": "Mourners carry Christ while the Virgin collapses in grief",
+      "context": "Post-High Renaissance artists stretched naturalism into spiritual artifice during Florentine instability",
+      "recognitionAnchors": [
+        "Weightless bearers in pastel colors",
+        "No cross, tomb, or stable ground"
+      ],
+      "comparisonIds": [
+        "ap63-arena-scrovegni-chapel"
+      ],
+      "keywords": [
+        "Mannerism",
+        "Pontormo",
+        "acidic color"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Jacopo%20da%20Pontormo%20-%20Deposizione.jpg",
+          "imageAlt": "Entombment of Christ — Primary view (AP 78)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Jacopo%20da%20Pontormo%20-%20Deposizione.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap79-allegory-law-grace",
+      "apNumber": 79,
+      "unit": 3,
+      "region": "centralEurope",
+      "culture": "protestantReformationGermany",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Northern Renaissance and Reformation",
+      "titleEn": "Allegory of Law and Grace",
+      "titleZh": "《法律与恩典的寓意》",
+      "artistCulture": "Lucas Cranach the Elder",
+      "siteName": "Wittenberg, Germany",
+      "coordinates": {
+        "x": 846,
+        "y": 215
+      },
+      "date": "c. 1530 C.E.",
+      "medium": "Woodcut and letterpress",
+      "workType": "Didactic print",
+      "function": "Lutheran instruction and polemic",
+      "form": "A central tree divides paired Old Law and Gospel narratives with explanatory text",
+      "content": "Sin, death, and judgment contrast with faith, grace, and salvation through Christ",
+      "context": "Reproducible image-text made Lutheran doctrine legible to a broad Reformation audience",
+      "recognitionAnchors": [
+        "Split tree divides Law and Gospel",
+        "Nude figure directed toward crucified Christ"
+      ],
+      "comparisonIds": [
+        "ap24-last-judgment-of-hunefer"
+      ],
+      "keywords": [
+        "Reformation",
+        "Law and Gospel",
+        "woodcut"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Cranach%20law%20and%20grace%20woodcut.jpg",
+          "imageAlt": "Allegory of Law and Grace — Primary view (AP 79)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Cranach%20law%20and%20grace%20woodcut.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap80-venus-urbino",
+      "apNumber": 80,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "venetianRenaissance",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Venetian Renaissance",
+      "titleEn": "Venus of Urbino",
+      "titleZh": "《乌尔比诺的维纳斯》",
+      "artistCulture": "Titian",
+      "siteName": "Venice, Italy",
+      "coordinates": {
+        "x": 854,
+        "y": 245
+      },
+      "date": "c. 1538 C.E.",
+      "medium": "Oil on canvas",
+      "workType": "Mythological nude",
+      "function": "Elite domestic display, likely connected to marriage",
+      "form": "Warm colorito, soft oil modeling, and a receding palace interior join nude and domestic space",
+      "content": "A reclining woman meets the viewer’s gaze while servants search a cassone",
+      "context": "Titian recast the classical Venus as a sensual contemporary bride within Venetian culture",
+      "recognitionAnchors": [
+        "Reclining nude meets viewer’s gaze",
+        "Dog and cassone servants signal domesticity"
+      ],
+      "comparisonIds": [
+        "ap72-birth-venus"
+      ],
+      "keywords": [
+        "colorito",
+        "reclining nude",
+        "Venetian"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Tizian%20-%20Venus%20von%20Urbino.jpg",
+          "imageAlt": "Venus of Urbino — Primary view (AP 80)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Tizian%20-%20Venus%20von%20Urbino.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap81-codex-mendoza-frontispiece",
+      "apNumber": 81,
+      "unit": 3,
+      "region": "colonialAmericas",
+      "culture": "colonialMexicaManuscript",
+      "traditionGroup": "baroqueColonial",
+      "period": "Early Colonial New Spain",
+      "titleEn": "Frontispiece of the Codex Mendoza",
+      "titleZh": "《门多萨手抄本》",
+      "artistCulture": "Mexica painter-scribes with Spanish annotation",
+      "siteName": "Tenochtitlan (Mexico City), New Spain",
+      "coordinates": {
+        "x": 405,
+        "y": 380
+      },
+      "date": "c. 1541–1542 C.E.",
+      "medium": "Ink and color on paper",
+      "workType": "Illustrated codex",
+      "function": "Imperial report on Mexica history, tribute, and social customs",
+      "form": "Indigenous pictographs combine with alphabetic Spanish glosses in organized registers",
+      "content": "The frontispiece maps Tenochtitlan’s foundation, rulers, conquests, and quadrants",
+      "context": "Commissioned for Charles V, the manuscript translates Indigenous knowledge through a colonial documentary format",
+      "recognitionAnchors": [
+        "Eagle on cactus at center of watery city",
+        "Blue-green canals divide four city quadrants"
+      ],
+      "comparisonIds": [
+        "ap19-code-of-hammurabi"
+      ],
+      "keywords": [
+        "codex",
+        "Tenochtitlan",
+        "colonial translation"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Codex%20Mendoza%20folio%202r.jpg",
+          "imageAlt": "Frontispiece of the Codex Mendoza — Primary view (AP 81)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Codex%20Mendoza%20folio%202r.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap82-il-gesu",
+      "apNumber": 82,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "romanBaroqueJesuit",
+      "traditionGroup": "baroqueColonial",
+      "period": "Counter-Reformation and Baroque",
+      "titleEn": "Il Gesù, including Triumph of the Name of Jesus ceiling fresco",
+      "titleZh": "耶稣会教堂（罗马）及《耶稣圣名的胜利》",
+      "artistCulture": "Giacomo da Vignola, Giacomo della Porta, and Giovanni Battista Gaulli",
+      "siteName": "Rome, Italy",
+      "coordinates": {
+        "x": 854,
+        "y": 260
+      },
+      "date": "Church 1568–1584 C.E.; ceiling fresco 1672–1679 C.E.",
+      "medium": "Brick, stone, stucco, and fresco",
+      "workType": "Jesuit mother church",
+      "function": "Preaching, Catholic reform, and Jesuit identity",
+      "form": "A wide nave with side chapels culminates in a theatrical illusionistic ceiling",
+      "content": "The IHS monogram radiates divine light as blessed figures rise and the damned fall",
+      "context": "The Gesù became a model for Counter-Reformation churches and Baroque multimedia persuasion",
+      "recognitionAnchors": [
+        "Two-story façade with paired pilasters",
+        "Gaulli ceiling breaks the architectural frame"
+      ],
+      "comparisonIds": [
+        "ap49-santa-sabina"
+      ],
+      "keywords": [
+        "Jesuit",
+        "Counter-Reformation",
+        "quadratura"
+      ],
+      "images": [
+        {
+          "id": "facade",
+          "label": "Facade",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Chiesa%20del%20Ges%C3%B9%20facciata.jpg",
+          "imageAlt": "Il Gesù, including Triumph of the Name of Jesus ceiling fresco — Facade (AP 82)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Chiesa%20del%20Ges%C3%B9%20facciata.jpg"
+        },
+        {
+          "id": "nave",
+          "label": "Nave",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/01%20Il%20Gesu%20Nave.jpg",
+          "imageAlt": "Il Gesù, including Triumph of the Name of Jesus ceiling fresco — Nave (AP 82)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:01%20Il%20Gesu%20Nave.jpg"
+        },
+        {
+          "id": "triumph-name-jesus",
+          "label": "Triumph Name Jesus",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/IlGesu%20Ceiling01.jpg",
+          "imageAlt": "Il Gesù, including Triumph of the Name of Jesus ceiling fresco — Triumph Name Jesus (AP 82)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:IlGesu%20Ceiling01.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap83-hunters-snow",
+      "apNumber": 83,
+      "unit": 3,
+      "region": "lowCountries",
+      "culture": "northernRenaissanceFlemish",
+      "traditionGroup": "renaissanceMannerism",
+      "period": "Northern Renaissance",
+      "titleEn": "Hunters in the Snow",
+      "titleZh": "《雪中猎人》",
+      "artistCulture": "Pieter Bruegel the Elder",
+      "siteName": "Antwerp, present-day Belgium",
+      "coordinates": {
+        "x": 815,
+        "y": 215
+      },
+      "date": "1565 C.E.",
+      "medium": "Oil on wood",
+      "workType": "Landscape painting",
+      "function": "Elite domestic display within a cycle of seasons",
+      "form": "A high viewpoint and diagonals lead from dark hunters toward an expansive wintry valley",
+      "content": "Hunters return with meager game while villagers work and skate below",
+      "context": "Bruegel elevated peasant labor and seasonal landscape for an urban Antwerp patron",
+      "recognitionAnchors": [
+        "Dark hunters and dogs descend snowy slope",
+        "Skaters animate distant frozen ponds"
+      ],
+      "comparisonIds": [
+        "ap68-arnolfini-portrait"
+      ],
+      "keywords": [
+        "landscape",
+        "winter",
+        "Bruegel"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/The%20Hunters%20in%20the%20Snow.jpg",
+          "imageAlt": "Hunters in the Snow — Primary view (AP 83)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:The%20Hunters%20in%20the%20Snow.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap84-mosque-selim-ii",
+      "apNumber": 84,
+      "unit": 3,
+      "region": "easternMediterranean",
+      "culture": "ottomanIslamic",
+      "traditionGroup": "medievalIslamic",
+      "period": "Ottoman",
+      "titleEn": "Mosque of Selim II",
+      "titleZh": "塞利米耶清真寺",
+      "artistCulture": "Mimar Sinan",
+      "siteName": "Edirne, Turkey",
+      "coordinates": {
+        "x": 947,
+        "y": 260
+      },
+      "date": "1568–1575 C.E.",
+      "medium": "Cut stone and brick with tile and painted decoration",
+      "workType": "Domed mosque complex",
+      "function": "Congregational prayer, education, and imperial commemoration",
+      "form": "A centralized octagonal support system unifies the prayer hall beneath one dominant dome",
+      "content": "Calligraphy, geometric ornament, and light direct attention toward the mihrab",
+      "context": "Sinan’s imperial commission for Selim II in Edirne rivaled Hagia Sophia and crowned his career",
+      "recognitionAnchors": [
+        "Four pencil minarets frame dominant dome",
+        "Octagonal supports open a unified interior"
+      ],
+      "comparisonIds": [
+        "ap52-hagia-sophia"
+      ],
+      "keywords": [
+        "Ottoman",
+        "Sinan",
+        "centralized dome"
+      ],
+      "images": [
+        {
+          "id": "exterior",
+          "label": "Exterior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Selimiye%20Mosque.png",
+          "imageAlt": "Mosque of Selim II — Exterior (AP 84)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Selimiye%20Mosque.png"
+        },
+        {
+          "id": "interior",
+          "label": "Interior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Interior%20of%20dome%2C%20Selimiye%20Mosque%2C%20Edirne%20-%20Tarik%20Kaan%20Muslu.jpg",
+          "imageAlt": "Mosque of Selim II — Interior (AP 84)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Interior%20of%20dome%2C%20Selimiye%20Mosque%2C%20Edirne%20-%20Tarik%20Kaan%20Muslu.jpg"
+        },
+        {
+          "id": "plan",
+          "label": "Plan",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Edirne%20Selimiye%20Mosque%20Plan%20in%202003%204454.jpg",
+          "imageAlt": "Mosque of Selim II — Plan (AP 84)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Edirne%20Selimiye%20Mosque%20Plan%20in%202003%204454.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap85-calling-saint-matthew",
+      "apNumber": 85,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "italianBaroque",
+      "traditionGroup": "baroqueColonial",
+      "period": "Italian Baroque",
+      "titleEn": "Calling of Saint Matthew",
+      "titleZh": "《圣马太蒙召》",
+      "artistCulture": "Caravaggio",
+      "siteName": "Rome, Italy",
+      "coordinates": {
+        "x": 854,
+        "y": 260
+      },
+      "date": "c. 1597–1601 C.E.",
+      "medium": "Oil on canvas",
+      "workType": "Chapel painting",
+      "function": "Devotion and Counter-Reformation persuasion",
+      "form": "Tenebrism and a sharp beam of light stage the action in a contemporary tavern-like room",
+      "content": "Christ points toward Matthew, who hesitates among tax collectors",
+      "context": "Naturalistic sacred drama made conversion immediate for visitors to the Contarelli Chapel",
+      "recognitionAnchors": [
+        "Diagonal beam isolates Matthew",
+        "Christ’s pointing hand echoes Michelangelo’s Adam"
+      ],
+      "comparisonIds": [
+        "ap82-il-gesu"
+      ],
+      "keywords": [
+        "tenebrism",
+        "conversion",
+        "Caravaggio"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/CaravaggioContarelli.jpg",
+          "imageAlt": "Calling of Saint Matthew — Primary view (AP 85)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:CaravaggioContarelli.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap86-henri-iv-marie-medici",
+      "apNumber": 86,
+      "unit": 3,
+      "region": "lowCountries",
+      "culture": "flemishBaroque",
+      "traditionGroup": "baroqueColonial",
+      "period": "Flemish Baroque",
+      "titleEn": "Henri IV Receives the Portrait of Marie de’ Medici, from the Marie de’ Medici Cycle",
+      "titleZh": "《亨利四世接受玛丽·德·美第奇的肖像》",
+      "artistCulture": "Peter Paul Rubens",
+      "siteName": "Antwerp, Southern Netherlands",
+      "coordinates": {
+        "x": 815,
+        "y": 215
+      },
+      "date": "1621–1625 C.E.",
+      "medium": "Oil on canvas",
+      "workType": "Allegorical history painting",
+      "function": "Dynastic propaganda in the Marie de’ Medici cycle",
+      "form": "Sweeping diagonals, saturated color, and muscular airborne gods animate courtly portraiture",
+      "content": "Jupiter and Juno approve as Cupid and Hymen present Marie’s portrait to Henry IV",
+      "context": "Rubens mythologized the queen mother’s biography to restore her political image in Luxembourg Palace",
+      "recognitionAnchors": [
+        "Flying gods present oval portrait",
+        "Henry IV gazes upward as armor slips away"
+      ],
+      "comparisonIds": [
+        "ap75-sistine-chapel-frescoes"
+      ],
+      "keywords": [
+        "Rubens",
+        "allegory",
+        "dynastic propaganda"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Henri%20IV%20re%C3%A7oit%20le%20portrait%20de%20Marie%20de%20M%C3%A9dicis%20et%20se%20laisse%20d%C3%A9sarmer%20par%20l%E2%80%99Amour%20-%20Pierre%20Paul%20Rubens%20-%20Mus%C3%A9e%20du%20Louvre%20Peintures%20INV%201772%20%3B%20MR%20963.jpg",
+          "imageAlt": "Henri IV Receives the Portrait of Marie de’ Medici, from the Marie de’ Medici Cycle — Primary view (AP 86)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Henri%20IV%20re%C3%A7oit%20le%20portrait%20de%20Marie%20de%20M%C3%A9dicis%20et%20se%20laisse%20d%C3%A9sarmer%20par%20l%E2%80%99Amour%20-%20Pierre%20Paul%20Rubens%20-%20Mus%C3%A9e%20du%20Louvre%20Peintures%20INV%201772%20%3B%20MR%20963.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap87-self-portrait-saskia",
+      "apNumber": 87,
+      "unit": 3,
+      "region": "lowCountries",
+      "culture": "dutchBaroque",
+      "traditionGroup": "baroqueColonial",
+      "period": "Dutch Baroque",
+      "titleEn": "Self-Portrait with Saskia",
+      "titleZh": "《与萨斯基亚的自画像》",
+      "artistCulture": "Rembrandt van Rijn",
+      "siteName": "Amsterdam, Netherlands",
+      "coordinates": {
+        "x": 815,
+        "y": 205
+      },
+      "date": "1636 C.E.",
+      "medium": "Etching",
+      "workType": "Print and self-portrait",
+      "function": "Artistic self-fashioning and collector market",
+      "form": "Loose etched lines and intimate cropping evoke a spontaneous studio encounter",
+      "content": "Rembrandt looks outward while Saskia sits farther back at a table",
+      "context": "A celebrated Amsterdam artist tested identity, marriage, and printmaking in a market-driven republic",
+      "recognitionAnchors": [
+        "Rembrandt looks directly from foreground",
+        "Saskia sits behind in a large hat"
+      ],
+      "comparisonIds": [
+        "ap68-arnolfini-portrait"
+      ],
+      "keywords": [
+        "etching",
+        "self-portrait",
+        "Rembrandt"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Rembrandt%20Self-portrait%20with%20Saskia01.jpg",
+          "imageAlt": "Self-Portrait with Saskia — Primary view (AP 87)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Rembrandt%20Self-portrait%20with%20Saskia01.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap88-san-carlo-quattro-fontane",
+      "apNumber": 88,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "italianBaroque",
+      "traditionGroup": "baroqueColonial",
+      "period": "Italian Baroque",
+      "titleEn": "San Carlo alle Quattro Fontane",
+      "titleZh": "四喷泉圣卡洛教堂",
+      "artistCulture": "Francesco Borromini",
+      "siteName": "Rome, Italy",
+      "coordinates": {
+        "x": 854,
+        "y": 260
+      },
+      "date": "1638–1646 C.E.",
+      "medium": "Stone and stucco",
+      "workType": "Church",
+      "function": "Trinitarian worship and monastic community",
+      "form": "An undulating façade and interlocking oval geometry compress dynamic space into a tiny site",
+      "content": "Coffers, columns, and curving walls direct the eye toward a luminous oval dome",
+      "context": "Borromini answered Roman Baroque patronage with geometric invention rather than classical stability",
+      "recognitionAnchors": [
+        "Concave-convex façade ripples outward",
+        "Oval coffered dome dissolves into lantern light"
+      ],
+      "comparisonIds": [
+        "ap46-pantheon"
+      ],
+      "keywords": [
+        "Borromini",
+        "oval plan",
+        "undulating façade"
+      ],
+      "images": [
+        {
+          "id": "facade",
+          "label": "Facade",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Rome%20S.%20Carlo%20alle%20Quattro%20Fontane%20facade.jpg",
+          "imageAlt": "San Carlo alle Quattro Fontane — Facade (AP 88)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Rome%20S.%20Carlo%20alle%20Quattro%20Fontane%20facade.jpg"
+        },
+        {
+          "id": "interior",
+          "label": "Interior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/San%20Carlo%20alle%20quattro%20fontane%20-%20interior.jpg",
+          "imageAlt": "San Carlo alle Quattro Fontane — Interior (AP 88)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:San%20Carlo%20alle%20quattro%20fontane%20-%20interior.jpg"
+        },
+        {
+          "id": "plan",
+          "label": "Plan",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/San%20Carlo%20alle%20Quattro%20Fontane%20Rome%20Italy.svg",
+          "imageAlt": "San Carlo alle Quattro Fontane — Plan (AP 88)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:San%20Carlo%20alle%20Quattro%20Fontane%20Rome%20Italy.svg"
+        }
+      ]
+    },
+    {
+      "id": "ap89-ecstasy-saint-teresa",
+      "apNumber": 89,
+      "unit": 3,
+      "region": "italyVatican",
+      "culture": "italianBaroque",
+      "traditionGroup": "baroqueColonial",
+      "period": "Italian Baroque",
+      "titleEn": "Ecstasy of Saint Teresa",
+      "titleZh": "《圣特蕾莎的狂喜》科尔纳罗礼拜堂",
+      "artistCulture": "Gian Lorenzo Bernini",
+      "siteName": "Rome, Italy",
+      "coordinates": {
+        "x": 854,
+        "y": 260
+      },
+      "date": "c. 1647–1652 C.E.",
+      "medium": "Marble sculpture with stucco, paint, gilding, and architecture",
+      "workType": "Multimedia chapel installation",
+      "function": "Funerary chapel, devotion, and Catholic persuasion",
+      "form": "Concealed light, gilded rays, colored marble, and theater-box portraits fuse sculpture with architecture",
+      "content": "An angel pierces Teresa’s heart as the Cornaro family witnesses her mystical vision",
+      "context": "Bernini transformed Counter-Reformation spirituality into an immersive aristocratic spectacle",
+      "recognitionAnchors": [
+        "Angel and swooning Teresa hover on a cloud",
+        "Cornaro patrons watch from theater boxes"
+      ],
+      "comparisonIds": [
+        "ap46-pantheon"
+      ],
+      "keywords": [
+        "Bernini",
+        "mysticism",
+        "bel composto"
+      ],
+      "images": [
+        {
+          "id": "church-interior",
+          "label": "Church Interior",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Santa%20Maria%20della%20Vittoria%20in%20Rome%20-%20Interior.jpg",
+          "imageAlt": "Ecstasy of Saint Teresa — Church Interior (AP 89)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Santa%20Maria%20della%20Vittoria%20in%20Rome%20-%20Interior.jpg"
+        },
+        {
+          "id": "cornaro-chapel",
+          "label": "Cornaro Chapel",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Santa%20Maria%20della%20Vittoria%20-%20Ecstasy%20of%20Saint%20Teresa.jpg",
+          "imageAlt": "Ecstasy of Saint Teresa — Cornaro Chapel (AP 89)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Santa%20Maria%20della%20Vittoria%20-%20Ecstasy%20of%20Saint%20Teresa.jpg"
+        },
+        {
+          "id": "ecstasy-saint-teresa",
+          "label": "Ecstasy Saint Teresa",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Ecstasy%20of%20Saint%20Theresa.jpg",
+          "imageAlt": "Ecstasy of Saint Teresa — Ecstasy Saint Teresa (AP 89)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Ecstasy%20of%20Saint%20Theresa.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap90-angel-arquebus",
+      "apNumber": 90,
+      "unit": 3,
+      "region": "colonialAmericas",
+      "culture": "andeanColonialBaroque",
+      "traditionGroup": "baroqueColonial",
+      "period": "Spanish Colonial Baroque",
+      "titleEn": "Angel with Arquebus, Asiel Timor Dei",
+      "titleZh": "《持火绳枪的天使：上帝的敬畏》",
+      "artistCulture": "Circle of the Master of Calamarca",
+      "siteName": "Calamarca, present-day Bolivia",
+      "coordinates": {
+        "x": 510,
+        "y": 520
+      },
+      "date": "c. 1680 C.E.",
+      "medium": "Oil on canvas",
+      "workType": "Devotional painting",
+      "function": "Catholic instruction and colonial devotional display",
+      "form": "A frontal winged figure wears sumptuous Andean-European court dress and holds an arquebus",
+      "content": "The inscription identifies an angelic personification of fear of God",
+      "context": "Colonial Andean workshops hybridized Catholic angel imagery, military authority, and local textile splendor",
+      "recognitionAnchors": [
+        "Winged figure carries an arquebus",
+        "Elaborate brocade dress and feathered hat"
+      ],
+      "comparisonIds": [
+        "ap43-augustus-prima-porta"
+      ],
+      "keywords": [
+        "arquebus angel",
+        "Calamarca",
+        "Andean Baroque"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/An%C3%B3nimo%20-%20Asiel%20Timor%20Dei.%20Arc%C3%A1ngel%20arcabucero%2C%20c.%201680.jpg",
+          "imageAlt": "Angel with Arquebus, Asiel Timor Dei — Primary view (AP 90)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:An%C3%B3nimo%20-%20Asiel%20Timor%20Dei.%20Arc%C3%A1ngel%20arcabucero%2C%20c.%201680.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap91-las-meninas",
+      "apNumber": 91,
+      "unit": 3,
+      "region": "iberianPeninsula",
+      "culture": "spanishBaroque",
+      "traditionGroup": "baroqueColonial",
+      "period": "Spanish Baroque",
+      "titleEn": "Las Meninas",
+      "titleZh": "《宫娥》",
+      "artistCulture": "Diego Velázquez",
+      "siteName": "Madrid, Spain",
+      "coordinates": {
+        "x": 760,
+        "y": 275
+      },
+      "date": "c. 1656 C.E.",
+      "medium": "Oil on canvas",
+      "workType": "Court portrait and studio scene",
+      "function": "Royal representation and meditation on artistic status",
+      "form": "Complex sightlines, open brushwork, mirror reflection, and a distant doorway implicate the viewer",
+      "content": "Infanta Margarita and attendants occupy the studio while the royal couple appears in a mirror",
+      "context": "Velázquez asserted the intellectual nobility of painting within Philip IV’s Madrid court",
+      "recognitionAnchors": [
+        "Artist stands at enormous canvas",
+        "Mirror reflects king and queen"
+      ],
+      "comparisonIds": [
+        "ap68-arnolfini-portrait"
+      ],
+      "keywords": [
+        "mirror",
+        "court portrait",
+        "Velázquez"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Las%20Meninas%20by%20Diego%20Vel%C3%A1zquez.jpg",
+          "imageAlt": "Las Meninas — Primary view (AP 91)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Las%20Meninas%20by%20Diego%20Vel%C3%A1zquez.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap92-woman-holding-balance",
+      "apNumber": 92,
+      "unit": 3,
+      "region": "lowCountries",
+      "culture": "dutchBaroque",
+      "traditionGroup": "baroqueColonial",
+      "period": "Dutch Baroque",
+      "titleEn": "Woman Holding a Balance",
+      "titleZh": "《持天平的女人》",
+      "artistCulture": "Johannes Vermeer",
+      "siteName": "Delft, Netherlands",
+      "coordinates": {
+        "x": 815,
+        "y": 210
+      },
+      "date": "c. 1664 C.E.",
+      "medium": "Oil on canvas",
+      "workType": "Genre painting",
+      "function": "Domestic display and moral contemplation",
+      "form": "Soft window light, measured geometry, and balanced color suspend a private moment",
+      "content": "A woman holds empty scales before jewelry and a Last Judgment painting",
+      "context": "Dutch domestic realism invites debate over temperance, spiritual judgment, and material wealth",
+      "recognitionAnchors": [
+        "Empty balance centered in woman’s hand",
+        "Last Judgment painting behind her head"
+      ],
+      "comparisonIds": [
+        "ap24-last-judgment-of-hunefer"
+      ],
+      "keywords": [
+        "Vermeer",
+        "balance",
+        "temperance"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Woman%20Holding%20a%20Balance%20%28Vermeer%29.jpg",
+          "imageAlt": "Woman Holding a Balance — Primary view (AP 92)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Woman%20Holding%20a%20Balance%20%28Vermeer%29.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap93-palace-versailles",
+      "apNumber": 93,
+      "unit": 3,
+      "region": "france",
+      "culture": "frenchBaroqueAbsolutism",
+      "traditionGroup": "baroqueColonial",
+      "period": "French Baroque",
+      "titleEn": "The Palace at Versailles",
+      "titleZh": "凡尔赛宫",
+      "artistCulture": "Louis Le Vau, Jules Hardouin-Mansart, Charles Le Brun, and André Le Nôtre",
+      "siteName": "Versailles, France",
+      "coordinates": {
+        "x": 805,
+        "y": 235
+      },
+      "date": "Begun 1669 C.E.",
+      "medium": "Masonry, stone, wood, iron, glass, paint, and gilding",
+      "workType": "Palace and garden complex",
+      "function": "Royal residence, government, ceremony, and control of the nobility",
+      "form": "Axial planning extends from courtyards through Hall of Mirrors into geometric gardens",
+      "content": "Apollo imagery, mirrors, war and peace salons, fountains, and vistas glorify Louis XIV",
+      "context": "The Sun King centralized aristocratic life and state spectacle outside Paris",
+      "recognitionAnchors": [
+        "Hall of Mirrors faces formal gardens",
+        "Radiating avenues and axial parterres"
+      ],
+      "comparisonIds": [
+        "ap45-forum-of-trajan"
+      ],
+      "keywords": [
+        "absolutism",
+        "Hall of Mirrors",
+        "Le Nôtre"
+      ],
+      "images": [
+        {
+          "id": "aerial-overview",
+          "label": "Aerial Overview",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Vue%20a%C3%A9rienne%20de%20Versailles.jpg",
+          "imageAlt": "The Palace at Versailles — Aerial Overview (AP 93)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Vue%20a%C3%A9rienne%20de%20Versailles.jpg"
+        },
+        {
+          "id": "facade",
+          "label": "Facade",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Fa%C3%A7ade%20of%20the%20Palace%20of%20Versailles.jpg",
+          "imageAlt": "The Palace at Versailles — Facade (AP 93)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Fa%C3%A7ade%20of%20the%20Palace%20of%20Versailles.jpg"
+        },
+        {
+          "id": "courtyard",
+          "label": "Courtyard",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Cour%20d'honneur%202.jpg",
+          "imageAlt": "The Palace at Versailles — Courtyard (AP 93)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Cour%20d'honneur%202.jpg"
+        },
+        {
+          "id": "hall-mirrors",
+          "label": "Hall Mirrors",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Palace%20of%20Versailles%20Hall%20of%20Mirrors%20%289812078196%29.jpg",
+          "imageAlt": "The Palace at Versailles — Hall Mirrors (AP 93)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Palace%20of%20Versailles%20Hall%20of%20Mirrors%20%289812078196%29.jpg"
+        },
+        {
+          "id": "gardens",
+          "label": "Gardens",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Vue%20a%C3%A9rienne%20des%20jardins%20du%20ch%C3%A2teau%20de%20Versailles.jpg",
+          "imageAlt": "The Palace at Versailles — Gardens (AP 93)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Vue%20a%C3%A9rienne%20des%20jardins%20du%20ch%C3%A2teau%20de%20Versailles.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap94-screen-siege-belgrade",
+      "apNumber": 94,
+      "unit": 3,
+      "region": "colonialAmericas",
+      "culture": "newSpainEnconchado",
+      "traditionGroup": "baroqueColonial",
+      "period": "Spanish Colonial Baroque",
+      "titleEn": "Screen with the Siege of Belgrade and hunting scene",
+      "titleZh": "《贝尔格莱德围城与狩猎图》屏风",
+      "artistCulture": "Circle of the González family",
+      "siteName": "Mexico City, New Spain",
+      "coordinates": {
+        "x": 405,
+        "y": 380
+      },
+      "date": "c. 1697–1701 C.E.",
+      "medium": "Tempera and resin on wood inlaid with mother-of-pearl",
+      "workType": "Folding screen",
+      "function": "Elite domestic display, diplomacy, and global prestige",
+      "form": "A hinged Japanese-derived biombo combines panoramic narrative with shimmering enconchado",
+      "content": "One face depicts the Siege of Belgrade; the reverse stages an aristocratic hunt",
+      "context": "New Spanish artisans merged Asian format, European prints, and Mexican shell-inlay for a viceregal audience",
+      "recognitionAnchors": [
+        "Two-sided folding screen format",
+        "Mother-of-pearl flashes across battle and hunt"
+      ],
+      "comparisonIds": [
+        "ap59-bayeux-tapestry"
+      ],
+      "keywords": [
+        "biombo",
+        "enconchado",
+        "global exchange"
+      ],
+      "images": [
+        {
+          "id": "siege-belgrade-front",
+          "label": "Siege Belgrade Front",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Gonz%C3%A1lez%20Family%20biombo%20enconchado%20of%20Siege%20of%20Belgrade%20%28with%20Hunting%20Scene%20on%20reverse%29%20c.%201697-1701.jpg",
+          "imageAlt": "Screen with the Siege of Belgrade and hunting scene — Siege Belgrade Front (AP 94)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Gonz%C3%A1lez%20Family%20biombo%20enconchado%20of%20Siege%20of%20Belgrade%20%28with%20Hunting%20Scene%20on%20reverse%29%20c.%201697-1701.jpg"
+        },
+        {
+          "id": "hunting-scene-reverse",
+          "label": "Hunting Scene Reverse",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Gonz%C3%A1lez%20Family%20biombo%20enconchado%20of%20Hunting%20Scene%20%28with%20Siege%20of%20Belgrade%20on%20reverse%29%20c.%201697-1701.jpg",
+          "imageAlt": "Screen with the Siege of Belgrade and hunting scene — Hunting Scene Reverse (AP 94)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Gonz%C3%A1lez%20Family%20biombo%20enconchado%20of%20Hunting%20Scene%20%28with%20Siege%20of%20Belgrade%20on%20reverse%29%20c.%201697-1701.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap95-virgin-guadalupe",
+      "apNumber": 95,
+      "unit": 3,
+      "region": "colonialAmericas",
+      "culture": "newSpainGuadalupe",
+      "traditionGroup": "baroqueColonial",
+      "period": "Spanish Colonial Baroque",
+      "titleEn": "The Virgin of Guadalupe (Virgen de Guadalupe)",
+      "titleZh": "《瓜达卢佩圣母》",
+      "artistCulture": "Miguel González",
+      "siteName": "Mexico City, New Spain",
+      "coordinates": {
+        "x": 405,
+        "y": 380
+      },
+      "date": "c. 1698 C.E.",
+      "medium": "Oil on canvas on wood inlaid with mother-of-pearl",
+      "workType": "Devotional image",
+      "function": "Marian devotion and creole identity",
+      "form": "The iconic Virgin stands within radiating mandorla above crescent and angel, framed by apparition scenes",
+      "content": "The Guadalupe image is joined to narrative vignettes of Juan Diego’s visions",
+      "context": "Enconchado technique and a locally rooted Marian cult articulated New Spanish sacred and cultural identity",
+      "recognitionAnchors": [
+        "Radiant Virgin stands on crescent moon",
+        "Mother-of-pearl surface surrounds apparition scenes"
+      ],
+      "comparisonIds": [
+        "ap54-virgin-theotokos-saints"
+      ],
+      "keywords": [
+        "Guadalupe",
+        "enconchado",
+        "creole identity"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://collections-images.lacma.org/images/158374/158374-1-primary.webp",
+          "imageAlt": "The Virgin of Guadalupe (Virgen de Guadalupe) — Primary view (AP 95)",
+          "imageSourceName": "Los Angeles County Museum of Art",
+          "imageSourceUrl": "https://collections.lacma.org/object/158374"
+        }
+      ]
+    },
+    {
+      "id": "ap96-fruit-insects",
+      "apNumber": 96,
+      "unit": 3,
+      "region": "lowCountries",
+      "culture": "dutchBaroqueStillLife",
+      "traditionGroup": "baroqueColonial",
+      "period": "Dutch Baroque",
+      "titleEn": "Fruit and Insects",
+      "titleZh": "《水果与昆虫静物》",
+      "artistCulture": "Rachel Ruysch",
+      "siteName": "Amsterdam, Netherlands",
+      "coordinates": {
+        "x": 815,
+        "y": 205
+      },
+      "date": "1711 C.E.",
+      "medium": "Oil on wood",
+      "workType": "Still-life painting",
+      "function": "Collector display and contemplation of nature and transience",
+      "form": "A diagonal mound of fruit, flowers, insects, and reptiles emerges dramatically from darkness",
+      "content": "Abundance coexists with bruising, predation, and decay",
+      "context": "Ruysch joined scientific observation and virtuoso market painting in the Dutch Republic",
+      "recognitionAnchors": [
+        "Fruit and flowers teem with insects",
+        "Dark forest floor heightens luminous specimens"
+      ],
+      "comparisonIds": [
+        "ap92-woman-holding-balance"
+      ],
+      "keywords": [
+        "still life",
+        "vanitas",
+        "natural history"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Rachel%20Ruysch%20-%20Still-Life%20with%20Fruit%20and%20Insects%20-%20WGA20557.jpg",
+          "imageAlt": "Fruit and Insects — Primary view (AP 96)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Rachel%20Ruysch%20-%20Still-Life%20with%20Fruit%20and%20Insects%20-%20WGA20557.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap97-spaniard-indian-mestizo",
+      "apNumber": 97,
+      "unit": 3,
+      "region": "colonialAmericas",
+      "culture": "newSpainCasta",
+      "traditionGroup": "baroqueColonial",
+      "period": "Spanish Colonial Baroque",
+      "titleEn": "Spaniard and Indian Produce a Mestizo",
+      "titleZh": "《西班牙人与印第安妇女生出混血儿》",
+      "artistCulture": "Attributed to Juan Rodríguez Juárez",
+      "siteName": "Mexico City, New Spain",
+      "coordinates": {
+        "x": 405,
+        "y": 380
+      },
+      "date": "c. 1715 C.E.",
+      "medium": "Oil on canvas",
+      "workType": "Casta painting",
+      "function": "Social classification and colonial display",
+      "form": "A polished family portrait pairs inscription, dress, occupation, and domestic goods",
+      "content": "A Spanish father, Indigenous mother, and mestizo child embody a named racial category",
+      "context": "Casta series naturalized New Spain’s colonial hierarchy while revealing its constructed categories",
+      "recognitionAnchors": [
+        "Family trio paired with classificatory text",
+        "Dress and goods stage colonial social rank"
+      ],
+      "comparisonIds": [
+        "ap91-las-meninas"
+      ],
+      "keywords": [
+        "casta",
+        "mestizo",
+        "colonial hierarchy"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Spaniard%20and%20Indian%20Produce%20a%20Mestizo.jpg",
+          "imageAlt": "Spaniard and Indian Produce a Mestizo — Primary view (AP 97)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Spaniard%20and%20Indian%20Produce%20a%20Mestizo.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ap98-tete-a-tete",
+      "apNumber": 98,
+      "unit": 3,
+      "region": "britishIsles",
+      "culture": "britishRococoSatire",
+      "traditionGroup": "baroqueColonial",
+      "period": "British Rococo and satire",
+      "titleEn": "The Tête à Tête, from Marriage à la Mode",
+      "titleZh": "《婚姻时尚》之二：夫妻对坐",
+      "artistCulture": "William Hogarth",
+      "siteName": "London, England",
+      "coordinates": {
+        "x": 790,
+        "y": 205
+      },
+      "date": "c. 1743 C.E.",
+      "medium": "Oil on canvas",
+      "workType": "Narrative satirical painting",
+      "function": "Moral satire and elite art-market display",
+      "form": "A stage-like interior packs diagonal glances and symbolic details into a sequential narrative",
+      "content": "A disheveled aristocratic couple and exhausted steward expose infidelity, debt, and failed marriage",
+      "context": "Hogarth critiqued arranged marriage and elite consumption in a series designed for painted and engraved circulation",
+      "recognitionAnchors": [
+        "Clock reads after noon above bored couple",
+        "Dog sniffs another woman’s cap in husband’s pocket"
+      ],
+      "comparisonIds": [
+        "ap59-bayeux-tapestry"
+      ],
+      "keywords": [
+        "Hogarth",
+        "satire",
+        "marriage"
+      ],
+      "images": [
+        {
+          "id": "primary",
+          "label": "Primary view",
+          "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/William%20Hogarth%20-%20Marriage%20A-la-Mode%202%20The%20T%C3%AAte%20%C3%A0%20T%C3%AAte.jpg",
+          "imageAlt": "The Tête à Tête, from Marriage à la Mode — Primary view (AP 98)",
+          "imageSourceName": "Wikimedia Commons",
+          "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:William%20Hogarth%20-%20Marriage%20A-la-Mode%202%20The%20T%C3%AAte%20%C3%A0%20T%C3%AAte.jpg"
+        }
+      ]
+    }
+  ],
+  "credits": {
+    "ap48-catacomb-priscilla": [
+      {
+        "creatorOrInstitution": "Early Christian painter; photograph André Held/akg / Catacomb of Priscilla / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Early Christian painter; Joseph Wilpert reproduction / Catacomb of Priscilla / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Early Christian painter; Joseph Wilpert reproduction / Catacomb of Priscilla / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      }
+    ],
+    "ap49-santa-sabina": [
+      {
+        "creatorOrInstitution": "Jensens / Wikimedia Commons",
+        "licenseName": "Public domain (self-dedicated)",
+        "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-self"
+      },
+      {
+        "creatorOrInstitution": "WikiRomaWiki / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "KU Leuven EuroPhot / Wikimedia Commons",
+        "licenseName": "Public domain (anonymous EU work)",
+        "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-anon-70-EU"
+      }
+    ],
+    "ap50-vienna-genesis": [
+      {
+        "creatorOrInstitution": "Vienna Genesis illuminator / Austrian National Library / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Vienna Genesis illuminator / Austrian National Library / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      }
+    ],
+    "ap51-san-vitale": [
+      {
+        "creatorOrInstitution": "Tango7174 / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "BjoernEisbaer / Wikimedia Commons",
+        "licenseName": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      },
+      {
+        "creatorOrInstitution": "José Luiz Bernardes Ribeiro / Basilica of San Vitale / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "Petar Milošević / Basilica of San Vitale / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "KU Leuven EuroPhot / Wikimedia Commons",
+        "licenseName": "Public domain (anonymous EU work)",
+        "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-anon-70-EU"
+      }
+    ],
+    "ap52-hagia-sophia": [
+      {
+        "creatorOrInstitution": "Yair Haklai / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "Matthew Badger (bad_germ) / Wikimedia Commons",
+        "licenseName": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      },
+      {
+        "creatorOrInstitution": "David Bjorgen/Cybjorg / Wikimedia Commons",
+        "licenseName": "CC BY-SA 2.5",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5/"
+      }
+    ],
+    "ap53-merovingian-fibulae": {
+      "creatorOrInstitution": "Merovingian workshop / Musée d’Archéologie nationale / Musée du Louvre",
+      "licenseName": "Louvre educational-use terms; commercial permission required",
+      "licenseUrl": "https://collections.louvre.fr/en/page/cgu"
+    },
+    "ap54-virgin-theotokos-saints": {
+      "creatorOrInstitution": "Byzantine icon painter / Saint Catherine’s Monastery / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap55-lindisfarne-gospels": [
+      {
+        "creatorOrInstitution": "Eadfrith / British Library / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Eadfrith / British Library; Penn State Art History VRC surrogate",
+        "licenseName": "Teaching, learning, and research access; open reuse not granted",
+        "licenseUrl": "https://libraries.psu.edu/psu-libraries-copyright-statement"
+      },
+      {
+        "creatorOrInstitution": "Eadfrith-associated workshop / British Library / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      }
+    ],
+    "ap56-great-mosque-cordoba": [
+      {
+        "creatorOrInstitution": "Richard Mortel / Wikimedia Commons",
+        "licenseName": "CC BY 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/2.0/"
+      },
+      {
+        "creatorOrInstitution": "Antonio Palacios / Wikimedia Commons",
+        "licenseName": "CC BY 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/2.0/"
+      },
+      {
+        "creatorOrInstitution": "TheBoxagon / Wikimedia Commons",
+        "licenseName": "CC0 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      {
+        "creatorOrInstitution": "James (Jim) Gordon / Wikimedia Commons",
+        "licenseName": "CC BY 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/2.0/"
+      },
+      {
+        "creatorOrInstitution": "Azahara22; revision R. Prazeres / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    ],
+    "ap57-pyxis-al-mughira": {
+      "creatorOrInstitution": "Workshop at the court of Madinat al-Zahra / Musée du Louvre / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap58-church-sainte-foy": [
+      {
+        "creatorOrInstitution": "Velvet / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "Woodstock / Wikimedia Commons",
+        "licenseName": "Free Art License 1.3",
+        "licenseUrl": "https://artlibre.org/licence/lal/en/"
+      },
+      {
+        "creatorOrInstitution": "PMRMaeyaert / Wikimedia Commons",
+        "licenseName": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      },
+      {
+        "creatorOrInstitution": "Medieval metalworkers / Abbey Church of Sainte-Foy / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      }
+    ],
+    "ap59-bayeux-tapestry": [
+      {
+        "creatorOrInstitution": "Anglo-Saxon embroiderers / Bayeux Museum / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Anglo-Saxon embroiderers; photograph Myrabella / Bayeux Museum / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      }
+    ],
+    "ap60-chartres-cathedral": [
+      {
+        "creatorOrInstitution": "Dcconsta / Wikimedia Commons",
+        "licenseName": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      },
+      {
+        "creatorOrInstitution": "Zairon / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "Eugène Viollet-le-Duc / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Patrick Monchicourt / Wikimedia Commons",
+        "licenseName": "CC BY-SA 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/"
+      },
+      {
+        "creatorOrInstitution": "Ludvig14 / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "Oliver Mitchell / Wikimedia Commons",
+        "licenseName": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      }
+    ],
+    "ap61-bibles-moralisees": [
+      {
+        "creatorOrInstitution": "Parisian illuminators / Toledo Cathedral / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Parisian illuminators / Austrian National Library / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      }
+    ],
+    "ap62-rottgen-pieta": {
+      "creatorOrInstitution": "Rhineland sculptor; photograph J. Vogel / LVR-LandesMuseum Bonn / Wikimedia Commons",
+      "licenseName": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    "ap63-arena-scrovegni-chapel": [
+      {
+        "creatorOrInstitution": "Hugo DK / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "Giotto di Bondone / Scrovegni Chapel / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Andrea Piroddi / Wikimedia Commons",
+        "licenseName": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      }
+    ],
+    "ap64-golden-haggadah": [
+      {
+        "creatorOrInstitution": "Jewish manuscript painter / British Library / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Jewish manuscript painter; NLI Education Center / British Library / Wikimedia Commons",
+        "licenseName": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      },
+      {
+        "creatorOrInstitution": "Jewish manuscript painter / British Library / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      }
+    ],
+    "ap65-alhambra": [
+      {
+        "creatorOrInstitution": "Jebulon / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "David Green / Wikimedia Commons",
+        "licenseName": "CC BY 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/2.0/"
+      },
+      {
+        "creatorOrInstitution": "PerryPlanet / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Encyclopædia Britannica (1911) / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      }
+    ],
+    "ap66-merode-altarpiece": {
+      "creatorOrInstitution": "Workshop of Robert Campin / The Met Cloisters",
+      "licenseName": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    "ap67-pazzi-chapel": [
+      {
+        "creatorOrInstitution": "Yair Haklai / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "Gryffindor / Wikimedia Commons",
+        "licenseName": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      }
+    ],
+    "ap68-arnolfini-portrait": {
+      "creatorOrInstitution": "Jan van Eyck / National Gallery, London / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap69-donatello-david": {
+      "creatorOrInstitution": "Donatello; photograph Yair Haklai / Museo Nazionale del Bargello / Wikimedia Commons",
+      "licenseName": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    "ap70-palazzo-rucellai": {
+      "creatorOrInstitution": "Leon Battista Alberti; photograph Miguel Hermoso Cuesta / Wikimedia Commons",
+      "licenseName": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    "ap71-madonna-child-two-angels": {
+      "creatorOrInstitution": "Fra Filippo Lippi; photograph Armin Kleiner / Uffizi Gallery / Wikimedia Commons",
+      "licenseName": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    "ap72-birth-venus": {
+      "creatorOrInstitution": "Sandro Botticelli / Uffizi Gallery / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap73-last-supper": {
+      "creatorOrInstitution": "Leonardo da Vinci; reproduction uploaded by Sailko / Museo del Cenacolo Vinciano / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap74-adam-eve-durer": {
+      "creatorOrInstitution": "Albrecht Dürer / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap75-sistine-chapel-frescoes": [
+      {
+        "creatorOrInstitution": "Michelangelo; photograph Gary Todd / Sistine Chapel / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Michelangelo / Sistine Chapel / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Michelangelo / Sistine Chapel / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Michelangelo / Sistine Chapel / Wikimedia Commons",
+        "licenseName": "Public Domain Mark 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+      }
+    ],
+    "ap76-school-athens": {
+      "creatorOrInstitution": "Raphael / Apostolic Palace / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap77-isenheim-altarpiece": [
+      {
+        "creatorOrInstitution": "Matthias Grünewald; photograph Gerhard Salomon / Unterlinden Museum / Wikimedia Commons",
+        "licenseName": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      },
+      {
+        "creatorOrInstitution": "Matthias Grünewald and Nikolaus Hagenauer; photograph Gsimonov / Unterlinden Museum / Wikimedia Commons",
+        "licenseName": "CC0 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "ap78-entombment-christ-pontormo": {
+      "creatorOrInstitution": "Jacopo da Pontormo / Capponi Chapel / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap79-allegory-law-grace": {
+      "creatorOrInstitution": "Lucas Cranach the Elder; scan by Concord / Weimar Schlossmuseum and British Museum / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap80-venus-urbino": {
+      "creatorOrInstitution": "Titian / Uffizi Gallery / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap81-codex-mendoza-frontispiece": {
+      "creatorOrInstitution": "Mexica painter-scribes / Bodleian Libraries / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap82-il-gesu": [
+      {
+        "creatorOrInstitution": "Hugo DK / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "NateBergin / Wikimedia Commons",
+        "licenseName": "CC BY 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      {
+        "creatorOrInstitution": "Fb78 / Wikimedia Commons",
+        "licenseName": "CC BY-SA 2.5",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5/"
+      }
+    ],
+    "ap83-hunters-snow": {
+      "creatorOrInstitution": "Pieter Bruegel the Elder / Kunsthistorisches Museum / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap84-mosque-selim-ii": [
+      {
+        "creatorOrInstitution": "eye of einstein / Wikimedia Commons",
+        "licenseName": "CC BY 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/2.0/"
+      },
+      {
+        "creatorOrInstitution": "Tarik Kaan Muslu / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "Dosseman / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    ],
+    "ap85-calling-saint-matthew": {
+      "creatorOrInstitution": "Caravaggio / Contarelli Chapel / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap86-henri-iv-marie-medici": {
+      "creatorOrInstitution": "Peter Paul Rubens / Musée du Louvre / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap87-self-portrait-saskia": {
+      "creatorOrInstitution": "Rembrandt van Rijn / Rembrandt House Museum / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap88-san-carlo-quattro-fontane": [
+      {
+        "creatorOrInstitution": "Nicholas Hartmann / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "Oursana / Wikimedia Commons",
+        "licenseName": "CC0 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      {
+        "creatorOrInstitution": "Afernand74 / Wikimedia Commons",
+        "licenseName": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      }
+    ],
+    "ap89-ecstasy-saint-teresa": [
+      {
+        "creatorOrInstitution": "Livioandronico2013 / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "Викидим / Santa Maria della Vittoria / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "David Finn Archive / National Gallery of Art / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    ],
+    "ap90-angel-arquebus": {
+      "creatorOrInstitution": "Circle of the Master of Calamarca / National Museum of Art, La Paz / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap91-las-meninas": {
+      "creatorOrInstitution": "Diego Velázquez / Museo del Prado / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap92-woman-holding-balance": {
+      "creatorOrInstitution": "Johannes Vermeer / National Gallery of Art / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap93-palace-versailles": [
+      {
+        "creatorOrInstitution": "Bonjour145644 / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "DiscoA340 / Wikimedia Commons",
+        "licenseName": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      {
+        "creatorOrInstitution": "Blood Destructor / Wikimedia Commons",
+        "licenseName": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      },
+      {
+        "creatorOrInstitution": "Gary Todd / Wikimedia Commons",
+        "licenseName": "CC0 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      {
+        "creatorOrInstitution": "HerRobin / Wikimedia Commons",
+        "licenseName": "CC0 1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    ],
+    "ap94-screen-siege-belgrade": [
+      {
+        "creatorOrInstitution": "Circle of the González family / Brooklyn Museum / Wikimedia Commons",
+        "licenseName": "No known copyright restrictions",
+        "licenseUrl": "https://commons.wikimedia.org/wiki/Commons:Copyright_rules_by_subject_matter#Photographs_of_old_artworks"
+      },
+      {
+        "creatorOrInstitution": "Circle of the González family / Brooklyn Museum / Wikimedia Commons",
+        "licenseName": "No known copyright restrictions",
+        "licenseUrl": "https://commons.wikimedia.org/wiki/Commons:Copyright_rules_by_subject_matter#Photographs_of_old_artworks"
+      }
+    ],
+    "ap95-virgin-guadalupe": {
+      "creatorOrInstitution": "Miguel González / Los Angeles County Museum of Art",
+      "licenseName": "LACMA collection image; reuse subject to museum terms",
+      "licenseUrl": "https://www.lacma.org/terms-use"
+    },
+    "ap96-fruit-insects": {
+      "creatorOrInstitution": "Rachel Ruysch / Uffizi Gallery / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    "ap97-spaniard-indian-mestizo": {
+      "creatorOrInstitution": "Attributed to Juan Rodríguez Juárez / Wikimedia Commons",
+      "licenseName": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    "ap98-tete-a-tete": {
+      "creatorOrInstitution": "William Hogarth / National Gallery, London / Wikimedia Commons",
+      "licenseName": "Public Domain Mark 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    }
+  }
+}
