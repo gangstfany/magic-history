@@ -18,6 +18,10 @@ const execFileAsync = promisify(execFile);
 const VALIDATOR_PATH = fileURLToPath(new URL('../scripts/validate-art-history-data.mjs', import.meta.url));
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const U1_CANONICAL_PATH = new URL('./fixtures/u1-canonical.json', import.meta.url);
+const U3_MANIFEST_PATH = new URL(
+  '../data/ap-art-history-unit-3-manifest.json',
+  import.meta.url,
+);
 const MANIFEST_PATHS = {
   1: new URL('../data/ap-art-history-unit-1-manifest.json', import.meta.url),
   2: new URL('../data/ap-art-history-unit-2-manifest.json', import.meta.url),
@@ -74,6 +78,59 @@ const EXPECTED_OFFICIAL_MANIFEST = [
   '45|ap45-forum-of-trajan|Forum of Trajan',
   '46|ap46-pantheon|Pantheon',
   '47|ap47-ludovisi-battle-sarcophagus|Ludovisi Battle Sarcophagus',
+];
+const EXPECTED_U3_MANIFEST = [
+  '48|ap48-catacomb-priscilla|Catacomb of Priscilla|italyVatican|3',
+  '49|ap49-santa-sabina|Santa Sabina|italyVatican|3',
+  '50|ap50-vienna-genesis|Rebecca and Eliezer at the Well and Jacob Wrestling the Angel, from the Vienna Genesis|easternMediterranean|2',
+  '51|ap51-san-vitale|San Vitale|italyVatican|5',
+  '52|ap52-hagia-sophia|Hagia Sophia|easternMediterranean|3',
+  '53|ap53-merovingian-fibulae|Merovingian looped fibulae|france|1',
+  '54|ap54-virgin-theotokos-saints|Virgin (Theotokos) and Child between Saints Theodore and George|easternMediterranean|1',
+  '55|ap55-lindisfarne-gospels|Lindisfarne Gospels: St. Matthew, cross-carpet page; St. Luke portrait page; St. Luke incipit page|britishIsles|3',
+  '56|ap56-great-mosque-cordoba|Great Mosque|iberianPeninsula|5',
+  '57|ap57-pyxis-al-mughira|Pyxis of al-Mughira|iberianPeninsula|1',
+  '58|ap58-church-sainte-foy|Church of Sainte-Foy|france|4',
+  '59|ap59-bayeux-tapestry|Bayeux Tapestry|britishIsles|2',
+  '60|ap60-chartres-cathedral|Chartres Cathedral|france|6',
+  '61|ap61-bibles-moralisees|Dedication Page with Blanche of Castile and King Louis IX of France, Scenes from the Apocalypse from Bibles moralisées|france|2',
+  '62|ap62-rottgen-pieta|Röttgen Pietà|centralEurope|1',
+  '63|ap63-arena-scrovegni-chapel|Arena (Scrovegni) Chapel, including Lamentation|italyVatican|3',
+  '64|ap64-golden-haggadah|Golden Haggadah (The Plagues of Egypt, Scenes of Liberation, and Preparation for Passover)|iberianPeninsula|3',
+  '65|ap65-alhambra|Alhambra|iberianPeninsula|4',
+  '66|ap66-merode-altarpiece|Annunciation Triptych (Merode Altarpiece)|lowCountries|1',
+  '67|ap67-pazzi-chapel|Pazzi Chapel|italyVatican|2',
+  '68|ap68-arnolfini-portrait|The Arnolfini Portrait|lowCountries|1',
+  '69|ap69-donatello-david|David|italyVatican|1',
+  '70|ap70-palazzo-rucellai|Palazzo Rucellai|italyVatican|1',
+  '71|ap71-madonna-child-two-angels|Madonna and Child with Two Angels|italyVatican|1',
+  '72|ap72-birth-venus|Birth of Venus|italyVatican|1',
+  '73|ap73-last-supper|Last Supper|italyVatican|1',
+  '74|ap74-adam-eve-durer|Adam and Eve|centralEurope|1',
+  '75|ap75-sistine-chapel-frescoes|Sistine Chapel ceiling and altar wall frescoes|italyVatican|4',
+  '76|ap76-school-athens|School of Athens|italyVatican|1',
+  '77|ap77-isenheim-altarpiece|Isenheim altarpiece|centralEurope|2',
+  '78|ap78-entombment-christ-pontormo|Entombment of Christ|italyVatican|1',
+  '79|ap79-allegory-law-grace|Allegory of Law and Grace|centralEurope|1',
+  '80|ap80-venus-urbino|Venus of Urbino|italyVatican|1',
+  '81|ap81-codex-mendoza-frontispiece|Frontispiece of the Codex Mendoza|colonialAmericas|1',
+  '82|ap82-il-gesu|Il Gesù, including Triumph of the Name of Jesus ceiling fresco|italyVatican|3',
+  '83|ap83-hunters-snow|Hunters in the Snow|lowCountries|1',
+  '84|ap84-mosque-selim-ii|Mosque of Selim II|easternMediterranean|3',
+  '85|ap85-calling-saint-matthew|Calling of Saint Matthew|italyVatican|1',
+  '86|ap86-henri-iv-marie-medici|Henri IV Receives the Portrait of Marie de’ Medici, from the Marie de’ Medici Cycle|lowCountries|1',
+  '87|ap87-self-portrait-saskia|Self-Portrait with Saskia|lowCountries|1',
+  '88|ap88-san-carlo-quattro-fontane|San Carlo alle Quattro Fontane|italyVatican|3',
+  '89|ap89-ecstasy-saint-teresa|Ecstasy of Saint Teresa|italyVatican|3',
+  '90|ap90-angel-arkebus|Angel with Arquebus, Asiel Timor Dei|colonialAmericas|1',
+  '91|ap91-las-meninas|Las Meninas|iberianPeninsula|1',
+  '92|ap92-woman-holding-balance|Woman Holding a Balance|lowCountries|1',
+  '93|ap93-palace-versailles|The Palace at Versailles|france|5',
+  '94|ap94-screen-running-bull|Screen with the Siege of Belgrade and hunting scene|colonialAmericas|2',
+  '95|ap95-casta-painting|The Virgin of Guadalupe (Virgen de Guadalupe)|colonialAmericas|1',
+  '96|ap96-fruit-flower-insects|Fruit and Insects|lowCountries|1',
+  '97|ap97-spanish-colonial-portrait|Portrait of Sor Juana Inés de la Cruz|colonialAmericas|1',
+  "98|ap98-st-pauls-cathedral|St. Paul's Cathedral|britishIsles|1",
 ];
 const EXPECTED_NEW_WORKS = [
   {
@@ -179,6 +236,27 @@ test('checked-in U2 manifest matches the official AP 12-47 sequence', async () =
     ),
     EXPECTED_OFFICIAL_MANIFEST,
     'checked-in manifest must match the independently transcribed CED sequence',
+  );
+});
+
+test('checked-in U3 manifest matches AP 48-98 and 103 required views', async () => {
+  const manifest = JSON.parse(await readFile(U3_MANIFEST_PATH, 'utf8'));
+  const entries = Object.entries(manifest)
+    .sort(([a], [b]) => Number(a) - Number(b));
+
+  assert.deepEqual(
+    entries.map(([apNumber]) => Number(apNumber)),
+    Array.from({ length: 51 }, (_, index) => index + 48),
+  );
+  assert.deepEqual(
+    entries.map(([apNumber, work]) => (
+      `${apNumber}|${work.id}|${work.titleEn}|${work.region}|${work.requiredViewIds.length}`
+    )),
+    EXPECTED_U3_MANIFEST,
+  );
+  assert.equal(
+    entries.reduce((sum, [, work]) => sum + work.requiredViewIds.length, 0),
+    103,
   );
 });
 
