@@ -18,16 +18,28 @@ traditions from the four broader study filters used by the map:
 two-sided works have one audited ledger row and one credit record per required
 view.
 
-Rights are recorded at view level. Open-license and public-domain labels link
-to the stated deed; restricted institutional images instead retain the
-institution's actual access or reuse terms. In particular, the Lindisfarne
-Gospels St. Luke portrait uses an exact Penn State teaching/research surrogate
-without an open-reuse claim, the Merovingian fibulae use the Louvre collection
-terms, the LACMA *Virgin of Guadalupe* image retains LACMA's reuse terms, and
-AP 97 uses the exact Breamore House work record distributed by Bridgeman
-Images, whose reuse requires a paid license. The AP 97 identification is
-cross-checked against Smarthistory's article on the same Breamore House
-painting rather than inferred from a similarly titled Commons file.
+Rights are recorded at view level in
+`data/ap-art-history-unit-3-rights.json`. Each entry links to its license,
+public-domain mark, or institutional terms page and has one release class:
+
+- `open`: public-domain or reusable under the stated open license.
+- `noncommercial`: reusable only under the stated noncommercial license.
+- `institutionalEducational`: retained under an institution's stated
+  educational or collection-use terms; it is not unrestricted or open.
+- `restricted`: not release-ready without explicit permission or replacement.
+
+The current Unit 3 set has no `restricted` media. The AP 55 St. Luke portrait
+(folio 137v) and AP 97 Breamore House painting use exact Smarthistory OER
+images under CC BY-NC-SA 4.0 and are therefore `noncommercial`. The Merovingian
+fibulae use the Louvre collection terms, and the LACMA *Virgin of Guadalupe*
+image retains LACMA's reuse terms; both are `institutionalEducational`, not
+open. Any later commercial use requires a new rights audit of both the
+`noncommercial` and `institutionalEducational` entries. This current app is
+classified for developer-only, noncommercial use.
+
+The AP 97 identification is cross-checked against Smarthistory's article on the
+same Breamore House painting rather than inferred from a similarly titled
+Commons file.
 
 Broad or disputed provenances are stated as qualifications rather than false
 precision. AP 50 remains Syria or Palestine; AP 53 records the Louvre findspot

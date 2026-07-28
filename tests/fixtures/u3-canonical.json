@@ -467,10 +467,10 @@
         {
           "id": "st-luke-portrait",
           "label": "St Luke Portrait",
-          "imageUrl": "https://digital.libraries.psu.edu/iiif/2/arthist2:113593/full/full/0/default.jpg",
+          "imageUrl": "https://human.libretexts.org/@api/deki/files/29514/luke-portrait.jpg?revision=1",
           "imageAlt": "《林迪斯法恩福音书》：路加持书而坐，背后帘幕卷起",
-          "imageSourceName": "Penn State Art History Visual Resources",
-          "imageSourceUrl": "https://digital.libraries.psu.edu/digital/collection/arthist2/id/113593/"
+          "imageSourceName": "Palo Alto College Art History image credits",
+          "imageSourceUrl": "https://pressbooks.pub/pacarthistory/back-matter/image-credits/"
         },
         {
           "id": "st-luke-incipit",
@@ -2765,10 +2765,10 @@
         {
           "id": "primary",
           "label": "Primary view",
-          "imageUrl": "https://images-cdn.bridgemanimages.com/api/1.0/image/600wm.BRH.7143740.7055475/470238.jpg",
+          "imageUrl": "https://human.libretexts.org/@api/deki/files/110949/77fccf037a0741d8859632be19bd3d6f0bd88b60.jpg?revision=1",
           "imageAlt": "《西班牙人与印第安妇女生出混血儿》：西班牙父亲、原住民母亲与混血儿童组成家庭群像",
-          "imageSourceName": "Breamore House record via Bridgeman Images",
-          "imageSourceUrl": "https://www.bridgemanimages.com/en-US/juarez/parents-with-their-children-c-1715-oil-on-canvas/oil-on-canvas/asset/470238"
+          "imageSourceName": "Smarthistory exact work page",
+          "imageSourceUrl": "https://smarthistory.org/spaniard-and-indian-produce-a-mestizo-attributed-to-juan-rodriguez/"
         }
       ]
     },
@@ -2928,9 +2928,9 @@
         "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
       },
       {
-        "creatorOrInstitution": "Eadfrith / British Library; Penn State Art History VRC surrogate",
-        "licenseName": "Teaching, learning, and research access; open reuse not granted",
-        "licenseUrl": "https://libraries.psu.edu/psu-libraries-copyright-statement"
+        "creatorOrInstitution": "Eadfrith (traditionally attributed) / British Library / Smarthistory",
+        "licenseName": "CC BY-NC-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
       },
       {
         "creatorOrInstitution": "Eadfrith-associated workshop / British Library / Wikimedia Commons",
@@ -3373,9 +3373,9 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
     },
     "ap97-spaniard-indian-mestizo": {
-      "creatorOrInstitution": "Attributed to Juan Rodríguez Juárez / Breamore House / Bridgeman Images",
-      "licenseName": "Bridgeman licensed image; paid reuse license required",
-      "licenseUrl": "https://www.bridgemanimages.com/en-US/juarez/parents-with-their-children-c-1715-oil-on-canvas/oil-on-canvas/asset/470238"
+      "creatorOrInstitution": "Attributed to Juan Rodríguez Juárez / Breamore House / Smarthistory",
+      "licenseName": "CC BY-NC-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
     },
     "ap98-tete-a-tete": {
       "creatorOrInstitution": "William Hogarth / National Gallery, London / Wikimedia Commons",

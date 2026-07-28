@@ -235,8 +235,8 @@ const U3_INSTITUTIONAL_MEDIA = new Map([
   [
     'ap55-lindisfarne-gospels\u0000st-luke-portrait',
     {
-      imageUrl: 'https://digital.libraries.psu.edu/iiif/2/arthist2:113593/full/full/0/default.jpg',
-      sourceUrl: 'https://digital.libraries.psu.edu/digital/collection/arthist2/id/113593/',
+      imageUrl: 'https://human.libretexts.org/@api/deki/files/29514/luke-portrait.jpg?revision=1',
+      sourceUrl: 'https://pressbooks.pub/pacarthistory/back-matter/image-credits/',
     },
   ],
   [
@@ -256,8 +256,8 @@ const U3_INSTITUTIONAL_MEDIA = new Map([
   [
     'ap97-spaniard-indian-mestizo\u0000primary',
     {
-      imageUrl: 'https://images-cdn.bridgemanimages.com/api/1.0/image/600wm.BRH.7143740.7055475/470238.jpg',
-      sourceUrl: 'https://www.bridgemanimages.com/en-US/juarez/parents-with-their-children-c-1715-oil-on-canvas/oil-on-canvas/asset/470238',
+      imageUrl: 'https://human.libretexts.org/@api/deki/files/110949/77fccf037a0741d8859632be19bd3d6f0bd88b60.jpg?revision=1',
+      sourceUrl: 'https://smarthistory.org/spaniard-and-indian-produce-a-mestizo-attributed-to-juan-rodriguez/',
     },
   ],
 ]);
