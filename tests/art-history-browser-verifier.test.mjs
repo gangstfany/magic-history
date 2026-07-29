@@ -103,6 +103,118 @@ test('U3 browser fixture loader validates the exact schema and freezes every lev
   assert.ok(frozen.every((work) => work.images.every(Object.isFrozen)));
 });
 
+test('runtime U3 fixture validation rejects balanced canonical work and view substitutions', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const fixture = JSON.parse(await readFile(U3_BROWSER_FIXTURE, 'utf8'));
+
+  const imposterWork = structuredClone(fixture);
+  imposterWork.find(({ apNumber }) => apNumber === 58).id = 'ap58-unique-imposter';
+  assert.throws(
+    () => verifier.validateAndFreezeU3Works(imposterWork),
+    /U3 canonical projection\.AP58\.id/,
+  );
+
+  const balancedViewSwap = structuredClone(fixture);
+  balancedViewSwap.find(({ apNumber }) => apNumber === 48).images.push({
+    id: 'unique-fake-view',
+    label: 'Unique Fake View',
+    imageUrl: 'https://example.invalid/u3-unique-fake-view.jpg',
+    imageAlt: 'Unique fake view used only by the negative control',
+    imageSourceUrl: 'https://example.invalid/u3-unique-fake-view-source',
+  });
+  const chartres = balancedViewSwap.find(({ apNumber }) => apNumber === 60);
+  chartres.images = chartres.images.filter(({ id }) => id !== 'stained-glass');
+  assert.equal(
+    balancedViewSwap.reduce((total, work) => total + work.images.length, 0),
+    103,
+  );
+  assert.throws(
+    () => verifier.validateAndFreezeU3Works(balancedViewSwap),
+    /U3 canonical projection\.AP48\.images\[3\]/,
+  );
+});
+
+test('runtime U3 fixture parsing rejects duplicate object keys with their JSON path', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+
+  assert.throws(
+    () => verifier.parseVerifierJson(
+      '{"artworks":[{"id":"first","id":"imposter"}]}',
+      'mutated U3 canonical',
+    ),
+    /mutated U3 canonical.*duplicate object key "id".*\$\.artworks\[0\]/,
+  );
+});
+
+test('canonical U3 projection freezes exact metadata and all 103 rendered credits', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const canonical = JSON.parse(await readFile(U3_CANONICAL_FIXTURE, 'utf8'));
+  const expected = verifier.projectAndFreezeU3Canonical(structuredClone(canonical));
+
+  assert.equal(expected.length, 51);
+  assert.equal(expected.reduce((total, work) => total + work.images.length, 0), 103);
+  assert.ok(Object.isFrozen(expected));
+  assert.ok(expected.every(Object.isFrozen));
+  assert.ok(expected.every((work) => Object.isFrozen(work.images)));
+  assert.ok(expected.every((work) => work.images.every(Object.isFrozen)));
+  assert.deepEqual(expected[0].metadata, {
+    titleZh: '普里西拉地下墓穴',
+    siteName: 'Rome, Italy',
+    culture: 'earlyChristianRome',
+    cultureLabelZh: '早期基督教罗马',
+    period: 'Late Antique Early Christian',
+    date: 'c. 200–400 C.E.',
+    artistCulture: 'Early Christian Roman workshop',
+    medium: 'Excavated tufa and fresco',
+    workType: 'Catacomb and wall painting',
+  });
+  assert.deepEqual(expected[0].images[0].credit, {
+    creatorOrInstitution:
+      'Early Christian painter; photograph André Held/akg / Catacomb of Priscilla / Wikimedia Commons',
+    licenseName: 'Public Domain Mark 1.0',
+    licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/',
+    imageSourceName: 'Wikimedia Commons',
+    imageSourceUrl:
+      'https://commons.wikimedia.org/wiki/File:Catacombe%20di%20Priscilla%2C%20Rome%20-%20Fresco%20of%20a%20Christian%20Agape%20feast%20-%20Fractio%20panis%20-%20Greek%20chapel%20-%202nd%20-%204th%20century.jpg',
+  });
+});
+
+test('exact U3 rendered metadata and credit assertions reject every reviewed mutation class', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const canonical = JSON.parse(await readFile(U3_CANONICAL_FIXTURE, 'utf8'));
+  const [expectedWork] = verifier.projectAndFreezeU3Canonical(structuredClone(canonical));
+  const metadata = expectedWork.metadata;
+  const credit = expectedWork.images[0].credit;
+
+  for (const [field, value] of [
+    ['titleZh', '错误标题'],
+    ['siteName', 'wrong site'],
+    ['date', 'wrong date'],
+    ['cultureLabelZh', '错误文化'],
+    ['period', 'wrong period'],
+    ['artistCulture', 'wrong artist or culture'],
+    ['medium', 'wrong medium'],
+    ['workType', 'wrong work type'],
+  ]) {
+    assert.throws(
+      () => verifier.assertU3MetadataMatches({ ...metadata, [field]: value }, metadata, 'metadata'),
+      new RegExp(field),
+    );
+  }
+  for (const [field, value] of [
+    ['creatorOrInstitution', 'wrong creator'],
+    ['licenseName', 'wrong license'],
+    ['licenseUrl', 'https://example.invalid/wrong-license'],
+    ['imageSourceName', 'wrong source'],
+    ['imageSourceUrl', 'https://example.invalid/wrong-source'],
+  ]) {
+    assert.throws(
+      () => verifier.assertU3CreditMatches({ ...credit, [field]: value }, credit, 'credit'),
+      new RegExp(field),
+    );
+  }
+});
+
 test('U3 verifier rejects fixture and rendered-view mutations with meaningful assertions', async () => {
   const verifier = await import(VERIFIER_URL.href);
   const fixture = JSON.parse(await readFile(U3_BROWSER_FIXTURE, 'utf8'));
@@ -316,9 +428,9 @@ test('browser verifier loads the frozen U1 projection and traverses all eleven w
 test('browser verifier locks the three-Unit hierarchy and exact U1/U3 region contracts', async () => {
   const source = await readFile(VERIFIER_URL, 'utf8');
 
-  assert.match(source, /U1Global Prehistory · 11 pieces/);
-  assert.match(source, /U2Ancient Mediterranean · 36 pieces/);
-  assert.match(source, /U3Early Europe and Colonial Americas · 51 pieces/);
+  assert.match(source, /U1 · Global Prehistory · 11 pieces/);
+  assert.match(source, /U2 · Ancient Mediterranean · 36 pieces/);
+  assert.match(source, /U3 · Early Europe and Colonial Americas · 51 pieces/);
   assert.match(source, /selectOption\('1'\)/);
   assert.match(source, /cultureFilters.*isHidden/s);
   assert.match(source, /Africa · 2 pieces/);
@@ -337,6 +449,90 @@ test('browser verifier locks the three-Unit hierarchy and exact U1/U3 region con
   assert.match(source, /Central Europe · 4 pieces/);
   assert.match(source, /Eastern Mediterranean · 4 pieces/);
   assert.match(source, /Colonial Americas · 5 pieces/);
+});
+
+test('initial hierarchy asserts the exact ordered three markers and 98-work result count', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  const hierarchy = source.slice(
+    source.indexOf('async function assertInitialHierarchy'),
+    source.indexOf('async function assertHierarchyAndDialog'),
+  );
+
+  assert.match(hierarchy, /assert\.deepEqual\(\s*initial,\s*\[/s);
+  assert.match(
+    hierarchy,
+    /'U1 · Global Prehistory · 11 pieces',[\s\S]*'U2 · Ancient Mediterranean · 36 pieces',[\s\S]*'U3 · Early Europe and Colonial Americas · 51 pieces'/,
+  );
+  assert.match(hierarchy, /当前显示 98 件作品/);
+});
+
+test('U3 responsive traversal rejects an omitted region branch and loops all eight branches', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const canonical = JSON.parse(await readFile(U3_CANONICAL_FIXTURE, 'utf8'));
+  const exactRegions = [
+    'Italy & Vatican · 18 pieces',
+    'France · 5 pieces',
+    'Iberian Peninsula · 5 pieces',
+    'British Isles · 3 pieces',
+    'Low Countries · 7 pieces',
+    'Central Europe · 4 pieces',
+    'Eastern Mediterranean · 4 pieces',
+    'Colonial Americas · 5 pieces',
+  ];
+  assert.throws(
+    () => verifier.assertU3RegionTraversalCoverage(exactRegions.slice(0, -1), 'omitted branch'),
+    /omitted branch.*Colonial Americas/,
+  );
+
+  const italyWorks = canonical.artworks.filter(({ region }) => region === 'italyVatican');
+  const italySiteLabels = [
+    'Florence, Italy · AP 67, 69–72, 78 · 6 pieces',
+    'Milan, Italy · AP 73 · 1 piece',
+    'Padua, Italy · AP 63 · 1 piece',
+    'Ravenna, Italy · AP 51 · 1 piece',
+    'Rome, Italy · AP 48–49, 82, 85, 88–89 · 6 pieces',
+    'Vatican City · AP 75–76 · 2 pieces',
+    'Venice, Italy · AP 80 · 1 piece',
+  ];
+  assert.throws(
+    () => verifier.assertU3SiteTraversalCoverage(
+      italySiteLabels.slice(0, -1),
+      italySiteLabels,
+      'omitted child site',
+    ),
+    /omitted child site/,
+  );
+
+  const expectedUnitTransform = verifier.calculateExpectedU3FitTransform(
+    canonical.artworks.map(({ coordinates }) => coordinates),
+  );
+  const expectedItalyTransform = verifier.calculateExpectedU3ZoomTransform(
+    expectedUnitTransform,
+    Math.max(2.5, expectedUnitTransform.scale),
+    { x: 854, y: 260 },
+  );
+  assert.notDeepEqual(expectedItalyTransform, { x: 0, y: 0, scale: 1 });
+  assert.throws(
+    () => verifier.assertU3TransformMatches(
+      { x: 0, y: 0, scale: 1 },
+      expectedItalyTransform,
+      'no-op region fit',
+    ),
+    /no-op region fit/,
+  );
+
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  const traversal = source.slice(
+    source.indexOf('async function verifyU3ResponsiveRegionBranches'),
+    source.indexOf('async function assertU3ResponsiveLayout'),
+  );
+  assert.match(traversal, /for \(const region of U3_REGION_BRANCHES\)/);
+  assert.match(traversal, /site-marker\[data-group-kind="site"\]/);
+  assert.match(traversal, /visibleWorldBounds/);
+  assert.match(traversal, /activeRegion/);
+  assert.match(traversal, /horizontalOverflow/);
+  assert.match(traversal, /assertU3SiteTraversalCoverage/);
+  assert.match(traversal, /assertU3TransformMatches/);
 });
 
 test('browser verifier loads and traverses every frozen U3 work in standalone and embedded modes', async () => {

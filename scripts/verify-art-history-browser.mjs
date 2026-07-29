@@ -58,6 +58,123 @@ export const BOUNDARY_VIEWPORTS = Object.freeze([
 ]);
 
 const PROJECT_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+
+class DuplicateVerifierJsonKeyError extends Error {}
+
+export function parseVerifierJson(source, label) {
+  let index = 0;
+  const skipWhitespace = () => {
+    while (/\s/.test(source[index] || '')) index += 1;
+  };
+  const syntaxError = (message) => {
+    throw new SyntaxError(`${message} at position ${index}`);
+  };
+  const parseString = () => {
+    if (source[index] !== '"') syntaxError('Expected a JSON string');
+    const start = index;
+    index += 1;
+    while (index < source.length) {
+      if (source[index] === '\\') {
+        index += 2;
+      } else if (source[index] === '"') {
+        index += 1;
+        return JSON.parse(source.slice(start, index));
+      } else {
+        index += 1;
+      }
+    }
+    syntaxError('Unterminated JSON string');
+    return '';
+  };
+  const childPath = (path, key) => (
+    /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key)
+      ? `${path}.${key}`
+      : `${path}[${JSON.stringify(key)}]`
+  );
+  const parseValue = (path) => {
+    skipWhitespace();
+    if (source[index] === '{') {
+      parseObject(path);
+    } else if (source[index] === '[') {
+      parseArray(path);
+    } else if (source[index] === '"') {
+      parseString();
+    } else {
+      const start = index;
+      while (
+        index < source.length
+        && ![',', ']', '}'].includes(source[index])
+        && !/\s/.test(source[index])
+      ) index += 1;
+      if (index === start) syntaxError('Expected a JSON value');
+    }
+  };
+  const parseObject = (path) => {
+    index += 1;
+    skipWhitespace();
+    if (source[index] === '}') {
+      index += 1;
+      return;
+    }
+    const keys = new Set();
+    while (index < source.length) {
+      skipWhitespace();
+      const key = parseString();
+      if (keys.has(key)) {
+        throw new DuplicateVerifierJsonKeyError(
+          `contains duplicate object key ${JSON.stringify(key)} at ${path}`,
+        );
+      }
+      keys.add(key);
+      skipWhitespace();
+      if (source[index] !== ':') syntaxError('Expected ":" after object key');
+      index += 1;
+      parseValue(childPath(path, key));
+      skipWhitespace();
+      if (source[index] === '}') {
+        index += 1;
+        return;
+      }
+      if (source[index] !== ',') syntaxError('Expected "," or "}" in object');
+      index += 1;
+    }
+    syntaxError('Unterminated JSON object');
+  };
+  const parseArray = (path) => {
+    index += 1;
+    skipWhitespace();
+    if (source[index] === ']') {
+      index += 1;
+      return;
+    }
+    let itemIndex = 0;
+    while (index < source.length) {
+      parseValue(`${path}[${itemIndex}]`);
+      itemIndex += 1;
+      skipWhitespace();
+      if (source[index] === ']') {
+        index += 1;
+        return;
+      }
+      if (source[index] !== ',') syntaxError('Expected "," or "]" in array');
+      index += 1;
+    }
+    syntaxError('Unterminated JSON array');
+  };
+
+  try {
+    parseValue('$');
+    skipWhitespace();
+    if (index !== source.length) syntaxError('Unexpected trailing JSON content');
+    return JSON.parse(source);
+  } catch (error) {
+    if (error instanceof DuplicateVerifierJsonKeyError) {
+      throw new Error(`${label} ${error.message}`);
+    }
+    throw new Error(`${label} contains invalid JSON (${error.message})`);
+  }
+}
+
 const U1_WORKS = Object.freeze(JSON.parse(
   await readFile(join(PROJECT_ROOT, 'tests', 'fixtures', 'u1-browser.json'), 'utf8'),
 ));
@@ -81,6 +198,47 @@ const U3_IMAGE_KEYS = Object.freeze([
   'imageAlt',
   'imageSourceUrl',
 ]);
+const U3_CULTURE_LABELS_ZH = Object.freeze({
+  earlyChristianRome: '早期基督教罗马',
+  earlyByzantineManuscript: '早期拜占庭手抄本',
+  byzantineRavenna: '拜占庭拉文纳',
+  byzantineConstantinople: '拜占庭君士坦丁堡',
+  merovingianMetalwork: '墨洛温金属工艺',
+  byzantineSinai: '拜占庭西奈',
+  insularHibernoSaxon: '不列颠群岛希伯诺-撒克逊',
+  umayyadIberia: '伊比利亚倭马亚',
+  romanesquePilgrimage: '罗马式朝圣艺术',
+  normanRomanesque: '诺曼罗马式',
+  frenchGothic: '法国哥特式',
+  frenchGothicManuscript: '法国哥特式手抄本',
+  germanGothicDevotional: '德国哥特式虔敬艺术',
+  protoRenaissanceItaly: '意大利原文艺复兴',
+  sephardicJewishManuscript: '塞法迪犹太手抄本',
+  nasridAndalusia: '纳斯里德安达卢西亚',
+  earlyNetherlandish: '早期尼德兰',
+  florentineEarlyRenaissance: '佛罗伦萨早期文艺复兴',
+  florentineRenaissance: '佛罗伦萨文艺复兴',
+  highRenaissanceItaly: '意大利文艺复兴盛期',
+  northernRenaissanceGermany: '德国北方文艺复兴',
+  italianMannerism: '意大利矫饰主义',
+  protestantReformationGermany: '德国宗教改革',
+  venetianRenaissance: '威尼斯文艺复兴',
+  colonialMexicaManuscript: '新西班牙墨西加殖民手抄本',
+  romanBaroqueJesuit: '罗马耶稣会巴洛克',
+  northernRenaissanceFlemish: '佛兰德斯北方文艺复兴',
+  ottomanIslamic: '奥斯曼伊斯兰',
+  italianBaroque: '意大利巴洛克',
+  flemishBaroque: '佛兰德斯巴洛克',
+  dutchBaroque: '荷兰巴洛克',
+  andeanColonialBaroque: '安第斯殖民巴洛克',
+  spanishBaroque: '西班牙巴洛克',
+  frenchBaroqueAbsolutism: '法国绝对主义巴洛克',
+  newSpainEnconchado: '新西班牙螺钿画',
+  newSpainGuadalupe: '新西班牙瓜达卢佩圣母艺术',
+  dutchBaroqueStillLife: '荷兰巴洛克静物画',
+  newSpainCasta: '新西班牙种姓画',
+  britishRococoSatire: '英国洛可可讽刺画',
+});
 
 function assertExactKeys(value, expected, label) {
   assert.deepEqual(Object.keys(value), expected, `${label} exact keyset`);
@@ -89,6 +247,210 @@ function assertExactKeys(value, expected, label) {
 function assertUnique(values, label) {
   assert.equal(new Set(values).size, values.length, `duplicate ${label}`);
 }
+
+export function projectAndFreezeU3Canonical(canonical) {
+  assertExactKeys(canonical, ['artworks', 'credits'], 'U3 canonical');
+  assert.equal(canonical.artworks.length, 51, 'U3 canonical work count');
+  const projected = canonical.artworks.map((work, workIndex) => {
+    const apNumber = 48 + workIndex;
+    assert.equal(work.apNumber, apNumber, `U3 canonical AP ${apNumber} sequence`);
+    const rawCredits = canonical.credits[work.id];
+    const credits = Array.isArray(rawCredits) ? rawCredits : [rawCredits];
+    assert.equal(
+      credits.length,
+      work.images.length,
+      `U3 canonical AP ${apNumber} credit alignment`,
+    );
+    const cultureLabelZh = U3_CULTURE_LABELS_ZH[work.culture];
+    assert.ok(cultureLabelZh, `U3 canonical AP ${apNumber} culture label`);
+    const metadata = Object.freeze({
+      titleZh: work.titleZh,
+      siteName: work.siteName,
+      culture: work.culture,
+      cultureLabelZh,
+      period: work.period,
+      date: work.date,
+      artistCulture: work.artistCulture,
+      medium: work.medium,
+      workType: work.workType,
+    });
+    const images = work.images.map((image, imageIndex) => {
+      const canonicalCredit = credits[imageIndex];
+      const credit = Object.freeze({
+        creatorOrInstitution: canonicalCredit.creatorOrInstitution,
+        licenseName: canonicalCredit.licenseName,
+        licenseUrl: canonicalCredit.licenseUrl,
+        imageSourceName: image.imageSourceName,
+        imageSourceUrl: image.imageSourceUrl,
+      });
+      return Object.freeze({
+        id: image.id,
+        label: image.label,
+        imageUrl: image.imageUrl,
+        imageAlt: image.imageAlt,
+        imageSourceName: image.imageSourceName,
+        imageSourceUrl: image.imageSourceUrl,
+        credit,
+      });
+    });
+    return Object.freeze({
+      id: work.id,
+      apNumber: work.apNumber,
+      titleEn: work.titleEn,
+      titleZh: work.titleZh,
+      unit: work.unit,
+      region: work.region,
+      siteName: work.siteName,
+      metadata,
+      images: Object.freeze(images),
+    });
+  });
+  assert.equal(
+    projected.reduce((total, work) => total + work.images.length, 0),
+    103,
+    'U3 canonical rendered credit count',
+  );
+  return Object.freeze(projected);
+}
+
+function projectU3CanonicalBrowser(expectedWorks) {
+  return Object.freeze(expectedWorks.map((work) => Object.freeze({
+    id: work.id,
+    apNumber: work.apNumber,
+    titleEn: work.titleEn,
+    titleZh: work.titleZh,
+    unit: work.unit,
+    region: work.region,
+    siteName: work.siteName,
+    images: Object.freeze(work.images.map((image) => Object.freeze({
+      id: image.id,
+      label: image.label,
+      imageUrl: image.imageUrl,
+      imageAlt: image.imageAlt,
+      imageSourceUrl: image.imageSourceUrl,
+    }))),
+  })));
+}
+
+function assertExactCanonicalValue(actual, expected, path) {
+  if (Array.isArray(expected)) {
+    const sharedLength = Math.min(actual.length, expected.length);
+    for (let index = 0; index < sharedLength; index += 1) {
+      assertExactCanonicalValue(actual[index], expected[index], `${path}[${index}]`);
+    }
+    if (actual.length > expected.length) {
+      assert.fail(`${path}[${expected.length}] unexpected canonical view`);
+    }
+    if (actual.length < expected.length) {
+      assert.fail(`${path}[${actual.length}] missing canonical view`);
+    }
+    return;
+  }
+  if (expected && typeof expected === 'object') {
+    for (const key of Object.keys(expected)) {
+      assertExactCanonicalValue(actual[key], expected[key], `${path}.${key}`);
+    }
+    return;
+  }
+  assert.equal(actual, expected, path);
+}
+
+const U3_CANONICAL = parseVerifierJson(
+  await readFile(join(PROJECT_ROOT, 'tests', 'fixtures', 'u3-canonical.json'), 'utf8'),
+  'U3 canonical fixture',
+);
+const U3_EXPECTED_WORKS = projectAndFreezeU3Canonical(U3_CANONICAL);
+const U3_EXPECTED_BROWSER = projectU3CanonicalBrowser(U3_EXPECTED_WORKS);
+
+export function calculateExpectedU3FitTransform(points) {
+  assert.ok(points.length > 0, 'U3 expected fit requires canonical points');
+  const left = Math.min(...points.map(({ x }) => x));
+  const right = Math.max(...points.map(({ x }) => x));
+  const top = Math.min(...points.map(({ y }) => y));
+  const bottom = Math.max(...points.map(({ y }) => y));
+  const padding = 160;
+  const scale = Math.min(3, Math.max(1, Math.min(
+    1600 / Math.max(1, right - left + padding * 2),
+    800 / Math.max(1, bottom - top + padding * 2),
+  )));
+  const unclamped = {
+    x: 800 - (left + right) / 2 * scale,
+    y: 400 - (top + bottom) / 2 * scale,
+    scale,
+  };
+  return Object.freeze({
+    x: Math.min(0, Math.max(1600 * (1 - scale), unclamped.x)),
+    y: Math.min(0, Math.max(800 * (1 - scale), unclamped.y)),
+    scale,
+  });
+}
+
+export function calculateExpectedU3ZoomTransform(transform, nextScale, point) {
+  const scale = Math.min(3, Math.max(1, nextScale));
+  const contentX = (point.x - transform.x) / transform.scale;
+  const contentY = (point.y - transform.y) / transform.scale;
+  const unclamped = {
+    x: point.x - contentX * scale,
+    y: point.y - contentY * scale,
+  };
+  return Object.freeze({
+    x: Math.min(0, Math.max(1600 * (1 - scale), unclamped.x)),
+    y: Math.min(0, Math.max(800 * (1 - scale), unclamped.y)),
+    scale,
+  });
+}
+
+const U3_EXPECTED_UNIT_TRANSFORM = calculateExpectedU3FitTransform(
+  U3_CANONICAL.artworks.map(({ coordinates }) => coordinates),
+);
+
+function compactCanonicalApNumbers(apNumbers) {
+  const ranges = [];
+  let start = apNumbers[0];
+  let end = apNumbers[0];
+  for (const apNumber of apNumbers.slice(1)) {
+    if (apNumber === end + 1) {
+      end = apNumber;
+    } else {
+      ranges.push(start === end ? String(start) : `${start}–${end}`);
+      start = apNumber;
+      end = apNumber;
+    }
+  }
+  ranges.push(start === end ? String(start) : `${start}–${end}`);
+  return ranges.join(', ');
+}
+
+const U3_REGION_BRANCHES = Object.freeze([
+  ['italyVatican', 'Italy & Vatican · 18 pieces'],
+  ['france', 'France · 5 pieces'],
+  ['iberianPeninsula', 'Iberian Peninsula · 5 pieces'],
+  ['britishIsles', 'British Isles · 3 pieces'],
+  ['lowCountries', 'Low Countries · 7 pieces'],
+  ['centralEurope', 'Central Europe · 4 pieces'],
+  ['easternMediterranean', 'Eastern Mediterranean · 4 pieces'],
+  ['colonialAmericas', 'Colonial Americas · 5 pieces'],
+].map(([id, label]) => {
+  const canonicalWorks = U3_CANONICAL.artworks.filter(({ region }) => region === id);
+  const siteWorks = new Map();
+  for (const work of canonicalWorks) {
+    if (!siteWorks.has(work.siteName)) siteWorks.set(work.siteName, []);
+    siteWorks.get(work.siteName).push(work);
+  }
+  const siteNames = [...siteWorks.keys()];
+  const siteLabels = [...siteWorks]
+    .map(([siteName, works]) => (
+      `${siteName} · AP ${compactCanonicalApNumbers(works.map(({ apNumber }) => apNumber))}`
+      + ` · ${works.length} ${works.length === 1 ? 'piece' : 'pieces'}`
+    ))
+    .sort();
+  return Object.freeze({
+    id,
+    label,
+    siteNames: Object.freeze(siteNames),
+    siteLabels: Object.freeze(siteLabels),
+  });
+}));
 
 export function validateAndFreezeU3Works(works) {
   assert.ok(Array.isArray(works), 'U3 browser fixture must be an array');
@@ -151,11 +513,19 @@ export function validateAndFreezeU3Works(works) {
   assertUnique(imageUrls, 'U3 image URL');
   assertUnique(imageAlts, 'U3 image alt');
   assertUnique(sourceUrls, 'U3 image source URL');
+  works.forEach((work, index) => {
+    assertExactCanonicalValue(
+      work,
+      U3_EXPECTED_BROWSER[index],
+      `U3 canonical projection.AP${work.apNumber}`,
+    );
+  });
   return Object.freeze(works);
 }
 
-const U3_WORKS = validateAndFreezeU3Works(JSON.parse(
+const U3_WORKS = validateAndFreezeU3Works(parseVerifierJson(
   await readFile(join(PROJECT_ROOT, 'tests', 'fixtures', 'u3-browser.json'), 'utf8'),
+  'U3 browser fixture',
 ));
 const IMAGE_FIXTURE = Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480"><rect width="640" height="480" fill="#d8c5a7"/><circle cx="320" cy="240" r="120" fill="#8f553f"/></svg>',
@@ -317,6 +687,63 @@ export function assertU3ViewMatches(actual, expected, label) {
   assert.equal(actual.imageUrl, expected.imageUrl, `${label} image URL`);
   assert.equal(actual.imageAlt, expected.imageAlt, `${label} image alt`);
   assert.equal(actual.imageSourceUrl, expected.imageSourceUrl, `${label} image source URL`);
+}
+
+export function assertU3MetadataMatches(actual, expected, label) {
+  for (const field of [
+    'titleZh',
+    'siteName',
+    'cultureLabelZh',
+    'period',
+    'date',
+    'artistCulture',
+    'medium',
+    'workType',
+  ]) {
+    assert.equal(actual[field], expected[field], `${label} ${field}`);
+  }
+}
+
+export function assertU3CreditMatches(actual, expected, label) {
+  for (const field of [
+    'creatorOrInstitution',
+    'licenseName',
+    'licenseUrl',
+    'imageSourceName',
+    'imageSourceUrl',
+  ]) {
+    assert.equal(actual[field], expected[field], `${label} ${field}`);
+  }
+}
+
+export function assertU3RegionTraversalCoverage(actualLabels, label) {
+  const expectedLabels = U3_REGION_BRANCHES.map((region) => region.label);
+  const length = Math.max(actualLabels.length, expectedLabels.length);
+  for (let index = 0; index < length; index += 1) {
+    assert.equal(
+      actualLabels[index],
+      expectedLabels[index],
+      `${label} expected ${expectedLabels[index] || 'no extra branch'} at index ${index}`,
+    );
+  }
+}
+
+export function assertU3SiteTraversalCoverage(actualLabels, expectedLabels, label) {
+  assert.deepEqual(
+    [...actualLabels].sort(),
+    [...expectedLabels].sort(),
+    `${label} exact canonical site markers`,
+  );
+}
+
+export function assertU3TransformMatches(actual, expected, label) {
+  for (const field of ['x', 'y', 'scale']) {
+    assert.ok(
+      Number.isFinite(actual[field])
+        && Math.abs(actual[field] - expected[field]) <= 1e-4,
+      `${label} ${field}: expected ${expected[field]}, received ${actual[field]}`,
+    );
+  }
 }
 
 export function assertExactImageRequests(imageRequests, work, checkpoint) {
@@ -584,11 +1011,13 @@ async function assertKeyboardAndFilters(page, frame) {
 async function assertInitialHierarchy(frame) {
   const initial = await frame
     .locator('.site-marker[data-group-kind="unit"]')
-    .allTextContents();
-  assert.equal(initial.length, 3);
-  assert.ok(initial.some((text) => /U1Global Prehistory · 11 pieces/.test(text)));
-  assert.ok(initial.some((text) => /U2Ancient Mediterranean · 36 pieces/.test(text)));
-  assert.ok(initial.some((text) => /U3Early Europe and Colonial Americas · 51 pieces/.test(text)));
+    .evaluateAll((markers) => markers.map((marker) => marker.getAttribute('aria-label')));
+  assert.deepEqual(initial, [
+    'U1 · Global Prehistory · 11 pieces',
+    'U2 · Ancient Mediterranean · 36 pieces',
+    'U3 · Early Europe and Colonial Americas · 51 pieces',
+  ]);
+  assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 98 件作品');
 }
 
 async function assertHierarchyAndDialog(page, frame) {
@@ -643,7 +1072,234 @@ async function assertHierarchyAndDialog(page, frame) {
   assert.equal(await frame.evaluate(() => document.activeElement?.className), 'artwork-image-button');
 }
 
-async function assertU3ResponsiveLayout(page, frame, mode, viewport) {
+function rectanglesOverlap(first, second) {
+  return (
+    first.left < second.right - 1
+    && first.right > second.left + 1
+    && first.top < second.bottom - 1
+    && first.bottom > second.top + 1
+  );
+}
+
+function assertRectangleInside(rect, bounds, label) {
+  assert.ok(
+    rect.left >= bounds.left - 1
+      && rect.right <= bounds.right + 1
+      && rect.top >= bounds.top - 1
+      && rect.bottom <= bounds.bottom + 1,
+    `${label} clipped: ${JSON.stringify({ rect, bounds })}`,
+  );
+}
+
+async function captureFinalSiteMarkerGeometry(frame) {
+  return frame.locator('.site-marker[data-group-kind="site"]').evaluateAll((markers) => {
+    const rect = (element) => {
+      const bounds = element.getBoundingClientRect();
+      return {
+        left: bounds.left,
+        right: bounds.right,
+        top: bounds.top,
+        bottom: bounds.bottom,
+      };
+    };
+    const union = (elements) => {
+      const rectangles = elements.map(rect);
+      return {
+        left: Math.min(...rectangles.map((bounds) => bounds.left)),
+        right: Math.max(...rectangles.map((bounds) => bounds.right)),
+        top: Math.min(...rectangles.map((bounds) => bounds.top)),
+        bottom: Math.max(...rectangles.map((bounds) => bounds.bottom)),
+      };
+    };
+    const map = document.querySelector('.map-panel');
+    const transform = { ...window.ArtHistoryMap.state.transform };
+    const visibleWorldBounds = {
+      left: Math.max(0, -transform.x / transform.scale),
+      right: Math.min(1600, (1600 - transform.x) / transform.scale),
+      top: Math.max(0, -transform.y / transform.scale),
+      bottom: Math.min(800, (800 - transform.y) / transform.scale),
+    };
+    return {
+      map: rect(map),
+      horizontalOverflow:
+        document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      activeRegion: window.ArtHistoryMap.state.activeRegion,
+      activeUnit: window.ArtHistoryMap.state.activeUnit,
+      stateTransform: transform,
+      mapViewportTransform: document.querySelector('#mapViewport').getAttribute('transform'),
+      visibleWorldBounds,
+      focusedSiteLabel: document.activeElement?.matches?.(
+        '.site-marker[data-group-kind="site"]',
+      )
+        ? document.activeElement.getAttribute('aria-label')
+        : null,
+      markers: markers.map((marker) => {
+        const hit = marker.querySelector('.marker-hit-area');
+        const capsule = marker.querySelector('.marker-label-bg');
+        const texts = [
+          ...marker.querySelectorAll(
+            '.marker-ap-label, .marker-title-label, .marker-subtitle-label',
+          ),
+        ];
+        const localTransform = marker.transform.baseVal.consolidate()?.matrix;
+        const hitX = Number(hit.getAttribute('x'));
+        const hitY = Number(hit.getAttribute('y'));
+        const hitWidth = Number(hit.getAttribute('width'));
+        const hitHeight = Number(hit.getAttribute('height'));
+        return {
+          label: marker.getAttribute('aria-label'),
+          group: rect(marker),
+          hit: rect(hit),
+          capsule: rect(capsule),
+          text: union(texts),
+          worldHit: {
+            left: localTransform.e + hitX,
+            right: localTransform.e + hitX + hitWidth,
+            top: localTransform.f + hitY,
+            bottom: localTransform.f + hitY + hitHeight,
+          },
+        };
+      }),
+    };
+  });
+}
+
+async function resetToU3Regions(frame) {
+  const unitFilter = frame.locator('#unitFilter');
+  await unitFilter.selectOption('all');
+  await waitForPostTransformRender(frame);
+  await unitFilter.selectOption('3');
+  await waitForPostTransformRender(frame);
+  await frame.locator('.site-marker[data-group-kind="region"]').first().waitFor();
+}
+
+async function verifyU3ResponsiveRegionBranches(page, frame, issues, mode, viewport) {
+  const visited = [];
+  for (const region of U3_REGION_BRANCHES) {
+    const regionMarker = frame.getByRole('button', { name: region.label, exact: true });
+    assert.equal(
+      await regionMarker.count(),
+      1,
+      `${mode} ${viewport.width} ${region.label} region marker`,
+    );
+    const activation = await regionMarker.evaluate((marker) => {
+      const localTransform = marker.transform.baseVal.consolidate()?.matrix;
+      return {
+        point: { x: localTransform.e, y: localTransform.f },
+        transform: { ...window.ArtHistoryMap.state.transform },
+      };
+    });
+    assertU3TransformMatches(
+      activation.transform,
+      U3_EXPECTED_UNIT_TRANSFORM,
+      `${mode} ${viewport.width} ${region.label} canonical Unit fit`,
+    );
+    const expectedActivatedTransform = calculateExpectedU3ZoomTransform(
+      activation.transform,
+      Math.max(2.5, activation.transform.scale),
+      activation.point,
+    );
+    await regionMarker.focus();
+    assert.equal(
+      await frame.evaluate(() => document.activeElement?.getAttribute('aria-label')),
+      region.label,
+      `${mode} ${viewport.width} ${region.label} region focus`,
+    );
+    await page.keyboard.press('Enter');
+    await waitForPostTransformRender(frame);
+
+    const siteMarkers = frame.locator('.site-marker[data-group-kind="site"]');
+    await siteMarkers.first().waitFor();
+    assert.ok(
+      await siteMarkers.count() > 0,
+      `${mode} ${viewport.width} ${region.label} nonempty site branch`,
+    );
+    const geometry = await captureFinalSiteMarkerGeometry(frame);
+    assert.equal(
+      geometry.activeRegion,
+      `unit-3-region-${region.id}`,
+      `${mode} ${viewport.width} ${region.label} parent branch`,
+    );
+    assert.equal(geometry.activeUnit, 3, `${mode} ${viewport.width} ${region.label} active Unit`);
+    assert.ok(
+      region.siteNames.some((siteName) => geometry.focusedSiteLabel?.startsWith(`${siteName} · `)),
+      `${mode} ${viewport.width} ${region.label} focused child ${geometry.focusedSiteLabel}`,
+    );
+    assertU3SiteTraversalCoverage(
+      geometry.markers.map(({ label }) => label),
+      region.siteLabels,
+      `${mode} ${viewport.width} ${region.label}`,
+    );
+    assertU3TransformMatches(
+      geometry.stateTransform,
+      expectedActivatedTransform,
+      `${mode} ${viewport.width} ${region.label} canonical marker-point zoom`,
+    );
+    assert.equal(
+      geometry.mapViewportTransform,
+      `translate(${geometry.stateTransform.x} ${geometry.stateTransform.y}) `
+        + `scale(${geometry.stateTransform.scale})`,
+      `${mode} ${viewport.width} ${region.label} final transform`,
+    );
+    assert.ok(
+      geometry.markers.every((marker) => (
+        region.siteNames.some((siteName) => marker.label.startsWith(`${siteName} · `))
+      )),
+      `${mode} ${viewport.width} ${region.label} site parent membership`,
+    );
+    for (const marker of geometry.markers) {
+      for (const [kind, markerRect] of Object.entries({
+        marker: marker.group,
+        hit: marker.hit,
+        capsule: marker.capsule,
+        text: marker.text,
+      })) {
+        assertRectangleInside(
+          markerRect,
+          geometry.map,
+          `${mode} ${viewport.width} ${region.label} ${marker.label} ${kind}`,
+        );
+      }
+      assertRectangleInside(
+        marker.worldHit,
+        geometry.visibleWorldBounds,
+        `${mode} ${viewport.width} ${region.label} ${marker.label} final visibleWorldBounds`,
+      );
+    }
+    for (let first = 0; first < geometry.markers.length; first += 1) {
+      for (let second = first + 1; second < geometry.markers.length; second += 1) {
+        const firstMarker = geometry.markers[first];
+        const secondMarker = geometry.markers[second];
+        for (const kind of ['group', 'hit', 'capsule', 'text']) {
+          assert.equal(
+            rectanglesOverlap(firstMarker[kind], secondMarker[kind]),
+            false,
+            `${mode} ${viewport.width} ${region.label} ${kind} overlap: `
+              + `${firstMarker.label} / ${secondMarker.label}`,
+          );
+        }
+      }
+    }
+    assert.ok(
+      geometry.horizontalOverflow <= 1,
+      `${mode} ${viewport.width} ${region.label} horizontalOverflow `
+        + geometry.horizontalOverflow,
+    );
+    assertNoCollectedIssues(
+      issues,
+      `${mode} ${viewport.width} ${region.label} responsive branch`,
+    );
+    visited.push(region.label);
+    await resetToU3Regions(frame);
+  }
+  assertU3RegionTraversalCoverage(
+    visited,
+    `${mode} ${viewport.width} U3 responsive branch coverage`,
+  );
+  return Object.freeze(visited);
+}
+
+async function assertU3ResponsiveLayout(page, frame, issues, mode, viewport) {
   const unitFilter = frame.locator('#unitFilter');
   await unitFilter.selectOption('3');
   await waitForPostTransformRender(frame);
@@ -768,6 +1424,13 @@ async function assertU3ResponsiveLayout(page, frame, mode, viewport) {
     }
   }
 
+  const regionBranches = await verifyU3ResponsiveRegionBranches(
+    page,
+    frame,
+    issues,
+    mode,
+    viewport,
+  );
   const responsiveWork = U3_WORKS.find(({ id }) => id === 'ap60-chartres-cathedral');
   await resetAndActivateWork(page, frame, responsiveWork);
   const importantDetails = frame.locator(
@@ -790,6 +1453,10 @@ async function assertU3ResponsiveLayout(page, frame, mode, viewport) {
     });
     assert.equal(visible, true, `${mode} ${viewport.width} clipped U3 detail control ${index}`);
   }
+  return {
+    count: regionBranches.length,
+    labels: regionBranches,
+  };
 }
 
 async function selectBoundaryFilters(frame) {
@@ -823,10 +1490,17 @@ async function verifyStandalone(
     );
     await assertInitialHierarchy(page);
     let metrics = await assertCommonLayout(page, 'standalone', viewport);
+    let u3RegionBranches = null;
     if (full) {
       await assertKeyboardAndFilters(page, page);
       await assertHierarchyAndDialog(page, page);
-      await assertU3ResponsiveLayout(page, page, 'standalone', viewport);
+      u3RegionBranches = await assertU3ResponsiveLayout(
+        page,
+        page,
+        errors,
+        'standalone',
+        viewport,
+      );
       assert.match(
         await page.evaluate(() => getComputedStyle(document.querySelector('.marker-visual')).transitionDuration),
         /^(?:0\.01ms|1e-05s)$/,
@@ -841,7 +1515,7 @@ async function verifyStandalone(
       await page.evaluate(() => console.error('responsive error regression'));
     }
     assertNoCollectedIssues(errors, `standalone ${viewport.width}x${viewport.height}`);
-    return metrics;
+    return { ...metrics, u3RegionBranches };
   });
 }
 
@@ -943,16 +1617,23 @@ async function verifyEmbedded(browser, baseUrl, viewport, full) {
       }
     }
     assert.equal(await iframe.getAttribute('aria-hidden'), 'false');
+    let u3RegionBranches = null;
     if (full) {
       await assertKeyboardAndFilters(page, frame);
       await assertHierarchyAndDialog(page, frame);
-      await assertU3ResponsiveLayout(page, frame, 'embedded', viewport);
+      u3RegionBranches = await assertU3ResponsiveLayout(
+        page,
+        frame,
+        errors,
+        'embedded',
+        viewport,
+      );
     } else {
       await selectBoundaryFilters(frame);
       metrics = await assertCommonLayout(frame, 'embedded', viewport);
     }
     assertNoCollectedIssues(errors, `embedded ${viewport.width}x${viewport.height}`);
-    return { ...metrics, host };
+    return { ...metrics, host, u3RegionBranches };
   });
 }
 
@@ -1385,6 +2066,8 @@ async function verifyU1StudyTabsAndComparison(page, frame, mode) {
 async function verifyU3Works(page, frame, imageRequests, mode) {
   const results = [];
   for (const work of U3_WORKS) {
+    const expectedWork = U3_EXPECTED_WORKS.find(({ id }) => id === work.id);
+    assert.ok(expectedWork, `${mode} AP ${work.apNumber} canonical work`);
     await resetAndActivateWork(page, frame, work, () => imageRequests.clear());
 
     const summary = frame.locator('.selected-summary');
@@ -1399,15 +2082,33 @@ async function verifyU3Works(page, frame, imageRequests, mode) {
       `${mode} AP ${work.apNumber} Chinese subtitle`,
     );
     const meta = (await summary.locator('.work-meta').textContent()).trim();
-    assert.equal(meta.split(' · ')[0], `AP #${work.apNumber}`);
-    assert.ok(meta.split(' · ').length >= 4, `${mode} AP ${work.apNumber} precise metadata`);
+    const metaParts = meta.split(' · ');
+    assert.deepEqual(
+      metaParts,
+      [
+        `AP #${work.apNumber}`,
+        expectedWork.metadata.cultureLabelZh,
+        expectedWork.metadata.period,
+        expectedWork.metadata.date,
+      ],
+      `${mode} AP ${work.apNumber} exact metadata line`,
+    );
     const identity = await summary.locator('.identity-row').evaluateAll((rows) => (
       Object.fromEntries(rows.map((row) => [
         row.querySelector('dt')?.textContent?.trim(),
         row.querySelector('dd')?.textContent?.trim(),
       ]))
     ));
-    assert.equal(identity['地点'], work.siteName, `${mode} AP ${work.apNumber} site metadata`);
+    assertU3MetadataMatches({
+      titleZh: (await summary.locator('.work-title-zh').textContent()).trim(),
+      siteName: identity['地点'],
+      cultureLabelZh: metaParts[1],
+      period: metaParts[2],
+      date: metaParts[3],
+      artistCulture: identity['艺术家／文化'],
+      medium: identity['材料'],
+      workType: identity['类型'],
+    }, expectedWork.metadata, `${mode} AP ${work.apNumber} rendered metadata`);
     assert.equal(
       await frame.locator('.site-marker[data-group-kind="site"][aria-pressed="true"]').count(),
       1,
@@ -1431,6 +2132,7 @@ async function verifyU3Works(page, frame, imageRequests, mode) {
 
     for (let imageIndex = 0; imageIndex < work.images.length; imageIndex += 1) {
       const expected = work.images[imageIndex];
+      const expectedCanonicalView = expectedWork.images[imageIndex];
       if (expectedViewButtonCount) {
         await viewButtons.nth(imageIndex).click();
         assert.deepEqual(
@@ -1465,6 +2167,23 @@ async function verifyU3Works(page, frame, imageRequests, mode) {
         2,
         `${mode} AP ${work.apNumber} ${expected.id} inline credit links`,
       );
+      const inlineCredit = await summary.locator('.image-credit').evaluate((line) => {
+        const [license, source] = line.querySelectorAll('a');
+        return {
+          creatorOrInstitution: (line.childNodes[0]?.textContent || '')
+            .replace(/^图片：/, '')
+            .replace(/ · $/, ''),
+          licenseName: license?.textContent?.trim(),
+          licenseUrl: license?.getAttribute('href'),
+          imageSourceName: source?.textContent?.trim(),
+          imageSourceUrl: source?.getAttribute('href'),
+        };
+      });
+      assertU3CreditMatches(
+        inlineCredit,
+        expectedCanonicalView.credit,
+        `${mode} AP ${work.apNumber} ${expected.id} inline credit`,
+      );
 
       await imageButton.click();
       const dialog = frame.locator('#imageDialog');
@@ -1481,11 +2200,16 @@ async function verifyU3Works(page, frame, imageRequests, mode) {
       assert.equal((await frame.locator('#dialogCaption').textContent()).trim(), expected.imageAlt);
       assert.match((await frame.locator('#dialogCredit').textContent()).trim(), /^图片：\S/);
       const dialogLicense = frame.locator('#dialogLicense');
-      assert.match(await dialogLicense.getAttribute('href'), /^https:\/\//);
-      assert.ok((await dialogLicense.textContent()).trim().length > 0);
       const dialogSource = frame.locator('#dialogSource');
-      assert.equal(await dialogSource.getAttribute('href'), expected.imageSourceUrl);
-      assert.ok((await dialogSource.textContent()).trim().length > 0);
+      assertU3CreditMatches({
+        creatorOrInstitution: (await frame.locator('#dialogCredit').textContent())
+          .trim()
+          .replace(/^图片：/, ''),
+        licenseName: (await dialogLicense.textContent()).trim(),
+        licenseUrl: await dialogLicense.getAttribute('href'),
+        imageSourceName: (await dialogSource.textContent()).trim(),
+        imageSourceUrl: await dialogSource.getAttribute('href'),
+      }, expectedCanonicalView.credit, `${mode} AP ${work.apNumber} ${expected.id} modal credit`);
 
       await frame.locator('#dialogClose').click();
       await dialog.waitFor({ state: 'hidden' });
