@@ -161,6 +161,30 @@ h1 .en { color: var(--accent); }
 .rt-btn:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
 /* 位移由 JS 的 rAF 插值负责(见 moveVehicle) —— 刻意不给 transform 加 CSS 过渡,两者会打架 */
 
+/* ---- 随堂练习面板 ---- */
+.quiz-panel { padding: 16px 20px 14px; border-bottom: 1px solid var(--line); background: #fffdf8; }
+.qz-head { display: flex; align-items: baseline; gap: 12px; }
+.qz-title { font-size: 17px; font-weight: 800; }
+.qz-score { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
+.qz-ask { margin: 10px 0 0; font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.qz-card { margin: 11px 0 0; padding: 13px 16px; border: 1px solid var(--line); border-left: 4px solid var(--ink-soft); border-radius: 10px; background: #fff; }
+.qz-meta { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+.qz-yr { font-weight: 800; font-size: 13.5px; color: var(--terracotta, #a8552f); font-variant-numeric: tabular-nums; }
+.qz-cat { font-size: 10px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .05em; margin-left: auto; white-space: nowrap; }
+.qz-trig { font-size: 14px; font-weight: 600; line-height: 1.6; color: var(--ink); }
+.qz-trig .hl { background: #fff3bf; padding: 1px 4px; border-radius: 3px; font-weight: 700; }
+.qz-verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0 0; padding: 10px 13px; border-radius: 9px; font-size: 13px; font-weight: 700; }
+.qz-verdict span { font-size: 13.5px; }
+.qz-verdict.ok { background: rgba(143,168,120,0.18); color: #3f5230; }
+.qz-verdict.near { background: rgba(217,164,65,0.20); color: #7a5a12; }
+.qz-verdict.bad { background: rgba(139,26,26,0.12); color: #8b1a1a; }
+.qz-verdict b { font-weight: 800; }
+.qz-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 13px 0 0; }
+.qz-hint { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+.qz-stem { margin: 10px 0 0; font-size: 13px; line-height: 1.7; color: var(--ink-soft); }
+.qz-reveal-title { padding: 14px 20px 0; font-size: 12px; font-weight: 800; color: var(--ink-soft); letter-spacing: .02em; }
+.quiz-chip .rc-dot { box-shadow: 0 0 0 3px rgba(139,26,26,0.12); }
+
 /* ---- 商路入口 ---- */
 .route-launch { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .route-launch:hover { border-color: var(--ink-soft); }
@@ -2198,6 +2222,7 @@ h1 .en { color: var(--accent); }
   }
   // 筛选器的挂起/恢复由下面的 initSearchFilter 赋值(它在闭包里,外面拿不到内部状态)
   let suspendFilters = null, restoreFilters = null;
+  let currentEventPass = null;   // 同上:出题时用它拿"当前筛选下的题库"
 
   // ============ 商路模式 ============
   // 原来的 scheduleRouteGlow 已经会"沿路依次点亮国家 + 把事件面板切到当前站",但它是
@@ -2370,7 +2395,10 @@ h1 .en { color: var(--accent); }
   // 空态那块地方原本只有一句说明文字,顺手当商路入口 —— 首页标语写着"跟着商队一路走",
   // 可这功能以前只有点到恰好在路线上的 16/104 个标点才会撞见。
   function routePickerHTML() {
-    return `<div class="route-picker-title">🐫 或者跟着商队走一趟</div>`
+    return `<div class="route-picker-title">✏️ 想自测?</div>`
+      + `<div class="route-picker"><button type="button" class="route-chip quiz-chip" data-quiz-start="1">`
+      + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">点地图作答</span></button></div>`
+      + `<div class="route-picker-title">🐫 或者跟着商队走一趟</div>`
       + `<div class="route-picker">`
       + ROUTES.map(r => `<button type="button" class="route-chip" data-route-go="${r.id}">`
         + `<span class="rc-dot" style="background:${r.color}"></span>${r.name.split(' · ')[0]}`
@@ -2382,8 +2410,140 @@ h1 .en { color: var(--accent); }
     eventEmpty.insertAdjacentHTML('beforeend', routePickerHTML());
   }
 
+  // ============ 随堂练习(第一批只做"点地图"题型) ============
+  // 题库取自当前筛选,所以"只练 Period 3 的经济类"直接沿用工具栏,不用另做界面。
+  let quizMode = null;   // { pool, q, answered, asked, right }
+
+  // 出点地图题要排掉两类坏题(剩 207 条,够用):
+  //   ① 题干里写了自己的地名 —— "Delhi Sultanate" 问在哪,等于送分(22 条)
+  //   ② 题干里写了别处的地名 —— Gao 那条写着"吞 Timbuktu",学生会很合理地点到 Timbuktu 而判错(6 条)
+  // 第二类比第一类更该排:送分题只是没营养,误导题是在教错东西。
+  const ALL_CITY_NAMES = (() => {
+    const seen = new Set(), out = [];
+    Object.keys(index).forEach(num => {
+      const city = index[num][0] && index[num][0].city;
+      String(city || '').split(/[\/,]/).map(x => x.trim()).forEach(name => {
+        if (name.length > 3 && !seen.has(name.toLowerCase())) { seen.add(name.toLowerCase()); out.push(name.toLowerCase()); }
+      });
+    });
+    return out;
+  })();
+  function cityLeaksInTrigger(it) {
+    const trig = (it.trigHTML || '').replace(/<[^>]*>/g, '').toLowerCase();
+    return ALL_CITY_NAMES.some(name => trig.includes(name));
+  }
+
+  function quizPool() {
+    const pool = [];
+    Object.keys(index).forEach(num => {
+      index[num].forEach(it => {
+        if (currentEventPass && !currentEventPass(it)) return;
+        if (cityLeaksInTrigger(it)) return;
+        pool.push({ num, it });
+      });
+    });
+    return pool;
+  }
+
+  function startQuiz() {
+    exitRouteMode(true);
+    const pool = quizPool();
+    if (pool.length < 4) {                     // 筛得太窄就没法出题了,明确告诉用户
+      eventEmpty.style.display = 'none';
+      eventPanel.innerHTML = `<div class="quiz-panel"><div class="qz-head"><div class="qz-title">✏️ 随堂练习</div></div>`
+        + `<p class="qz-stem">当前筛选下只有 ${pool.length} 条可出题的事件,放宽时期或主题再试。</p>`
+        + `<div class="qz-ctrl"><button type="button" class="rt-btn" data-quiz-action="exit">返回</button></div></div>`;
+      eventPanel.classList.add('show');
+      quizMode = { pool: [], q: null, answered: true, asked: 0, right: 0 };
+      return;
+    }
+    quizMode = { pool, q: null, answered: false, asked: 0, right: 0 };
+    if (suspendFilters) suspendFilters();      // 题库已取好;筛选的"隐藏标点"效果要撤掉,否则答案空间只剩几个点
+    deactivateRegion();
+    svg.querySelectorAll('.pin-group').forEach(g => g.classList.add('revealed'));  // 整张地图都是选项
+    dismissFirstClickHint();
+    nextQuestion();
+  }
+
+  function nextQuestion() {
+    if (!quizMode) return;
+    const p = quizMode.pool;
+    quizMode.q = p[Math.floor(Math.random() * p.length)];
+    quizMode.answered = false;
+    quizMode.asked++;
+    ['asia', 'mideast', 'europe', 'americas', 'africa'].forEach(resetRegionToBaseline);
+    hideAllRoutes();
+    renderQuiz();
+  }
+
+  function answerQuiz(num) {
+    if (!quizMode || quizMode.answered || !quizMode.q) return;
+    const right = String(num) === String(quizMode.q.num);
+    const near = !right && pinRegion(num) === pinRegion(quizMode.q.num);
+    quizMode.answered = true;
+    quizMode.verdict = right ? 'right' : near ? 'near' : 'wrong';
+    quizMode.picked = num;
+    if (right) quizMode.right++;
+    spotlightPin(quizMode.q.num);              // 无论对错都把正确答案点亮 —— 答错本身要变成一次学习
+    renderQuiz();
+  }
+
+  function exitQuiz() {
+    if (!quizMode) return;
+    quizMode = null;
+    if (restoreFilters) restoreFilters();
+    ['asia', 'mideast', 'europe', 'americas', 'africa'].forEach(resetRegionToBaseline);
+    svg.querySelectorAll('.pin-group').forEach(g => g.classList.remove('revealed'));
+    eventPanel.classList.remove('show');
+    eventPanel.innerHTML = '';
+    eventEmpty.style.display = 'block';
+  }
+
+  function renderQuiz() {
+    const { q, answered, asked, right } = quizMode;
+    const verdictBox = !answered ? '' : (() => {
+      const v = quizMode.verdict;
+      const label = v === 'right' ? '✓ 答对了' : v === 'near' ? '～ 近了,同一地区,但不是这一站' : '✗ 答错了';
+      const cls = v === 'right' ? 'ok' : v === 'near' ? 'near' : 'bad';
+      const ans = `正确答案:<b>${q.num} ${q.it.city}</b>`;
+      return `<div class="qz-verdict ${cls}"><span>${label}</span>${v === 'right' ? '' : ans}</div>`;
+    })();
+    const stem = answered ? '' : `<p class="qz-ask">在地图上点出这件事发生的地方</p>`;
+    eventPanel.innerHTML = `<div class="quiz-panel">
+        <div class="qz-head">
+          <div class="qz-title">✏️ 随堂练习</div>
+          <div class="qz-score">第 ${asked} 题 · 答对 ${right}</div>
+        </div>
+        ${stem}
+        <div class="qz-card" style="border-left-color:${q.it.catColor}">
+          <div class="qz-meta"><span class="qz-yr">${q.it.yr}</span><span class="qz-cat">${CAT_ICON[q.it.catAbbr] || ''} ${q.it.catFull}</span></div>
+          <div class="qz-trig">${q.it.trigHTML}</div>
+        </div>
+        ${verdictBox}
+        <div class="qz-ctrl">
+          ${answered ? `<button type="button" class="rt-btn primary" data-quiz-action="next">下一题 →</button>` : `<span class="qz-hint">点地图上任意数字标点作答</span>`}
+          <button type="button" class="rt-btn ghost" data-quiz-action="exit">退出练习</button>
+        </div>
+      </div>`;
+    if (answered) {
+      // 答完把这一站的完整事件卡接在下面,顺手把整站内容复习一遍
+      eventPanel.insertAdjacentHTML('beforeend', `<div class="qz-reveal-title">${q.num} ${q.it.city} 的全部历史事件</div>`);
+      const items = index[q.num] || [];
+      eventPanel.insertAdjacentHTML('beforeend', `<div class="event-list">`
+        + items.map(it => `<div class="event-card" style="border-left-color:${it.catColor}">`
+          + `<div class="ec-top"><span class="ec-yr">${it.yr}</span><span class="ec-cat">${CAT_ICON[it.catAbbr] || ''} ${it.catFull}</span></div>`
+          + `<div class="ec-trig">${it.trigHTML}</div></div>`).join('') + `</div>`);
+    }
+    eventEmpty.style.display = 'none';
+    eventPanel.classList.remove('show');
+    void eventPanel.offsetWidth;
+    eventPanel.classList.add('show');
+    eventZone.classList.remove('fit-content');
+    eventZone.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+  }
+
   function showRoutesFor(num) {
-    if (routeMode) return;          // 商路模式下由行程面板控制,别被点标点打断
+    if (routeMode || quizMode) return;   // 练习/商路模式下由各自面板控制,别被点标点打断
     hideAllRoutes();
     (pinToRoutes[num] || []).forEach(route => {
       document.getElementById(`route-line-${route.id}`).classList.add('on');
@@ -2408,6 +2568,13 @@ h1 .en { color: var(--accent); }
   eventPanel.addEventListener('click', e => {
     const step = e.target.closest('[data-route-step]');
     if (step) { stopAutoPlay(); goToStop(+step.dataset.routeStep); return; }
+    const qz = e.target.closest('[data-quiz-action]');
+    if (qz) {
+      const a = qz.dataset.quizAction;
+      if (a === 'next') nextQuestion();
+      else if (a === 'exit') exitQuiz();
+      return;
+    }
     const act = e.target.closest('[data-route-action]');
     if (!act || !routeMode) return;
     const a = act.dataset.routeAction;
@@ -2419,6 +2586,7 @@ h1 .en { color: var(--accent); }
 
   mountRoutePicker();
   eventEmpty.addEventListener('click', e => {
+    if (e.target.closest('[data-quiz-start]')) { startQuiz(); return; }
     const chip = e.target.closest('[data-route-go]');
     if (chip) enterRouteMode(chip.dataset.routeGo);
   });
@@ -2477,6 +2645,7 @@ h1 .en { color: var(--accent); }
       e.stopPropagation();
       // 商路模式下点站点 = 跳到那一站,否则 renderEventPanel 会把行程面板整个冲掉,
       // 用户就失去了上一站/下一站/退出的入口
+      if (quizMode) { answerQuiz(num); return; }   // 练习模式:点标点 = 作答
       if (routeMode) {
         const at = routeMode.route.stops.indexOf(+num);
         if (at >= 0) { stopAutoPlay(); goToStop(at); }
@@ -2637,7 +2806,7 @@ h1 .en { color: var(--accent); }
     p.addEventListener('keydown', e => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       e.preventDefault();
-      if (routeMode) return;                 // 商路模式下地块不响应,退出请用行程面板的按钮
+      if (routeMode || quizMode) return;     // 商路/练习模式下地块不响应,退出请用面板上的按钮
       dismissFirstClickHint();
       if (region === activeRegion) deactivateRegion();
       else activateRegion(region);
@@ -2663,7 +2832,7 @@ h1 .en { color: var(--accent); }
     p.addEventListener('click', (e) => {
       e.stopPropagation();
       if (dragMoved) { dragMoved = false; return; }
-      if (routeMode) return;                 // 同上
+      if (routeMode || quizMode) return;     // 同上
       dismissFirstClickHint();
       if (region === activeRegion) deactivateRegion();
       else activateRegion(region);
@@ -2748,6 +2917,7 @@ h1 .en { color: var(--accent); }
       return p ? inPeriod(it, p) : true;
     };
     const eventPass = it => activeCats.has(it.catAbbr) && matchesPeriod(it) && matchesQuery(it);
+    currentEventPass = eventPass;   // 出题时按当前筛选取题库("只练 Period 3 的经济类")
     const pinGroups = () => Array.from(svg.querySelectorAll('.pin-group'));
     const pinNum = g => { const t = g.querySelector('text'); return t ? t.textContent.trim() : ''; };
     const filterActive = () => tokens.length > 0 || activeCats.size < allCats.size || !!activePeriod;
