@@ -136,6 +136,40 @@ h1 .en { color: var(--accent); }
 .ec-where .ew-pin { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 5px; background: rgba(139,26,26,0.10); color: #8b1a1a; font-size: 11px; font-variant-numeric: tabular-nums; }
 .ec-where .ew-go { margin-left: auto; color: var(--terracotta, #a8552f); white-space: nowrap; }
 .event-head .badge-search { background: #3f4a56 !important; font-size: 15px; }
+/* ---- 商路模式:行程面板 ---- */
+.route-panel { padding: 16px 20px 14px; border-bottom: 1px solid var(--line); background: #fffdf8; }
+.rt-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.rt-name { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
+.rt-progress { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
+.rt-blurb { margin: 9px 0 0; font-size: 13px; line-height: 1.7; color: var(--ink); }
+.rt-exam { margin: 7px 0 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-soft); }
+.rt-exam span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(201,113,79,0.14); color: #a8552f; font-size: 11px; font-weight: 800; }
+.rt-stops { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; }
+.rt-stop { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.rt-stop .rt-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-faint, #b7ae9c); }
+.rt-stop .rt-num { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+.rt-stop.done { opacity: .62; }
+.rt-stop.done .rt-dot { background: #8fa878; }
+.rt-stop.now { border-color: #8b1a1a; box-shadow: 0 0 0 2px rgba(139,26,26,0.14); }
+.rt-stop.now .rt-dot { background: #8b1a1a; }
+.rt-stop:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.rt-ctrl { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; }
+.rt-btn { min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.rt-btn.primary { background: var(--ink, #211f1c); border-color: var(--ink, #211f1c); color: #fff; }
+.rt-btn.ghost { color: var(--ink-soft); }
+.rt-btn[disabled] { opacity: .38; cursor: default; }
+.rt-btn:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+/* 位移由 JS 的 rAF 插值负责(见 moveVehicle) —— 刻意不给 transform 加 CSS 过渡,两者会打架 */
+
+/* ---- 商路入口 ---- */
+.route-launch { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.route-launch:hover { border-color: var(--ink-soft); }
+.route-picker { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 14px 0 0; }
+.route-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.route-chip:hover { border-color: var(--ink-soft); }
+.route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; }
+.route-picker-title { margin: 22px 0 0; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
+
 .search-none { padding: 34px 22px; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--ink-soft); line-height: 1.8; }
 .search-none span { font-size: 12px; font-weight: 600; color: var(--ink-faint, #9b9382); }
 
@@ -1989,16 +2023,40 @@ h1 .en { color: var(--accent); }
 
   const ROUTES = [
     { id: 'silk_road', icon: 'camel', color: '#8fa878', dur: '7s', stops: [5, 8, 9, 3],
+      name: '丝绸之路 · Silk Road',
+      path: 'Beijing → Karakorum → Samarkand → Baghdad',
+      blurb: '走的是丝绸、瓷器这类高价值、低体积的奢侈品 —— 运一船粮食横穿中亚根本不划算。跟着货物一起走的还有技术、宗教和病菌。',
+      exam: '蒙古治世(Pax Mongolica)压低了沿途的保护费与风险,商队规模因此变大;黑死病也是顺着这条路进的欧洲。',
       label: '丝绸之路 · Silk Road(Beijing → Karakorum → Samarkand → Baghdad)' },
     { id: 'indian_ocean', icon: 'ship', color: '#1e8f6f', dur: '6s', stops: [15, 2, 6],
+      name: '印度洋贸易 · Indian Ocean Trade',
+      path: 'Guangzhou → Malacca → Delhi',
+      blurb: '节奏由季风决定:夏季风把船推向东北,冬季风再送回来。所以商人到港后常要等上好几个月才能返航。',
+      exam: '等风的那几个月催生了侨居商人社区与通婚 —— 斯瓦希里海岸的城邦就是这样长出来的。',
       label: '印度洋贸易 · Indian Ocean trade(Guangzhou → Malacca → Delhi)' },
     { id: 'galleon', icon: 'ship', color: '#e08e0b', dur: '6s', stops: [10, 2, 12],
+      name: '全球白银贸易 · Silver Trade',
+      path: 'Nanjing → Malacca → Manila',
+      blurb: '明朝把税改成征银(一条鞭法),中国对白银的胃口把美洲矿山、马尼拉和欧洲绑进了同一个循环。',
+      exam: '这是第一个真正意义上的全球贸易网:白银从美洲出发,绕地球一圈流进中国国库。',
       label: '全球白银贸易 · Silver trade(Nanjing → Malacca → Manila)' },
     { id: 'atlantic_triangle', icon: 'ship', color: '#5c3a21', dur: '7s', stops: [39, 87, 59],
+      name: '大西洋三角贸易 · Atlantic Triangular Trade',
+      path: 'Liverpool → Elmina → Bridgetown',
+      blurb: '三段各运各的:欧洲的工业品去西非,被掳的人横渡中央航路去美洲,蔗糖、烟草与棉花再运回欧洲。',
+      exam: '与此前各地的奴隶制不同,这里是"动产奴隶制"—— 身份世袭、与种族绑定、人被当作可买卖的财产。',
       label: '大西洋三角贸易 · Atlantic Triangular Trade(Liverpool → Elmina → Bridgetown)' },
     { id: 'columbian_exchange', icon: 'ship', color: '#e0949a', dur: '6s', stops: [45, 49],
+      name: '哥伦布大交换 · Columbian Exchange',
+      path: 'Seville → Tenochtitlan',
+      blurb: '双向流动:作物、牲畜、人和病菌同时跨洋。天花等旧大陆疾病造成美洲原住民人口崩溃。',
+      exam: '劳动力缺口正是大西洋奴隶贸易的直接起因 —— 这两条线在答题时要连起来写。',
       label: '哥伦布大交换 · Columbian Exchange(Seville → Tenochtitlan/Mexico City)' },
     { id: 'mansa_musa_hajj', icon: 'camel', color: '#d4a017', dur: '6s', stops: [73, 84],
+      name: 'Mansa Musa 朝觐 · Hajj to Mecca',
+      path: 'Timbuktu → Cairo',
+      blurb: '1324 年曼萨·穆萨带着大量黄金前往麦加朝觐,沿途散金,据说让开罗的金价多年没能回到原位。',
+      exam: '注意这是宗教朝觐、不是贸易路线 —— 但它把马里放进了伊斯兰世界的版图,也把西非的黄金—食盐贸易展示给了整个地中海。',
       label: 'Mansa Musa 朝觐路线 · Hajj to Mecca(Timbuktu → Cairo)' },
   ];
 
@@ -2138,7 +2196,194 @@ h1 .en { color: var(--accent); }
     routesLayer.querySelectorAll('.route-line, .route-vehicle').forEach(el => el.classList.remove('on'));
     clearGlowTimers();
   }
+  // 筛选器的挂起/恢复由下面的 initSearchFilter 赋值(它在闭包里,外面拿不到内部状态)
+  let suspendFilters = null, restoreFilters = null;
+
+  // ============ 商路模式 ============
+  // 原来的 scheduleRouteGlow 已经会"沿路依次点亮国家 + 把事件面板切到当前站",但它是
+  // 定时循环的:丝绸之路 7s 走 4 站,每站只停约 2 秒 —— 读不完一站的事件卡就被翻页了。
+  // 所以这里做成默认手动步进,自动播放降级为可选,节奏也放慢到每站 7 秒。
+  let routeMode = null;   // { route, i, playing, timer, visited }
+  let routeStepCb = null; // 首页订阅:自动播放时步进在 iframe 内发生,不通知的话父页面面板不会跟着变
+
+  function routeVehicle(route) { return document.getElementById(`route-vehicle-${route.id}`); }
+
+  // animateMotion 没写 begin,默认文档加载就开跑,而且 repeatCount="indefinite" —— endElement() 按不住它。
+  // 它产生的位移会和我们设的 transform 叠加,骆驼直接飞出画面。所以商路模式下把动画节点整个摘下来,
+  // 退出时再装回去(点标点触发的老路径还要用它)。
+  function detachAnim(v) {
+    const a = v.querySelector('animateMotion');
+    if (a) { v._stashedAnim = a; a.remove(); }
+  }
+  function reattachAnim(v) {
+    if (v._stashedAnim) { v.appendChild(v._stashedAnim); v._stashedAnim = null; }
+  }
+
+  // 位移不用 CSS 过渡驱动:过渡一旦没跑起来,骆驼就永远停在原点 —— 位置的正确性不该依赖动画时序。
+  // 这里跟镜头推近一样用 rAF 自己插值,到不了也至少落在终点。
+  let vehTween = null, vehLandTimer = null;
+  function moveVehicle(v, from, to, ms) {
+    if (vehTween) cancelAnimationFrame(vehTween);
+    if (vehLandTimer) clearTimeout(vehLandTimer);
+    const land = () => {
+      v.setAttribute('transform', `translate(${to.x}, ${to.y})`);
+      if (vehTween) { cancelAnimationFrame(vehTween); vehTween = null; }
+      vehLandTimer = null;
+    };
+    if (!from || !ms || prefersReducedMotion()) { land(); return; }
+    // 兜底:标签页切到后台时 rAF 完全不触发,补间一帧都不会跑,骆驼会永远停在起点。
+    // 所以无论动画有没有跑完,到点都强制落位 —— 位置的正确性不能依赖动画时序。
+    vehLandTimer = setTimeout(land, ms + 150);
+    const t0 = performance.now();
+    const step = now => {
+      const t = Math.min(1, (now - t0) / ms);
+      const e = 1 - Math.pow(1 - t, 3);
+      v.setAttribute('transform', `translate(${from.x + (to.x - from.x) * e}, ${from.y + (to.y - from.y) * e})`);
+      if (t < 1) vehTween = requestAnimationFrame(step);
+      else land();
+    };
+    vehTween = requestAnimationFrame(step);
+  }
+
+  function placeVehicleAt(route, num) {
+    const v = routeVehicle(route);
+    if (!v) return;
+    detachAnim(v);
+    const to = pinPos(num);
+    if (!to) return;
+    const prev = v.getAttribute('transform');
+    const m = prev && prev.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
+    const from = m ? { x: +m[1], y: +m[2] } : null;
+    moveVehicle(v, from, to, 850);
+  }
+
+  function goToStop(i) {
+    if (!routeMode) return;
+    const { route } = routeMode;
+    routeMode.i = Math.max(0, Math.min(i, route.stops.length - 1));
+    // 走过的国家累积点亮:第 0 站到当前站之间的 passThrough 全部并进来
+    const visited = new Set();
+    for (let k = 0; k <= routeMode.i; k++) {
+      route.stopWindows[k].passThrough.forEach(p => visited.add(p));
+      const own = findCountryPathForPin(route.stops[k]);
+      if (own) visited.add(own);
+    }
+    spotlightTrail(route, visited);
+    const num = route.stops[routeMode.i];
+    placeVehicleAt(route, num);
+    renderEventContent(num, pinBadgeColor(num));
+    eventPanel.insertAdjacentHTML('afterbegin', itineraryHTML());
+    eventZone.classList.remove('fit-content');   // 行程面板占位,别再按 1-2 条事件收窄
+    eventZone.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    if (routeStepCb) routeStepCb();
+  }
+
+  function stopAutoPlay() {
+    if (routeMode && routeMode.timer) { clearInterval(routeMode.timer); routeMode.timer = null; }
+    if (routeMode) routeMode.playing = false;
+  }
+
+  function toggleAutoPlay() {
+    if (!routeMode) return;
+    if (routeMode.playing) { stopAutoPlay(); goToStop(routeMode.i); return; }
+    routeMode.playing = true;
+    // 已经在终点就从头开始,免得点了播放没反应
+    if (routeMode.i >= routeMode.route.stops.length - 1) routeMode.i = -1;
+    routeMode.timer = setInterval(() => {
+      if (!routeMode) return;
+      if (routeMode.i >= routeMode.route.stops.length - 1) { stopAutoPlay(); goToStop(routeMode.i); return; }
+      goToStop(routeMode.i + 1);
+    }, 7000);
+    goToStop(routeMode.i + 1);
+  }
+
+  function enterRouteMode(id) {
+    const route = ROUTES.find(r => r.id === id);
+    if (!route) return;
+    exitRouteMode(true);                       // 先清干净上一条
+    hideAllRoutes();
+    if (typeof suspendFilters === 'function') suspendFilters();   // 筛选临时挂起,否则中间某站可能被筛没、路就断了
+    deactivateRegion();
+    routeMode = { route, i: -1, playing: false, timer: null };
+
+    // 只显示这条路线上的站点
+    svg.querySelectorAll('.pin-group').forEach(g => g.classList.remove('revealed'));
+    const stopGroups = route.stops.map(stopGroupFor).filter(Boolean);
+    stopGroups.forEach(g => g.classList.add('revealed'));
+    document.getElementById(`route-line-${route.id}`).classList.add('on');
+    const v = routeVehicle(route);
+    if (v) v.classList.add('on');
+    fitToPins(stopGroups);
+    dismissFirstClickHint();
+    goToStop(0);
+  }
+
+  function stopGroupFor(num) {
+    return Array.from(svg.querySelectorAll('.pin-group')).find(g => {
+      const t = g.querySelector('text'); return t && t.textContent.trim() === String(num);
+    });
+  }
+
+  function exitRouteMode(quiet) {
+    if (!routeMode) return;
+    stopAutoPlay();
+    const { route } = routeMode;
+    routeMode = null;
+    const v = routeVehicle(route);
+    if (v) { v.classList.remove('on'); v.removeAttribute('transform'); reattachAnim(v); }
+    const line = document.getElementById(`route-line-${route.id}`);
+    if (line) line.classList.remove('on');
+    clearGlowTimers();
+    svg.querySelectorAll('.pin-group').forEach(g => g.classList.remove('revealed'));
+    if (quiet) return;
+    if (typeof restoreFilters === 'function') restoreFilters();   // 把之前的时期/主题/搜索还回去
+    eventPanel.classList.remove('show');
+    eventPanel.innerHTML = '';
+    eventEmpty.style.display = 'block';
+  }
+
+  function itineraryHTML() {
+    const { route, i, playing } = routeMode;
+    const steps = route.stops.map((num, k) => {
+      const state = k < i ? 'done' : k === i ? 'now' : 'todo';
+      return `<button type="button" class="rt-stop ${state}" data-route-step="${k}">`
+        + `<span class="rt-dot"></span><span class="rt-num">${num}</span>`
+        + `<span class="rt-city">${(index[num] && index[num][0] ? index[num][0].city : '')}</span></button>`;
+    }).join('');
+    return `<div class="route-panel">
+      <div class="rt-head">
+        <div class="rt-name">${route.name}</div>
+        <div class="rt-progress">第 ${i + 1} 站 / 共 ${route.stops.length} 站</div>
+      </div>
+      <p class="rt-blurb">${route.blurb}</p>
+      <p class="rt-exam"><span>考点</span>${route.exam}</p>
+      <div class="rt-stops">${steps}</div>
+      <div class="rt-ctrl">
+        <button type="button" class="rt-btn" data-route-action="prev" ${i <= 0 ? 'disabled' : ''}>← 上一站</button>
+        <button type="button" class="rt-btn primary" data-route-action="next" ${i >= route.stops.length - 1 ? 'disabled' : ''}>下一站 →</button>
+        <button type="button" class="rt-btn" data-route-action="play">${playing ? '⏸ 暂停' : '▶ 自动播放'}</button>
+        <button type="button" class="rt-btn ghost" data-route-action="exit">退出商路</button>
+      </div>
+    </div>`;
+  }
+
+  // 空态那块地方原本只有一句说明文字,顺手当商路入口 —— 首页标语写着"跟着商队一路走",
+  // 可这功能以前只有点到恰好在路线上的 16/104 个标点才会撞见。
+  function routePickerHTML() {
+    return `<div class="route-picker-title">🐫 或者跟着商队走一趟</div>`
+      + `<div class="route-picker">`
+      + ROUTES.map(r => `<button type="button" class="route-chip" data-route-go="${r.id}">`
+        + `<span class="rc-dot" style="background:${r.color}"></span>${r.name.split(' · ')[0]}`
+        + `<span style="color:var(--ink-soft);font-weight:600">${r.stops.length} 站</span></button>`).join('')
+      + `</div>`;
+  }
+  function mountRoutePicker() {
+    if (!eventEmpty || eventEmpty.querySelector('.route-picker')) return;
+    eventEmpty.insertAdjacentHTML('beforeend', routePickerHTML());
+  }
+
   function showRoutesFor(num) {
+    if (routeMode) return;          // 商路模式下由行程面板控制,别被点标点打断
     hideAllRoutes();
     (pinToRoutes[num] || []).forEach(route => {
       document.getElementById(`route-line-${route.id}`).classList.add('on');
@@ -2157,6 +2402,26 @@ h1 .en { color: var(--accent); }
   const eventEmpty = document.getElementById('eventEmpty');
   const eventPanel = document.getElementById('eventPanel');
   const eventZone = document.getElementById('eventZone');
+
+  // ↓ 商路模式里这几句要立即执行,必须排在上面三个 const 之后(它们是 const,提前引用会 TDZ 报错)
+  // 行程面板的按钮:事件面板是 innerHTML 重铺的,所以走事件委托
+  eventPanel.addEventListener('click', e => {
+    const step = e.target.closest('[data-route-step]');
+    if (step) { stopAutoPlay(); goToStop(+step.dataset.routeStep); return; }
+    const act = e.target.closest('[data-route-action]');
+    if (!act || !routeMode) return;
+    const a = act.dataset.routeAction;
+    if (a === 'prev') { stopAutoPlay(); goToStop(routeMode.i - 1); }
+    else if (a === 'next') { stopAutoPlay(); goToStop(routeMode.i + 1); }
+    else if (a === 'play') toggleAutoPlay();
+    else if (a === 'exit') exitRouteMode();
+  });
+
+  mountRoutePicker();
+  eventEmpty.addEventListener('click', e => {
+    const chip = e.target.closest('[data-route-go]');
+    if (chip) enterRouteMode(chip.dataset.routeGo);
+  });
   let activeNum = null;
 
   const CAT_ICON = { 'GOV': '👑', 'ECN': '💰', 'CDI': '📜', 'SIO': '👥', 'TEC': '⚙' };
@@ -2210,6 +2475,13 @@ h1 .en { color: var(--accent); }
     const leave = () => c.setAttribute('r', BASE_R);
     const activate = (e) => {
       e.stopPropagation();
+      // 商路模式下点站点 = 跳到那一站,否则 renderEventPanel 会把行程面板整个冲掉,
+      // 用户就失去了上一站/下一站/退出的入口
+      if (routeMode) {
+        const at = routeMode.route.stops.indexOf(+num);
+        if (at >= 0) { stopAutoPlay(); goToStop(at); }
+        return;
+      }
       renderEventPanel(num, c.getAttribute('fill'));
       // 路线动画(如果这一站在某条路线上)已经在 renderEventPanel → showRoutesFor 里排好队了;
       // 这里再点一次聚光灯,保证"点哪个标点,哪个国家立刻深色"就算它不在任何路线上也成立
@@ -2365,6 +2637,7 @@ h1 .en { color: var(--accent); }
     p.addEventListener('keydown', e => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       e.preventDefault();
+      if (routeMode) return;                 // 商路模式下地块不响应,退出请用行程面板的按钮
       dismissFirstClickHint();
       if (region === activeRegion) deactivateRegion();
       else activateRegion(region);
@@ -2390,6 +2663,7 @@ h1 .en { color: var(--accent); }
     p.addEventListener('click', (e) => {
       e.stopPropagation();
       if (dragMoved) { dragMoved = false; return; }
+      if (routeMode) return;                 // 同上
       dismissFirstClickHint();
       if (region === activeRegion) deactivateRegion();
       else activateRegion(region);
@@ -2586,6 +2860,29 @@ h1 .en { color: var(--accent); }
       apply();
     }
 
+    // 商路模式期间把筛选整个挂起:否则选了"只看经济与贸易"再进丝绸之路,
+    // 中间某一站可能一条都不匹配,路就断在那儿了。退出商路再原样还回去。
+    let stash = null;
+    suspendFilters = () => {
+      if (stash) return;
+      stash = { query, tokens: tokens.slice(), cats: new Set(activeCats), period: activePeriod,
+                inputValue: searchInput ? searchInput.value : '' };
+      takeQuery(''); if (searchInput) searchInput.value = '';
+      activeCats = new Set(allCats); activePeriod = '';
+      syncPills(); if (periodSel) periodSel.value = '';
+      if (countBox) countBox.textContent = '';
+      if (onCountChange) onCountChange('');
+    };
+    restoreFilters = () => {
+      if (!stash) return;
+      query = stash.query; tokens = stash.tokens;
+      activeCats = stash.cats; activePeriod = stash.period;
+      if (searchInput) searchInput.value = stash.inputValue;
+      syncPills(); if (periodSel) periodSel.value = activePeriod;
+      stash = null;
+      apply();
+    };
+
     // 每个时期各有多少条,直接标在选项里 —— 学生选之前就知道这一期有多少内容
     const periodCount = p => Object.values(index).reduce((n, arr) => n + arr.filter(it => inPeriod(it, p)).length, 0);
     const catCount = abbr => Object.values(index).reduce((n, arr) => n + arr.filter(it => it.catAbbr === abbr).length, 0);
@@ -2627,6 +2924,19 @@ h1 .en { color: var(--accent); }
       getActiveCats: () => new Set(activeCats),
       getState: () => ({ query, cats: new Set(activeCats), period: activePeriod }),
       setQuery, toggleCat, setPeriod, reset, openHit,
+      // 商路模式:首页据此建入口、并把行程面板镜像过去
+      getRoutes: () => ROUTES.map(r => ({ id: r.id, name: r.name, color: r.color, stops: r.stops.length })),
+      enterRoute: id => enterRouteMode(id),
+      exitRoute: () => exitRouteMode(),
+      routeStep: i => goToStop(i),
+      routeAction: a => {
+        if (a === 'prev') { stopAutoPlay(); goToStop(routeMode ? routeMode.i - 1 : 0); }
+        else if (a === 'next') { stopAutoPlay(); goToStop(routeMode ? routeMode.i + 1 : 0); }
+        else if (a === 'play') toggleAutoPlay();
+        else if (a === 'exit') exitRouteMode();
+      },
+      inRoute: () => !!routeMode,
+      onRouteStep: fn => { routeStepCb = fn; },
       onCountChange: fn => { onCountChange = fn; },
     };
   })();

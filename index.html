@@ -279,6 +279,35 @@ nav.topnav {
 .home-events .ec-where .ew-pin { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 5px; background: rgba(139,26,26,0.10); color: #8b1a1a; font-size: 11px; font-variant-numeric: tabular-nums; }
 .home-events .ec-where .ew-go { margin-left: auto; color: var(--terracotta); white-space: nowrap; }
 .home-events .event-head .badge-search { background: #3f4a56 !important; font-size: 15px; }
+/* ---- 商路行程面板(从地图镜像过来) ---- */
+.home-events .route-panel { padding: 16px 20px 14px; border-bottom: 1px solid var(--line); background: #fffdf8; }
+.home-events .rt-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.home-events .rt-name { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
+.home-events .rt-progress { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
+.home-events .rt-blurb { margin: 9px 0 0; font-size: 13px; line-height: 1.7; color: var(--ink); }
+.home-events .rt-exam { margin: 7px 0 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-soft); }
+.home-events .rt-exam span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(201,113,79,0.14); color: #a8552f; font-size: 11px; font-weight: 800; }
+.home-events .rt-stops { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; }
+.home-events .rt-stop { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.home-events .rt-stop .rt-dot { width: 7px; height: 7px; border-radius: 50%; background: #b7ae9c; }
+.home-events .rt-stop .rt-num { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+.home-events .rt-stop.done { opacity: .62; }
+.home-events .rt-stop.done .rt-dot { background: #8fa878; }
+.home-events .rt-stop.now { border-color: #8b1a1a; box-shadow: 0 0 0 2px rgba(139,26,26,0.14); }
+.home-events .rt-stop.now .rt-dot { background: #8b1a1a; }
+.home-events .rt-ctrl { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; }
+.home-events .rt-btn { min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.home-events .rt-btn.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+.home-events .rt-btn.ghost { color: var(--ink-soft); }
+.home-events .rt-btn[disabled] { opacity: .38; cursor: default; }
+.home-events .rt-stop:focus-visible, .home-events .rt-btn:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+/* 空态里的商路入口 */
+.home-events .route-picker-title { margin: 22px 0 0; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
+.home-events .route-picker { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 12px 0 0; }
+.home-events .route-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.home-events .route-chip:hover { border-color: var(--ink-soft); }
+.home-events .route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; }
+
 .home-events .search-none { padding: 46px 22px; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--ink-soft); line-height: 1.8; }
 .home-events .search-none span { font-size: 12px; font-weight: 600; color: var(--ink-faint, #9b9382); }
 
@@ -447,7 +476,10 @@ nav.topnav {
           </div>
           <!-- 右侧事件面板:点左边地图的数字标点,该站事件在这里完整显示 -->
           <div id="home-events" class="home-events" role="region" aria-label="历史事件" aria-live="polite">
-            <div class="he-empty">📍 点地图上的数字标点，<br>这里会显示那一站的历史事件</div>
+            <div class="he-empty">📍 点地图上的数字标点，<br>这里会显示那一站的历史事件
+              <div class="route-picker-title">🐫 或者跟着商队走一趟</div>
+              <div class="route-picker" id="homeRoutePicker"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -696,7 +728,16 @@ nav.topnav {
     };
     homeEvents.addEventListener('click', e => {
       const card = e.target.closest('.event-card.is-result');
-      if (card) openHitFromHome(card);
+      if (card) { openHitFromHome(card); return; }
+      // 商路:入口 chip / 站点 / 上一站下一站播放退出 —— 面板是拷过来的,监听不会跟过来,这边代理
+      let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
+      if (!win || !win.__mapFilter) return;
+      const go = e.target.closest('[data-route-go]');
+      if (go) { win.__mapFilter.enterRoute(go.dataset.routeGo); setTimeout(syncHomeEvents, 120); return; }
+      const step = e.target.closest('[data-route-step]');
+      if (step) { win.__mapFilter.routeStep(+step.dataset.routeStep); setTimeout(syncHomeEvents, 120); return; }
+      const act = e.target.closest('[data-route-action]');
+      if (act) { win.__mapFilter.routeAction(act.dataset.routeAction); setTimeout(syncHomeEvents, 120); }
     });
     homeEvents.addEventListener('keydown', e => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -746,6 +787,15 @@ nav.topnav {
       opts.forEach(o => { const el = document.createElement('option'); el.value = o.value; el.textContent = o.label; sel.appendChild(el); });
     };
     fill(periodSel, api.getPeriodOptions());
+    // 空态里的商路入口,选项由地图那边给
+    const picker = document.getElementById('homeRoutePicker');
+    if (picker && api.getRoutes) {
+      picker.innerHTML = api.getRoutes().map(r =>
+        `<button type="button" class="route-chip" data-route-go="${r.id}">`
+        + `<span class="rc-dot" style="background:${r.color}"></span>${r.name.split(' · ')[0]}`
+        + `<span style="color:var(--ink-soft);font-weight:600">${r.stops} 站</span></button>`).join('');
+    }
+    if (api.onRouteStep) api.onRouteStep(() => syncHomeEvents());
     // 主题药丸:多选。重建而非追加,免得 iframe 重载后越堆越多
     catsBox.innerHTML = '';
     api.getCats().forEach(c => {
