@@ -2699,6 +2699,12 @@ export async function runManagedVerification({
   let operationError;
   let verificationTimer;
   let timedOut = false;
+  let phase = 'server startup';
+  const deadline = Date.now() + timeoutMs;
+  const timeoutError = (timeoutPhase = phase) => new Error(
+    `Browser verification timed out after ${timeoutMs} ms during ${timeoutPhase}`,
+  );
+  const deadlineExpired = () => timedOut || Date.now() >= deadline;
   const closeWithTimeout = async (resource, label) => {
     if (!resource?.close) return;
     let cleanupTimer;
@@ -2718,33 +2724,43 @@ export async function runManagedVerification({
       clearTimeout(cleanupTimer);
     }
   };
+  const watchdog = new Promise((_, reject) => {
+    verificationTimer = setTimeout(
+      () => {
+        timedOut = true;
+        reject(timeoutError());
+      },
+      Math.max(0, deadline - Date.now()),
+    );
+  });
   const lifecycle = (async () => {
     const startedServer = await startServer();
-    if (timedOut) {
+    if (deadlineExpired()) {
+      timedOut = true;
       await closeWithTimeout(startedServer, 'late server');
-      return undefined;
+      throw timeoutError('server startup');
     }
     server = startedServer;
+    phase = 'browser launch';
     const launchedBrowser = await launchBrowser(server);
-    if (timedOut) {
+    if (deadlineExpired()) {
+      timedOut = true;
       await closeWithTimeout(launchedBrowser, 'late browser');
-      return undefined;
+      throw timeoutError('browser launch');
     }
     browser = launchedBrowser;
-    return verify({ server, browser });
+    phase = 'verification';
+    const verificationResult = await verify({ server, browser });
+    if (deadlineExpired()) {
+      timedOut = true;
+      throw timeoutError('verification');
+    }
+    return verificationResult;
   })();
   try {
     result = await Promise.race([
       lifecycle,
-      new Promise((_, reject) => {
-        verificationTimer = setTimeout(
-          () => {
-            timedOut = true;
-            reject(new Error(`Browser verification timed out after ${timeoutMs} ms`));
-          },
-          timeoutMs,
-        );
-      }),
+      watchdog,
     ]);
   } catch (error) {
     operationError = error;

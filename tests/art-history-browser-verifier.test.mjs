@@ -1237,6 +1237,85 @@ test('verification lifecycle timeout starts before server startup', async () => 
   assert.ok(Date.now() - startedAt < 250);
 });
 
+test('verification lifecycle deadline catches synchronous blocking server startup', async () => {
+  const { runManagedVerification } = await import(VERIFIER_URL.href);
+  const events = [];
+
+  await assert.rejects(
+    runManagedVerification({
+      timeoutMs: 20,
+      startServer: () => {
+        events.push('server.start');
+        const unblockAt = Date.now() + 60;
+        while (Date.now() < unblockAt) {
+          // Deliberately block to prove the absolute deadline does not depend on timers firing.
+        }
+        return {
+          close: async () => events.push('server.close'),
+        };
+      },
+      launchBrowser: async () => events.push('browser.launch'),
+      verify: async () => events.push('verify'),
+    }),
+    /Browser verification timed out after 20 ms during server startup/,
+  );
+  assert.deepEqual(events, ['server.start', 'server.close']);
+});
+
+test('verification lifecycle deadline catches synchronous blocking browser launch', async () => {
+  const { runManagedVerification } = await import(VERIFIER_URL.href);
+  const events = [];
+
+  await assert.rejects(
+    runManagedVerification({
+      timeoutMs: 20,
+      startServer: async () => ({
+        close: async () => events.push('server.close'),
+      }),
+      launchBrowser: () => {
+        events.push('browser.launch');
+        const unblockAt = Date.now() + 60;
+        while (Date.now() < unblockAt) {
+          // Deliberately block past the watchdog deadline.
+        }
+        return {
+          close: async () => events.push('browser.close'),
+        };
+      },
+      verify: async () => events.push('verify'),
+    }),
+    /Browser verification timed out after 20 ms during browser launch/,
+  );
+  assert.deepEqual(events, ['browser.launch', 'browser.close', 'server.close']);
+});
+
+test('verification lifecycle deadline catches synchronous blocking verification', async () => {
+  const { runManagedVerification } = await import(VERIFIER_URL.href);
+  const events = [];
+
+  await assert.rejects(
+    runManagedVerification({
+      timeoutMs: 20,
+      startServer: async () => ({
+        close: async () => events.push('server.close'),
+      }),
+      launchBrowser: async () => ({
+        close: async () => events.push('browser.close'),
+      }),
+      verify: () => {
+        events.push('verify');
+        const unblockAt = Date.now() + 60;
+        while (Date.now() < unblockAt) {
+          // Deliberately block past the watchdog deadline.
+        }
+        return ['late report'];
+      },
+    }),
+    /Browser verification timed out after 20 ms during verification/,
+  );
+  assert.deepEqual(events, ['verify', 'browser.close', 'server.close']);
+});
+
 test('verification lifecycle timeout covers browser launch and cleans the started server', async () => {
   const { runManagedVerification } = await import(VERIFIER_URL.href);
   const events = [];
