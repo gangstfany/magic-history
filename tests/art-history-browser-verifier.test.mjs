@@ -10,6 +10,8 @@ const NINE_WORKS_URL = new URL('./fixtures/u2-imported-browser.json', import.met
 const SOURCE_FIXTURE_URL = new URL('./fixtures/u2-corrected-and-imported.json', import.meta.url);
 const U1_BROWSER_FIXTURE = new URL('./fixtures/u1-browser.json', import.meta.url);
 const U1_CANONICAL_FIXTURE = new URL('./fixtures/u1-canonical.json', import.meta.url);
+const U3_BROWSER_FIXTURE = new URL('./fixtures/u3-browser.json', import.meta.url);
+const U3_CANONICAL_FIXTURE = new URL('./fixtures/u3-canonical.json', import.meta.url);
 
 function projectBrowserFixture(canonical) {
   return canonical.artworks.map((work) => {
@@ -37,6 +39,138 @@ function projectBrowserFixture(canonical) {
     };
   });
 }
+
+function projectU3BrowserFixture(canonical) {
+  return canonical.artworks.map((work) => ({
+    id: work.id,
+    apNumber: work.apNumber,
+    titleEn: work.titleEn,
+    titleZh: work.titleZh,
+    unit: work.unit,
+    region: work.region,
+    siteName: work.siteName,
+    images: work.images.map(({
+      id,
+      label,
+      imageUrl,
+      imageAlt,
+      imageSourceUrl,
+    }) => ({
+      id,
+      label,
+      imageUrl,
+      imageAlt,
+      imageSourceUrl,
+    })),
+  }));
+}
+
+test('U3 browser fixture is the exact 51-work, 103-view canonical projection', async () => {
+  const [browserFixture, canonical] = await Promise.all([
+    readFile(U3_BROWSER_FIXTURE, 'utf8').then(JSON.parse),
+    readFile(U3_CANONICAL_FIXTURE, 'utf8').then(JSON.parse),
+  ]);
+
+  assert.deepEqual(browserFixture, projectU3BrowserFixture(canonical));
+  assert.deepEqual(
+    browserFixture.map(({ apNumber }) => apNumber),
+    Array.from({ length: 51 }, (_, index) => index + 48),
+  );
+  assert.equal(
+    browserFixture.reduce((total, work) => total + work.images.length, 0),
+    103,
+  );
+  for (const key of ['id', 'imageUrl', 'imageAlt', 'imageSourceUrl']) {
+    const values = browserFixture.flatMap((work) => (
+      key === 'id'
+        ? [work.id, ...work.images.map((image) => `${work.id}/${image.id}`)]
+        : work.images.map((image) => image[key])
+    ));
+    assert.equal(new Set(values).size, values.length, `distinct U3 ${key} values`);
+  }
+});
+
+test('U3 browser fixture loader validates the exact schema and freezes every level', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const fixture = JSON.parse(await readFile(U3_BROWSER_FIXTURE, 'utf8'));
+  const frozen = verifier.validateAndFreezeU3Works(structuredClone(fixture));
+
+  assert.equal(frozen.length, 51);
+  assert.equal(frozen.reduce((total, work) => total + work.images.length, 0), 103);
+  assert.ok(Object.isFrozen(frozen));
+  assert.ok(frozen.every((work) => Object.isFrozen(work)));
+  assert.ok(frozen.every((work) => Object.isFrozen(work.images)));
+  assert.ok(frozen.every((work) => work.images.every(Object.isFrozen)));
+});
+
+test('U3 verifier rejects fixture and rendered-view mutations with meaningful assertions', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const fixture = JSON.parse(await readFile(U3_BROWSER_FIXTURE, 'utf8'));
+  const clone = () => structuredClone(fixture);
+
+  const missingWork = clone();
+  missingWork.splice(10, 1);
+  assert.throws(
+    () => verifier.validateAndFreezeU3Works(missingWork),
+    /51 U3 works|AP 58/,
+  );
+
+  const duplicateWork = clone();
+  duplicateWork[10] = structuredClone(duplicateWork[9]);
+  assert.throws(
+    () => verifier.validateAndFreezeU3Works(duplicateWork),
+    /AP 58|duplicate U3 work id/,
+  );
+
+  const missingChartresView = clone();
+  const chartres = missingChartresView.find(({ apNumber }) => apNumber === 60);
+  chartres.images.pop();
+  assert.throws(
+    () => verifier.validateAndFreezeU3Works(missingChartresView),
+    /103 U3 views|AP 60/,
+  );
+
+  const duplicateView = clone();
+  const chartresWithDuplicate = duplicateView.find(({ apNumber }) => apNumber === 60);
+  chartresWithDuplicate.images.push(structuredClone(chartresWithDuplicate.images[0]));
+  assert.throws(
+    () => verifier.validateAndFreezeU3Works(duplicateView),
+    /103 U3 views|duplicate U3 view id|duplicate U3 image URL/,
+  );
+
+  const expected = fixture[0].images[0];
+  assert.throws(
+    () => verifier.assertU3ViewMatches(
+      { ...expected, imageUrl: 'https://example.invalid/wrong-required-view.jpg' },
+      expected,
+      'mutated required image',
+    ),
+    /image URL/,
+  );
+  assert.throws(
+    () => verifier.assertExactImageRequests(
+      new Map(fixture[0].images.map((image, index) => [
+        image.imageUrl,
+        index === 0 ? 2 : 1,
+      ])),
+      fixture[0],
+      'duplicate request mutation',
+    ),
+    /request count/,
+  );
+  assert.throws(
+    () => verifier.assertNoCollectedIssues(['console warning: mutation'], 'warning mutation'),
+    /console warning: mutation/,
+  );
+  assert.throws(
+    () => verifier.assertNoCollectedIssues(['console error: mutation'], 'error mutation'),
+    /console error: mutation/,
+  );
+  assert.throws(
+    () => verifier.assertDialogFocusRestored(false, 'focus mutation'),
+    /focus mutation/,
+  );
+});
 
 test('U1 browser fixture covers AP 1-11 and exactly 12 audited views', async () => {
   const works = JSON.parse(await readFile(U1_BROWSER_FIXTURE, 'utf8'));
@@ -72,11 +206,11 @@ test('browser verifier exposes required and responsive-boundary viewport matrice
   assert.deepEqual(
     verifier.REQUIRED_VIEWPORTS.map(({ width, height }) => [width, height]),
     [
-      [1440, 900],
-      [1024, 768],
-      [768, 900],
+      [1365, 768],
       [375, 812],
+      [390, 844],
       [667, 375],
+      [665, 700],
     ],
   );
   assert.deepEqual(
@@ -179,11 +313,12 @@ test('browser verifier loads the frozen U1 projection and traverses all eleven w
   assert.match(source, /verifyU1Embedded/);
 });
 
-test('browser verifier locks the two-Unit hierarchy and exact U1 region contract', async () => {
+test('browser verifier locks the three-Unit hierarchy and exact U1/U3 region contracts', async () => {
   const source = await readFile(VERIFIER_URL, 'utf8');
 
   assert.match(source, /U1Global Prehistory · 11 pieces/);
   assert.match(source, /U2Ancient Mediterranean · 36 pieces/);
+  assert.match(source, /U3Early Europe and Colonial Americas · 51 pieces/);
   assert.match(source, /selectOption\('1'\)/);
   assert.match(source, /cultureFilters.*isHidden/s);
   assert.match(source, /Africa · 2 pieces/);
@@ -193,6 +328,112 @@ test('browser verifier locks the two-Unit hierarchy and exact U1 region contract
   assert.match(source, /East Asia · 1 piece/);
   assert.match(source, /Oceania · 2 pieces/);
   assert.match(source, /selectOption\('2'\)/);
+  assert.match(source, /selectOption\('3'\)/);
+  assert.match(source, /Italy & Vatican · 18 pieces/);
+  assert.match(source, /France · 5 pieces/);
+  assert.match(source, /Iberian Peninsula · 5 pieces/);
+  assert.match(source, /British Isles · 3 pieces/);
+  assert.match(source, /Low Countries · 7 pieces/);
+  assert.match(source, /Central Europe · 4 pieces/);
+  assert.match(source, /Eastern Mediterranean · 4 pieces/);
+  assert.match(source, /Colonial Americas · 5 pieces/);
+});
+
+test('browser verifier loads and traverses every frozen U3 work in standalone and embedded modes', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+
+  assert.match(source, /u3-browser\.json/);
+  assert.match(source, /const U3_WORKS = validateAndFreezeU3Works/);
+  assert.match(source, /async function verifyU3Works\(/);
+  assert.match(source, /for \(const work of U3_WORKS\)/);
+  assert.match(source, /async function verifyU3Standalone\(/);
+  assert.match(source, /async function verifyU3Embedded\(/);
+  assert.equal(
+    source.match(/await verifyU3Works\(page,\s*(?:page|frame),\s*imageRequests,\s*'[^']+'\)/g)?.length,
+    2,
+  );
+  assert.match(source, /kind:\s*'u3-fifty-one-works'/);
+});
+
+test('U3 traversal covers all study tabs and AP 89 comparison navigation to AP 46', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+
+  assert.match(source, /async function verifyU3StudyTabsAndComparison\(/);
+  assert.equal(
+    source.match(/await verifyU3StudyTabsAndComparison\(page,\s*(?:page|frame),\s*'[^']+'\)/g)?.length,
+    2,
+  );
+  assert.match(source, /ap52-hagia-sophia|ap60-chartres-cathedral/);
+  assert.match(source, /ap89-ecstasy-saint-teresa/);
+  assert.match(source, /ap46-pantheon/);
+  assert.match(source, /当前显示 36 件作品/);
+  assert.match(source, /Pantheon/);
+});
+
+test('Unit changes apply the fitted SVG transform before scheduling one render frame', async () => {
+  const artMap = await readFile(ART_MAP_URL, 'utf8');
+  const handler = artMap.slice(
+    artMap.indexOf("document.getElementById('unitFilter').addEventListener"),
+    artMap.indexOf("document.getElementById('periodFilter').addEventListener"),
+  );
+  const fitIndex = handler.indexOf('fitMapToWorks(getWorksForUnit())');
+  const applyIndex = handler.indexOf('applyTransform()');
+  const scheduleIndex = handler.indexOf('scheduleMarkerLayout()');
+
+  assert.ok(fitIndex >= 0, 'Unit change should fit the selected Unit');
+  assert.ok(applyIndex > fitIndex, 'Unit change should apply the fitted transform');
+  assert.ok(
+    scheduleIndex > applyIndex,
+    'Unit change should schedule rendering after the transform reaches the next frame',
+  );
+  assert.equal(handler.match(/\brender\(\)/g)?.length || 0, 0, 'Unit change should not render early');
+});
+
+test('mobile standalone filter labels and selects may shrink around the complete U3 Unit option', async () => {
+  const artMap = await readFile(ART_MAP_URL, 'utf8');
+  const mobileCss = artMap.slice(
+    artMap.indexOf('@media (max-width:520px)'),
+    artMap.indexOf('@media (max-width:664px)'),
+  );
+
+  assert.match(
+    mobileCss,
+    /\.filter-toolbar\s*>\s*\.filter-label\s*\{[^}]*min-width:\s*0/,
+  );
+  assert.match(
+    mobileCss,
+    /\.filter-toolbar\s+select\s*\{[^}]*min-width:\s*0/,
+  );
+});
+
+test('U3 responsive control hit testing first restores the embedded map controls to the viewport', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  const responsive = source.slice(
+    source.indexOf('async function assertU3ResponsiveLayout'),
+    source.indexOf('async function selectBoundaryFilters'),
+  );
+  const scrollIndex = responsive.indexOf("locator('.map-controls').scrollIntoViewIfNeeded()");
+  const hitIndex = responsive.indexOf('document.elementFromPoint');
+
+  assert.ok(scrollIndex >= 0, 'responsive verification should restore scrolled controls');
+  assert.ok(hitIndex > scrollIndex, 'controls should be visible before pointer hit testing');
+});
+
+test('U3 request accounting begins immediately before final work activation', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  const traversal = source.slice(
+    source.indexOf('async function verifyU3Works'),
+    source.indexOf('async function verifyU3StudyTabsAndComparison'),
+  );
+
+  assert.match(
+    traversal,
+    /resetAndActivateWork\(page,\s*frame,\s*work,\s*\(\)\s*=>\s*imageRequests\.clear\(\)\)/,
+  );
+  assert.doesNotMatch(
+    traversal,
+    /imageRequests\.clear\(\);\s*await resetAndActivateWork/,
+  );
 });
 
 test('U1 traversal verifies both Stonehenge views, request exactness, and focus restoration', async () => {

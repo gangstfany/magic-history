@@ -133,6 +133,8 @@
       body.is-embedded .filter-toolbar { padding:8px 12px; }
       .page-header, .filter-toolbar { padding-left:12px; padding-right:12px; }
       .filter-toolbar > * { max-width:100%; }
+      .filter-toolbar > .filter-label { min-width:0; }
+      .filter-toolbar select { min-width:0; }
       .culture-filters { gap:8px; }
       .filter-pill, .clear-button, select, input[type="search"] { min-height:44px; }
       #unitFilter, .culture-filters .filter-pill { min-height:44px; }
@@ -1483,6 +1485,12 @@
       const positioned = [];
       const scale = Math.max(0.05, screenScale);
       const gap = 6 / scale;
+      const packingBounds = visibleWorldBounds || {
+        left: 0,
+        right: 1600,
+        top: 0,
+        bottom: 800
+      };
       const prepared = groups.map((group) => {
         const markerText = typeof getMapGroupText === 'function'
           ? getMapGroupText(group)
@@ -1503,12 +1511,6 @@
         };
       });
       if (prepared.length && prepared.every((group) => group.isDenseFallback === true)) {
-        const packingBounds = visibleWorldBounds || {
-          left: 0,
-          right: 1600,
-          top: 0,
-          bottom: 800
-        };
         const availableWidth = packingBounds.right - packingBounds.left;
         const availableHeight = packingBounds.bottom - packingBounds.top;
         const denseGap = 4 / scale;
@@ -1566,8 +1568,8 @@
         function candidateFits(candidate) {
           const bounds = getMarkerBounds(candidate, metrics);
           if (
-            bounds.left < 0 || bounds.right > 1600
-            || bounds.top < 0 || bounds.bottom > 800
+            bounds.left < packingBounds.left || bounds.right > packingBounds.right
+            || bounds.top < packingBounds.top || bounds.bottom > packingBounds.bottom
           ) return false;
           const expandedBounds = expandMarkerBounds(bounds, gap);
           const nearby = spatialHash.query(expandedBounds);
@@ -2729,12 +2731,11 @@
       state.activeUnit = state.unit === 'all' ? null : Number(state.unit);
       state.transform = { x:0, y:0, scale:1 };
       syncFilterControls();
-      render();
       if (state.unit !== 'all') {
         fitMapToWorks(getWorksForUnit());
-        render();
       }
       applyTransform();
+      scheduleMarkerLayout();
     });
     document.getElementById('periodFilter').addEventListener('change', (event) => {
       clearHierarchyBranch();
