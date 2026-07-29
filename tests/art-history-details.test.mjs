@@ -326,7 +326,7 @@ class FakeNode {
   }
 }
 
-function createDetailHarness(html, artworks, credits) {
+function createDetailHarness(html, artworks, credits, stateOverrides = {}) {
   const elements = new Map();
   const document = {
     activeElement:null,
@@ -357,7 +357,11 @@ function createDetailHarness(html, artworks, credits) {
   imageDialog.showModal = () => {
     imageDialog.open = true;
   };
-  const state = { activeDetailTab:'quick', selectedSiteIndex:0 };
+  const state = {
+    activeDetailTab:'quick',
+    selectedSiteIndex:0,
+    ...stateOverrides,
+  };
   const sources = [
     getFunctionSource(html, 'installImageFallback'),
     getFunctionSource(html, 'getArtworkImages'),
@@ -389,6 +393,7 @@ function createDetailHarness(html, artworks, credits) {
         getArtworkImageCredits,
         renderArtworkDetails,
         getDialogTrigger: () => imageDialogTrigger,
+        getSelectedSiteIndex: () => state.selectedSiteIndex,
       };`,
   )(document, credits, artworks, imageDialog, state);
 }
@@ -691,6 +696,90 @@ test('Stonehenge view buttons synchronize image, attribution, dialog, and presse
     imageButton.ownerDocument.activeElement,
     imageButton.ownerDocument.getElementById('dialogClose'),
   );
+});
+
+test('Chartres six-view buttons keep every image, attribution, dialog, and local selection in sync', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const harness = createDetailHarness(html, artworks, credits, { selectedSiteIndex:4 });
+  const chartres = artworks.find(({ apNumber }) => apNumber === 60);
+  const chartresCredits = credits[chartres.id];
+  const summary = harness.renderArtworkDetails(chartres, { works:[chartres] });
+  const imageButton = summary.querySelector('.artwork-image-button');
+  const switcher = summary.querySelector('.image-view-switcher');
+  const creditHost = summary.querySelector('.image-credit-host');
+  const viewButtons = switcher.querySelectorAll('button');
+  const expectedLabels = [
+    'West Facade',
+    'Nave',
+    'Plan',
+    'Royal Portal',
+    'Rose Window',
+    'Stained Glass',
+  ];
+
+  assert.equal(chartres.images.length, 6);
+  assert.equal(chartresCredits.length, 6);
+  assert.equal(switcher.getAttribute('role'), 'group');
+  assert.equal(switcher.getAttribute('aria-label'), 'Choose artwork image view');
+  assert.deepEqual(viewButtons.map(({ textContent }) => textContent), expectedLabels);
+  assert.ok(viewButtons.every(({ type }) => type === 'button'));
+  assert.deepEqual(
+    viewButtons.map((button) => button.getAttribute('aria-pressed')),
+    ['true', 'false', 'false', 'false', 'false', 'false'],
+  );
+
+  for (const [index, button] of viewButtons.entries()) {
+    const media = chartres.images[index];
+    const credit = chartresCredits[index];
+
+    button.focus();
+    button.click();
+
+    assert.equal(
+      button.ownerDocument.activeElement,
+      button,
+      `${media.label} selection preserves focus`,
+    );
+    assert.deepEqual(
+      viewButtons.map((candidate) => candidate.getAttribute('aria-pressed')),
+      viewButtons.map((_, candidateIndex) => String(candidateIndex === index)),
+      `${media.label} has exactly one pressed view`,
+    );
+    assert.equal(imageButton.children[0].src, media.imageUrl);
+    assert.equal(imageButton.children[0].alt, media.imageAlt);
+    assert.match(imageButton.getAttribute('aria-label'), /Chartres Cathedral/);
+    assert.match(imageButton.getAttribute('aria-label'), new RegExp(media.label));
+
+    assert.match(creditHost.textContent, new RegExp(credit.creatorOrInstitution));
+    const creditLinks = creditHost.querySelectorAll('a');
+    assert.equal(creditLinks[0].href, credit.licenseUrl);
+    assert.equal(creditLinks[0].textContent, credit.licenseName);
+    assert.equal(creditLinks[1].href, media.imageSourceUrl);
+    assert.equal(creditLinks[1].textContent, media.imageSourceName);
+
+    imageButton.click();
+    const document = imageButton.ownerDocument;
+    assert.equal(harness.getDialogTrigger(), imageButton);
+    assert.equal(document.getElementById('dialogMedia').children[0].src, media.imageUrl);
+    assert.equal(document.getElementById('dialogMedia').children[0].alt, media.imageAlt);
+    assert.equal(document.getElementById('dialogCaption').textContent, media.imageAlt);
+    assert.match(
+      document.getElementById('dialogCredit').textContent,
+      new RegExp(credit.creatorOrInstitution),
+    );
+    assert.equal(document.getElementById('dialogLicense').href, credit.licenseUrl);
+    assert.equal(document.getElementById('dialogLicense').textContent, credit.licenseName);
+    assert.equal(document.getElementById('dialogSource').href, media.imageSourceUrl);
+    assert.equal(document.getElementById('dialogSource').textContent, media.imageSourceName);
+    assert.equal(document.activeElement, document.getElementById('dialogClose'));
+    assert.equal(
+      harness.getSelectedSiteIndex(),
+      4,
+      'media selection must not mutate shared site navigation state',
+    );
+  }
 });
 
 test('single-image Unit 2 details preserve one image and render no empty view switcher', async () => {

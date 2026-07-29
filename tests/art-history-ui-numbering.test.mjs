@@ -2820,13 +2820,14 @@ test('artwork images and modal preserve labels, complete-image space, fallback, 
   assert.doesNotMatch(html, /class=["'][^"']*gallery|createGallery|renderGallery/i);
 });
 
-test('Stonehenge image view switcher matches aligned controls and stays touch accessible', async () => {
+test('required image view switcher wraps six controls and stays touch accessible', async () => {
   const html = await loadHtml();
   const switcherCss = getCssDeclarations(html, '.image-view-switcher');
   const buttonCss = getCssDeclarations(html, '.image-view-switcher button');
   const pressedCss = getCssDeclarations(html, '.image-view-switcher button[aria-pressed="true"]');
 
   assert.match(switcherCss, /display:\s*flex/);
+  assert.match(switcherCss, /flex-wrap:\s*wrap/);
   assert.match(switcherCss, /gap:\s*6px/);
   assert.match(switcherCss, /margin:\s*8px 0 0/);
   assert.match(buttonCss, /min-height:\s*30px/);
@@ -2842,7 +2843,7 @@ test('Stonehenge image view switcher matches aligned controls and stays touch ac
   assert.match(pressedCss, /border-color:\s*var\(--ink\)/);
   assert.match(pressedCss, /color:\s*#fff/);
 
-  const narrowCss = getMediaQuerySource(html, '(max-width:520px)');
+  const narrowCss = getMediaQuerySource(html, '(max-width:666px)');
   const narrowButtonCss = getCssDeclarations(narrowCss, '.image-view-switcher button');
   assert.match(narrowButtonCss, /min-height:\s*44px/);
 });

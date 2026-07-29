@@ -82,7 +82,7 @@
     .work-meta { font-size:12px; font-weight:600; }
     .artwork-image-button { display:grid; place-items:center; box-sizing:border-box; width:100%; height:300px; max-height:300px; padding:10px; overflow:hidden; border:1px solid var(--line-strong); border-radius:10px; background:var(--surface-sunken); cursor:zoom-in; }
     .artwork-image-button img { display:block; width:100%; height:278px; max-width:100%; max-height:278px; object-fit:contain; object-position:center; }
-    .image-view-switcher { display:flex; gap:6px; margin:8px 0 0; }
+    .image-view-switcher { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 0; }
     .image-view-switcher button { min-height:30px; padding:5px 10px; border:1px solid var(--line); border-radius:999px; background:var(--paper); color:var(--ink-soft); font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
     .image-view-switcher button[aria-pressed="true"] { background:var(--ink); border-color:var(--ink); color:#fff; }
     .image-fallback { min-height:150px; display:grid; place-items:center; padding:20px; color:var(--ink-soft); background:linear-gradient(135deg,#eadfce,#f8f0e5); text-align:center; }
@@ -126,6 +126,9 @@
     body.is-embedded .page-header { display:none; }
     body.is-embedded .filter-toolbar { flex:0 0 auto; width:100%; max-width:none; margin:0; padding:8px 12px; border-bottom:1px solid var(--line); background:var(--card); }
     body.is-embedded .art-workspace { flex:1 1 auto; width:100%; max-width:none; height:auto; min-height:0; margin:0; border:0; border-radius:0; box-shadow:none; }
+    @media (max-width:666px) {
+      .image-view-switcher button { min-height:44px; }
+    }
     @media (max-width:520px) {
       body.is-embedded .filter-toolbar { padding:8px 12px; }
       .page-header, .filter-toolbar { padding-left:12px; padding-right:12px; }
@@ -136,7 +139,6 @@
       .filter-label:has(#searchInput) { width:100%; }
       #searchInput { width:100%; }
       .map-controls button { width:44px; height:44px; min-width:44px; min-height:44px; }
-      .image-view-switcher button { min-height:44px; }
       body.is-embedded .filter-toolbar { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:end; }
       body.is-embedded .filter-label { min-width:0; width:auto; }
       body.is-embedded select, body.is-embedded #searchInput { width:100%; }
