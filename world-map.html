@@ -173,6 +173,10 @@ h1 .en { color: var(--accent); }
 .qz-opt { min-height: 40px; padding: 0 15px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); cursor: pointer; transition: border-color .15s ease, background .15s ease; }
 .qz-opt:hover { border-color: var(--ink-soft); background: #fff; }
 .qz-opt:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.qz-opt .qz-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+/* 术语题的选项是整句释义,竖排、左对齐才读得下去 */
+.qz-opts-stack { flex-direction: column; align-items: stretch; }
+.qz-opt-long { min-height: 0; padding: 11px 14px; text-align: left; font-weight: 600; line-height: 1.6; white-space: normal; }
 /* 错题本:统计行与状态提示 */
 .qz-stats { margin: 12px 0 0; font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
 .qz-link { border: none; background: none; padding: 0; font: inherit; font-size: 11.5px; font-weight: 700; color: var(--terracotta, #a8552f); text-decoration: underline; cursor: pointer; }
@@ -2234,7 +2238,7 @@ h1 .en { color: var(--accent); }
   // 筛选器的挂起/恢复由下面的 initSearchFilter 赋值(它在闭包里,外面拿不到内部状态)
   let suspendFilters = null, restoreFilters = null;
   let currentEventPass = null;   // 同上:出题时用它拿"当前筛选下的题库"
-  let PERIODS_REF = null, inPeriodRef = null;   // 时期定义也在那个闭包里,出时期题要用
+  let PERIODS_REF = null, inPeriodRef = null, CATS_REF = null;   // 时期/主题定义都在那个闭包里,出题要用
 
   // ============ 商路模式 ============
   // 原来的 scheduleRouteGlow 已经会"沿路依次点亮国家 + 把事件面板切到当前站",但它是
@@ -2498,17 +2502,34 @@ h1 .en { color: var(--accent); }
   //   时期题 —— 只能用"只属于单一时期"的事件(169 条)。跨期的(如蒙古 1206–1450)四选一会有多个正确答案。
   //             地名泄漏对它无所谓:知道在德里也推不出是哪个时期。
   //   区域题 —— 要排掉题干里出现任何地名的(26 条),否则等于把答案写在题面上。
+  // 术语题要把触发句拆成「术语 — 释义」。释义里若又出现术语本身(33/231 条)就等于送答案,排除。
+  function termParts(it) {
+    const div = document.createElement('div');
+    div.innerHTML = it.trigHTML || '';
+    const hl = div.querySelector('.hl');
+    if (!hl) return null;
+    const term = hl.textContent.trim();
+    const parts = div.textContent.trim().split(/\s*[—–]\s*/);
+    if (parts.length < 2) return null;
+    const desc = parts.slice(1).join(' ').trim();
+    if (desc.length < 8 || desc.toLowerCase().includes(term.toLowerCase())) return null;
+    return { term, desc };
+  }
+
   function quizPools() {
-    const period = [], region = [];
+    const period = [], region = [], theme = [], term = [];
     Object.keys(index).forEach(num => {
       index[num].forEach(it => {
         if (currentEventPass && !currentEventPass(it)) return;
         const hits = (PERIODS_REF || []).filter(p => inPeriodRef && inPeriodRef(it, p));
         if (hits.length === 1) period.push({ type: 'period', num, it, answer: hits[0] });
         if (!cityLeaksInTrigger(it) && pinRegion(num)) region.push({ type: 'region', num, it, answer: pinRegion(num) });
+        if (it.catAbbr) theme.push({ type: 'theme', num, it, answer: it.catAbbr });
+        const tp = termParts(it);
+        if (tp) term.push({ type: 'term', num, it, answer: tp.desc, term: tp.term });
       });
     });
-    return { period, region };
+    return { period, region, theme, term };
   }
 
   function startQuiz(mode) {
@@ -2517,10 +2538,9 @@ h1 .en { color: var(--accent); }
     if (mode === 'review') {            // 只练错题:两个题库都缩到"待复习"的那些
       const st = loadStore();
       const keep = x => needsReview(st[eventKey(x.num, x.it)]);
-      pools.period = pools.period.filter(keep);
-      pools.region = pools.region.filter(keep);
+      Object.keys(pools).forEach(k => { pools[k] = pools[k].filter(keep); });
     }
-    const total = pools.period.length + pools.region.length;
+    const total = Object.values(pools).reduce((n, a) => n + a.length, 0);
     // 干扰项来自固定的时期/主题列表,不是题库 —— 有 1 条就能出题。
     // 之前拿 4 当门槛,结果"只练错题"在错题只剩一两条时直接被挡掉,恰恰废了错题本最该起作用的时候。
     if (total < 1) {
@@ -2531,7 +2551,7 @@ h1 .en { color: var(--accent); }
              : '当前筛选下没有可出题的事件,放宽时期或主题再试。'}</p>`
         + `<div class="qz-ctrl"><button type="button" class="rt-btn" data-quiz-action="exit">返回</button></div></div>`;
       eventPanel.classList.add('show');
-      quizMode = { pools: { period: [], region: [] }, q: null, answered: true, asked: 0, right: 0, mode: mode || 'all' };
+      quizMode = { pools: { period: [], region: [], theme: [], term: [] }, q: null, answered: true, asked: 0, right: 0, mode: mode || 'all' };
       return;
     }
     quizMode = { pools, q: null, answered: false, asked: 0, right: 0, mode: mode || 'all' };
@@ -2543,11 +2563,21 @@ h1 .en { color: var(--accent); }
 
   function nextQuestion() {
     if (!quizMode) return;
-    const { period, region } = quizMode.pools;
-    // 两种题型混着出;某一种在当前筛选下没题就只出另一种
-    const useRegion = region.length && (!period.length || Math.random() < 0.5);
-    const pool = useRegion ? region : period;
-    quizMode.q = pool[Math.floor(Math.random() * pool.length)];
+    // 四种题型混着出,只从当前筛选下确实有题的那几种里挑
+    const avail = Object.keys(quizMode.pools).filter(k => quizMode.pools[k].length);
+    const kind = avail[Math.floor(Math.random() * avail.length)];
+    const pool = quizMode.pools[kind];
+    const q = Object.assign({}, pool[Math.floor(Math.random() * pool.length)]);
+    // 术语题的三个干扰项在出题时定好,免得重绘时换来换去。优先同主题,读起来才像样。
+    if (q.type === 'term') {
+      const others = quizMode.pools.term.filter(x => x.answer !== q.answer);
+      const near = others.filter(x => x.it.catAbbr === q.it.catAbbr);
+      const bag = (near.length >= 3 ? near : others).slice();
+      const picks = [];
+      while (picks.length < 3 && bag.length) picks.push(bag.splice(Math.floor(Math.random() * bag.length), 1)[0].answer);
+      q.options = picks.concat([q.answer]).sort(() => Math.random() - 0.5);
+    }
+    quizMode.q = q;
     quizMode.answered = false;
     quizMode.asked++;
     ['asia', 'mideast', 'europe', 'americas', 'africa'].forEach(resetRegionToBaseline);
@@ -2626,6 +2656,20 @@ h1 .en { color: var(--accent); }
     if (quizStepCb) quizStepCb();
   }
 
+  function answerTheme(abbr) {
+    if (!quizMode || quizMode.answered || !quizMode.q || quizMode.q.type !== 'theme') return;
+    const picked = (CATS_REF || []).find(c => c.abbr === abbr);
+    judge(abbr === quizMode.q.answer, picked ? picked.full : abbr);
+    renderQuiz();
+  }
+
+  function answerTerm(i) {
+    if (!quizMode || quizMode.answered || !quizMode.q || quizMode.q.type !== 'term') return;
+    const picked = quizMode.q.options[+i];
+    judge(picked === quizMode.q.answer, picked);
+    renderQuiz();
+  }
+
   function exitQuiz() {
     // 错题本视图没有 quizMode,但同样要能用"返回"收掉
     if (!quizMode && !eventPanel.querySelector('.quiz-panel')) return;
@@ -2642,23 +2686,32 @@ h1 .en { color: var(--accent); }
   function renderQuiz() {
     const { q, answered, asked, right } = quizMode;
     const isRegion = q.type === 'region';
+    const isTerm = q.type === 'term';
 
-    const ask = isRegion
-      ? '这件事发生在哪个地区?<span>在地图上点那片区域</span>'
-      : '这件事属于哪个时期?';
+    const ask = { region: '这件事发生在哪个地区?<span>在地图上点那片区域</span>',
+                  period: '这件事属于哪个时期?',
+                  theme:  '这条属于哪个主题?',
+                  term:   '这个概念指的是什么?' }[q.type];
 
-    // 时期题给四个按钮;区域题的选项就是地图本身
-    const options = (!isRegion && !answered)
-      ? `<div class="qz-opts">` + (PERIODS_REF || []).map(p =>
-          `<button type="button" class="qz-opt" data-quiz-period="${p.id}">${p.label}</button>`).join('') + `</div>`
-      : '';
+    let options = '';
+    if (!answered) {
+      if (q.type === 'period') options = `<div class="qz-opts">` + (PERIODS_REF || []).map(p =>
+        `<button type="button" class="qz-opt" data-quiz-period="${p.id}">${p.label}</button>`).join('') + `</div>`;
+      else if (q.type === 'theme') options = `<div class="qz-opts">` + (CATS_REF || []).map(c =>
+        `<button type="button" class="qz-opt" data-quiz-theme="${c.abbr}">`
+        + `<span class="qz-dot" style="background:${c.color}"></span>${c.full}</button>`).join('') + `</div>`;
+      else if (isTerm) options = `<div class="qz-opts qz-opts-stack">` + q.options.map((o, i) =>
+        `<button type="button" class="qz-opt qz-opt-long" data-quiz-term="${i}">${o}</button>`).join('') + `</div>`;
+    }
 
     let verdict = '';
     if (answered) {
       const ok = quizMode.verdict === 'right';
       const answerLabel = isRegion
         ? (REGION_INFO[q.answer] ? REGION_INFO[q.answer].name : q.answer) + ` · ${q.num} ${q.it.city}`
-        : q.answer.label;
+        : q.type === 'period' ? q.answer.label
+        : q.type === 'theme' ? q.it.catFull
+        : q.answer;
       verdict = `<div class="qz-verdict ${ok ? 'ok' : 'bad'}">`
         + `<span>${ok ? '✓ 答对了' : '✗ 答错了'}</span>`
         + (ok ? '' : `你选了 ${quizMode.pickedLabel} · 正确答案:<b>${answerLabel}</b>`)
@@ -2676,9 +2729,9 @@ h1 .en { color: var(--accent); }
         <div class="qz-card" style="border-left-color:${q.it.catColor}">
           <div class="qz-meta">
             ${isRegion ? `<span class="qz-yr">${q.it.yr}</span>` : ''}
-            <span class="qz-cat">${CAT_ICON[q.it.catAbbr] || ''} ${q.it.catFull}</span>
+            ${q.type === 'theme' ? '' : `<span class="qz-cat">${q.it.catFull}</span>`}
           </div>
-          <div class="qz-trig">${q.it.trigHTML}</div>
+          <div class="qz-trig">${isTerm ? `<span class="hl">${q.term}</span>` : q.it.trigHTML}</div>
         </div>
         ${options}
         ${verdict}
@@ -2737,6 +2790,10 @@ h1 .en { color: var(--accent); }
     if (e.target.closest('[data-quiz-book]')) { renderMistakeBook(); return; }
     const qp = e.target.closest('[data-quiz-period]');
     if (qp) { answerPeriod(qp.dataset.quizPeriod); return; }
+    const qt = e.target.closest('[data-quiz-theme]');
+    if (qt) { answerTheme(qt.dataset.quizTheme); return; }
+    const qm = e.target.closest('[data-quiz-term]');
+    if (qm) { answerTerm(qm.dataset.quizTerm); return; }
     const qz = e.target.closest('[data-quiz-action]');
     if (qz) {
       const a = qz.dataset.quizAction;
@@ -3095,7 +3152,7 @@ h1 .en { color: var(--accent); }
     };
     const eventPass = it => activeCats.has(it.catAbbr) && matchesPeriod(it) && matchesQuery(it);
     currentEventPass = eventPass;   // 出题时按当前筛选取题库("只练 Period 3 的经济类")
-    PERIODS_REF = PERIODS; inPeriodRef = inPeriod;
+    PERIODS_REF = PERIODS; inPeriodRef = inPeriod; CATS_REF = cats;
     const pinGroups = () => Array.from(svg.querySelectorAll('.pin-group'));
     const pinNum = g => { const t = g.querySelector('text'); return t ? t.textContent.trim() : ''; };
     const filterActive = () => tokens.length > 0 || activeCats.size < allCats.size || !!activePeriod;
@@ -3291,6 +3348,8 @@ h1 .en { color: var(--accent); }
       quizReset: () => { clearQuizStore(); remountRoutePicker(); },
       quizAction: a => { if (a === 'next') nextQuestion(); else if (a === 'exit') exitQuiz(); },
       quizPeriod: pid => answerPeriod(pid),
+      quizTheme: a => answerTheme(a),
+      quizTerm: i => answerTerm(i),
       inQuiz: () => !!quizMode,
       onQuizStep: fn => { quizStepCb = fn; },
       onRouteStep: fn => { routeStepCb = fn; },
