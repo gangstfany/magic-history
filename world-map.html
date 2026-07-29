@@ -173,6 +173,11 @@ h1 .en { color: var(--accent); }
 .qz-opt { min-height: 40px; padding: 0 15px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); cursor: pointer; transition: border-color .15s ease, background .15s ease; }
 .qz-opt:hover { border-color: var(--ink-soft); background: #fff; }
 .qz-opt:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+/* 错题本:统计行与状态提示 */
+.qz-stats { margin: 12px 0 0; font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+.qz-link { border: none; background: none; padding: 0; font: inherit; font-size: 11.5px; font-weight: 700; color: var(--terracotta, #a8552f); text-decoration: underline; cursor: pointer; }
+.qz-link:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.qz-note { margin-left: auto; padding: 2px 8px; border-radius: 999px; background: rgba(33,31,28,0.08); font-size: 11px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
 .qz-card { margin: 11px 0 0; padding: 13px 16px; border: 1px solid var(--line); border-left: 4px solid var(--ink-soft); border-radius: 10px; background: #fff; }
 .qz-meta { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
 .qz-yr { font-weight: 800; font-size: 13.5px; color: var(--terracotta, #a8552f); font-variant-numeric: tabular-nums; }
@@ -2402,9 +2407,17 @@ h1 .en { color: var(--accent); }
   // 空态那块地方原本只有一句说明文字,顺手当商路入口 —— 首页标语写着"跟着商队一路走",
   // 可这功能以前只有点到恰好在路线上的 16/104 个标点才会撞见。
   function routePickerHTML() {
+    const st = quizStats();
     return `<div class="route-picker-title">Practice</div>`
-      + `<div class="route-picker"><button type="button" class="route-chip quiz-chip" data-quiz-start="1">`
-      + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">时期 · 地区</span></button></div>`
+      + `<div class="route-picker">`
+      + `<button type="button" class="route-chip quiz-chip" data-quiz-start="all">`
+      + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">时期 · 地区</span></button>`
+      + (st.review ? `<button type="button" class="route-chip quiz-chip" data-quiz-start="review">`
+          + `<span class="rc-dot" style="background:#d9a441"></span>只练错题<span style="color:var(--ink-soft);font-weight:600">${st.review} 条</span></button>` : '')
+      + `</div>`
+      + (st.practiced ? `<div class="qz-stats">已练 ${st.practiced} 条 · 待复习 ${st.review} 条`
+          + (st.review ? ` · <button type="button" class="qz-link" data-quiz-book="1">看错题本</button>` : '')
+          + ` · <button type="button" class="qz-link" data-quiz-reset="1">清空记录</button></div>` : '')
       + `<div class="route-picker-title">或者跟着商队走一趟</div>`
       + `<div class="route-picker">`
       + ROUTES.map(r => `<button type="button" class="route-chip" data-route-go="${r.id}">`
@@ -2414,6 +2427,12 @@ h1 .en { color: var(--accent); }
   }
   function mountRoutePicker() {
     if (!eventEmpty || eventEmpty.querySelector('.route-picker')) return;
+    eventEmpty.insertAdjacentHTML('beforeend', routePickerHTML());
+  }
+  // 错题数会变,所以每次回到空态都把入口区重铺一次
+  function remountRoutePicker() {
+    if (!eventEmpty) return;
+    eventEmpty.querySelectorAll('.route-picker, .route-picker-title, .qz-stats').forEach(el => el.remove());
     eventEmpty.insertAdjacentHTML('beforeend', routePickerHTML());
   }
 
@@ -2441,6 +2460,40 @@ h1 .en { color: var(--accent); }
     return ALL_CITY_NAMES.some(name => trig.includes(name));
   }
 
+  // ---- 错题本:存 localStorage,跨会话保留 ----
+  // 事件没有稳定 id,用「标点号 + 年份 + 触发句前 24 字」当键。数据改了旧记录会失效,
+  // 这是可以接受的:内容变了,那条掌握度本来也该重算。
+  const QUIZ_STORE_KEY = 'mh.quiz.v1';
+  const MASTER_STREAK = 2;   // 错过之后要连续答对 2 次才移出错题本 —— 蒙对一次不算掌握
+  function eventKey(num, it) {
+    const plain = (it.trigHTML || '').replace(/<[^>]*>/g, '').trim().slice(0, 24);
+    return `${num}|${it.yr}|${plain}`;
+  }
+  function loadStore() {
+    try { return JSON.parse(localStorage.getItem(QUIZ_STORE_KEY)) || {}; }
+    catch (err) { return {}; }   // 隐私模式/配额满都可能抛,坏掉也不该影响做题
+  }
+  function saveStore(st) {
+    try { localStorage.setItem(QUIZ_STORE_KEY, JSON.stringify(st)); } catch (err) {}
+  }
+  function recordAnswer(num, it, correct) {
+    const st = loadStore();
+    const k = eventKey(num, it);
+    const rec = st[k] || { hit: 0, miss: 0, streak: 0 };
+    if (correct) { rec.hit++; rec.streak++; } else { rec.miss++; rec.streak = 0; }
+    rec.last = Date.now();
+    rec.num = num;                     // 存下来,列出错题时不用再全表反查
+    st[k] = rec;
+    saveStore(st);
+  }
+  const needsReview = rec => rec && rec.miss > 0 && rec.streak < MASTER_STREAK;
+  function quizStats() {
+    const st = loadStore();
+    const all = Object.values(st);
+    return { practiced: all.length, review: all.filter(needsReview).length };
+  }
+  function clearQuizStore() { try { localStorage.removeItem(QUIZ_STORE_KEY); } catch (err) {} }
+
   // 题库分两种,各有各的排除规则:
   //   时期题 —— 只能用"只属于单一时期"的事件(169 条)。跨期的(如蒙古 1206–1450)四选一会有多个正确答案。
   //             地名泄漏对它无所谓:知道在德里也推不出是哪个时期。
@@ -2458,20 +2511,30 @@ h1 .en { color: var(--accent); }
     return { period, region };
   }
 
-  function startQuiz() {
+  function startQuiz(mode) {
     exitRouteMode(true);
     const pools = quizPools();
+    if (mode === 'review') {            // 只练错题:两个题库都缩到"待复习"的那些
+      const st = loadStore();
+      const keep = x => needsReview(st[eventKey(x.num, x.it)]);
+      pools.period = pools.period.filter(keep);
+      pools.region = pools.region.filter(keep);
+    }
     const total = pools.period.length + pools.region.length;
-    if (total < 4) {
+    // 干扰项来自固定的时期/主题列表,不是题库 —— 有 1 条就能出题。
+    // 之前拿 4 当门槛,结果"只练错题"在错题只剩一两条时直接被挡掉,恰恰废了错题本最该起作用的时候。
+    if (total < 1) {
       eventEmpty.style.display = 'none';
-      eventPanel.innerHTML = `<div class="quiz-panel"><div class="qz-head"><div class="qz-title">随堂练习</div></div>`
-        + `<p class="qz-stem">当前筛选下只有 ${total} 条可出题的事件,放宽时期或主题再试。</p>`
+      eventPanel.innerHTML = `<div class="quiz-panel"><div class="qz-head"><div class="qz-title">${mode === 'review' ? '只练错题' : '随堂练习'}</div></div>`
+        + `<p class="qz-stem">${mode === 'review'
+             ? '错题本是空的 —— 先做几题随堂练习,答错的会自动收进来。'
+             : '当前筛选下没有可出题的事件,放宽时期或主题再试。'}</p>`
         + `<div class="qz-ctrl"><button type="button" class="rt-btn" data-quiz-action="exit">返回</button></div></div>`;
       eventPanel.classList.add('show');
-      quizMode = { pools: { period: [], region: [] }, q: null, answered: true, asked: 0, right: 0 };
+      quizMode = { pools: { period: [], region: [] }, q: null, answered: true, asked: 0, right: 0, mode: mode || 'all' };
       return;
     }
-    quizMode = { pools, q: null, answered: false, asked: 0, right: 0 };
+    quizMode = { pools, q: null, answered: false, asked: 0, right: 0, mode: mode || 'all' };
     if (suspendFilters) suspendFilters();
     deactivateRegion();
     dismissFirstClickHint();
@@ -2499,6 +2562,15 @@ h1 .en { color: var(--accent); }
     quizMode.verdict = correct ? 'right' : 'wrong';
     quizMode.pickedLabel = pickedLabel;
     if (correct) quizMode.right++;
+    const q = quizMode.q;
+    const before = loadStore()[eventKey(q.num, q.it)];
+    recordAnswer(q.num, q.it, correct);
+    const after = loadStore()[eventKey(q.num, q.it)];
+    // 告诉学生这一答让这条题的状态往哪边走了 —— 否则错题本是个黑箱
+    quizMode.note = !correct ? '已加入错题本'
+      : (needsReview(before) && !needsReview(after)) ? '已移出错题本'
+      : needsReview(after) ? `还需连续答对 ${MASTER_STREAK - after.streak} 次才移出错题本`
+      : '';
   }
 
   function answerRegion(region) {
@@ -2521,14 +2593,49 @@ h1 .en { color: var(--accent); }
     renderQuiz();
   }
 
+  function renderMistakeBook() {
+    const st = loadStore();
+    const rows = [];
+    Object.keys(index).forEach(num => {
+      index[num].forEach(it => {
+        const rec = st[eventKey(num, it)];
+        if (needsReview(rec)) rows.push({ num, it, rec });
+      });
+    });
+    rows.sort((a, b) => (b.rec.miss - a.rec.miss) || (b.rec.last - a.rec.last));
+    eventEmpty.style.display = 'none';
+    eventPanel.innerHTML = `<div class="quiz-panel">
+        <div class="qz-head"><div class="qz-title">错题本</div>
+          <div class="qz-score">${rows.length} 条待复习</div></div>
+        <p class="qz-stem">答错过、且还没连续答对 ${MASTER_STREAK} 次的都在这里。点任意一条可以在地图上打开那一站。</p>
+        <div class="qz-ctrl">
+          ${rows.length ? `<button type="button" class="rt-btn primary" data-quiz-start="review">开始只练错题</button>` : ''}
+          <button type="button" class="rt-btn ghost" data-quiz-action="exit">返回</button>
+        </div>
+      </div>`
+      + `<div class="event-list">`
+      + rows.map(r => `<div class="event-card is-result" data-pin="${r.num}" data-region="${pinRegion(r.num) || ''}" role="button" tabindex="0" style="border-left-color:${r.it.catColor}">`
+        + `<div class="ec-top"><span class="ec-yr">${r.it.yr}</span><span class="ec-cat">${r.it.catFull}</span></div>`
+        + `<div class="ec-trig">${r.it.trigHTML}</div>`
+        + `<div class="ec-where"><span class="ew-pin">${r.num}</span>${r.it.city}`
+        + `<span class="ew-go">错 ${r.rec.miss} 次 · 在地图上打开 →</span></div></div>`).join('')
+      + `</div>`;
+    eventPanel.classList.add('show');
+    eventZone.classList.remove('fit-content');
+    quizMode = null;   // 错题本是只读视图,不是答题状态
+    if (quizStepCb) quizStepCb();
+  }
+
   function exitQuiz() {
-    if (!quizMode) return;
+    // 错题本视图没有 quizMode,但同样要能用"返回"收掉
+    if (!quizMode && !eventPanel.querySelector('.quiz-panel')) return;
     quizMode = null;
     if (restoreFilters) restoreFilters();
     ['asia', 'mideast', 'europe', 'americas', 'africa'].forEach(resetRegionToBaseline);
     svg.querySelectorAll('.pin-group').forEach(g => g.classList.remove('revealed'));
     eventPanel.classList.remove('show');
     eventPanel.innerHTML = '';
+    remountRoutePicker();
     eventEmpty.style.display = 'block';
   }
 
@@ -2556,12 +2663,13 @@ h1 .en { color: var(--accent); }
         + `<span>${ok ? '✓ 答对了' : '✗ 答错了'}</span>`
         + (ok ? '' : `你选了 ${quizMode.pickedLabel} · 正确答案:<b>${answerLabel}</b>`)
         + (ok ? `<b>${answerLabel}</b>` : '')
+        + (quizMode.note ? `<span class="qz-note">${quizMode.note}</span>` : '')
         + `</div>`;
     }
 
     eventPanel.innerHTML = `<div class="quiz-panel">
         <div class="qz-head">
-          <div class="qz-title">随堂练习</div>
+          <div class="qz-title">${quizMode.mode === 'review' ? '只练错题' : '随堂练习'}</div>
           <div class="qz-score">第 ${asked} 题 · 答对 ${right}</div>
         </div>
         <p class="qz-ask">${ask}</p>
@@ -2624,6 +2732,9 @@ h1 .en { color: var(--accent); }
   eventPanel.addEventListener('click', e => {
     const step = e.target.closest('[data-route-step]');
     if (step) { stopAutoPlay(); goToStop(+step.dataset.routeStep); return; }
+    const qs2 = e.target.closest('[data-quiz-start]');
+    if (qs2) { startQuiz(qs2.dataset.quizStart); return; }
+    if (e.target.closest('[data-quiz-book]')) { renderMistakeBook(); return; }
     const qp = e.target.closest('[data-quiz-period]');
     if (qp) { answerPeriod(qp.dataset.quizPeriod); return; }
     const qz = e.target.closest('[data-quiz-action]');
@@ -2644,7 +2755,13 @@ h1 .en { color: var(--accent); }
 
   mountRoutePicker();
   eventEmpty.addEventListener('click', e => {
-    if (e.target.closest('[data-quiz-start]')) { startQuiz(); return; }
+    const qs = e.target.closest('[data-quiz-start]');
+    if (qs) { startQuiz(qs.dataset.quizStart); return; }
+    if (e.target.closest('[data-quiz-book]')) { renderMistakeBook(); return; }
+    if (e.target.closest('[data-quiz-reset]')) {
+      if (confirm('清空练习记录?错题本和已练条数都会归零。')) { clearQuizStore(); remountRoutePicker(); }
+      return;
+    }
     const chip = e.target.closest('[data-route-go]');
     if (chip) enterRouteMode(chip.dataset.routeGo);
   });
@@ -3168,7 +3285,10 @@ h1 .en { color: var(--accent); }
       },
       inRoute: () => !!routeMode,
       // 随堂练习
-      startQuiz: () => startQuiz(),
+      startQuiz: mode => startQuiz(mode),
+      quizStats: () => quizStats(),
+      quizBook: () => renderMistakeBook(),
+      quizReset: () => { clearQuizStore(); remountRoutePicker(); },
       quizAction: a => { if (a === 'next') nextQuestion(); else if (a === 'exit') exitQuiz(); },
       quizPeriod: pid => answerPeriod(pid),
       inQuiz: () => !!quizMode,

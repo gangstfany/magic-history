@@ -290,6 +290,10 @@ nav.topnav {
 .home-events .qz-opt { min-height: 40px; padding: 0 15px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); cursor: pointer; transition: border-color .15s ease, background .15s ease; }
 .home-events .qz-opt:hover { border-color: var(--ink-soft); background: #fff; }
 .home-events .qz-opt:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.home-events .qz-stats { margin: 12px 0 0; font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+.home-events .qz-link { border: none; background: none; padding: 0; font: inherit; font-size: 11.5px; font-weight: 700; color: var(--terracotta); text-decoration: underline; cursor: pointer; }
+.home-events .qz-link:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.home-events .qz-note { margin-left: auto; padding: 2px 8px; border-radius: 999px; background: rgba(33,31,28,0.08); font-size: 11px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
 .home-events .qz-card { margin: 11px 0 0; padding: 13px 16px; border: 1px solid var(--line); border-left: 4px solid var(--ink-soft); border-radius: 10px; background: #fff; }
 .home-events .qz-meta { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
 .home-events .qz-yr { font-weight: 800; font-size: 13.5px; color: var(--terracotta); font-variant-numeric: tabular-nums; }
@@ -505,7 +509,7 @@ nav.topnav {
           <div id="home-events" class="home-events" role="region" aria-label="历史事件" aria-live="polite">
             <div class="he-empty">点地图上的数字标点，<br>这里会显示那一站的历史事件
               <div class="route-picker-title">Practice</div>
-              <div class="route-picker"><button type="button" class="route-chip quiz-chip" data-quiz-start="1"><span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">时期 · 地区</span></button></div>
+              <div id="homePracticeBlock"></div>
               <div class="route-picker-title">或者跟着商队走一趟</div>
               <div class="route-picker" id="homeRoutePicker"></div>
             </div>
@@ -717,10 +721,26 @@ nav.topnav {
       + `<span class="rc-dot" style="background:${r.color}"></span>${r.name.split(' · ')[0]}`
       + `<span style="color:var(--ink-soft);font-weight:600">${r.stops} 站</span></button>`).join('');
   }
+  // 练习区要显示错题数,每次回到空态都得重新问一次地图
+  function fillHomePractice() {
+    const box = document.getElementById('homePracticeBlock');
+    if (!box || !hostApi || !hostApi.quizStats) return;
+    const st = hostApi.quizStats();
+    box.innerHTML = `<div class="route-picker">`
+      + `<button type="button" class="route-chip quiz-chip" data-quiz-start="all">`
+      + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">时期 · 地区</span></button>`
+      + (st.review ? `<button type="button" class="route-chip quiz-chip" data-quiz-start="review">`
+          + `<span class="rc-dot" style="background:#d9a441"></span>只练错题<span style="color:var(--ink-soft);font-weight:600">${st.review} 条</span></button>` : '')
+      + `</div>`
+      + (st.practiced ? `<div class="qz-stats">已练 ${st.practiced} 条 · 待复习 ${st.review} 条`
+          + (st.review ? ` · <button type="button" class="qz-link" data-quiz-book="1">看错题本</button>` : '')
+          + ` · <button type="button" class="qz-link" data-quiz-reset="1">清空记录</button></div>` : '');
+  }
   function resetHomeEvents() {
     if (!homeEvents) return;
     homeEvents.innerHTML = HOME_EVENTS_EMPTY;
     fillHomeRoutePicker();
+    fillHomePractice();
   }
 
   // 把内嵌地图收拾成"只剩地图、填满整格":隐藏 world-map 自带的表头和事件区,让地图区撑满 iframe
@@ -773,7 +793,13 @@ nav.topnav {
       // 商路:入口 chip / 站点 / 上一站下一站播放退出 —— 面板是拷过来的,监听不会跟过来,这边代理
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
       if (!win || !win.__mapFilter) return;
-      if (e.target.closest('[data-quiz-start]')) { win.__mapFilter.startQuiz(); setTimeout(syncHomeEvents, 140); return; }
+      const qs = e.target.closest('[data-quiz-start]');
+      if (qs) { win.__mapFilter.startQuiz(qs.dataset.quizStart); setTimeout(syncHomeEvents, 140); return; }
+      if (e.target.closest('[data-quiz-book]')) { win.__mapFilter.quizBook(); setTimeout(syncHomeEvents, 140); return; }
+      if (e.target.closest('[data-quiz-reset]')) {
+        if (confirm('清空练习记录?错题本和已练条数都会归零。')) { win.__mapFilter.quizReset(); fillHomePractice(); }
+        return;
+      }
       const qp = e.target.closest('[data-quiz-period]');
       if (qp) { win.__mapFilter.quizPeriod(qp.dataset.quizPeriod); setTimeout(syncHomeEvents, 140); return; }
       const qz = e.target.closest('[data-quiz-action]');
@@ -837,6 +863,7 @@ nav.topnav {
     if (api.getRoutes) { homeRouteOptions = api.getRoutes(); fillHomeRoutePicker(); }
     if (api.onRouteStep) api.onRouteStep(() => syncHomeEvents());
     if (api.onQuizStep) api.onQuizStep(() => syncHomeEvents());
+    fillHomePractice();
     // 主题药丸:多选。重建而非追加,免得 iframe 重载后越堆越多
     catsBox.innerHTML = '';
     api.getCats().forEach(c => {
