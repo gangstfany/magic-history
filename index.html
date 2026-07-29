@@ -681,6 +681,22 @@ nav.topnav {
   const prefersReducedMotion = () => reduceMotionMQ.matches;
   const homeEvents = document.getElementById('home-events');
   const HOME_EVENTS_EMPTY = homeEvents ? homeEvents.innerHTML : '';  // 空状态提示,复位时用
+  // 这份快照是在商路 chip 填进去之前拍的,所以每次用它复位后都得把 chip 补回来,
+  // 否则退出商路会看到一个只剩标题、下面空荡荡的空态。
+  let homeRouteOptions = null;
+  function fillHomeRoutePicker() {
+    const picker = document.getElementById('homeRoutePicker');
+    if (!picker || !homeRouteOptions) return;
+    picker.innerHTML = homeRouteOptions.map(r =>
+      `<button type="button" class="route-chip" data-route-go="${r.id}">`
+      + `<span class="rc-dot" style="background:${r.color}"></span>${r.name.split(' · ')[0]}`
+      + `<span style="color:var(--ink-soft);font-weight:600">${r.stops} 站</span></button>`).join('');
+  }
+  function resetHomeEvents() {
+    if (!homeEvents) return;
+    homeEvents.innerHTML = HOME_EVENTS_EMPTY;
+    fillHomeRoutePicker();
+  }
 
   // 把内嵌地图收拾成"只剩地图、填满整格":隐藏 world-map 自带的表头和事件区,让地图区撑满 iframe
   function styleEmbeddedMap() {
@@ -713,7 +729,7 @@ nav.topnav {
         homeEvents.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
       }
     } else {
-      homeEvents.innerHTML = HOME_EVENTS_EMPTY;
+      resetHomeEvents();
     }
   }
 
@@ -788,13 +804,7 @@ nav.topnav {
     };
     fill(periodSel, api.getPeriodOptions());
     // 空态里的商路入口,选项由地图那边给
-    const picker = document.getElementById('homeRoutePicker');
-    if (picker && api.getRoutes) {
-      picker.innerHTML = api.getRoutes().map(r =>
-        `<button type="button" class="route-chip" data-route-go="${r.id}">`
-        + `<span class="rc-dot" style="background:${r.color}"></span>${r.name.split(' · ')[0]}`
-        + `<span style="color:var(--ink-soft);font-weight:600">${r.stops} 站</span></button>`).join('');
-    }
+    if (api.getRoutes) { homeRouteOptions = api.getRoutes(); fillHomeRoutePicker(); }
     if (api.onRouteStep) api.onRouteStep(() => syncHomeEvents());
     // 主题药丸:多选。重建而非追加,免得 iframe 重载后越堆越多
     catsBox.innerHTML = '';
@@ -991,7 +1001,7 @@ nav.topnav {
     csTitle.textContent = s.label;
     mapComingSoon.classList.add('show');
     if (homeEvents) {
-      homeEvents.innerHTML = HOME_EVENTS_EMPTY;
+      resetHomeEvents();
       homeEvents.hidden = true;
     }
     todayPick.style.display = 'none';
