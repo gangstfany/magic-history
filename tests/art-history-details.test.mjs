@@ -48,6 +48,53 @@ const NEW_ARTWORK_IDS = [
   'ap31-temple-minerva-apollo',
   'ap32-tomb-of-the-triclinium',
 ];
+const REQUIRED_U3_COMPARISON_NOTES = [
+  {
+    sourceId:'ap49-santa-sabina',
+    targetId:'ap46-pantheon',
+    basis:[
+      '中轴式长厅以高侧窗、侧廊、列柱和木构屋顶组织行进',
+      '传统门廊连接圆形穹顶大厅',
+      '服务会众共同参与的基督教礼仪',
+    ],
+  },
+  {
+    sourceId:'ap52-hagia-sophia',
+    targetId:'ap46-pantheon',
+    basis:[
+      '帆拱承托巨型穹顶',
+      '作为帝国主教座堂举行东正教礼仪',
+      '敬奉诸神并关联皇帝与宇宙秩序',
+    ],
+  },
+  {
+    sourceId:'ap58-church-sainte-foy',
+    targetId:'ap23-tutankhamun-innermost-coffin',
+    basis:[
+      '珠宝圣物箱构成整体',
+      '实心黄金人形棺',
+      '圣髑崇敬',
+    ],
+  },
+  {
+    sourceId:'ap81-codex-mendoza-frontispiece',
+    targetId:'ap19-code-of-hammurabi',
+    basis:[
+      '贡赋与社会习俗',
+      '王室司法纪念物宣示法律',
+      '神授正义',
+    ],
+  },
+  {
+    sourceId:'ap89-ecstasy-saint-teresa',
+    targetId:'ap46-pantheon',
+    basis:[
+      '彩色大理石和包厢肖像融合雕塑建筑',
+      '天主教感化',
+      '罗马混凝土技术创造前所未有的统一内部空间',
+    ],
+  },
+];
 const EXPECTED_NEW_ARTWORK_MEDIA = {
   'ap12-white-temple-ziggurat': {
     imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Uruk_(3).jpg',
@@ -296,10 +343,12 @@ class FakeNode {
     const visit = (node) => {
       const className = selector.startsWith('.') ? selector.slice(1) : null;
       const role = selector.match(/^\[role="([^"]+)"\]$/)?.[1];
+      const selectedArtworkTitle = selector === '[data-selected-artwork-title]';
       const tagName = /^[a-z]+$/i.test(selector) ? selector.toUpperCase() : null;
       if (
         (className && node.classList.contains(className))
         || (role && node.getAttribute('role') === role)
+        || (selectedArtworkTitle && Object.hasOwn(node.dataset, 'selectedArtworkTitle'))
         || (tagName && node.tagName === tagName)
       ) matches.push(node);
       node.children.forEach(visit);
@@ -372,12 +421,19 @@ function createDetailHarness(html, artworks, credits, stateOverrides = {}) {
     selectedSiteIndex:0,
     ...stateOverrides,
   };
+  const detailPanel = document.createElement('aside');
+  const scrollCalls = [];
+  detailPanel.scrollTo = (options) => scrollCalls.push(options);
   const sources = [
     getFunctionSource(html, 'installImageFallback'),
     getFunctionSource(html, 'getArtworkImages'),
     getFunctionSource(html, 'getArtworkImageCredits'),
     getFunctionSource(html, 'createImageCredit'),
+    getFunctionSource(html, 'summarizeComparisonField'),
+    getFunctionSource(html, 'createComparisonAngle'),
     getFunctionSource(html, 'openImageDialog'),
+    getFunctionSource(html, 'focusSelectedArtworkHeading'),
+    getFunctionSource(html, 'selectComparison'),
     getFunctionSource(html, 'renderArtworkDetails'),
   ].join('\n');
   return Function(
@@ -386,8 +442,11 @@ function createDetailHarness(html, artworks, credits, stateOverrides = {}) {
     'ARTWORKS',
     'imageDialog',
     'state',
+    'detailPanel',
+    'scrollCalls',
     `"use strict";
       let imageDialogTrigger = null;
+      let syncedControls = null;
       const formatArtworkMeta = () => 'meta';
       const createStudyBlock = (title, ...paragraphs) => {
         const block = document.createElement('section');
@@ -395,8 +454,19 @@ function createDetailHarness(html, artworks, credits, stateOverrides = {}) {
         return block;
       };
       const cycleSite = () => {};
-      const createComparisonAngle = () => '';
-      const selectComparison = () => {};
+      const syncFilterControls = () => {
+        syncedControls = {
+        unit:state.unit,
+        culture:state.culture,
+        period:state.period,
+        workType:state.workType,
+        search:state.search,
+        };
+      };
+      const render = () => {
+        const selected = ARTWORKS.find((work) => work.id === state.selectedId);
+        detailPanel.replaceChildren(renderArtworkDetails(selected, { works:[selected] }));
+      };
       ${sources}
       document.getElementById('dialogClose').addEventListener('click', () => imageDialog.close());
       imageDialog.addEventListener('close', () => {
@@ -410,8 +480,22 @@ function createDetailHarness(html, artworks, credits, stateOverrides = {}) {
         getDialogTrigger: () => imageDialogTrigger,
         isDialogOpen: () => imageDialog.open,
         getSelectedSiteIndex: () => state.selectedSiteIndex,
+        createComparisonAngle,
+        renderSelected: render,
+        getDetailPanel: () => detailPanel,
+        getState: () => state,
+        getSyncedControls: () => syncedControls,
+        getScrollCalls: () => scrollCalls,
       };`,
-  )(document, credits, artworks, imageDialog, state);
+  )(
+    document,
+    credits,
+    artworks,
+    imageDialog,
+    state,
+    detailPanel,
+    scrollCalls,
+  );
 }
 
 function parseSourceWorksheet(markdown) {
@@ -616,6 +700,93 @@ test('comparison navigation clears conflicting filters when crossing Units 1 and
     activeDetailTab:'quick',
   });
   assert.deepEqual(calls, ['sync', 'render', 'focus', 'scroll']);
+});
+
+test('required U3 cross-unit comparison notes retain their canonical basis', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const harness = createDetailHarness(html, artworks, credits);
+
+  for (const { sourceId, targetId, basis } of REQUIRED_U3_COMPARISON_NOTES) {
+    const source = artworks.find(({ id }) => id === sourceId);
+    const target = artworks.find(({ id }) => id === targetId);
+    assert.ok(source.comparisonIds.includes(targetId));
+    const note = harness.createComparisonAngle(source, target);
+
+    assert.ok(note.trim(), `${sourceId} comparison note must not be empty`);
+    assert.match(note, /^联系：.+形式：.+功能：.+语境：.+$/);
+    for (const expectedBasis of basis) {
+      assert.ok(
+        note.includes(expectedBasis),
+        `${sourceId} -> ${targetId} must retain basis "${expectedBasis}"`,
+      );
+    }
+  }
+});
+
+test('U3 comparison card clears incompatible filters and focuses AP 46 in Unit 2', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const harness = createDetailHarness(html, artworks, credits, {
+    unit:'3',
+    culture:'baroqueColonial',
+    period:'Spanish Colonial Baroque',
+    workType:'Casta painting',
+    search:'mestizo',
+    selectedId:'ap89-ecstasy-saint-teresa',
+    selectedSiteIndex:3,
+    expandedSiteToken:'u3:italyVatican',
+    activeUnit:3,
+    activeRegion:'italyVatican',
+    pendingFocusParentKey:'u3:italyVatican',
+    activeDetailTab:'compare',
+  });
+
+  harness.renderSelected();
+  const comparisonCard = harness.getDetailPanel().find(
+    (node) => node.dataset.comparisonId === 'ap46-pantheon',
+  );
+  assert.ok(comparisonCard, 'AP 89 comparison UI must expose AP 46');
+  comparisonCard.click();
+
+  assert.deepEqual(harness.getState(), {
+    unit:'2',
+    culture:'all',
+    period:'',
+    workType:'',
+    search:'',
+    selectedId:'ap46-pantheon',
+    selectedSiteIndex:0,
+    expandedSiteToken:null,
+    activeUnit:2,
+    activeRegion:null,
+    pendingFocusParentKey:null,
+    activeDetailTab:'quick',
+  });
+  assert.deepEqual(harness.getSyncedControls(), {
+    unit:'2',
+    culture:'all',
+    period:'',
+    workType:'',
+    search:'',
+  });
+  assert.equal(
+    harness.getDetailPanel().find(
+      (node) => node.dataset.selectedArtworkTitle === '',
+    )?.textContent,
+    'Pantheon',
+    'the incompatible U3 filters must not hide the selected U2 target',
+  );
+  assert.equal(
+    harness.getDetailPanel().ownerDocument.activeElement?.id,
+    'detailTitle',
+  );
+  assert.deepEqual(
+    harness.getScrollCalls(),
+    [{ top:0, behavior:'smooth' }],
+  );
 });
 
 test('image dialog supports labelled media, attribution, and focus restoration', async () => {

@@ -11,6 +11,10 @@ const U1_SOURCE_LEDGER_PATH = new URL(
   '../docs/data-sources/u1-source-ledger.md',
   import.meta.url,
 );
+const U1_CANONICAL_PATH = new URL(
+  './fixtures/u1-canonical.json',
+  import.meta.url,
+);
 const UNAFFECTED_FIXTURE_PATH = new URL(
   './fixtures/u2-unaffected-legacy.json',
   import.meta.url,
@@ -61,6 +65,14 @@ const CORRECTED_AND_IMPORTED_IDS = [
   'ap42-head-of-a-roman-patrician',
   'ap43-augustus-prima-porta',
 ];
+
+const REQUIRED_U3_CROSS_UNIT_COMPARISONS = new Map([
+  ['ap49-santa-sabina', 'ap46-pantheon'],
+  ['ap52-hagia-sophia', 'ap46-pantheon'],
+  ['ap58-church-sainte-foy', 'ap23-tutankhamun-innermost-coffin'],
+  ['ap81-codex-mendoza-frontispiece', 'ap19-code-of-hammurabi'],
+  ['ap89-ecstasy-saint-teresa', 'ap46-pantheon'],
+]);
 
 const COMPLETE_ARTWORK_FIELDS = [
   'id',
@@ -193,6 +205,10 @@ async function assertFixtureMatches(path, expectedIds) {
   );
 }
 
+function getCreditEntries(credit) {
+  return Array.isArray(credit) ? credit : [credit];
+}
+
 function splitLedgerRow(line) {
   assert.match(line, /^\|.*\|$/, `malformed ledger row: ${line}`);
   return line.split('|').slice(1, -1).map((cell) => cell.trim());
@@ -218,6 +234,119 @@ test('live Unit 2 remains the exact AP 12–47 sequence', async () => {
     liveU2.map(({ apNumber }) => apNumber),
     Array.from({ length: 36 }, (_, index) => index + 12),
   );
+});
+
+test('U1 and U2 stay field-for-field frozen after U3 import', async () => {
+  const [
+    { artworks, credits },
+    u1Fixture,
+    unaffectedFixture,
+    correctedFixture,
+  ] = await Promise.all([
+    loadActualData(),
+    loadFixture(U1_CANONICAL_PATH),
+    loadFixture(UNAFFECTED_FIXTURE_PATH),
+    loadFixture(CORRECTED_FIXTURE_PATH),
+  ]);
+  const frozenFixtures = [
+    ...u1Fixture.artworks,
+    ...unaffectedFixture.artworks,
+    ...correctedFixture.artworks,
+  ].sort((first, second) => first.apNumber - second.apNumber);
+  const expectedIds = frozenFixtures.map(({ id }) => id);
+  const liveFrozenArtworks = artworks.filter(({ unit }) => unit <= 2);
+  const canonicalLiveFrozenArtworks = liveFrozenArtworks.map((artwork) => (
+    artwork.unit === 2 ? canonicalizeArtwork(artwork) : artwork
+  ));
+  const liveFrozenCredits = Object.fromEntries(
+    expectedIds.map((id) => [id, credits[id]]),
+  );
+  const expectedCredits = {
+    ...u1Fixture.credits,
+    ...unaffectedFixture.credits,
+    ...correctedFixture.credits,
+  };
+
+  assert.deepEqual(
+    liveFrozenArtworks.map(({ apNumber }) => apNumber),
+    Array.from({ length: 47 }, (_, index) => index + 1),
+    'U1/U2 must remain the exact AP 1–47 sequence',
+  );
+  assert.deepEqual(
+    liveFrozenArtworks.map(({ id }) => id),
+    expectedIds,
+    'U1/U2 must have no missing, extra, or reordered ids',
+  );
+  assert.deepEqual(
+    canonicalLiveFrozenArtworks,
+    frozenFixtures,
+    'all U1/U2 artwork fields and media arrays must match their canonical fixtures',
+  );
+  assert.deepEqual(
+    liveFrozenCredits,
+    expectedCredits,
+    'all U1/U2 image credits must match their canonical fixtures',
+  );
+  assert.deepEqual(
+    Object.keys(credits).filter((id) => expectedIds.includes(id)).sort(),
+    [...expectedIds].sort(),
+    'U1/U2 credits must have the exact AP 1–47 keyset',
+  );
+
+  for (const id of expectedIds) {
+    const actualEntries = getCreditEntries(credits[id]);
+    const expectedEntries = getCreditEntries(expectedCredits[id]);
+    assert.equal(
+      actualEntries.length,
+      expectedEntries.length,
+      `${id} must preserve one exact credit per media item`,
+    );
+    actualEntries.forEach((credit, index) => {
+      assert.deepEqual(
+        Object.keys(credit),
+        Object.keys(expectedEntries[index]),
+        `${id} credit ${index + 1} must have no extra, missing, or reordered fields`,
+      );
+    });
+  }
+});
+
+test('all U3 comparisons resolve and retain the required cross-unit targets', async () => {
+  const { artworks } = await loadActualData();
+  const ids = new Set(artworks.map(({ id }) => id));
+  const u3 = artworks.filter(({ unit }) => unit === 3);
+
+  assert.equal(artworks.length, 98);
+  assert.equal(u3.length, 51);
+  for (const work of u3) {
+    assert.ok(
+      work.comparisonIds.length >= 1,
+      `${work.id} must retain at least one comparison`,
+    );
+    assert.equal(
+      new Set(work.comparisonIds).size,
+      work.comparisonIds.length,
+      `${work.id} must not repeat a comparison target`,
+    );
+    for (const comparisonId of work.comparisonIds) {
+      assert.notEqual(comparisonId, work.id, `${work.id} must not target itself`);
+      assert.ok(ids.has(comparisonId), `${work.id} target ${comparisonId} must resolve`);
+    }
+  }
+
+  for (const [sourceId, targetId] of REQUIRED_U3_CROSS_UNIT_COMPARISONS) {
+    const source = u3.find(({ id }) => id === sourceId);
+    assert.ok(source, `missing required comparison source ${sourceId}`);
+    assert.ok(
+      source.comparisonIds.includes(targetId),
+      `${sourceId} must retain cross-unit target ${targetId}`,
+    );
+    assert.equal(
+      artworks.find(({ id }) => id === targetId)?.unit,
+      2,
+      `${targetId} must remain a Unit 2 target`,
+    );
+  }
 });
 
 test('unaffected legacy records and credits stay field-for-field preserved', async () => {
