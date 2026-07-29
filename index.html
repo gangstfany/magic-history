@@ -21,7 +21,7 @@
 <meta name="twitter:title" content="Magic History — AP 世界历史互动地图">
 <meta name="twitter:description" content="悬浮、点开、跟着商队一路走——每一个地方都有它自己的故事。AMSCO 页码可查,按 AP CED 五大主题分类。">
 <meta name="twitter:image" content="og-cover.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23c9714f'/><text x='50' y='50' font-family='Georgia,serif' font-size='62' fill='%23f9f4e8' text-anchor='middle' dominant-baseline='central'>M</text></svg>">
 <style>
 :root {
   --frame: #f2d3ce;
@@ -503,10 +503,10 @@ nav.topnav {
           </div>
           <!-- 右侧事件面板:点左边地图的数字标点,该站事件在这里完整显示 -->
           <div id="home-events" class="home-events" role="region" aria-label="历史事件" aria-live="polite">
-            <div class="he-empty">📍 点地图上的数字标点，<br>这里会显示那一站的历史事件
-              <div class="route-picker-title">✏️ Practice</div>
+            <div class="he-empty">点地图上的数字标点，<br>这里会显示那一站的历史事件
+              <div class="route-picker-title">Practice</div>
               <div class="route-picker"><button type="button" class="route-chip quiz-chip" data-quiz-start="1"><span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">时期 · 地区</span></button></div>
-              <div class="route-picker-title">🐫 或者跟着商队走一趟</div>
+              <div class="route-picker-title">或者跟着商队走一趟</div>
               <div class="route-picker" id="homeRoutePicker"></div>
             </div>
           </div>
@@ -516,22 +516,18 @@ nav.topnav {
 
       <div class="features">
         <div class="feature">
-          <div class="ic">📚</div>
           <h2>AMSCO-sourced</h2>
           <p>每一条历史事件都能查到教材原文页码,不是编的。</p>
         </div>
         <div class="feature">
-          <div class="ic">🧑‍🏫</div>
           <h2>Teacher-ready</h2>
           <p>课堂或考前冲刺都能直接用,后续还会加讲义与练习包。</p>
         </div>
         <div class="feature feature-clickable" data-goto="subjects">
-          <div class="ic">🧭</div>
           <h2>More subjects coming</h2>
           <p>Euro History、US History、Human Geography 正在路上,World History 已经可以直接用。</p>
         </div>
         <div class="feature">
-          <div class="ic">🏷️</div>
           <h2>CED-aligned categories</h2>
           <p>政权、经济、文化、社会、技术——每条事件按 AP 考纲五大主题分类打标签,不是随手归类。</p>
         </div>
@@ -578,7 +574,7 @@ nav.topnav {
     <section class="view" id="view-teacher">
       <div class="back-link" data-goto="home">← Home</div>
       <div class="stub">
-        <div class="badge-lg">🧑‍🏫</div>
+        <div class="badge-lg">✦</div>
         <h2 class="serif">Teacher&rsquo;s pack</h2>
         <p>讲义、教师脚本、随堂练习正在整理中,之后会放在这里。</p>
       </div>
@@ -648,7 +644,7 @@ nav.topnav {
   const mapCard = document.querySelector('.map-card');
   const mapCardHead = document.querySelector('.map-card-head');
   const homeMapCaption = document.getElementById('homeMapCaption');
-  const CAT_ICON = { GOV: '👑', ECN: '💰', CDI: '📜', SIO: '👥', TEC: '⚙' };
+  const CAT_ICON = {};   // 分类不再用 emoji 标记,保留这个映射只为渲染代码不必改
 
   function dayOfYear(d) {
     const start = new Date(d.getFullYear(), 0, 0);
@@ -691,7 +687,7 @@ nav.topnav {
     const today = new Date();
     const pick = all[dayOfYear(today) % all.length];
     todayPick.innerHTML =
-      `<div class="tp-eyebrow">📅 ${today.getMonth() + 1}月${today.getDate()}日 · Today's Pick</div>`
+      `<div class="tp-eyebrow">${today.getMonth() + 1}月${today.getDate()}日 · Today's Pick</div>`
       + `<div class="tp-top"><span class="tp-yr">${pick.yr}</span><span class="tp-city">${pick.city}</span>`
       + `<span class="tp-cat">${CAT_ICON[pick.catAbbr] || ''} ${pick.catFull}</span></div>`
       + `<div class="tp-trig">${pick.trigHTML}</div>`
