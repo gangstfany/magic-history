@@ -279,6 +279,28 @@ nav.topnav {
 .home-events .ec-where .ew-pin { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 5px; background: rgba(139,26,26,0.10); color: #8b1a1a; font-size: 11px; font-variant-numeric: tabular-nums; }
 .home-events .ec-where .ew-go { margin-left: auto; color: var(--terracotta); white-space: nowrap; }
 .home-events .event-head .badge-search { background: #3f4a56 !important; font-size: 15px; }
+/* ---- 随堂练习面板(从地图镜像过来) ---- */
+.home-events .quiz-panel { padding: 16px 20px 14px; border-bottom: 1px solid var(--line); background: #fffdf8; }
+.home-events .qz-head { display: flex; align-items: baseline; gap: 12px; }
+.home-events .qz-title { font-size: 16px; font-weight: 800; color: var(--ink); }
+.home-events .qz-score { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
+.home-events .qz-ask { margin: 10px 0 0; font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.home-events .qz-card { margin: 11px 0 0; padding: 13px 16px; border: 1px solid var(--line); border-left: 4px solid var(--ink-soft); border-radius: 10px; background: #fff; }
+.home-events .qz-meta { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+.home-events .qz-yr { font-weight: 800; font-size: 13.5px; color: var(--terracotta); font-variant-numeric: tabular-nums; }
+.home-events .qz-cat { font-size: 10px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .05em; margin-left: auto; white-space: nowrap; }
+.home-events .qz-trig { font-size: 13.5px; font-weight: 600; line-height: 1.6; color: var(--ink); }
+.home-events .qz-trig .hl { background: #fff3bf; padding: 1px 4px; border-radius: 3px; font-weight: 700; }
+.home-events .qz-verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0 0; padding: 10px 13px; border-radius: 9px; font-size: 13px; font-weight: 700; }
+.home-events .qz-verdict.ok { background: rgba(143,168,120,0.18); color: #3f5230; }
+.home-events .qz-verdict.near { background: rgba(217,164,65,0.20); color: #7a5a12; }
+.home-events .qz-verdict.bad { background: rgba(139,26,26,0.12); color: #8b1a1a; }
+.home-events .qz-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 13px 0 0; }
+.home-events .qz-hint { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+.home-events .qz-stem { margin: 10px 0 0; font-size: 13px; line-height: 1.7; color: var(--ink-soft); }
+.home-events .qz-reveal-title { padding: 14px 20px 0; font-size: 12px; font-weight: 800; color: var(--ink-soft); }
+.home-events .quiz-chip .rc-dot { box-shadow: 0 0 0 3px rgba(139,26,26,0.12); }
+
 /* ---- 商路行程面板(从地图镜像过来) ---- */
 .home-events .route-panel { padding: 16px 20px 14px; border-bottom: 1px solid var(--line); background: #fffdf8; }
 .home-events .rt-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
@@ -477,6 +499,8 @@ nav.topnav {
           <!-- 右侧事件面板:点左边地图的数字标点,该站事件在这里完整显示 -->
           <div id="home-events" class="home-events" role="region" aria-label="历史事件" aria-live="polite">
             <div class="he-empty">📍 点地图上的数字标点，<br>这里会显示那一站的历史事件
+              <div class="route-picker-title">✏️ 想自测?</div>
+              <div class="route-picker"><button type="button" class="route-chip quiz-chip" data-quiz-start="1"><span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">点地图作答</span></button></div>
               <div class="route-picker-title">🐫 或者跟着商队走一趟</div>
               <div class="route-picker" id="homeRoutePicker"></div>
             </div>
@@ -748,6 +772,9 @@ nav.topnav {
       // 商路:入口 chip / 站点 / 上一站下一站播放退出 —— 面板是拷过来的,监听不会跟过来,这边代理
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
       if (!win || !win.__mapFilter) return;
+      if (e.target.closest('[data-quiz-start]')) { win.__mapFilter.startQuiz(); setTimeout(syncHomeEvents, 140); return; }
+      const qz = e.target.closest('[data-quiz-action]');
+      if (qz) { win.__mapFilter.quizAction(qz.dataset.quizAction); setTimeout(syncHomeEvents, 140); return; }
       const go = e.target.closest('[data-route-go]');
       if (go) { win.__mapFilter.enterRoute(go.dataset.routeGo); setTimeout(syncHomeEvents, 120); return; }
       const step = e.target.closest('[data-route-step]');
@@ -806,6 +833,7 @@ nav.topnav {
     // 空态里的商路入口,选项由地图那边给
     if (api.getRoutes) { homeRouteOptions = api.getRoutes(); fillHomeRoutePicker(); }
     if (api.onRouteStep) api.onRouteStep(() => syncHomeEvents());
+    if (api.onQuizStep) api.onQuizStep(() => syncHomeEvents());
     // 主题药丸:多选。重建而非追加,免得 iframe 重载后越堆越多
     catsBox.innerHTML = '';
     api.getCats().forEach(c => {

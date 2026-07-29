@@ -2413,6 +2413,7 @@ h1 .en { color: var(--accent); }
   // ============ 随堂练习(第一批只做"点地图"题型) ============
   // 题库取自当前筛选,所以"只练 Period 3 的经济类"直接沿用工具栏,不用另做界面。
   let quizMode = null;   // { pool, q, answered, asked, right }
+  let quizStepCb = null; // 首页订阅:作答是点 iframe 里的标点触发的,父页面得跟着刷新面板
 
   // 出点地图题要排掉两类坏题(剩 207 条,够用):
   //   ① 题干里写了自己的地名 —— "Delhi Sultanate" 问在哪,等于送分(22 条)
@@ -2540,6 +2541,7 @@ h1 .en { color: var(--accent); }
     eventPanel.classList.add('show');
     eventZone.classList.remove('fit-content');
     eventZone.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    if (quizStepCb) quizStepCb();
   }
 
   function showRoutesFor(num) {
@@ -3106,6 +3108,11 @@ h1 .en { color: var(--accent); }
         else if (a === 'exit') exitRouteMode();
       },
       inRoute: () => !!routeMode,
+      // 随堂练习
+      startQuiz: () => startQuiz(),
+      quizAction: a => { if (a === 'next') nextQuestion(); else if (a === 'exit') exitQuiz(); },
+      inQuiz: () => !!quizMode,
+      onQuizStep: fn => { quizStepCb = fn; },
       onRouteStep: fn => { routeStepCb = fn; },
       onCountChange: fn => { onCountChange = fn; },
     };
