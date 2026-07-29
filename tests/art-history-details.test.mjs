@@ -355,7 +355,17 @@ function createDetailHarness(html, artworks, credits, stateOverrides = {}) {
   }
   const imageDialog = document.createElement('dialog');
   imageDialog.showModal = () => {
+    if (imageDialog.open) {
+      throw new Error('InvalidStateError: dialog is already open');
+    }
     imageDialog.open = true;
+  };
+  imageDialog.close = () => {
+    if (!imageDialog.open) return;
+    imageDialog.open = false;
+    for (const listener of imageDialog.listeners.close ?? []) {
+      listener({ target:imageDialog });
+    }
   };
   const state = {
     activeDetailTab:'quick',
@@ -388,11 +398,17 @@ function createDetailHarness(html, artworks, credits, stateOverrides = {}) {
       const createComparisonAngle = () => '';
       const selectComparison = () => {};
       ${sources}
+      document.getElementById('dialogClose').addEventListener('click', () => imageDialog.close());
+      imageDialog.addEventListener('close', () => {
+        imageDialogTrigger?.focus();
+        imageDialogTrigger = null;
+      });
       return {
         getArtworkImages,
         getArtworkImageCredits,
         renderArtworkDetails,
         getDialogTrigger: () => imageDialogTrigger,
+        isDialogOpen: () => imageDialog.open,
         getSelectedSiteIndex: () => state.selectedSiteIndex,
       };`,
   )(document, credits, artworks, imageDialog, state);
@@ -778,6 +794,15 @@ test('Chartres six-view buttons keep every image, attribution, dialog, and local
       harness.getSelectedSiteIndex(),
       4,
       'media selection must not mutate shared site navigation state',
+    );
+
+    document.getElementById('dialogClose').click();
+    assert.equal(harness.isDialogOpen(), false);
+    assert.equal(harness.getDialogTrigger(), null);
+    assert.equal(
+      document.activeElement,
+      imageButton,
+      `${media.label} close restores focus to the image trigger`,
     );
   }
 });
