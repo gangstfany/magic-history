@@ -299,6 +299,9 @@ class FakeNode {
   }
 
   replaceChildren(...nodes) {
+    this.children.forEach((child) => {
+      child.parentNode = null;
+    });
     this.children = [];
     this._textContent = '';
     this.append(...nodes);
@@ -342,11 +345,13 @@ class FakeNode {
     const matches = [];
     const visit = (node) => {
       const className = selector.startsWith('.') ? selector.slice(1) : null;
+      const id = selector.match(/^#([a-zA-Z][\w-]*)$/)?.[1];
       const role = selector.match(/^\[role="([^"]+)"\]$/)?.[1];
       const selectedArtworkTitle = selector === '[data-selected-artwork-title]';
       const tagName = /^[a-z]+$/i.test(selector) ? selector.toUpperCase() : null;
       if (
         (className && node.classList.contains(className))
+        || (id && node.id === id)
         || (role && node.getAttribute('role') === role)
         || (selectedArtworkTitle && Object.hasOwn(node.dataset, 'selectedArtworkTitle'))
         || (tagName && node.tagName === tagName)
@@ -372,6 +377,11 @@ class FakeNode {
       if (result) return result;
     }
     return null;
+  }
+
+  contains(candidate) {
+    return this === candidate
+      || this.children.some((child) => child.contains?.(candidate));
   }
 }
 
@@ -511,6 +521,21 @@ function parseSourceWorksheet(markdown) {
       const [ap, id, identifying, study, image, creator, license, visual] = cells;
       return { ap, id, identifying, study, image, creator, license, visual };
     });
+}
+
+function assertCurrentDetailHeadingFocus(detailPanel, expectedTitle) {
+  const currentHeading = detailPanel.querySelector('#detailTitle');
+  assert.ok(currentHeading, 'the current detail render must contain #detailTitle');
+  assert.equal(currentHeading.textContent, expectedTitle);
+  assert.ok(
+    detailPanel.contains(currentHeading),
+    '#detailTitle must belong to the current detail render',
+  );
+  assert.ok(
+    detailPanel.ownerDocument.activeElement === currentHeading,
+    'focus must be on the current live detail heading, not a detached heading with the same id',
+  );
+  return currentHeading;
 }
 
 test('detail view exposes four accessible study tabs', async () => {
@@ -745,6 +770,9 @@ test('U3 comparison card clears incompatible filters and focuses AP 46 in Unit 2
   });
 
   harness.renderSelected();
+  const sourceHeading = harness.getDetailPanel().querySelector('#detailTitle');
+  assert.equal(sourceHeading.textContent, 'Ecstasy of Saint Teresa');
+  sourceHeading.focus();
   const comparisonCard = harness.getDetailPanel().find(
     (node) => node.dataset.comparisonId === 'ap46-pantheon',
   );
@@ -779,9 +807,34 @@ test('U3 comparison card clears incompatible filters and focuses AP 46 in Unit 2
     'Pantheon',
     'the incompatible U3 filters must not hide the selected U2 target',
   );
+  const currentHeading = assertCurrentDetailHeadingFocus(
+    harness.getDetailPanel(),
+    'Pantheon',
+  );
+  assert.equal(currentHeading.id, 'detailTitle');
+  assert.equal(sourceHeading.id, currentHeading.id);
+  assert.notStrictEqual(
+    currentHeading,
+    sourceHeading,
+    'AP46 must render a new heading rather than reuse the detached AP89 heading',
+  );
   assert.equal(
-    harness.getDetailPanel().ownerDocument.activeElement?.id,
-    'detailTitle',
+    harness.getDetailPanel().contains(sourceHeading),
+    false,
+    'the prior AP89 heading must be detached after rendering AP46',
+  );
+
+  const focusedHeading = harness.getDetailPanel().ownerDocument.activeElement;
+  harness.getDetailPanel().ownerDocument.activeElement = sourceHeading;
+  assert.throws(
+    () => assertCurrentDetailHeadingFocus(harness.getDetailPanel(), 'Pantheon'),
+    /current live detail heading/,
+    'a detached stale heading with the same id must not satisfy the focus contract',
+  );
+  harness.getDetailPanel().ownerDocument.activeElement = focusedHeading;
+  assert.strictEqual(
+    assertCurrentDetailHeadingFocus(harness.getDetailPanel(), 'Pantheon'),
+    currentHeading,
   );
   assert.deepEqual(
     harness.getScrollCalls(),
