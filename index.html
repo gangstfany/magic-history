@@ -285,6 +285,11 @@ nav.topnav {
 .home-events .qz-title { font-size: 16px; font-weight: 800; color: var(--ink); }
 .home-events .qz-score { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
 .home-events .qz-ask { margin: 10px 0 0; font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.home-events .qz-ask span { margin-left: 8px; font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+.home-events .qz-opts { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0 0; }
+.home-events .qz-opt { min-height: 40px; padding: 0 15px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+.home-events .qz-opt:hover { border-color: var(--ink-soft); background: #fff; }
+.home-events .qz-opt:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
 .home-events .qz-card { margin: 11px 0 0; padding: 13px 16px; border: 1px solid var(--line); border-left: 4px solid var(--ink-soft); border-radius: 10px; background: #fff; }
 .home-events .qz-meta { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
 .home-events .qz-yr { font-weight: 800; font-size: 13.5px; color: var(--terracotta); font-variant-numeric: tabular-nums; }
@@ -500,7 +505,7 @@ nav.topnav {
           <div id="home-events" class="home-events" role="region" aria-label="历史事件" aria-live="polite">
             <div class="he-empty">📍 点地图上的数字标点，<br>这里会显示那一站的历史事件
               <div class="route-picker-title">✏️ 想自测?</div>
-              <div class="route-picker"><button type="button" class="route-chip quiz-chip" data-quiz-start="1"><span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">点地图作答</span></button></div>
+              <div class="route-picker"><button type="button" class="route-chip quiz-chip" data-quiz-start="1"><span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">时期 · 地区</span></button></div>
               <div class="route-picker-title">🐫 或者跟着商队走一趟</div>
               <div class="route-picker" id="homeRoutePicker"></div>
             </div>
@@ -773,6 +778,8 @@ nav.topnav {
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
       if (!win || !win.__mapFilter) return;
       if (e.target.closest('[data-quiz-start]')) { win.__mapFilter.startQuiz(); setTimeout(syncHomeEvents, 140); return; }
+      const qp = e.target.closest('[data-quiz-period]');
+      if (qp) { win.__mapFilter.quizPeriod(qp.dataset.quizPeriod); setTimeout(syncHomeEvents, 140); return; }
       const qz = e.target.closest('[data-quiz-action]');
       if (qz) { win.__mapFilter.quizAction(qz.dataset.quizAction); setTimeout(syncHomeEvents, 140); return; }
       const go = e.target.closest('[data-route-go]');
