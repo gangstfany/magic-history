@@ -2693,6 +2693,8 @@ h1 .en { color: var(--accent); }
                   theme:  '这条属于哪个主题?',
                   term:   '这个概念指的是什么?' }[q.type];
 
+    // 答题时藏起会泄题的线索(时期题的年份、主题题的分类、术语题的释义),
+    // 判分后一律还回来 —— 学生要靠这张完整的卡片理解"为什么是这个答案"。
     let options = '';
     if (!answered) {
       if (q.type === 'period') options = `<div class="qz-opts">` + (PERIODS_REF || []).map(p =>
@@ -2728,10 +2730,10 @@ h1 .en { color: var(--accent); }
         <p class="qz-ask">${ask}</p>
         <div class="qz-card" style="border-left-color:${q.it.catColor}">
           <div class="qz-meta">
-            ${isRegion ? `<span class="qz-yr">${q.it.yr}</span>` : ''}
-            ${q.type === 'theme' ? '' : `<span class="qz-cat">${q.it.catFull}</span>`}
+            ${(isRegion || answered) ? `<span class="qz-yr">${q.it.yr}</span>` : ''}
+            ${(q.type !== 'theme' || answered) ? `<span class="qz-cat">${q.it.catFull}</span>` : ''}
           </div>
-          <div class="qz-trig">${isTerm ? `<span class="hl">${q.term}</span>` : q.it.trigHTML}</div>
+          <div class="qz-trig">${(isTerm && !answered) ? `<span class="hl">${q.term}</span>` : q.it.trigHTML}</div>
         </div>
         ${options}
         ${verdict}
