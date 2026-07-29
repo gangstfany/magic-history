@@ -57,6 +57,37 @@ export const BOUNDARY_VIEWPORTS = Object.freeze([
   { width: 667, height: 521 },
 ]);
 
+export const VERIFIER_IMAGE_TIMEOUT_MS = 15_000;
+export const BROWSER_VERIFICATION_TIMEOUT_MS = 10 * 60 * 1000;
+export const BROWSER_CLEANUP_TIMEOUT_MS = 30_000;
+export const U3_FAULT_MODES = Object.freeze([
+  'wrong-rendered-url',
+  'broken-focus-restoration',
+  'duplicate-network-request',
+]);
+
+export function parseU3FaultMode(args) {
+  const faultArguments = args.filter((argument) => argument.startsWith('--u3-fault'));
+  for (const argument of faultArguments) {
+    assert.match(
+      argument,
+      /^--u3-fault=.+$/,
+      `Malformed --u3-fault argument ${JSON.stringify(argument)}`,
+    );
+  }
+  assert.ok(
+    faultArguments.length <= 1,
+    'Verifier accepts exactly one --u3-fault argument',
+  );
+  if (!faultArguments.length) return null;
+  const faultMode = faultArguments[0].slice('--u3-fault='.length);
+  assert.ok(
+    U3_FAULT_MODES.includes(faultMode),
+    `Unknown U3 verifier fault mode ${JSON.stringify(faultMode)}`,
+  );
+  return faultMode;
+}
+
 const PROJECT_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
 class DuplicateVerifierJsonKeyError extends Error {}
@@ -761,6 +792,33 @@ export function assertExactImageRequests(imageRequests, work, checkpoint) {
   }
 }
 
+export function createImageRequestObserver(imageRequests) {
+  const observe = (url) => {
+    imageRequests.set(url, (imageRequests.get(url) || 0) + 1);
+  };
+  return {
+    observe,
+    beginExactReload(url) {
+      return {
+        url,
+        countBeforeReload: imageRequests.get(url) || 0,
+        attempted: true,
+      };
+    },
+    completeExactReload(url, attempt) {
+      assert.equal(attempt?.attempted, true, `${url} exact reload was not attempted`);
+      assert.equal(attempt?.url, url, `${url} exact reload attempt URL`);
+      const routeObserved = (imageRequests.get(url) || 0) > attempt.countBeforeReload;
+      if (!routeObserved) observe(url);
+      return {
+        attempted: true,
+        routeObserved,
+        fallbackObservationAdded: !routeObserved,
+      };
+    },
+  };
+}
+
 async function mockRemoteImages(page, onImageRequest = () => {}) {
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/, async (route) => {
     if (route.request().resourceType() === 'image') {
@@ -785,6 +843,71 @@ async function waitForPostTransformRender(frame) {
   await frame.evaluate(() => new Promise((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(resolve));
   }));
+}
+
+export async function waitForVerifierImage(
+  image,
+  label,
+  timeoutMs = VERIFIER_IMAGE_TIMEOUT_MS,
+) {
+  const deadline = Date.now() + timeoutMs;
+  try {
+    await image.waitFor({ state: 'attached', timeout: timeoutMs });
+  } catch (error) {
+    throw new Error(
+      `${label} image element was not attached within ${timeoutMs} ms`,
+      { cause: error },
+    );
+  }
+  const remainingTimeoutMs = Math.max(0, deadline - Date.now());
+  if (!remainingTimeoutMs) {
+    throw new Error(`${label} image timed out after ${timeoutMs} ms`);
+  }
+  await image.evaluate((element, options) => {
+    const {
+      imageLabel,
+      imageTimeoutMs,
+      reportedTimeoutMs,
+    } = options;
+    const failure = (reason) => new Error(`${imageLabel} image ${reason}`);
+    if (element.complete) {
+      if (element.naturalWidth > 0) return;
+      throw failure('already failed (complete with naturalWidth 0)');
+    }
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      let timer;
+      const cleanup = () => {
+        element.removeEventListener('load', onLoad);
+        element.removeEventListener('error', onError);
+        clearTimeout(timer);
+      };
+      const settle = (error) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (error) reject(error);
+        else resolve();
+      };
+      const onLoad = () => {
+        settle(element.naturalWidth > 0
+          ? null
+          : failure('loaded without a natural width'));
+      };
+      const onError = () => settle(failure('emitted an error event'));
+      element.addEventListener('load', onLoad, { once: true });
+      element.addEventListener('error', onError, { once: true });
+      timer = setTimeout(
+        () => settle(failure(`timed out after ${reportedTimeoutMs} ms`)),
+        imageTimeoutMs,
+      );
+      if (element.complete) onLoad();
+    });
+  }, {
+    imageLabel: label,
+    imageTimeoutMs: remainingTimeoutMs,
+    reportedTimeoutMs: timeoutMs,
+  });
 }
 
 async function geometry(frame) {
@@ -1040,15 +1163,7 @@ async function assertHierarchyAndDialog(page, frame) {
 
   const imageButton = frame.locator('.artwork-image-button');
   const image = imageButton.locator('img');
-  await image.waitFor();
-  await image.evaluate((element) => (
-    element.complete && element.naturalWidth > 0
-      ? undefined
-      : new Promise((resolve, reject) => {
-        element.addEventListener('load', resolve, { once: true });
-        element.addEventListener('error', reject, { once: true });
-      })
-  ));
+  await waitForVerifierImage(image, 'responsive hierarchy artwork image');
   const imageFacts = await image.evaluate((element) => ({
     alt: element.alt,
     complete: element.complete,
@@ -1091,8 +1206,45 @@ function assertRectangleInside(rect, bounds, label) {
   );
 }
 
-async function captureFinalSiteMarkerGeometry(frame) {
-  return frame.locator('.site-marker[data-group-kind="site"]').evaluateAll((markers) => {
+export function assertMarkerGeometrySet(geometry, label) {
+  assert.ok(geometry.markers.length > 0, `${label} must contain markers`);
+  for (const marker of geometry.markers) {
+    assert.ok(
+      marker.hitSize.width >= 43.99 && marker.hitSize.height >= 43.99,
+      `${label} ${marker.label} 44px hit target: ${JSON.stringify(marker.hitSize)}`,
+    );
+    for (const kind of ['group', 'hit', 'capsule', 'text']) {
+      assertRectangleInside(
+        marker.client[kind],
+        geometry.map,
+        `${label} ${marker.label} ${kind} client`,
+      );
+      assertRectangleInside(
+        marker.world[kind],
+        geometry.visibleWorldBounds,
+        `${label} ${marker.label} ${kind} world`,
+      );
+    }
+  }
+  for (let first = 0; first < geometry.markers.length; first += 1) {
+    for (let second = first + 1; second < geometry.markers.length; second += 1) {
+      const firstMarker = geometry.markers[first];
+      const secondMarker = geometry.markers[second];
+      for (const kind of ['group', 'hit', 'capsule', 'text']) {
+        assert.equal(
+          rectanglesOverlap(firstMarker.client[kind], secondMarker.client[kind]),
+          false,
+          `${label} ${kind} overlap: ${firstMarker.label} / ${secondMarker.label}`,
+        );
+      }
+    }
+  }
+}
+
+async function captureMarkerGeometry(frame, markerKind) {
+  return frame
+    .locator(`.site-marker[data-group-kind="${markerKind}"]`)
+    .evaluateAll((markers) => {
     const rect = (element) => {
       const bounds = element.getBoundingClientRect();
       return {
@@ -1100,6 +1252,8 @@ async function captureFinalSiteMarkerGeometry(frame) {
         right: bounds.right,
         top: bounds.top,
         bottom: bounds.bottom,
+        width: bounds.width,
+        height: bounds.height,
       };
     };
     const union = (elements) => {
@@ -1111,22 +1265,42 @@ async function captureFinalSiteMarkerGeometry(frame) {
         bottom: Math.max(...rectangles.map((bounds) => bounds.bottom)),
       };
     };
-    const map = document.querySelector('.map-panel');
+    const project = (bounds, inverse) => {
+      const corners = [
+        new DOMPoint(bounds.left, bounds.top),
+        new DOMPoint(bounds.right, bounds.top),
+        new DOMPoint(bounds.left, bounds.bottom),
+        new DOMPoint(bounds.right, bounds.bottom),
+      ].map((point) => point.matrixTransform(inverse));
+      return {
+        left: Math.min(...corners.map(({ x }) => x)),
+        right: Math.max(...corners.map(({ x }) => x)),
+        top: Math.min(...corners.map(({ y }) => y)),
+        bottom: Math.max(...corners.map(({ y }) => y)),
+      };
+    };
+    const map = document.querySelector('.map-svg');
+    const mapViewport = document.querySelector('#mapViewport');
+    const screenMatrix = mapViewport.getScreenCTM();
+    if (!screenMatrix) throw new Error('Unable to project marker geometry');
+    const inverse = screenMatrix.inverse();
+    const mapBounds = rect(map);
+    const projectedViewport = project(mapBounds, inverse);
     const transform = { ...window.ArtHistoryMap.state.transform };
     const visibleWorldBounds = {
-      left: Math.max(0, -transform.x / transform.scale),
-      right: Math.min(1600, (1600 - transform.x) / transform.scale),
-      top: Math.max(0, -transform.y / transform.scale),
-      bottom: Math.min(800, (800 - transform.y) / transform.scale),
+      left: Math.max(0, projectedViewport.left),
+      right: Math.min(1600, projectedViewport.right),
+      top: Math.max(0, projectedViewport.top),
+      bottom: Math.min(800, projectedViewport.bottom),
     };
     return {
-      map: rect(map),
+      map: mapBounds,
       horizontalOverflow:
         document.documentElement.scrollWidth - document.documentElement.clientWidth,
       activeRegion: window.ArtHistoryMap.state.activeRegion,
       activeUnit: window.ArtHistoryMap.state.activeUnit,
       stateTransform: transform,
-      mapViewportTransform: document.querySelector('#mapViewport').getAttribute('transform'),
+      mapViewportTransform: mapViewport.getAttribute('transform'),
       visibleWorldBounds,
       focusedSiteLabel: document.activeElement?.matches?.(
         '.site-marker[data-group-kind="site"]',
@@ -1146,12 +1320,19 @@ async function captureFinalSiteMarkerGeometry(frame) {
         const hitY = Number(hit.getAttribute('y'));
         const hitWidth = Number(hit.getAttribute('width'));
         const hitHeight = Number(hit.getAttribute('height'));
-        return {
-          label: marker.getAttribute('aria-label'),
+        const client = {
           group: rect(marker),
           hit: rect(hit),
           capsule: rect(capsule),
           text: union(texts),
+        };
+        return {
+          label: marker.getAttribute('aria-label'),
+          client,
+          world: Object.fromEntries(
+            Object.entries(client).map(([kind, bounds]) => [kind, project(bounds, inverse)]),
+          ),
+          hitSize: { width: client.hit.width, height: client.hit.height },
           worldHit: {
             left: localTransform.e + hitX,
             right: localTransform.e + hitX + hitWidth,
@@ -1214,7 +1395,7 @@ async function verifyU3ResponsiveRegionBranches(page, frame, issues, mode, viewp
       await siteMarkers.count() > 0,
       `${mode} ${viewport.width} ${region.label} nonempty site branch`,
     );
-    const geometry = await captureFinalSiteMarkerGeometry(frame);
+    const geometry = await captureMarkerGeometry(frame, 'site');
     assert.equal(
       geometry.activeRegion,
       `unit-3-region-${region.id}`,
@@ -1247,39 +1428,10 @@ async function verifyU3ResponsiveRegionBranches(page, frame, issues, mode, viewp
       )),
       `${mode} ${viewport.width} ${region.label} site parent membership`,
     );
-    for (const marker of geometry.markers) {
-      for (const [kind, markerRect] of Object.entries({
-        marker: marker.group,
-        hit: marker.hit,
-        capsule: marker.capsule,
-        text: marker.text,
-      })) {
-        assertRectangleInside(
-          markerRect,
-          geometry.map,
-          `${mode} ${viewport.width} ${region.label} ${marker.label} ${kind}`,
-        );
-      }
-      assertRectangleInside(
-        marker.worldHit,
-        geometry.visibleWorldBounds,
-        `${mode} ${viewport.width} ${region.label} ${marker.label} final visibleWorldBounds`,
-      );
-    }
-    for (let first = 0; first < geometry.markers.length; first += 1) {
-      for (let second = first + 1; second < geometry.markers.length; second += 1) {
-        const firstMarker = geometry.markers[first];
-        const secondMarker = geometry.markers[second];
-        for (const kind of ['group', 'hit', 'capsule', 'text']) {
-          assert.equal(
-            rectanglesOverlap(firstMarker[kind], secondMarker[kind]),
-            false,
-            `${mode} ${viewport.width} ${region.label} ${kind} overlap: `
-              + `${firstMarker.label} / ${secondMarker.label}`,
-          );
-        }
-      }
-    }
+    assertMarkerGeometrySet(
+      geometry,
+      `${mode} ${viewport.width} ${region.label} site geometry`,
+    );
     assert.ok(
       geometry.horizontalOverflow <= 1,
       `${mode} ${viewport.width} ${region.label} horizontalOverflow `
@@ -1354,41 +1506,7 @@ async function assertU3ResponsiveLayout(page, frame, issues, mode, viewport) {
     `${mode} ${viewport.width} map control pointer centers ${JSON.stringify(mapControls)}`,
   );
 
-  const markerGeometry = await frame
-    .locator('.site-marker[data-group-kind="region"]')
-    .evaluateAll((markers) => {
-      const map = document.querySelector('.map-panel').getBoundingClientRect();
-      const transform = { ...window.ArtHistoryMap.state.transform };
-      return {
-        map: { left: map.left, right: map.right, top: map.top, bottom: map.bottom },
-        stateTransform: transform,
-        mapViewportTransform: document.querySelector('#mapViewport').getAttribute('transform'),
-        visibleWorldBounds: {
-          left: Math.max(0, -transform.x / transform.scale),
-          right: Math.min(1600, (1600 - transform.x) / transform.scale),
-          top: Math.max(0, -transform.y / transform.scale),
-          bottom: Math.min(800, (800 - transform.y) / transform.scale),
-        },
-        markers: markers.map((marker) => {
-          const rect = marker.querySelector('.marker-label-bg').getBoundingClientRect();
-          const textRects = [
-            marker.querySelector('.marker-title-label').getBoundingClientRect(),
-            marker.querySelector('.marker-subtitle-label').getBoundingClientRect(),
-          ];
-          return {
-            label: marker.getAttribute('aria-label'),
-            left: rect.left,
-            right: rect.right,
-            top: rect.top,
-            bottom: rect.bottom,
-            textLeft: Math.min(...textRects.map((textRect) => textRect.left)),
-            textRight: Math.max(...textRects.map((textRect) => textRect.right)),
-            textTop: Math.min(...textRects.map((textRect) => textRect.top)),
-            textBottom: Math.max(...textRects.map((textRect) => textRect.bottom)),
-          };
-        }),
-      };
-    });
+  const markerGeometry = await captureMarkerGeometry(frame, 'region');
   assert.equal(
     markerGeometry.mapViewportTransform,
     `translate(${markerGeometry.stateTransform.x} ${markerGeometry.stateTransform.y}) `
@@ -1396,33 +1514,10 @@ async function assertU3ResponsiveLayout(page, frame, issues, mode, viewport) {
     `${mode} ${viewport.width} applied map transform`,
   );
   assert.equal(markerGeometry.markers.length, 8, `${mode} ${viewport.width} U3 region count`);
-  for (const marker of markerGeometry.markers) {
-    assert.ok(
-      marker.textLeft >= markerGeometry.map.left - 1
-        && marker.textRight <= markerGeometry.map.right + 1
-        && marker.textTop >= markerGeometry.map.top - 1
-        && marker.textBottom <= markerGeometry.map.bottom + 1,
-      `${mode} ${viewport.width} clipped U3 region ${marker.label}: `
-        + JSON.stringify({ marker, map: markerGeometry.map }),
-    );
-  }
-  for (let first = 0; first < markerGeometry.markers.length; first += 1) {
-    for (let second = first + 1; second < markerGeometry.markers.length; second += 1) {
-      const a = markerGeometry.markers[first];
-      const b = markerGeometry.markers[second];
-      const overlaps = (
-        a.left < b.right - 1
-        && a.right > b.left + 1
-        && a.top < b.bottom - 1
-        && a.bottom > b.top + 1
-      );
-      assert.equal(
-        overlaps,
-        false,
-        `${mode} ${viewport.width} marker overlap: ${a.label} / ${b.label}`,
-      );
-    }
-  }
+  assertMarkerGeometrySet(
+    markerGeometry,
+    `${mode} ${viewport.width} U3 region overview geometry`,
+  );
 
   const regionBranches = await verifyU3ResponsiveRegionBranches(
     page,
@@ -1698,19 +1793,6 @@ async function resetAndActivateWork(page, frame, work, beforeActivate = () => {}
   assert.equal((await heading.textContent()).trim(), work.titleEn);
 }
 
-async function waitForLoadedImage(image) {
-  await image.waitFor();
-  await image.evaluate((element) => (
-    element.complete && element.naturalWidth > 0
-      ? undefined
-      : new Promise((resolve, reject) => {
-        element.addEventListener('load', resolve, { once: true });
-        element.addEventListener('error', reject, { once: true });
-      })
-  ));
-  assert.ok(await image.evaluate((element) => element.complete && element.naturalWidth > 0));
-}
-
 function assertSingleImageRequest(imageRequests, work, checkpoint) {
   assert.equal(imageRequests.length, 1,
     `${checkpoint} AP ${work.apNumber} should issue exactly one image request`,
@@ -1738,7 +1820,10 @@ async function verifyNineImportedWorks(page, frame, imageRequests, mode) {
     assert.equal(await summary.locator('[class*="gallery"]').count(), 0);
     const imageButton = imageButtons.first();
     const image = imageButton.locator('img');
-    await waitForLoadedImage(image);
+    await waitForVerifierImage(
+      image,
+      `${mode} AP ${work.apNumber} primary ${work.imageUrl}`,
+    );
     assert.equal(await image.getAttribute('alt'), work.imageAlt);
 
     const imageCredit = summary.locator('.image-credit');
@@ -1766,7 +1851,10 @@ async function verifyNineImportedWorks(page, frame, imageRequests, mode) {
     assert.equal((await frame.locator('#dialogTitle').textContent()).trim(), `${work.titleEn} · ${work.titleZh}`);
     assert.equal(await dialog.locator('img').count(), 1);
     const dialogImage = frame.locator('#dialogImage');
-    await waitForLoadedImage(dialogImage);
+    await waitForVerifierImage(
+      dialogImage,
+      `${mode} AP ${work.apNumber} primary dialog ${work.imageUrl}`,
+    );
     assert.equal(await dialogImage.getAttribute('alt'), work.imageAlt);
     assert.equal((await frame.locator('#dialogCredit').textContent()).trim(), `图片：${work.credit.creatorOrInstitution}`);
 
@@ -1868,7 +1956,10 @@ async function verifyU1Works(page, frame, imageRequests, mode) {
       const expected = work.images[imageIndex];
       const imageButton = summary.locator('.artwork-image-button');
       const image = imageButton.locator('img');
-      await waitForLoadedImage(image);
+      await waitForVerifierImage(
+        image,
+        `${mode} AP ${work.apNumber} view ${imageIndex + 1} ${expected.imageUrl}`,
+      );
       assert.equal(await image.getAttribute('src'), expected.imageUrl);
       assert.equal(await image.getAttribute('alt'), expected.imageAlt);
 
@@ -1896,7 +1987,10 @@ async function verifyU1Works(page, frame, imageRequests, mode) {
       await dialog.waitFor({ state: 'visible' });
       assert.equal(await frame.evaluate(() => document.activeElement?.id), 'dialogClose');
       const dialogImage = frame.locator('#dialogImage');
-      await waitForLoadedImage(dialogImage);
+      await waitForVerifierImage(
+        dialogImage,
+        `${mode} AP ${work.apNumber} view ${imageIndex + 1} dialog ${expected.imageUrl}`,
+      );
       assert.equal(await dialogImage.getAttribute('src'), expected.imageUrl);
       assert.equal(await dialogImage.getAttribute('alt'), expected.imageAlt);
       assert.equal(
@@ -2063,7 +2157,17 @@ async function verifyU1StudyTabsAndComparison(page, frame, mode) {
   };
 }
 
-async function verifyU3Works(page, frame, imageRequests, mode) {
+async function verifyU3Works(
+  page,
+  frame,
+  imageRequests,
+  mode,
+  {
+    faultMode = null,
+    maxWorks = Number.POSITIVE_INFINITY,
+    requestObserver = null,
+  } = {},
+) {
   const results = [];
   for (const work of U3_WORKS) {
     const expectedWork = U3_EXPECTED_WORKS.find(({ id }) => id === work.id);
@@ -2146,7 +2250,22 @@ async function verifyU3Works(page, frame, imageRequests, mode) {
 
       const imageButton = summary.locator('.artwork-image-button');
       const image = imageButton.locator('img');
-      await waitForLoadedImage(image);
+      await waitForVerifierImage(
+        image,
+        `${mode} AP ${work.apNumber} ${expected.id} ${expected.imageUrl}`,
+      );
+      const injectFault = faultMode
+        && work.apNumber === 48
+        && imageIndex === 0;
+      if (injectFault && faultMode === 'wrong-rendered-url') {
+        await image.evaluate((element) => {
+          element.setAttribute(
+            'src',
+            'https://example.invalid/verifier-wrong-rendered-url.jpg',
+          );
+          element.setAttribute('alt', 'Verifier wrong rendered image');
+        });
+      }
       const sourceLink = summary.locator('.image-credit a').nth(1);
       const actual = {
         id: expected.id,
@@ -2190,7 +2309,10 @@ async function verifyU3Works(page, frame, imageRequests, mode) {
       await dialog.waitFor({ state: 'visible' });
       assert.equal(await frame.evaluate(() => document.activeElement?.id), 'dialogClose');
       const dialogImage = frame.locator('#dialogImage');
-      await waitForLoadedImage(dialogImage);
+      await waitForVerifierImage(
+        dialogImage,
+        `${mode} AP ${work.apNumber} ${expected.id} dialog ${expected.imageUrl}`,
+      );
       assert.equal(await dialogImage.getAttribute('src'), expected.imageUrl);
       assert.equal(await dialogImage.getAttribute('alt'), expected.imageAlt);
       assert.equal(
@@ -2213,12 +2335,59 @@ async function verifyU3Works(page, frame, imageRequests, mode) {
 
       await frame.locator('#dialogClose').click();
       await dialog.waitFor({ state: 'hidden' });
+      if (injectFault && faultMode === 'broken-focus-restoration') {
+        await frame.locator('#unitFilter').focus();
+      }
       assertDialogFocusRestored(
         await frame.evaluate(() => (
           document.activeElement?.classList.contains('artwork-image-button')
         )),
         `${mode} AP ${work.apNumber} ${expected.id}`,
       );
+      if (injectFault && faultMode === 'duplicate-network-request') {
+        assert.ok(requestObserver, `${mode} AP ${work.apNumber} request observer`);
+        const exactReload = requestObserver.beginExactReload(expected.imageUrl);
+        const exactReloadResult = await frame.evaluate((url) => new Promise((resolve, reject) => {
+          const reload = new Image();
+          const timer = setTimeout(
+            () => reject(new Error(`Exact image reload timed out for ${url}`)),
+            15_000,
+          );
+          const settle = (result) => {
+            clearTimeout(timer);
+            reload.onload = null;
+            reload.onerror = null;
+            resolve(result);
+          };
+          reload.onload = () => settle('loaded');
+          reload.onerror = () => settle('errored');
+          reload.src = url;
+        }), expected.imageUrl);
+        assert.equal(
+          exactReloadResult,
+          'loaded',
+          `${mode} AP ${work.apNumber} ${expected.id} exact reload completion`,
+        );
+        const duplicateObservation = requestObserver.completeExactReload(
+          expected.imageUrl,
+          exactReload,
+        );
+        assert.equal(
+          duplicateObservation.attempted,
+          true,
+          `${mode} AP ${work.apNumber} ${expected.id} exact reload attempted`,
+        );
+        assert.equal(
+          duplicateObservation.routeObserved,
+          false,
+          `${mode} AP ${work.apNumber} ${expected.id} exact reload cache coalescing`,
+        );
+        assert.equal(
+          duplicateObservation.fallbackObservationAdded,
+          true,
+          `${mode} AP ${work.apNumber} ${expected.id} fallback observation`,
+        );
+      }
     }
     assertExactImageRequests(imageRequests, work, mode);
     results.push({
@@ -2230,6 +2399,7 @@ async function verifyU3Works(page, frame, imageRequests, mode) {
         requestCount: imageRequests.get(imageUrl),
       })),
     });
+    if (faultMode && results.length >= maxWorks) break;
   }
   return results;
 }
@@ -2300,18 +2470,26 @@ async function verifyU3StudyTabsAndComparison(page, frame, mode) {
   };
 }
 
-async function verifyU3Standalone(browser, baseUrl) {
+async function verifyU3Standalone(browser, baseUrl, faultOptions = null) {
   const viewport = { width: 1365, height: 768 };
   return withBrowserContext(browser, { viewport, reducedMotion: 'reduce' }, async (context) => {
     const page = await context.newPage();
     const issues = installErrorCollection(page, 'U3 fifty-one works standalone');
     const imageRequests = new Map();
-    await mockRemoteImages(page, (url) => {
-      imageRequests.set(url, (imageRequests.get(url) || 0) + 1);
-    });
+    const requestObserver = createImageRequestObserver(imageRequests);
+    await mockRemoteImages(page, requestObserver.observe);
     await page.goto(`${baseUrl}/art-history-map.html`, { waitUntil: 'load' });
     await waitForArt(page);
-    const works = await verifyU3Works(page, page, imageRequests, 'standalone');
+    const works = faultOptions
+      ? await verifyU3Works(page, page, imageRequests, 'standalone', {
+          ...faultOptions,
+          requestObserver,
+        })
+      : await verifyU3Works(page, page, imageRequests, 'standalone');
+    if (faultOptions) {
+      assertNoCollectedIssues(issues, `U3 ${faultOptions.faultMode} assembled fault path`);
+      return { viewport, works, faultMode: faultOptions.faultMode };
+    }
     const study = await verifyU3StudyTabsAndComparison(page, page, 'standalone');
     assertNoCollectedIssues(issues, 'U3 standalone');
     return { viewport, works, study };
@@ -2476,6 +2654,23 @@ export async function runFocusedWarningVerification() {
   });
 }
 
+export async function runFocusedU3FaultVerification(faultMode) {
+  assert.ok(U3_FAULT_MODES.includes(faultMode), `Unknown U3 verifier fault mode ${faultMode}`);
+  const playwright = await discoverPlaywright();
+  const executablePath = await discoverBrowser(playwright.chromium);
+  return runManagedVerification({
+    startServer: () => startStaticServer(),
+    launchBrowser: () => playwright.chromium.launch({
+      executablePath,
+      headless: true,
+      args: ['--disable-gpu', '--no-sandbox'],
+    }),
+    verify: async ({ server, browser }) => (
+      verifyU3Standalone(browser, server.baseUrl, { faultMode, maxWorks: 1 })
+    ),
+  });
+}
+
 export async function withBrowserContext(browser, options, verify) {
   const context = await browser.newContext(options);
   let result;
@@ -2491,21 +2686,74 @@ export async function withBrowserContext(browser, options, verify) {
   return result;
 }
 
-export async function runManagedVerification({ startServer, launchBrowser, verify }) {
+export async function runManagedVerification({
+  startServer,
+  launchBrowser,
+  verify,
+  timeoutMs = BROWSER_VERIFICATION_TIMEOUT_MS,
+  cleanupTimeoutMs = BROWSER_CLEANUP_TIMEOUT_MS,
+}) {
   let server;
   let browser;
   let result;
   let operationError;
+  let verificationTimer;
+  let timedOut = false;
+  const closeWithTimeout = async (resource, label) => {
+    if (!resource?.close) return;
+    let cleanupTimer;
+    try {
+      await Promise.race([
+        resource.close(),
+        new Promise((_, reject) => {
+          cleanupTimer = setTimeout(
+            () => reject(new Error(
+              `Browser verification ${label} cleanup timed out after ${cleanupTimeoutMs} ms`,
+            )),
+            cleanupTimeoutMs,
+          );
+        }),
+      ]);
+    } finally {
+      clearTimeout(cleanupTimer);
+    }
+  };
+  const lifecycle = (async () => {
+    const startedServer = await startServer();
+    if (timedOut) {
+      await closeWithTimeout(startedServer, 'late server');
+      return undefined;
+    }
+    server = startedServer;
+    const launchedBrowser = await launchBrowser(server);
+    if (timedOut) {
+      await closeWithTimeout(launchedBrowser, 'late browser');
+      return undefined;
+    }
+    browser = launchedBrowser;
+    return verify({ server, browser });
+  })();
   try {
-    server = await startServer();
-    browser = await launchBrowser(server);
-    result = await verify({ server, browser });
+    result = await Promise.race([
+      lifecycle,
+      new Promise((_, reject) => {
+        verificationTimer = setTimeout(
+          () => {
+            timedOut = true;
+            reject(new Error(`Browser verification timed out after ${timeoutMs} ms`));
+          },
+          timeoutMs,
+        );
+      }),
+    ]);
   } catch (error) {
     operationError = error;
+  } finally {
+    clearTimeout(verificationTimer);
   }
   const cleanupResults = await Promise.allSettled([
-    browser?.close?.(),
-    server?.close?.(),
+    closeWithTimeout(browser, 'browser'),
+    closeWithTimeout(server, 'server'),
   ]);
   if (operationError) throw operationError;
   const cleanupErrors = cleanupResults
@@ -2572,15 +2820,16 @@ const isMain = process.argv[1]
   && fileURLToPath(import.meta.url) === normalize(process.argv[1]);
 
 if (isMain) {
-  let verification;
-  if (process.argv.includes('--imported-only')) {
-    verification = runFocusedImportedVerification();
-  } else if (process.argv.includes('--warning-regression-only')) {
-    verification = runFocusedWarningVerification();
-  } else {
-    verification = runVerification();
-  }
-  verification
+  Promise.resolve()
+    .then(() => {
+      const faultMode = parseU3FaultMode(process.argv.slice(2));
+      if (faultMode) return runFocusedU3FaultVerification(faultMode);
+      if (process.argv.includes('--imported-only')) return runFocusedImportedVerification();
+      if (process.argv.includes('--warning-regression-only')) {
+        return runFocusedWarningVerification();
+      }
+      return runVerification();
+    })
     .then((report) => {
       process.stdout.write(`${JSON.stringify({ ok: true, cases: report }, null, 2)}\n`);
     })

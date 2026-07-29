@@ -2,8 +2,11 @@
 
 import { readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import {
+  RELEASE_STAGE_TIMEOUT_MS,
+  runReleaseStage,
+} from './art-history-release-stage.mjs';
 
 const PROJECT_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const tests = readdirSync(join(PROJECT_ROOT, 'tests'))
@@ -20,17 +23,25 @@ const steps = [
   ['rendered browser matrix', ['scripts/verify-art-history-browser.mjs']],
 ];
 
-for (const [label, args] of steps) {
-  process.stdout.write(`\n[release] ${label}\n`);
-  const result = spawnSync(process.execPath, args, {
-    cwd: PROJECT_ROOT,
-    stdio: 'inherit',
-  });
-  if (result.error || result.status !== 0) {
-    const detail = result.error?.message || `exit code ${result.status}`;
-    process.stderr.write(`Release verification failed during ${label}: ${detail}\n`);
-    process.exit(result.status || 1);
+export async function runReleaseVerification() {
+  for (const [label, args] of steps) {
+    process.stdout.write(`\n[release] ${label}\n`);
+    await runReleaseStage({
+      label,
+      args,
+      cwd: PROJECT_ROOT,
+      timeoutMs: RELEASE_STAGE_TIMEOUT_MS,
+    });
   }
+  process.stdout.write('\nRelease verification passed.\n');
 }
 
-process.stdout.write('\nRelease verification passed.\n');
+const isMain = process.argv[1]
+  && fileURLToPath(import.meta.url) === process.argv[1];
+
+if (isMain) {
+  runReleaseVerification().catch((error) => {
+    process.stderr.write(`Release verification failed: ${error.message}\n`);
+    process.exitCode = 1;
+  });
+}

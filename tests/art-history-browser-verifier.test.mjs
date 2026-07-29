@@ -1,9 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 const VERIFIER_URL = new URL('../scripts/verify-art-history-browser.mjs', import.meta.url);
 const RELEASE_VERIFIER_URL = new URL('../scripts/verify-art-history-release.mjs', import.meta.url);
+const RELEASE_STAGE_URL = new URL('../scripts/art-history-release-stage.mjs', import.meta.url);
 const HOMEPAGE_URL = new URL('../index.html', import.meta.url);
 const ART_MAP_URL = new URL('../art-history-map.html', import.meta.url);
 const NINE_WORKS_URL = new URL('./fixtures/u2-imported-browser.json', import.meta.url);
@@ -63,6 +66,268 @@ function projectU3BrowserFixture(canonical) {
       imageSourceUrl,
     })),
   }));
+}
+
+function createFakeImageLocator(element, waitFor = async () => {}) {
+  return {
+    waitFor,
+    evaluate: async (callback, argument) => callback(element, argument),
+  };
+}
+
+function elementAttributes(html, tagName, id) {
+  const markup = html.match(
+    new RegExp(`<${tagName}\\b[^>]*\\bid=(?:"${id}"|'${id}')[^>]*>`, 'i'),
+  )?.[0];
+  assert.ok(markup, `missing ${tagName}#${id}`);
+  const attributes = {};
+  const source = markup.slice(markup.indexOf(' ') + 1, -1);
+  for (const match of source.matchAll(
+    /([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g,
+  )) {
+    attributes[match[1]] = match[2] ?? match[3] ?? match[4] ?? true;
+  }
+  return attributes;
+}
+
+function cssDeclarations(html, selector) {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const body = html.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`))?.[1];
+  assert.ok(body, `missing CSS rule ${selector}`);
+  return Object.fromEntries(body
+    .split(';')
+    .map((declaration) => declaration.trim())
+    .filter(Boolean)
+    .map((declaration) => {
+      const separator = declaration.indexOf(':');
+      return [
+        declaration.slice(0, separator).trim(),
+        declaration.slice(separator + 1).trim(),
+      ];
+    }));
+}
+
+test('bounded image readiness rejects already-failed and never-settling images', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const alreadyFailed = {
+    complete: true,
+    naturalWidth: 0,
+    addEventListener() {
+      assert.fail('already-failed image must not attach listeners');
+    },
+    removeEventListener() {
+      assert.fail('already-failed image must not remove unattached listeners');
+    },
+  };
+  await assert.rejects(
+    verifier.waitForVerifierImage(
+      createFakeImageLocator(alreadyFailed),
+      'standalone AP 48 primary https://example.invalid/already-failed.jpg',
+      25,
+    ),
+    /standalone AP 48 primary.*already-failed\.jpg.*already failed/,
+  );
+
+  const listeners = new Map();
+  const removals = [];
+  const neverSettles = {
+    complete: false,
+    naturalWidth: 0,
+    addEventListener(type, listener) {
+      listeners.set(type, listener);
+    },
+    removeEventListener(type, listener) {
+      if (listeners.get(type) === listener) listeners.delete(type);
+      removals.push(type);
+    },
+  };
+  const startedAt = Date.now();
+  await assert.rejects(
+    verifier.waitForVerifierImage(
+      createFakeImageLocator(neverSettles),
+      'embedded AP 60 stained-glass https://example.invalid/never-settles.jpg',
+      25,
+    ),
+    /embedded AP 60 stained-glass.*never-settles\.jpg.*timed out after 25 ms/,
+  );
+  assert.ok(Date.now() - startedAt < 500, 'image timeout should stay test-bounded');
+  assert.deepEqual(removals.sort(), ['error', 'load']);
+  assert.equal(listeners.size, 0, 'timeout must remove both image listeners');
+});
+
+test('bounded image readiness covers attachment, load, error, and competing events', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  let attachmentOptions;
+  await assert.rejects(
+    verifier.waitForVerifierImage(
+      createFakeImageLocator({}, async (options) => {
+        attachmentOptions = options;
+        throw new Error('locator did not attach');
+      }),
+      'standalone AP 48 missing image',
+      25,
+    ),
+    /standalone AP 48 missing image.*not attached.*25 ms/,
+  );
+  assert.deepEqual(attachmentOptions, { state: 'attached', timeout: 25 });
+
+  for (const [event, expectation] of [
+    ['load', 'resolves'],
+    ['error', 'rejects'],
+  ]) {
+    const listeners = new Map();
+    const removed = [];
+    const image = {
+      complete: false,
+      naturalWidth: 0,
+      addEventListener(type, listener) {
+        listeners.set(type, listener);
+      },
+      removeEventListener(type, listener) {
+        removed.push(type);
+      },
+    };
+    const readiness = verifier.waitForVerifierImage(
+      createFakeImageLocator(image),
+      `embedded AP 60 ${event} event`,
+      100,
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+    const loadListener = listeners.get('load');
+    const errorListener = listeners.get('error');
+    if (event === 'load') image.naturalWidth = 100;
+    listeners.get(event)();
+    if (expectation === 'resolves') {
+      await readiness;
+    } else {
+      await assert.rejects(readiness, /embedded AP 60 error event.*emitted an error event/);
+    }
+    assert.deepEqual(removed.sort(), ['error', 'load']);
+    const competingListener = event === 'load' ? errorListener : loadListener;
+    competingListener();
+  }
+});
+
+test('release child stage has a bounded timeout and waits for child termination', async () => {
+  const {
+    RELEASE_STAGE_TIMEOUT_MS,
+    runReleaseStage,
+  } = await import(RELEASE_STAGE_URL.href);
+  assert.equal(RELEASE_STAGE_TIMEOUT_MS, 12 * 60 * 1000);
+
+  const startedAt = Date.now();
+  await assert.rejects(
+    runReleaseStage({
+      label: 'test TERM-resistant child',
+      command: process.execPath,
+      args: [
+        '-e',
+        "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)",
+      ],
+      timeoutMs: 250,
+      forceKillMs: 30,
+      stdio: 'ignore',
+    }),
+    /Release stage timed out during test TERM-resistant child after 250 ms/,
+  );
+  assert.ok(Date.now() - startedAt >= 265, 'runner must await the SIGKILL fallback');
+  assert.ok(Date.now() - startedAt < 1000, 'release timeout test must not wait minutes');
+});
+
+test('U3 assembled fault modes use an explicit allowlist', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  assert.deepEqual(verifier.U3_FAULT_MODES, [
+    'wrong-rendered-url',
+    'broken-focus-restoration',
+    'duplicate-network-request',
+  ]);
+  assert.equal(
+    verifier.parseU3FaultMode(['--u3-fault=wrong-rendered-url']),
+    'wrong-rendered-url',
+  );
+  assert.throws(
+    () => verifier.parseU3FaultMode(['--u3-fault=unknown']),
+    /Unknown U3 verifier fault mode "unknown"/,
+  );
+  assert.throws(
+    () => verifier.parseU3FaultMode([
+      '--u3-fault=wrong-rendered-url',
+      '--u3-fault=broken-focus-restoration',
+    ]),
+    /exactly one --u3-fault/,
+  );
+  assert.throws(
+    () => verifier.parseU3FaultMode(['--u3-fault']),
+    /Malformed --u3-fault argument/,
+  );
+});
+
+test('duplicate-request fault observes an attempted exact reload before coalesced fallback', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const imageUrl = 'https://example.invalid/exact-reload.jpg';
+  const coalescedRequests = new Map();
+  const coalescedObserver = verifier.createImageRequestObserver(coalescedRequests);
+  coalescedObserver.observe(imageUrl);
+  const coalescedAttempt = coalescedObserver.beginExactReload(imageUrl);
+  const coalescedResult = coalescedObserver.completeExactReload(
+    imageUrl,
+    coalescedAttempt,
+  );
+  assert.deepEqual(coalescedResult, {
+    attempted: true,
+    routeObserved: false,
+    fallbackObservationAdded: true,
+  });
+  assert.equal(coalescedRequests.get(imageUrl), 2);
+
+  const routedRequests = new Map();
+  const routedObserver = verifier.createImageRequestObserver(routedRequests);
+  routedObserver.observe(imageUrl);
+  const routedAttempt = routedObserver.beginExactReload(imageUrl);
+  routedObserver.observe(imageUrl);
+  assert.deepEqual(routedObserver.completeExactReload(imageUrl, routedAttempt), {
+    attempted: true,
+    routeObserved: true,
+    fallbackObservationAdded: false,
+  });
+  assert.equal(routedRequests.get(imageUrl), 2);
+
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  const traversal = source.slice(
+    source.indexOf('async function verifyU3Works'),
+    source.indexOf('async function verifyU3StudyTabsAndComparison'),
+  );
+  assert.match(
+    traversal,
+    /beginExactReload[\s\S]*new Image\(\)[\s\S]*completeExactReload/,
+  );
+  assert.doesNotMatch(traversal, /imageRequests\.set/);
+});
+
+for (const [faultMode, expectedFailure] of [
+  ['wrong-rendered-url', /standalone AP 48 greek-chapel image URL/],
+  ['broken-focus-restoration', /standalone AP 48 greek-chapel dialog focus restoration/],
+  ['duplicate-network-request', /standalone AP 48 greek-chapel request count/],
+]) {
+  test(`assembled U3 verifier rejects ${faultMode}`, () => {
+    const result = spawnSync(
+      process.execPath,
+      [fileURLToPath(VERIFIER_URL), `--u3-fault=${faultMode}`],
+      {
+        cwd: fileURLToPath(new URL('..', import.meta.url)),
+        encoding: 'utf8',
+        timeout: 120_000,
+      },
+    );
+    assert.equal(result.error, undefined, `${faultMode} subprocess error`);
+    assert.notEqual(
+      result.status,
+      0,
+      `${faultMode} assembled verifier unexpectedly succeeded:\n${result.stdout}`,
+    );
+    assert.match(result.stderr, /Art History browser verification failed/);
+    assert.match(result.stderr, expectedFailure);
+  });
 }
 
 test('U3 browser fixture is the exact 51-work, 103-view canonical projection', async () => {
@@ -528,11 +793,107 @@ test('U3 responsive traversal rejects an omitted region branch and loops all eig
   );
   assert.match(traversal, /for \(const region of U3_REGION_BRANCHES\)/);
   assert.match(traversal, /site-marker\[data-group-kind="site"\]/);
-  assert.match(traversal, /visibleWorldBounds/);
+  assert.match(traversal, /captureMarkerGeometry\(frame, 'site'\)/);
+  assert.match(traversal, /assertMarkerGeometrySet/);
   assert.match(traversal, /activeRegion/);
   assert.match(traversal, /horizontalOverflow/);
   assert.match(traversal, /assertU3SiteTraversalCoverage/);
   assert.match(traversal, /assertU3TransformMatches/);
+});
+
+test('shared marker geometry rejects clipped hit targets and capsules with in-bounds text', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const inside = { left: 20, right: 80, top: 20, bottom: 80 };
+  const text = { left: 35, right: 65, top: 40, bottom: 60 };
+  const baseMarker = {
+    label: 'Mutation region · 1 piece',
+    client: {
+      group: { ...inside },
+      hit: { left: 28, right: 72, top: 28, bottom: 72 },
+      capsule: { ...inside },
+      text: { ...text },
+    },
+    world: {
+      group: { ...inside },
+      hit: { left: 28, right: 72, top: 28, bottom: 72 },
+      capsule: { ...inside },
+      text: { ...text },
+    },
+    hitSize: { width: 44, height: 44 },
+  };
+  const baseGeometry = {
+    map: { left: 0, right: 100, top: 0, bottom: 100 },
+    visibleWorldBounds: { left: 0, right: 100, top: 0, bottom: 100 },
+    markers: [baseMarker],
+  };
+
+  for (const kind of ['hit', 'capsule']) {
+    const mutated = structuredClone(baseGeometry);
+    mutated.markers[0].client[kind].left = -5;
+    mutated.markers[0].world[kind].left = -5;
+    assert.deepEqual(mutated.markers[0].client.text, text);
+    assert.throws(
+      () => verifier.assertMarkerGeometrySet(mutated, `${kind} clipping mutation`),
+      new RegExp(`${kind} clipping mutation.*${kind} client.*clipped`),
+    );
+  }
+  const undersized = structuredClone(baseGeometry);
+  undersized.markers[0].hitSize.width = 43.5;
+  assert.throws(
+    () => verifier.assertMarkerGeometrySet(undersized, 'undersized hit mutation'),
+    /undersized hit mutation.*44px hit target/,
+  );
+
+  const outsideSvgInsidePanel = structuredClone(baseGeometry);
+  outsideSvgInsidePanel.panel = {
+    left: 0,
+    right: 100,
+    top: 0,
+    bottom: 100,
+  };
+  outsideSvgInsidePanel.map = {
+    left: 10,
+    right: 90,
+    top: 10,
+    bottom: 90,
+  };
+  outsideSvgInsidePanel.markers[0].client.group = {
+    left: 5,
+    right: 80,
+    top: 20,
+    bottom: 80,
+  };
+  assert.ok(
+    outsideSvgInsidePanel.markers[0].client.group.left
+      >= outsideSvgInsidePanel.panel.left,
+    'mutation remains inside the broader map panel',
+  );
+  assert.throws(
+    () => verifier.assertMarkerGeometrySet(
+      outsideSvgInsidePanel,
+      'outside SVG inside panel mutation',
+    ),
+    /outside SVG inside panel mutation.*group client.*clipped/,
+  );
+
+  const worldOnlyClipping = structuredClone(baseGeometry);
+  worldOnlyClipping.markers[0].world.capsule.left = -5;
+  assert.throws(
+    () => verifier.assertMarkerGeometrySet(
+      worldOnlyClipping,
+      'visible world mutation',
+    ),
+    /visible world mutation.*capsule world.*clipped/,
+  );
+
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  const capture = source.slice(
+    source.indexOf('async function captureMarkerGeometry'),
+    source.indexOf('async function resetToU3Regions'),
+  );
+  assert.match(capture, /querySelector\('\.map-svg'\)/);
+  assert.doesNotMatch(capture, /querySelector\('\.map-panel'\)/);
+  assert.doesNotMatch(capture, /querySelector\('#panSurface'\)/);
 });
 
 test('browser verifier loads and traverses every frozen U3 work in standalone and embedded modes', async () => {
@@ -713,15 +1074,28 @@ test('copy integration preserves World History text and iframe dimensions', asyn
 
   assert.match(homepage, /History World Map/);
   assert.match(homepage, /5 regions · 233 events · 104 pins · 6 trade routes/);
-  assert.match(
-    homepage,
-    /<iframe id="worldMapFrame" class="subject-map-frame active" src="world-map\.html" title="Interactive world history map" loading="lazy" aria-hidden="false"><\/iframe>/,
+  const worldFrame = elementAttributes(homepage, 'iframe', 'worldMapFrame');
+  const artFrame = elementAttributes(homepage, 'iframe', 'artMapFrame');
+  assert.equal(worldFrame.src, 'world-map.html');
+  assert.equal(worldFrame.title, 'Interactive world history map');
+  assert.equal(worldFrame.loading, 'lazy');
+  assert.equal(worldFrame['aria-hidden'], 'false');
+  assert.deepEqual(
+    new Set(String(worldFrame.class).split(/\s+/)),
+    new Set(['subject-map-frame', 'active']),
   );
-  assert.match(
-    homepage,
-    /<iframe id="artMapFrame" class="subject-map-frame" src="art-history-map\.html\?embed=1" title="Interactive AP art history map" loading="lazy" hidden aria-hidden="true"><\/iframe>/,
+  assert.equal(artFrame.src, 'art-history-map.html?embed=1');
+  assert.equal(artFrame.title, 'Interactive AP art history map');
+  assert.equal(artFrame.loading, 'lazy');
+  assert.equal(artFrame.hidden, true);
+  assert.equal(artFrame['aria-hidden'], 'true');
+  assert.deepEqual(
+    new Set(String(artFrame.class).split(/\s+/)),
+    new Set(['subject-map-frame']),
   );
-  assert.match(homepage, /\.subject-map-frame\s*\{[^}]*width:\s*100%;\s*height:\s*100%;/);
+  const frameRule = cssDeclarations(homepage, '.subject-map-frame');
+  assert.equal(frameRule.width, '100%');
+  assert.equal(frameRule.height, '100%');
 });
 
 test('responsive browser modes reject console warnings by default', async () => {
@@ -809,6 +1183,155 @@ test('verification lifecycle still closes the server when browser close rejects'
     closeError,
   );
   assert.deepEqual(events, ['verify', 'browser.close', 'server.close']);
+});
+
+test('verification lifecycle timeout closes browser and server before release timeout', async () => {
+  const {
+    BROWSER_VERIFICATION_TIMEOUT_MS,
+    runManagedVerification,
+  } = await import(VERIFIER_URL.href);
+  assert.equal(BROWSER_VERIFICATION_TIMEOUT_MS, 10 * 60 * 1000);
+  const events = [];
+
+  await assert.rejects(
+    Promise.race([
+      runManagedVerification({
+        timeoutMs: 25,
+        startServer: async () => ({
+          close: async () => events.push('server.close'),
+        }),
+        launchBrowser: async () => ({
+          close: async () => events.push('browser.close'),
+        }),
+        verify: async () => new Promise(() => {}),
+      }),
+      new Promise((_, reject) => setTimeout(
+        () => reject(new Error('test guard expired before browser verification timeout')),
+        250,
+      )),
+    ]),
+    /Browser verification timed out after 25 ms/,
+  );
+  assert.deepEqual(events, ['browser.close', 'server.close']);
+});
+
+test('verification lifecycle timeout starts before server startup', async () => {
+  const { runManagedVerification } = await import(VERIFIER_URL.href);
+  const startedAt = Date.now();
+
+  await assert.rejects(
+    Promise.race([
+      runManagedVerification({
+        timeoutMs: 25,
+        startServer: async () => new Promise(() => {}),
+        launchBrowser: async () => assert.fail('browser must not launch'),
+        verify: async () => assert.fail('verification must not start'),
+      }),
+      new Promise((_, reject) => setTimeout(
+        () => reject(new Error('test guard expired before server startup timeout')),
+        250,
+      )),
+    ]),
+    /Browser verification timed out after 25 ms/,
+  );
+  assert.ok(Date.now() - startedAt < 250);
+});
+
+test('verification lifecycle timeout covers browser launch and cleans the started server', async () => {
+  const { runManagedVerification } = await import(VERIFIER_URL.href);
+  const events = [];
+
+  await assert.rejects(
+    runManagedVerification({
+      timeoutMs: 25,
+      startServer: async () => ({
+        close: async () => events.push('server.close'),
+      }),
+      launchBrowser: async () => new Promise(() => {}),
+      verify: async () => assert.fail('verification must not start'),
+    }),
+    /Browser verification timed out after 25 ms/,
+  );
+  assert.deepEqual(events, ['server.close']);
+});
+
+test('verification lifecycle disposes a server that resolves after timeout', async () => {
+  const { runManagedVerification } = await import(VERIFIER_URL.href);
+  const events = [];
+
+  await assert.rejects(
+    runManagedVerification({
+      timeoutMs: 20,
+      cleanupTimeoutMs: 25,
+      startServer: async () => new Promise((resolve) => setTimeout(
+        () => resolve({
+          close: async () => events.push('late server.close'),
+        }),
+        45,
+      )),
+      launchBrowser: async () => events.push('browser.launch'),
+      verify: async () => events.push('verify'),
+    }),
+    /Browser verification timed out after 20 ms/,
+  );
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  assert.deepEqual(events, ['late server.close']);
+});
+
+test('verification lifecycle disposes a browser that resolves after timeout', async () => {
+  const { runManagedVerification } = await import(VERIFIER_URL.href);
+  const events = [];
+
+  await assert.rejects(
+    runManagedVerification({
+      timeoutMs: 20,
+      cleanupTimeoutMs: 25,
+      startServer: async () => ({
+        close: async () => events.push('server.close'),
+      }),
+      launchBrowser: async () => new Promise((resolve) => setTimeout(
+        () => resolve({
+          close: async () => events.push('late browser.close'),
+        }),
+        45,
+      )),
+      verify: async () => events.push('verify'),
+    }),
+    /Browser verification timed out after 20 ms/,
+  );
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  assert.deepEqual(events, ['server.close', 'late browser.close']);
+});
+
+test('verification lifecycle bounds teardown after an operation timeout', async () => {
+  const {
+    BROWSER_CLEANUP_TIMEOUT_MS,
+    runManagedVerification,
+  } = await import(VERIFIER_URL.href);
+  assert.equal(BROWSER_CLEANUP_TIMEOUT_MS, 30_000);
+  const startedAt = Date.now();
+
+  await assert.rejects(
+    Promise.race([
+      runManagedVerification({
+        timeoutMs: 20,
+        cleanupTimeoutMs: 25,
+        startServer: async () => ({
+          close: async () => new Promise(() => {}),
+        }),
+        launchBrowser: async () => ({
+          close: async () => new Promise(() => {}),
+        }),
+        verify: async () => new Promise(() => {}),
+      }),
+      new Promise((_, reject) => setTimeout(
+        () => reject(new Error('test guard expired before teardown timeout')),
+        250,
+      )),
+    ]),
+    /Browser verification timed out after 20 ms/,
+  );
+  assert.ok(Date.now() - startedAt < 250);
 });
 
 test('release verifier explicitly runs tests, strict data validation, and browser verification', async () => {
