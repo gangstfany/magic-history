@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises';
 
 const VERIFIER_URL = new URL('../scripts/verify-art-history-browser.mjs', import.meta.url);
 const RELEASE_VERIFIER_URL = new URL('../scripts/verify-art-history-release.mjs', import.meta.url);
+const HOMEPAGE_URL = new URL('../index.html', import.meta.url);
+const ART_MAP_URL = new URL('../art-history-map.html', import.meta.url);
 const NINE_WORKS_URL = new URL('./fixtures/u2-imported-browser.json', import.meta.url);
 const SOURCE_FIXTURE_URL = new URL('./fixtures/u2-corrected-and-imported.json', import.meta.url);
 const U1_BROWSER_FIXTURE = new URL('./fixtures/u1-browser.json', import.meta.url);
@@ -248,16 +250,41 @@ test('U1 standalone and embedded traversals exercise all study tabs and cross-Un
   );
 });
 
-test('browser copy and release labels target the complete 47-work Units 1-2 map', async () => {
-  const [browserSource, releaseSource] = await Promise.all([
-    readFile(VERIFIER_URL, 'utf8'),
+test('integration copy and release labels target the complete 98-work Units 1-3 map', async () => {
+  const [homepage, artMap, releaseSource] = await Promise.all([
+    readFile(HOMEPAGE_URL, 'utf8'),
+    readFile(ART_MAP_URL, 'utf8'),
     readFile(RELEASE_VERIFIER_URL, 'utf8'),
   ]);
 
-  assert.match(browserSource, /AP 艺术史互动地图/);
-  assert.match(browserSource, /47 AP works · Units 1-2 · filter, compare and study/);
-  assert.match(browserSource, /当前显示 47 件作品/);
-  assert.match(releaseSource, /strict 47-work Units 1-2 validator/);
+  assert.match(homepage, /98 AP works · Units 1-3 · filter, compare and study/);
+  assert.match(artMap, /AP 艺术史互动地图 · Units 1-3/);
+  assert.match(
+    artMap,
+    /aria-label="完整世界地图；展示 AP 艺术史 Units 1-3 全部 98 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
+  );
+  assert.match(
+    artMap,
+    /aria-label="AP 艺术史 Units 1-3 完整世界地图，标记全部 98 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
+  );
+  assert.match(artMap, /count\.textContent = `当前显示 \$\{visibleWorks\.length\} 件作品`/);
+  assert.match(releaseSource, /strict 98-work Units 1-3 validator/);
+});
+
+test('copy integration preserves World History text and iframe dimensions', async () => {
+  const homepage = await readFile(HOMEPAGE_URL, 'utf8');
+
+  assert.match(homepage, /History World Map/);
+  assert.match(homepage, /5 regions · 233 events · 104 pins · 6 trade routes/);
+  assert.match(
+    homepage,
+    /<iframe id="worldMapFrame" class="subject-map-frame active" src="world-map\.html" title="Interactive world history map" loading="lazy" aria-hidden="false"><\/iframe>/,
+  );
+  assert.match(
+    homepage,
+    /<iframe id="artMapFrame" class="subject-map-frame" src="art-history-map\.html\?embed=1" title="Interactive AP art history map" loading="lazy" hidden aria-hidden="true"><\/iframe>/,
+  );
+  assert.match(homepage, /\.subject-map-frame\s*\{[^}]*width:\s*100%;\s*height:\s*100%;/);
 });
 
 test('responsive browser modes reject console warnings by default', async () => {

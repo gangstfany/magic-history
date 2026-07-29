@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 const HTML_PATH = new URL('../index.html', import.meta.url);
 const ART_HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const WORLD_HTML_PATH = new URL('../world-map.html', import.meta.url);
+const RELEASE_VERIFIER_PATH = new URL('../scripts/verify-art-history-release.mjs', import.meta.url);
 
 async function loadHtml() {
   return readFile(HTML_PATH, 'utf8');
@@ -140,16 +141,58 @@ test('homepage subject pills expose keyboard button semantics', async () => {
   );
 });
 
-test('map caption follows the selected subject and hides for coming-soon subjects', async () => {
+test('map caption describes all 98 Units 1-3 works and preserves the World History caption', async () => {
   const html = await loadHtml();
 
   assert.match(html, /id="homeMapCaption"/);
   assert.match(html, /homeMapCaption\.textContent = key === 'art'/);
   assert.match(
     html,
-    /\? '47 AP works · Units 1-2 · filter, compare and study'/,
+    /\? '98 AP works · Units 1-3 · filter, compare and study'/,
   );
+  assert.match(html, /: '5 regions · 233 events · 104 pins · 6 trade routes'/);
   assert.match(html, /homeMapCaption\.hidden = !s\.live/);
+});
+
+test('Art map copy and release stage identify the complete Units 1-3 scope', async () => {
+  const [artHtml, releaseSource] = await Promise.all([
+    readFile(ART_HTML_PATH, 'utf8'),
+    readFile(RELEASE_VERIFIER_PATH, 'utf8'),
+  ]);
+
+  assert.match(artHtml, /<title>AP 艺术史互动地图 · Units 1-3<\/title>/);
+  assert.match(artHtml, /<h1>AP 艺术史互动地图 · Units 1-3<\/h1>/);
+  assert.match(
+    artHtml,
+    /Units 1-3[^<]*U3 Early Europe and Colonial Americas/,
+  );
+  assert.match(
+    artHtml,
+    /aria-label="完整世界地图；展示 AP 艺术史 Units 1-3 全部 98 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
+  );
+  assert.match(
+    artHtml,
+    /aria-label="AP 艺术史 Units 1-3 完整世界地图，标记全部 98 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
+  );
+  assert.match(artHtml, /count\.textContent = `当前显示 \$\{visibleWorks\.length\} 件作品`/);
+  assert.match(artHtml, /Explore all 98 AP works across Units 1-3/);
+  assert.doesNotMatch(artHtml, /Units 1-2/);
+  assert.match(releaseSource, /strict 98-work Units 1-3 validator/);
+  assert.match(releaseSource, /\['scripts\/validate-art-history-data\.mjs'/);
+});
+
+test('homepage preserves the established iframe dimensions for Art and World maps', async () => {
+  const html = await loadHtml();
+
+  assert.match(
+    html,
+    /\.subject-map-frame\s*\{\s*display:\s*none;\s*width:\s*100%;\s*height:\s*100%;\s*border:\s*0;\s*\}/,
+  );
+  assert.match(html, /\.map-events-split\s*\{[^}]*height:\s*min\(540px,\s*62vh\)/);
+  assert.match(
+    html,
+    /\.map-card\[data-subject="art"\] \.map-events-split\s*\{\s*height:\s*min\(760px,\s*78vh\)/,
+  );
 });
 
 test('world-only integrations target worldMapFrame and art mode uses the full map width', async () => {

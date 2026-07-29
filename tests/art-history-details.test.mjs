@@ -441,23 +441,24 @@ test('detail view exposes four accessible study tabs', async () => {
   }
 });
 
-test('standalone map copy and accessible map labels cover Units 1-2 worldwide', async () => {
+test('standalone map copy and accessible map labels cover all 98 Units 1-3 works worldwide', async () => {
   const html = await loadHtml();
 
-  assert.match(html, /<h1>AP 艺术史互动地图<\/h1>/);
+  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-3<\/h1>/);
   assert.doesNotMatch(html, /<h1>[^<]*Unit 2 古代地中海[^<]*<\/h1>/);
   assert.match(
     html,
-    /<p class="subtitle">Units 1-2：从全球史前艺术到古代地中海，以地点连接作品、传统与历史语境。<\/p>/,
+    /<p class="subtitle">Units 1-3：从全球史前艺术、古代地中海到 U3 Early Europe and Colonial Americas，以地点连接全部 98 件作品、传统与历史语境。<\/p>/,
   );
   assert.match(
     html,
-    /<section id="mapPanel" class="map-panel" aria-label="完整世界地图；展示 Units 1-2 作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布">/,
+    /<section id="mapPanel" class="map-panel" aria-label="完整世界地图；展示 AP 艺术史 Units 1-3 全部 98 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布">/,
   );
   assert.match(
     html,
-    /<svg class="map-svg"[^>]+aria-label="AP 艺术史 Units 1-2 完整世界地图，标记全球史前艺术与古代地中海作品地点">/,
+    /<svg class="map-svg"[^>]+aria-label="AP 艺术史 Units 1-3 完整世界地图，标记全部 98 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布">/,
   );
+  assert.doesNotMatch(html, /Units 1-2/);
   assert.doesNotMatch(html, /当前作品地点集中在古代地中海/);
   assert.doesNotMatch(html, /当前艺术史作品标记集中在古代地中海/);
 });

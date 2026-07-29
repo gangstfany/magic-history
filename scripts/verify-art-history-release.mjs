@@ -14,7 +14,7 @@ const tests = readdirSync(join(PROJECT_ROOT, 'tests'))
 const steps = [
   ['Node test suite', ['--test', ...tests]],
   [
-    'strict 47-work Units 1-2 validator',
+    'strict 98-work Units 1-3 validator',
     ['scripts/validate-art-history-data.mjs', 'art-history-map.html'],
   ],
   ['rendered browser matrix', ['scripts/verify-art-history-browser.mjs']],
