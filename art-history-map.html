@@ -829,6 +829,7 @@
       const apNumberQuery = apNumberMatch && Number(apNumberMatch[1]) <= 250
         ? Number(apNumberMatch[1])
         : null;
+      const isApPrefixedQuery = /^ap\s*#?\s*\d{1,3}$/.test(query);
       return works.filter((work) => {
         if (filters.unit && filters.unit !== 'all' && work.unit !== Number(filters.unit)) return false;
         if (
@@ -839,7 +840,6 @@
         if (filters.period && work.period !== filters.period) return false;
         if (filters.workType && work.workType !== filters.workType) return false;
         if (!query) return true;
-        if (apNumberQuery !== null) return work.apNumber === apNumberQuery;
         const region = MAP_REGIONS[work.region];
         const preciseTradition = TRADITION_LABELS[work.culture];
         const broadTradition = TRADITION_LABELS[work.traditionGroup];
@@ -865,7 +865,10 @@
           ...(work.keywords || [])
         ]
           .map(normalize).join(' ');
-        return searchable.includes(query);
+        return (
+          work.apNumber === apNumberQuery
+          || (!isApPrefixedQuery && searchable.includes(query))
+        );
       });
     }
 

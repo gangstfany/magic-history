@@ -868,6 +868,7 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
     ['const TRADITION_LABELS =', 'const MAP_REGIONS ='],
   );
   const u1Works = parseArtworkData(html).filter(({ unit }) => unit === 1);
+  const u2Works = parseArtworkData(html).filter(({ unit }) => unit === 2);
   const u3Works = parseArtworkData(html).filter(({ unit }) => unit === 3);
   const works = [
     {
@@ -915,6 +916,21 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
     filterWorks(u1Works, { unit: '1', culture: 'all', period: '', workType: '', search: '4200' })
       .map(({ apNumber }) => apNumber),
     [5],
+  );
+  assert.deepEqual(
+    filterWorks(u1Works, { unit: '1', culture: 'all', period: '', workType: '', search: '200' })
+      .map(({ apNumber }) => apNumber),
+    [5, 7, 10],
+  );
+  assert.deepEqual(
+    filterWorks(u2Works, { unit: '2', culture: 'all', period: '', workType: '', search: '100' })
+      .map(({ apNumber }) => apNumber),
+    [40, 41],
+  );
+  assert.deepEqual(
+    filterWorks(u1Works, { unit: '1', culture: 'all', period: '', workType: '', search: '12' })
+      .map(({ apNumber }) => apNumber),
+    [10],
   );
   assert.deepEqual(
     filterWorks(u1Works, { unit: '1', culture: 'all', period: '', workType: '', search: 'Sandstone' })
@@ -975,7 +991,7 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
   assert.deepEqual(searchU3('哥特式'), [60, 61, 62]);
   assert.deepEqual(searchU3('New Spain'), [81, 94, 95, 97]);
   assert.deepEqual(searchU3('新西班牙'), [81, 94, 95, 97]);
-  assert.deepEqual(searchU3('48'), [48]);
+  assert.deepEqual(searchU3('48'), [48, 72]);
   assert.deepEqual(searchU3('AP 48'), [48]);
   assert.deepEqual(searchU3('Late Antique & Byzantine'), [48, 49, 50, 51, 52]);
   assert.deepEqual(searchU3('晚期古代与拜占庭'), [48, 49, 50, 51, 52]);
