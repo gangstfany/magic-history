@@ -79,10 +79,18 @@ function loadMapFitFunctions(html) {
     getObjectDeclarationSource(html, 'const SITE_WORLD_COORDINATES ='),
     getObjectDeclarationSource(html, 'const state ='),
     getFunctionSource(html, 'toWorldCoordinates'),
-    'function clampTransform(transform) { return transform; }',
+    getFunctionSource(html, 'clampTransform'),
+    getFunctionSource(html, 'getVisibleWorldBounds'),
     getFunctionSource(html, 'fitMapToWorks'),
   ].join('\n');
-  return Function(`"use strict"; ${sources}; return { state, toWorldCoordinates, fitMapToWorks };`)();
+  return Function(
+    `"use strict"; ${sources}; return {
+      state,
+      toWorldCoordinates,
+      fitMapToWorks,
+      getVisibleWorldBounds
+    };`,
+  )();
 }
 
 function parseArtworkData(html) {
@@ -576,9 +584,12 @@ test('Unit filter configuration, tradition labels, and map regions cover Units 1
 
 test('Unit 3 broad and precise tradition labels are exact and bilingual', async () => {
   const html = await loadHtml();
-  const configSource = getObjectDeclarationSource(html, 'const TRADITION_LABELS =');
-  const { TRADITION_LABELS } = Function(
-    `"use strict"; ${configSource}; return { TRADITION_LABELS };`,
+  const configSource = [
+    getObjectDeclarationSource(html, 'const TRADITION_LABELS ='),
+    getObjectDeclarationSource(html, 'const UNIT_FILTER_CONFIG ='),
+  ].join('\n');
+  const { TRADITION_LABELS, UNIT_FILTER_CONFIG } = Function(
+    `"use strict"; ${configSource}; return { TRADITION_LABELS, UNIT_FILTER_CONFIG };`,
   )();
   const expected = {
     lateAntiqueByzantine: {
@@ -715,6 +726,11 @@ test('Unit 3 broad and precise tradition labels are exact and bilingual', async 
     [...unit3Cultures].filter((culture) => !TRADITION_LABELS[culture]),
     [],
   );
+  const expectedKeyset = [...new Set([
+    ...parseArtworkData(html).map(({ culture }) => culture),
+    ...Object.values(UNIT_FILTER_CONFIG).flatMap(({ cultureIds }) => cultureIds),
+  ])].sort();
+  assert.deepEqual(Object.keys(TRADITION_LABELS).sort(), expectedKeyset);
 });
 
 test('detail metadata resolves every supported culture without undefined labels', async () => {
@@ -978,6 +994,31 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
       search: '',
     }).map(({ id }) => id),
     ['legacy-culture-fallback'],
+  );
+  const numericSemanticsWorks = [
+    { id: 'ap-4', apNumber: 4, unit: 1, culture: 'prehistoricNamibia', date: 'undated' },
+    { id: 'ap-14', apNumber: 14, unit: 2, culture: 'ancientNearEast', date: 'undated' },
+    { id: 'date-4200', apNumber: 5, unit: 1, culture: 'prehistoricSusa', date: '4200 B.C.E.' },
+  ];
+  assert.deepEqual(
+    filterWorks(numericSemanticsWorks, {
+      unit: 'all',
+      culture: 'all',
+      period: '',
+      workType: '',
+      search: '4',
+    }).map(({ id }) => id),
+    ['ap-4', 'date-4200'],
+  );
+  assert.deepEqual(
+    filterWorks(numericSemanticsWorks, {
+      unit: 'all',
+      culture: 'all',
+      period: '',
+      workType: '',
+      search: 'AP 4',
+    }).map(({ id }) => id),
+    ['ap-4'],
   );
 
   const searchU3 = (search) => filterWorks(u3Works, {
@@ -1404,10 +1445,50 @@ test('configured Unit 3 hierarchy exposes eight counted regions then creation si
   assert.ok(sites.every(({ kind, parentKey }) => kind === 'site' && parentKey === italy.key));
   assert.equal(sites.find(({ siteName }) => siteName === 'Rome, Italy').works.length, 6);
 
-  for (const screenScale of [667 / 1600, 1280 / 1600]) {
-    const laidOut = helpers.layoutMapGroups(unit3Artworks, 1, screenScale, branches);
-    assert.equal(laidOut.length, 8);
+  const renderedMaps = [
+    { viewport: '375x812', width: 349, height: 446.59375 },
+    { viewport: '667x375', width: 350, height: 478 },
+    { viewport: '768x900', width: 451, height: 618 },
+  ];
+  const {
+    state: fittedState,
+    fitMapToWorks,
+    getVisibleWorldBounds,
+  } = loadMapFitFunctions(html);
+  fitMapToWorks(unit3Artworks);
+  const fittedTransform = fittedState.transform;
+  const visibleWorldBounds = getVisibleWorldBounds(fittedTransform);
+  for (const { viewport, width, height } of renderedMaps) {
+    const baseScreenScale = Math.min(width / 1600, height / 800);
+    const screenScale = baseScreenScale * fittedTransform.scale;
+    const laidOut = helpers.layoutMapGroups(
+      unit3Artworks,
+      fittedTransform.scale,
+      screenScale,
+      branches,
+      visibleWorldBounds,
+    );
+    assert.equal(laidOut.length, 8, viewport);
     assert.ok(laidOut.every(({ kind }) => kind === 'region'));
+    assert.ok(
+      laidOut.every(({ isGridFallback }) => isGridFallback !== true),
+      `${viewport} must retain English region capsules`,
+    );
+    const contentTop = (height - 800 * baseScreenScale) / 2;
+    laidOut.forEach(({ bounds, regionId }) => {
+      const clientBounds = {
+        left: (bounds.left * fittedTransform.scale + fittedTransform.x) * baseScreenScale,
+        right: (bounds.right * fittedTransform.scale + fittedTransform.x) * baseScreenScale,
+        top: contentTop
+          + (bounds.top * fittedTransform.scale + fittedTransform.y) * baseScreenScale,
+        bottom: contentTop
+          + (bounds.bottom * fittedTransform.scale + fittedTransform.y) * baseScreenScale,
+      };
+      assert.ok(clientBounds.left >= 0, `${viewport} ${regionId} clips left`);
+      assert.ok(clientBounds.right <= width, `${viewport} ${regionId} clips right`);
+      assert.ok(clientBounds.top >= 0, `${viewport} ${regionId} clips top`);
+      assert.ok(clientBounds.bottom <= height, `${viewport} ${regionId} clips bottom`);
+    });
     for (let index = 0; index < laidOut.length; index += 1) {
       for (let otherIndex = index + 1; otherIndex < laidOut.length; otherIndex += 1) {
         assert.equal(
@@ -1415,6 +1496,33 @@ test('configured Unit 3 hierarchy exposes eight counted regions then creation si
           false,
           `${laidOut[index].key} overlaps ${laidOut[otherIndex].key}`,
         );
+      }
+    }
+    for (const region of regions) {
+      const regionSites = helpers.layoutMapGroups(
+        unit3Artworks,
+        2.5,
+        screenScale * 2.5,
+        {
+          selectedUnit: '3',
+          activeUnit: 3,
+          activeRegion: region.key,
+        },
+      );
+      assert.ok(regionSites.length > 0, `${viewport} ${region.regionId}`);
+      assert.ok(regionSites.every(({ kind }) => kind === 'site'));
+      assert.ok(regionSites.every(({ parentKey }) => parentKey === region.key));
+      for (let index = 0; index < regionSites.length; index += 1) {
+        for (let otherIndex = index + 1; otherIndex < regionSites.length; otherIndex += 1) {
+          assert.equal(
+            helpers.markerBoundsOverlap(
+              regionSites[index].bounds,
+              regionSites[otherIndex].bounds,
+            ),
+            false,
+            `${viewport} ${region.regionId} site collision`,
+          );
+        }
       }
     }
   }
@@ -1952,10 +2060,18 @@ test('250 configured works keep deterministic collision-safe hierarchy fallbacks
         candidates[0].every((group) => !group.isGridFallback),
         'approved configured hierarchy must remain the first candidate',
       );
-      assert.ok(
-        candidates.slice(1).some((groups) => groups.every((group) => group.isGridFallback)),
-        'configured hierarchy needs an explicitly compact fallback',
-      );
+      const isRegionBranch = candidates[0].every((group) => group.kind === 'region');
+      if (isRegionBranch) {
+        assert.ok(
+          candidates[1].every((group) => group.isDenseFallback && !group.isGridFallback),
+          'configured regions need a dense English-label fallback',
+        );
+      } else {
+        assert.ok(
+          candidates.slice(1).some((groups) => groups.every((group) => group.isGridFallback)),
+          'configured hierarchy needs an explicitly compact fallback',
+        );
+      }
       assert.deepEqual(
         helpers.buildMapGroupCandidates(artworks, zoomScale, branch)
           .map((groups) => groups.map((group) => group.key)),

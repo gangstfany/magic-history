@@ -844,8 +844,6 @@
         const preciseTradition = TRADITION_LABELS[work.culture];
         const broadTradition = TRADITION_LABELS[work.traditionGroup];
         const searchable = [
-          work.apNumber,
-          `AP ${work.apNumber}`,
           work.titleEn,
           work.titleZh,
           work.siteName,
@@ -1172,6 +1170,14 @@
         Number.isInteger(work.unit) && MAP_REGIONS[work.region]
       ));
       if (usesConfiguredRegions) {
+        if (configuredGroups.every((group) => group.kind === 'region')) {
+          const denseConfiguredGroups = configuredGroups.map((group) => ({
+            ...group,
+            isGridFallback: false,
+            isDenseFallback: true
+          }));
+          return [configuredGroups, denseConfiguredGroups];
+        }
         const compactConfiguredGroups = configuredGroups.map((group) => ({
           ...group,
           isGridFallback: true
@@ -1210,15 +1216,23 @@
       return group.kind === 'site' && group.works.length === 1;
     }
 
-    function getMarkerMetrics(apLabel, isSingle, screenScale, isCompact = false) {
+    function getMarkerMetrics(
+      apLabel,
+      isSingle,
+      screenScale,
+      isCompact = false,
+      isDense = false
+    ) {
       const scale = Math.max(0.05, screenScale);
       const fontSize = 10 / scale;
       const title = typeof apLabel === 'object' ? apLabel.title : String(apLabel);
       const subtitle = typeof apLabel === 'object' ? apLabel.subtitle : '';
-      const titleFontSize = 11 / scale;
-      const subtitleFontSize = 10 / scale;
-      const visualHeight = (isSingle || isCompact ? 22 : 38) / scale;
-      const visualWidthPx = isSingle
+      const titleFontSize = (isDense ? 9 : 11) / scale;
+      const subtitleFontSize = (isDense ? 8 : 10) / scale;
+      const visualHeight = (isDense ? 50 : isSingle || isCompact ? 22 : 38) / scale;
+      const visualWidthPx = isDense
+        ? 104
+        : isSingle
         ? 22
         : isCompact
           ? Math.max(38, Math.min(108, title.length * 6.4 + 16))
@@ -1231,8 +1245,8 @@
         visualWidth,
         visualHeight,
         cornerRadius: visualHeight / 2,
-        hitWidth: Math.max(44 / scale, visualWidth * 1.12),
-        hitHeight: 44 / scale
+        hitWidth: isDense ? 110 / scale : Math.max(44 / scale, visualWidth * 1.12),
+        hitHeight: (isDense ? 50 : 44) / scale
       };
     }
 
@@ -1458,7 +1472,12 @@
       return nearest;
     }
 
-    function layoutSiteMarkers(groups, screenScale = 0.5, project = toWorldCoordinates) {
+    function layoutSiteMarkers(
+      groups,
+      screenScale = 0.5,
+      project = toWorldCoordinates,
+      visibleWorldBounds = null
+    ) {
       const positioned = [];
       const scale = Math.max(0.05, screenScale);
       const gap = 6 / scale;
@@ -1468,6 +1487,7 @@
           : { title:group.siteName, subtitle:group.apGroupLabel };
         const isSingleWorkSite = group.kind === 'site' && group.works.length === 1;
         const usesSingleLineFallback = group.isGridFallback === true;
+        const usesDenseFallback = group.isDenseFallback === true;
         return {
           ...group,
           markerText,
@@ -1475,10 +1495,60 @@
             isSingleWorkSite || usesSingleLineFallback ? group.apLabel : markerText,
             isSingleWorkSite,
             scale,
-            usesSingleLineFallback
+            usesSingleLineFallback,
+            usesDenseFallback
           )
         };
       });
+      if (prepared.length && prepared.every((group) => group.isDenseFallback === true)) {
+        const packingBounds = visibleWorldBounds || {
+          left: 0,
+          right: 1600,
+          top: 0,
+          bottom: 800
+        };
+        const availableWidth = packingBounds.right - packingBounds.left;
+        const availableHeight = packingBounds.bottom - packingBounds.top;
+        const denseGap = 4 / scale;
+        const hitWidth = Math.max(...prepared.map((group) => group.markerMetrics.hitWidth));
+        const hitHeight = Math.max(...prepared.map((group) => group.markerMetrics.hitHeight));
+        const columnCount = Math.floor(
+          (availableWidth + denseGap) / (hitWidth + denseGap)
+        );
+        const rowCount = Math.ceil(prepared.length / columnCount);
+        const totalHeight = rowCount * hitHeight + (rowCount - 1) * denseGap;
+        if (columnCount < 1 || totalHeight > availableHeight) {
+          throw new Error('Unable to place configured region capsules without a marker collision');
+        }
+        const firstY = packingBounds.top
+          + (availableHeight - totalHeight) / 2
+          + hitHeight / 2;
+        return prepared.map((group, index) => {
+          const row = Math.floor(index / columnCount);
+          const rowItemCount = Math.min(
+            columnCount,
+            prepared.length - row * columnCount
+          );
+          const rowWidth = rowItemCount * hitWidth + (rowItemCount - 1) * denseGap;
+          const firstX = packingBounds.left
+            + (availableWidth - rowWidth) / 2
+            + hitWidth / 2;
+          const display = {
+            x: firstX + (index % columnCount) * (hitWidth + denseGap),
+            y: firstY + row * (hitHeight + denseGap)
+          };
+          const anchor = project(group);
+          return {
+            ...group,
+            anchorX: anchor.x,
+            anchorY: anchor.y,
+            displayX: display.x,
+            displayY: display.y,
+            markerMetrics: group.markerMetrics,
+            bounds: getMarkerBounds(display, group.markerMetrics)
+          };
+        });
+      }
       const largestCell = prepared.reduce(
         (largest, group) => Math.max(
           largest,
@@ -1551,13 +1621,19 @@
       works,
       zoomScale = 1,
       screenScale = 0.5,
-      branch = null
+      branch = null,
+      visibleWorldBounds = null
     ) {
       let collisionError = null;
       const candidates = buildMapGroupCandidates(works, zoomScale, branch);
       for (const groups of candidates) {
         try {
-          return layoutSiteMarkers(groups, screenScale);
+          return layoutSiteMarkers(
+            groups,
+            screenScale,
+            toWorldCoordinates,
+            visibleWorldBounds
+          );
         } catch (error) {
           if (!String(error?.message).startsWith('Unable to place ')) throw error;
           collisionError = error;
@@ -2391,7 +2467,8 @@
           selectedUnit:state.unit,
           activeUnit:state.activeUnit,
           activeRegion:state.activeRegion
-        }
+        },
+        getVisibleWorldBounds(state.transform)
       );
       if (
         state.expandedSiteToken
@@ -2467,6 +2544,42 @@
           label.style.fontSize = `${metrics.fontSize}px`;
           label.textContent = group.apLabel;
           visual.append(background, label);
+        } else if (group.isDenseFallback) {
+          visual.append(background);
+          const words = groupText.title.split(/\s+/);
+          let titleLines = [groupText.title];
+          if (words.length > 1) {
+            titleLines = Array.from({ length: words.length - 1 }, (_, index) => {
+              const split = index + 1;
+              return [words.slice(0, split).join(' '), words.slice(split).join(' ')];
+            }).sort((first, second) => (
+              Math.max(...first.map((line) => line.length))
+              - Math.max(...second.map((line) => line.length))
+            ))[0];
+          }
+          titleLines.forEach((titleLine, index) => {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            line.classList.add('marker-title-label');
+            line.setAttribute('font-size', String(metrics.titleFontSize));
+            line.style.fontSize = `${metrics.titleFontSize}px`;
+            line.setAttribute(
+              'y',
+              String((titleLines.length === 1 ? -5 : -12 + index * 11)
+                / Math.max(0.05, renderedMarkerScale))
+            );
+            line.textContent = titleLine;
+            visual.append(line);
+          });
+          const subtitleLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          subtitleLabel.classList.add('marker-subtitle-label');
+          subtitleLabel.setAttribute('font-size', String(metrics.subtitleFontSize));
+          subtitleLabel.style.fontSize = `${metrics.subtitleFontSize}px`;
+          subtitleLabel.setAttribute(
+            'y',
+            String(15 / Math.max(0.05, renderedMarkerScale))
+          );
+          subtitleLabel.textContent = groupText.subtitle;
+          visual.append(subtitleLabel);
         } else {
           const titleLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
           titleLabel.classList.add('marker-title-label');
