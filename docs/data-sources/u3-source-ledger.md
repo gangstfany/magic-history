@@ -6,7 +6,7 @@
 - 本地学习核对：`APAH notes.pdf` 与
   `Smarthistory-guide-to-AP®-Art-History-volume-two.pdf`
 - Commons 条目使用可在浏览器中解析的 `Special:Redirect/file` 直链；来源页保留文件身份、作者与许可链。
-- 机构图片按其实际条款记录，不推定为开放许可：AP 53 Louvre、AP 55 St. Luke portrait（Penn State 教学/研究访问）与 AP 95 LACMA 均保留对应机构条款。
+- 机构图片按其实际条款记录，不推定为开放许可：AP 53 Louvre 与 AP 95 LACMA 保留对应机构条款；AP 55 St. Luke portrait 使用 Pressbooks 来源页、Smarthistory 图片署名与 CC BY-NC-SA 4.0。
 
 | AP # | Artwork id | View id | View label | Image | Source page | Creator/institution | License/rights |
 | ---: | --- | --- | --- | --- | --- | --- | --- |

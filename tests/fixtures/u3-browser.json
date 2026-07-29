@@ -7,6 +7,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Rome, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "greek-chapel",
@@ -39,6 +40,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Rome, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "exterior",
@@ -71,6 +73,7 @@
     "unit": 3,
     "region": "easternMediterranean",
     "siteName": "Syria or Palestine",
+    "provenanceQualifier": "Made in Syria or Palestine; the precise workshop is not securely localized.",
     "images": [
       {
         "id": "rebecca-eliezer",
@@ -96,6 +99,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Ravenna, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "exterior",
@@ -142,6 +146,7 @@
     "unit": 3,
     "region": "easternMediterranean",
     "siteName": "Constantinople (Istanbul), Turkey",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "exterior",
@@ -174,6 +179,7 @@
     "unit": 3,
     "region": "france",
     "siteName": "Early medieval Europe",
+    "provenanceQualifier": "The Louvre records Jouy-le-Comte as the findspot; the manufacturing workshop is not securely localized, so the map uses a broad early medieval European anchor.",
     "images": [
       {
         "id": "primary",
@@ -192,6 +198,7 @@
     "unit": 3,
     "region": "easternMediterranean",
     "siteName": "Mount Sinai, Egypt",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -210,6 +217,7 @@
     "unit": 3,
     "region": "britishIsles",
     "siteName": "Northumbria, England",
+    "provenanceQualifier": "Made in Northumbria, probably at Lindisfarne; Eadfrith is the traditionally attributed scribe-artist.",
     "images": [
       {
         "id": "st-matthew-cross-carpet",
@@ -242,6 +250,7 @@
     "unit": 3,
     "region": "iberianPeninsula",
     "siteName": "Córdoba, Spain",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "exterior",
@@ -288,6 +297,7 @@
     "unit": 3,
     "region": "iberianPeninsula",
     "siteName": "Madinat al-Zahra, Spain",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -306,6 +316,7 @@
     "unit": 3,
     "region": "france",
     "siteName": "Conques, France",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "exterior",
@@ -345,6 +356,7 @@
     "unit": 3,
     "region": "britishIsles",
     "siteName": "England or Normandy",
+    "provenanceQualifier": "Probably embroidered in England for a Norman patron; the precise workshop and original display setting remain debated.",
     "images": [
       {
         "id": "narrative-overview",
@@ -370,6 +382,7 @@
     "unit": 3,
     "region": "france",
     "siteName": "Chartres, France",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "west-facade",
@@ -423,6 +436,7 @@
     "unit": 3,
     "region": "france",
     "siteName": "Paris, France",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "dedication-page",
@@ -448,6 +462,7 @@
     "unit": 3,
     "region": "centralEurope",
     "siteName": "Rhineland, Germany",
+    "provenanceQualifier": "Made in the Rhineland; the precise workshop and original devotional setting are not securely localized.",
     "images": [
       {
         "id": "primary",
@@ -466,6 +481,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Padua, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "chapel-interior",
@@ -498,6 +514,7 @@
     "unit": 3,
     "region": "iberianPeninsula",
     "siteName": "Barcelona, Spain",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "plagues-egypt",
@@ -530,6 +547,7 @@
     "unit": 3,
     "region": "iberianPeninsula",
     "siteName": "Granada, Spain",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "exterior",
@@ -569,6 +587,7 @@
     "unit": 3,
     "region": "lowCountries",
     "siteName": "Tournai, present-day Belgium",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -587,6 +606,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Florence, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "exterior",
@@ -612,6 +632,7 @@
     "unit": 3,
     "region": "lowCountries",
     "siteName": "Flanders, present-day Belgium",
+    "provenanceQualifier": "Made in Flanders, probably Bruges; the sitters’ identities and original domestic setting remain debated.",
     "images": [
       {
         "id": "primary",
@@ -630,6 +651,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Florence, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -648,6 +670,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Florence, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -666,6 +689,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Florence, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -684,6 +708,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Florence, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -702,6 +727,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Milan, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -720,6 +746,7 @@
     "unit": 3,
     "region": "centralEurope",
     "siteName": "Nuremberg, Germany",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -738,6 +765,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Vatican City",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "ceiling-overview",
@@ -777,6 +805,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Vatican City",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -795,6 +824,7 @@
     "unit": 3,
     "region": "centralEurope",
     "siteName": "Isenheim, Alsace",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "closed-state",
@@ -820,6 +850,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Florence, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -838,6 +869,7 @@
     "unit": 3,
     "region": "centralEurope",
     "siteName": "Wittenberg, Germany",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -856,6 +888,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Venice, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -874,6 +907,7 @@
     "unit": 3,
     "region": "colonialAmericas",
     "siteName": "Tenochtitlan (Mexico City), New Spain",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -892,6 +926,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Rome, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "facade",
@@ -924,6 +959,7 @@
     "unit": 3,
     "region": "lowCountries",
     "siteName": "Antwerp, present-day Belgium",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -942,6 +978,7 @@
     "unit": 3,
     "region": "easternMediterranean",
     "siteName": "Edirne, Turkey",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "exterior",
@@ -974,6 +1011,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Rome, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -992,6 +1030,7 @@
     "unit": 3,
     "region": "lowCountries",
     "siteName": "Antwerp, Southern Netherlands",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -1010,6 +1049,7 @@
     "unit": 3,
     "region": "lowCountries",
     "siteName": "Amsterdam, Netherlands",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -1028,6 +1068,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Rome, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "facade",
@@ -1060,6 +1101,7 @@
     "unit": 3,
     "region": "italyVatican",
     "siteName": "Rome, Italy",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "church-interior",
@@ -1092,6 +1134,7 @@
     "unit": 3,
     "region": "colonialAmericas",
     "siteName": "Calamarca, present-day Bolivia",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -1110,6 +1153,7 @@
     "unit": 3,
     "region": "iberianPeninsula",
     "siteName": "Madrid, Spain",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -1128,6 +1172,7 @@
     "unit": 3,
     "region": "lowCountries",
     "siteName": "Delft, Netherlands",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -1146,6 +1191,7 @@
     "unit": 3,
     "region": "france",
     "siteName": "Versailles, France",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "aerial-overview",
@@ -1192,6 +1238,7 @@
     "unit": 3,
     "region": "colonialAmericas",
     "siteName": "Mexico City, New Spain",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "siege-belgrade-front",
@@ -1217,6 +1264,7 @@
     "unit": 3,
     "region": "colonialAmericas",
     "siteName": "Mexico City, New Spain",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -1235,6 +1283,7 @@
     "unit": 3,
     "region": "lowCountries",
     "siteName": "Amsterdam, Netherlands",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -1253,6 +1302,7 @@
     "unit": 3,
     "region": "colonialAmericas",
     "siteName": "Mexico City, New Spain",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",
@@ -1271,6 +1321,7 @@
     "unit": 3,
     "region": "britishIsles",
     "siteName": "London, England",
+    "provenanceQualifier": null,
     "images": [
       {
         "id": "primary",

@@ -601,6 +601,35 @@ test('Unit 3 detail metadata keeps precise traditions distinct from broad filter
   assert.equal(chartres.traditionGroup, 'medievalIslamic');
 });
 
+test('Unit 3 detail location rows render every exact provenance qualifier', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const harness = createDetailHarness(html, artworks, credits);
+  const expectedLocations = new Map([
+    [50, 'Syria or Palestine · Made in Syria or Palestine; the precise workshop is not securely localized.'],
+    [53, 'Early medieval Europe · The Louvre records Jouy-le-Comte as the findspot; the manufacturing workshop is not securely localized, so the map uses a broad early medieval European anchor.'],
+    [55, 'Northumbria, England · Made in Northumbria, probably at Lindisfarne; Eadfrith is the traditionally attributed scribe-artist.'],
+    [59, 'England or Normandy · Probably embroidered in England for a Norman patron; the precise workshop and original display setting remain debated.'],
+    [62, 'Rhineland, Germany · Made in the Rhineland; the precise workshop and original devotional setting are not securely localized.'],
+    [68, 'Flanders, present-day Belgium · Made in Flanders, probably Bruges; the sitters’ identities and original domestic setting remain debated.'],
+  ]);
+
+  for (const [apNumber, expectedLocation] of expectedLocations) {
+    const work = artworks.find((artwork) => artwork.apNumber === apNumber);
+    const details = harness.renderArtworkDetails(work, { works:[work] });
+    const locationRow = details.querySelectorAll('.identity-row').find(
+      (row) => row.querySelector('dt')?.textContent === '地点',
+    );
+
+    assert.equal(
+      locationRow?.querySelector('dd')?.textContent,
+      expectedLocation,
+      `AP ${apNumber} provenance-qualified location`,
+    );
+  }
+});
+
 test('comparison navigation resolves targets without rewriting artwork data', async () => {
   const html = await loadHtml();
   const selectComparison = html.match(

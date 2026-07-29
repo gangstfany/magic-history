@@ -771,3 +771,54 @@ test('U3 exact AP55 and AP97 OER replacements are noncommercial and release-read
   );
   assertReleaseReady(audit);
 });
+
+test('AP55 St. Luke portrait preserves the approved Smarthistory attribution', async () => {
+  const [fixture, audit] = await Promise.all([
+    readJson(FIXTURE_URL),
+    readJson(RIGHTS_URL),
+  ]);
+  const work = fixture.artworks.find(({ id }) => id === 'ap55-lindisfarne-gospels');
+  const viewIndex = work.images.findIndex(({ id }) => id === 'st-luke-portrait');
+  const expectedCreator =
+    'Eadfrith (traditionally attributed) / British Library / Smarthistory';
+  const mediaIdentity = mediaKey(work.id, work.images[viewIndex].id);
+
+  assert.equal(
+    fixture.credits[work.id][viewIndex].creatorOrInstitution,
+    expectedCreator,
+    'canonical AP55 St. Luke portrait attribution',
+  );
+  assert.equal(
+    audit[mediaIdentity].creatorOrInstitution,
+    expectedCreator,
+    'rights audit AP55 St. Luke portrait attribution',
+  );
+  assert.match(audit[mediaIdentity].creatorOrInstitution, /Smarthistory/);
+});
+
+test('AP55 ledger summary distinguishes its Pressbooks source from institutional terms', async () => {
+  const ledger = await readFile(LEDGER_URL, 'utf8');
+  const ap55Row = parseU3Ledger(ledger).find((cells) => (
+    cells[1] === '`ap55-lindisfarne-gospels`'
+      && cells[2] === 'st-luke-portrait'
+  ));
+
+  assert.doesNotMatch(ledger, /Penn State/);
+  assert.match(
+    ledger,
+    /AP 55 St\. Luke portrait 使用 Pressbooks 来源页、Smarthistory 图片署名与 CC BY-NC-SA 4\.0/,
+  );
+  assert.ok(ap55Row, 'missing AP55 St. Luke portrait ledger row');
+  assert.equal(
+    markdownLink(ap55Row[5]).url,
+    'https://pressbooks.pub/pacarthistory/back-matter/image-credits/',
+  );
+  assert.equal(
+    ap55Row[6],
+    'Eadfrith (traditionally attributed) / British Library / Smarthistory',
+  );
+  assert.deepEqual(markdownLink(ap55Row[7]), {
+    label:'CC BY-NC-SA 4.0',
+    url:'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+  });
+});

@@ -52,6 +52,7 @@ function projectU3BrowserFixture(canonical) {
     unit: work.unit,
     region: work.region,
     siteName: work.siteName,
+    provenanceQualifier: work.provenanceQualifier ?? null,
     images: work.images.map(({
       id,
       label,
@@ -425,6 +426,7 @@ test('canonical U3 projection freezes exact metadata and all 103 rendered credit
   assert.deepEqual(expected[0].metadata, {
     titleZh: '普里西拉地下墓穴',
     siteName: 'Rome, Italy',
+    provenanceQualifier: null,
     culture: 'earlyChristianRome',
     cultureLabelZh: '早期基督教罗马',
     period: 'Late Antique Early Christian',
@@ -454,6 +456,7 @@ test('exact U3 rendered metadata and credit assertions reject every reviewed mut
   for (const [field, value] of [
     ['titleZh', '错误标题'],
     ['siteName', 'wrong site'],
+    ['provenanceQualifier', 'wrong provenance qualifier'],
     ['date', 'wrong date'],
     ['cultureLabelZh', '错误文化'],
     ['period', 'wrong period'],

@@ -220,6 +220,7 @@ const U3_WORK_KEYS = Object.freeze([
   'unit',
   'region',
   'siteName',
+  'provenanceQualifier',
   'images',
 ]);
 const U3_IMAGE_KEYS = Object.freeze([
@@ -297,6 +298,7 @@ export function projectAndFreezeU3Canonical(canonical) {
     const metadata = Object.freeze({
       titleZh: work.titleZh,
       siteName: work.siteName,
+      provenanceQualifier: work.provenanceQualifier ?? null,
       culture: work.culture,
       cultureLabelZh,
       period: work.period,
@@ -353,6 +355,7 @@ function projectU3CanonicalBrowser(expectedWorks) {
     unit: work.unit,
     region: work.region,
     siteName: work.siteName,
+    provenanceQualifier: work.metadata.provenanceQualifier,
     images: Object.freeze(work.images.map((image) => Object.freeze({
       id: image.id,
       label: image.label,
@@ -502,6 +505,14 @@ export function validateAndFreezeU3Works(works) {
       assert.equal(typeof work[key], 'string', `AP ${expectedApNumber} ${key} type`);
       assert.ok(work[key].trim(), `AP ${expectedApNumber} ${key} value`);
     }
+    assert.ok(
+      work.provenanceQualifier === null
+        || (
+          typeof work.provenanceQualifier === 'string'
+          && work.provenanceQualifier.trim()
+        ),
+      `AP ${expectedApNumber} provenanceQualifier value`,
+    );
     assert.ok(Array.isArray(work.images), `AP ${expectedApNumber} images`);
     assert.ok(work.images.length > 0, `AP ${expectedApNumber} must retain required views`);
     workIds.push(work.id);
@@ -724,6 +735,7 @@ export function assertU3MetadataMatches(actual, expected, label) {
   for (const field of [
     'titleZh',
     'siteName',
+    'provenanceQualifier',
     'cultureLabelZh',
     'period',
     'date',
@@ -2203,9 +2215,16 @@ async function verifyU3Works(
         row.querySelector('dd')?.textContent?.trim(),
       ]))
     ));
+    const renderedLocation = identity['地点'];
+    const qualifierSeparator = renderedLocation.indexOf(' · ');
     assertU3MetadataMatches({
       titleZh: (await summary.locator('.work-title-zh').textContent()).trim(),
-      siteName: identity['地点'],
+      siteName: qualifierSeparator < 0
+        ? renderedLocation
+        : renderedLocation.slice(0, qualifierSeparator),
+      provenanceQualifier: qualifierSeparator < 0
+        ? null
+        : renderedLocation.slice(qualifierSeparator + 3),
       cultureLabelZh: metaParts[1],
       period: metaParts[2],
       date: metaParts[3],

@@ -2204,11 +2204,12 @@
 
       const identity = document.createElement('dl');
       identity.className = 'identity-list';
+      const siteQualifier = work.provenanceQualifier ?? work.siteQualifier;
       [
         ['年代', work.date],
         ['艺术家／文化', work.artistCulture],
         ['材料', work.medium],
-        ['地点', `${work.siteName}${work.siteQualifier ? ` · ${work.siteQualifier}` : ''}`],
+        ['地点', `${work.siteName}${siteQualifier ? ` · ${siteQualifier}` : ''}`],
         ['类型', work.workType],
         ['功能', work.function]
       ].forEach(([label, value]) => {
