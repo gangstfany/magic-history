@@ -503,7 +503,7 @@ test('official AP unit helpers use every published unit boundary', async () => {
   assert.equal(getUnitById('2'), null);
 });
 
-test('Unit filter configuration, tradition labels, and map regions cover Units 1 and 2', async () => {
+test('Unit filter configuration, tradition labels, and map regions cover Units 1 through 3', async () => {
   const html = await loadHtml();
   const configSource = [
     getObjectDeclarationSource(html, 'const TRADITION_LABELS ='),
@@ -521,6 +521,15 @@ test('Unit filter configuration, tradition labels, and map regions cover Units 1
       2: {
         showCultureFilters: true,
         cultureIds: ['ancientNearEast', 'egypt', 'greece', 'etruscan', 'rome'],
+      },
+      3: {
+        showCultureFilters: true,
+        cultureIds: [
+          'lateAntiqueByzantine',
+          'medievalIslamic',
+          'renaissanceMannerism',
+          'baroqueColonial',
+        ],
       },
     },
   );
@@ -549,6 +558,163 @@ test('Unit filter configuration, tradition labels, and map regions cover Units 1
   assert.equal(MAP_REGIONS.middleEast?.nameEn, 'Middle East');
   assert.deepEqual(MAP_REGIONS.northAfrica, { nameEn: 'North Africa', unitIds: [2] });
   assert.deepEqual(MAP_REGIONS.southernEurope, { nameEn: 'Southern Europe', unitIds: [2] });
+  assert.deepEqual(MAP_REGIONS.italyVatican, { nameEn: 'Italy & Vatican', unitIds: [3] });
+  assert.deepEqual(MAP_REGIONS.france, { nameEn: 'France', unitIds: [3] });
+  assert.deepEqual(MAP_REGIONS.iberianPeninsula, { nameEn: 'Iberian Peninsula', unitIds: [3] });
+  assert.deepEqual(MAP_REGIONS.britishIsles, { nameEn: 'British Isles', unitIds: [3] });
+  assert.deepEqual(MAP_REGIONS.lowCountries, { nameEn: 'Low Countries', unitIds: [3] });
+  assert.deepEqual(MAP_REGIONS.centralEurope, { nameEn: 'Central Europe', unitIds: [3] });
+  assert.deepEqual(MAP_REGIONS.easternMediterranean, {
+    nameEn: 'Eastern Mediterranean',
+    unitIds: [3],
+  });
+  assert.deepEqual(MAP_REGIONS.colonialAmericas, {
+    nameEn: 'Colonial Americas',
+    unitIds: [3],
+  });
+});
+
+test('Unit 3 broad and precise tradition labels are exact and bilingual', async () => {
+  const html = await loadHtml();
+  const configSource = getObjectDeclarationSource(html, 'const TRADITION_LABELS =');
+  const { TRADITION_LABELS } = Function(
+    `"use strict"; ${configSource}; return { TRADITION_LABELS };`,
+  )();
+  const expected = {
+    lateAntiqueByzantine: {
+      labelEn: 'Late Antique & Byzantine',
+      labelZh: '晚期古代与拜占庭',
+    },
+    medievalIslamic: {
+      labelEn: 'Medieval & Islamic',
+      labelZh: '中世纪与伊斯兰',
+    },
+    renaissanceMannerism: {
+      labelEn: 'Renaissance & Mannerism',
+      labelZh: '文艺复兴与矫饰主义',
+    },
+    baroqueColonial: {
+      labelEn: 'Baroque & Colonial',
+      labelZh: '巴洛克与殖民艺术',
+    },
+    earlyChristianRome: { labelEn: 'Early Christian Rome', labelZh: '早期基督教罗马' },
+    earlyByzantineManuscript: {
+      labelEn: 'Early Byzantine Manuscript',
+      labelZh: '早期拜占庭手抄本',
+    },
+    byzantineRavenna: { labelEn: 'Byzantine Ravenna', labelZh: '拜占庭拉文纳' },
+    byzantineConstantinople: {
+      labelEn: 'Byzantine Constantinople',
+      labelZh: '拜占庭君士坦丁堡',
+    },
+    merovingianMetalwork: { labelEn: 'Merovingian Metalwork', labelZh: '墨洛温金属工艺' },
+    byzantineSinai: { labelEn: 'Byzantine Sinai', labelZh: '拜占庭西奈' },
+    insularHibernoSaxon: {
+      labelEn: 'Insular Hiberno-Saxon',
+      labelZh: '不列颠群岛希伯诺-撒克逊',
+    },
+    umayyadIberia: { labelEn: 'Umayyad Iberia', labelZh: '伊比利亚倭马亚' },
+    romanesquePilgrimage: {
+      labelEn: 'Romanesque Pilgrimage Art',
+      labelZh: '罗马式朝圣艺术',
+    },
+    normanRomanesque: { labelEn: 'Norman Romanesque', labelZh: '诺曼罗马式' },
+    frenchGothic: { labelEn: 'French Gothic', labelZh: '法国哥特式' },
+    frenchGothicManuscript: {
+      labelEn: 'French Gothic Manuscript',
+      labelZh: '法国哥特式手抄本',
+    },
+    germanGothicDevotional: {
+      labelEn: 'German Gothic Devotional Art',
+      labelZh: '德国哥特式虔敬艺术',
+    },
+    protoRenaissanceItaly: {
+      labelEn: 'Italian Proto-Renaissance',
+      labelZh: '意大利原文艺复兴',
+    },
+    sephardicJewishManuscript: {
+      labelEn: 'Sephardic Jewish Manuscript',
+      labelZh: '塞法迪犹太手抄本',
+    },
+    nasridAndalusia: { labelEn: 'Nasrid Andalusia', labelZh: '纳斯里德安达卢西亚' },
+    earlyNetherlandish: { labelEn: 'Early Netherlandish', labelZh: '早期尼德兰' },
+    florentineEarlyRenaissance: {
+      labelEn: 'Florentine Early Renaissance',
+      labelZh: '佛罗伦萨早期文艺复兴',
+    },
+    florentineRenaissance: {
+      labelEn: 'Florentine Renaissance',
+      labelZh: '佛罗伦萨文艺复兴',
+    },
+    highRenaissanceItaly: {
+      labelEn: 'Italian High Renaissance',
+      labelZh: '意大利文艺复兴盛期',
+    },
+    northernRenaissanceGermany: {
+      labelEn: 'German Northern Renaissance',
+      labelZh: '德国北方文艺复兴',
+    },
+    italianMannerism: { labelEn: 'Italian Mannerism', labelZh: '意大利矫饰主义' },
+    protestantReformationGermany: {
+      labelEn: 'German Protestant Reformation',
+      labelZh: '德国宗教改革',
+    },
+    venetianRenaissance: { labelEn: 'Venetian Renaissance', labelZh: '威尼斯文艺复兴' },
+    colonialMexicaManuscript: {
+      labelEn: 'Colonial Mexica Manuscript',
+      labelZh: '新西班牙墨西加殖民手抄本',
+    },
+    romanBaroqueJesuit: {
+      labelEn: 'Roman Jesuit Baroque',
+      labelZh: '罗马耶稣会巴洛克',
+    },
+    northernRenaissanceFlemish: {
+      labelEn: 'Flemish Northern Renaissance',
+      labelZh: '佛兰德斯北方文艺复兴',
+    },
+    ottomanIslamic: { labelEn: 'Ottoman Islamic', labelZh: '奥斯曼伊斯兰' },
+    italianBaroque: { labelEn: 'Italian Baroque', labelZh: '意大利巴洛克' },
+    flemishBaroque: { labelEn: 'Flemish Baroque', labelZh: '佛兰德斯巴洛克' },
+    dutchBaroque: { labelEn: 'Dutch Baroque', labelZh: '荷兰巴洛克' },
+    andeanColonialBaroque: {
+      labelEn: 'Andean Colonial Baroque',
+      labelZh: '安第斯殖民巴洛克',
+    },
+    spanishBaroque: { labelEn: 'Spanish Baroque', labelZh: '西班牙巴洛克' },
+    frenchBaroqueAbsolutism: {
+      labelEn: 'French Absolutist Baroque',
+      labelZh: '法国绝对主义巴洛克',
+    },
+    newSpainEnconchado: {
+      labelEn: 'New Spain Enconchado',
+      labelZh: '新西班牙螺钿画',
+    },
+    newSpainGuadalupe: {
+      labelEn: 'New Spain Guadalupe Art',
+      labelZh: '新西班牙瓜达卢佩圣母艺术',
+    },
+    dutchBaroqueStillLife: {
+      labelEn: 'Dutch Baroque Still Life',
+      labelZh: '荷兰巴洛克静物画',
+    },
+    newSpainCasta: { labelEn: 'New Spain Casta Painting', labelZh: '新西班牙种姓画' },
+    britishRococoSatire: {
+      labelEn: 'British Rococo Satire',
+      labelZh: '英国洛可可讽刺画',
+    },
+  };
+
+  assert.deepEqual(
+    Object.fromEntries(Object.keys(expected).map((key) => [key, TRADITION_LABELS[key]])),
+    expected,
+  );
+  const unit3Cultures = new Set(
+    parseArtworkData(html).filter(({ unit }) => unit === 3).map(({ culture }) => culture),
+  );
+  assert.deepEqual(
+    [...unit3Cultures].filter((culture) => !TRADITION_LABELS[culture]),
+    [],
+  );
 });
 
 test('detail metadata resolves every supported culture without undefined labels', async () => {
@@ -601,8 +767,70 @@ test('culture filter visibility follows the selected Unit configuration', async 
   assert.match(source, /container\.hidden = !unitConfig\?\.showCultureFilters/);
   assert.match(source, /container\.replaceChildren\(\)/);
   assert.match(source, /\['all',\s*\.\.\.unitConfig\.cultureIds\]/);
-  assert.match(source, /cultureId === 'all' \? 'All cultures' : getCultureLabel\(cultureId, 'en'\)/);
+  assert.match(
+    source,
+    /cultureId === 'all'[\s\S]*unitId === 3 \? 'All traditions' : 'All cultures'[\s\S]*getCultureLabel\(cultureId, 'en'\)/,
+  );
   assert.match(source, /updateCultureFilterSelection\(container, state\.culture\)/);
+});
+
+test('Unit 3 renders five broad tradition pills while Unit 2 keeps culture wording', async () => {
+  const html = await loadHtml();
+  const sources = [
+    getObjectDeclarationSource(html, 'const TRADITION_LABELS ='),
+    getObjectDeclarationSource(html, 'const UNIT_FILTER_CONFIG ='),
+    getObjectDeclarationSource(html, 'const state ='),
+    getFunctionSource(html, 'getCultureLabel'),
+    getFunctionSource(html, 'updateCultureFilterSelection'),
+    getFunctionSource(html, 'renderCultureFilters'),
+  ].join('\n');
+  const container = {
+    hidden: false,
+    children: [],
+    replaceChildren() { this.children = []; },
+    append(child) { this.children.push(child); },
+    querySelectorAll() { return this.children; },
+  };
+  const document = {
+    getElementById(id) {
+      assert.equal(id, 'cultureFilters');
+      return container;
+    },
+    createElement(tagName) {
+      assert.equal(tagName, 'button');
+      return {
+        dataset: {},
+        attributes: new Map(),
+        setAttribute(name, value) { this.attributes.set(name, value); },
+        addEventListener() {},
+      };
+    },
+  };
+  const harness = Function(
+    'document',
+    'clearHierarchyBranch',
+    'render',
+    `"use strict"; ${sources}; return { state, renderCultureFilters };`,
+  )(document, () => {}, () => {});
+
+  harness.state.unit = '3';
+  harness.state.culture = 'all';
+  harness.renderCultureFilters();
+  assert.equal(container.hidden, false);
+  assert.deepEqual(
+    container.children.map(({ dataset, textContent }) => [dataset.culture, textContent]),
+    [
+      ['all', 'All traditions'],
+      ['lateAntiqueByzantine', 'Late Antique & Byzantine'],
+      ['medievalIslamic', 'Medieval & Islamic'],
+      ['renaissanceMannerism', 'Renaissance & Mannerism'],
+      ['baroqueColonial', 'Baroque & Colonial'],
+    ],
+  );
+
+  harness.state.unit = '2';
+  harness.renderCultureFilters();
+  assert.equal(container.children[0].textContent, 'All cultures');
 });
 
 test('Unit toolbar uses one accessible Unit select and an English culture group', async () => {
@@ -640,6 +868,7 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
     ['const TRADITION_LABELS =', 'const MAP_REGIONS ='],
   );
   const u1Works = parseArtworkData(html).filter(({ unit }) => unit === 1);
+  const u3Works = parseArtworkData(html).filter(({ unit }) => unit === 3);
   const works = [
     {
       id: 'white-temple', unit: 2, culture: 'ancientNearEast',
@@ -707,6 +936,55 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
       .map(({ apNumber }) => apNumber),
     [7],
   );
+  assert.deepEqual(
+    filterWorks(u3Works, {
+      unit: '3',
+      culture: 'lateAntiqueByzantine',
+      period: '',
+      workType: '',
+      search: '',
+    }).map(({ apNumber }) => apNumber),
+    [48, 49, 50, 51, 52],
+  );
+  assert.deepEqual(
+    filterWorks([
+      {
+        id: 'legacy-culture-fallback',
+        unit: 2,
+        culture: 'greece',
+        titleEn: 'Legacy Greek work',
+      },
+    ], {
+      unit: '2',
+      culture: 'greece',
+      period: '',
+      workType: '',
+      search: '',
+    }).map(({ id }) => id),
+    ['legacy-culture-fallback'],
+  );
+
+  const searchU3 = (search) => filterWorks(u3Works, {
+    unit: '3',
+    culture: 'all',
+    period: '',
+    workType: '',
+    search,
+  }).map(({ apNumber }) => apNumber);
+  assert.deepEqual(searchU3('Gothic'), [60, 61, 62]);
+  assert.deepEqual(searchU3('哥特式'), [60, 61, 62]);
+  assert.deepEqual(searchU3('New Spain'), [81, 94, 95, 97]);
+  assert.deepEqual(searchU3('新西班牙'), [81, 94, 95, 97]);
+  assert.deepEqual(searchU3('48'), [48]);
+  assert.deepEqual(searchU3('AP 48'), [48]);
+  assert.deepEqual(searchU3('Late Antique & Byzantine'), [48, 49, 50, 51, 52]);
+  assert.deepEqual(searchU3('晚期古代与拜占庭'), [48, 49, 50, 51, 52]);
+  assert.deepEqual(searchU3('italyVatican'), [
+    48, 49, 51, 63, 67, 69, 70, 71, 72, 73, 75, 76, 78, 80, 82, 85, 88, 89,
+  ]);
+  assert.deepEqual(searchU3('Italy & Vatican'), [
+    48, 49, 51, 63, 67, 69, 70, 71, 72, 73, 75, 76, 78, 80, 82, 85, 88, 89,
+  ]);
 });
 
 test('culture selection updates existing buttons without replacing the focused button', async () => {
@@ -860,6 +1138,37 @@ test('Unit 1 site projections use the approved exact world coordinates', async (
   );
 });
 
+test('every canonical Unit 3 creation site uses its reviewed exact world coordinates', async () => {
+  const html = await loadHtml();
+  const artworks = parseArtworkData(html).filter(({ unit }) => unit === 3);
+  const source = getObjectDeclarationSource(html, 'const SITE_WORLD_COORDINATES =');
+  const { SITE_WORLD_COORDINATES } = Function(
+    `"use strict"; ${source}; return { SITE_WORLD_COORDINATES };`,
+  )();
+  const canonicalSites = new Map();
+
+  artworks.forEach(({ siteName, coordinates }) => {
+    if (canonicalSites.has(siteName)) {
+      assert.deepEqual(
+        coordinates,
+        canonicalSites.get(siteName),
+        `${siteName} has conflicting canonical coordinates`,
+      );
+    } else {
+      canonicalSites.set(siteName, coordinates);
+    }
+  });
+
+  assert.equal(canonicalSites.size, 37);
+  for (const [siteName, coordinates] of canonicalSites) {
+    assert.deepEqual(
+      SITE_WORLD_COORDINATES[siteName],
+      coordinates,
+      `${siteName} must use the creation-context coordinates from its canonical record`,
+    );
+  }
+});
+
 test('configured Unit 1 hierarchy exposes only its six regions with exact counts', async () => {
   const html = await loadHtml();
   const artworks = parseArtworkData(html);
@@ -995,6 +1304,104 @@ test('configured Unit 2 hierarchy follows real region and site metadata', async 
       .filter(({ works }) => works.length === 1)
       .every(({ apLabel, works }) => apLabel === String(works[0].apNumber)),
   );
+});
+
+test('configured Unit 3 hierarchy exposes eight counted regions then creation sites', async () => {
+  const html = await loadHtml();
+  const unit3Artworks = parseArtworkData(html).filter(({ unit }) => unit === 3);
+  const helpers = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'formatPieceCount',
+      'createSiteToken',
+      'getUnitById',
+      'getApUnitNumber',
+      'getMapGroupText',
+      'toWorldCoordinates',
+      'groupBySite',
+      'groupByConfiguredRegion',
+      'getMapHierarchyLevel',
+      'groupByRegionGrid',
+      'buildMapGroups',
+      'buildMapGroupCandidates',
+      'getMarkerMetrics',
+      'getMarkerBounds',
+      'markerBoundsOverlap',
+      'expandMarkerBounds',
+      'createSpatialHash',
+      'findNearestAvailableMarkerSlot',
+      'layoutSiteMarkers',
+      'layoutMapGroups',
+    ],
+    ['const AP_UNITS =', 'const MAP_REGIONS =', 'const SITE_WORLD_COORDINATES ='],
+  );
+  const branches = { selectedUnit: '3', activeUnit: 3, activeRegion: null };
+  const regions = helpers.buildMapGroups(unit3Artworks, 1, branches);
+
+  assert.deepEqual(
+    regions.map(({ regionId, works }) => [regionId, works.length]),
+    [
+      ['italyVatican', 18],
+      ['france', 5],
+      ['iberianPeninsula', 5],
+      ['britishIsles', 3],
+      ['lowCountries', 7],
+      ['centralEurope', 4],
+      ['easternMediterranean', 4],
+      ['colonialAmericas', 5],
+    ],
+  );
+  assert.deepEqual(
+    regions.map(helpers.getMapGroupText),
+    [
+      { title: 'Italy & Vatican', subtitle: '18 pieces' },
+      { title: 'France', subtitle: '5 pieces' },
+      { title: 'Iberian Peninsula', subtitle: '5 pieces' },
+      { title: 'British Isles', subtitle: '3 pieces' },
+      { title: 'Low Countries', subtitle: '7 pieces' },
+      { title: 'Central Europe', subtitle: '4 pieces' },
+      { title: 'Eastern Mediterranean', subtitle: '4 pieces' },
+      { title: 'Colonial Americas', subtitle: '5 pieces' },
+    ],
+  );
+
+  const italy = regions.find(({ regionId }) => regionId === 'italyVatican');
+  const sites = helpers.buildMapGroups(unit3Artworks, 2.5, {
+    selectedUnit: '3',
+    activeUnit: 3,
+    activeRegion: italy.key,
+  });
+  assert.deepEqual(
+    sites.map(({ siteName }) => siteName),
+    [
+      'Florence, Italy',
+      'Milan, Italy',
+      'Padua, Italy',
+      'Ravenna, Italy',
+      'Rome, Italy',
+      'Vatican City',
+      'Venice, Italy',
+    ],
+  );
+  assert.ok(sites.every(({ kind, parentKey }) => kind === 'site' && parentKey === italy.key));
+  assert.equal(sites.find(({ siteName }) => siteName === 'Rome, Italy').works.length, 6);
+
+  for (const screenScale of [667 / 1600, 1280 / 1600]) {
+    const laidOut = helpers.layoutMapGroups(unit3Artworks, 1, screenScale, branches);
+    assert.equal(laidOut.length, 8);
+    assert.ok(laidOut.every(({ kind }) => kind === 'region'));
+    for (let index = 0; index < laidOut.length; index += 1) {
+      for (let otherIndex = index + 1; otherIndex < laidOut.length; otherIndex += 1) {
+        assert.equal(
+          helpers.markerBoundsOverlap(laidOut[index].bounds, laidOut[otherIndex].bounds),
+          false,
+          `${laidOut[index].key} overlaps ${laidOut[otherIndex].key}`,
+        );
+      }
+    }
+  }
 });
 
 test('map markers use circular AP pins and two-line English hierarchy capsules', async () => {

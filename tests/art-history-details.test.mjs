@@ -441,6 +441,35 @@ test('standalone map copy and accessible map labels cover Units 1-2 worldwide', 
   assert.doesNotMatch(html, /当前艺术史作品标记集中在古代地中海/);
 });
 
+test('Unit 3 detail metadata keeps precise traditions distinct from broad filter groups', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data').filter(({ unit }) => unit === 3);
+  const traditionStart = html.indexOf('const TRADITION_LABELS =');
+  const traditionEnd = html.indexOf('const UNIT_FILTER_CONFIG =', traditionStart);
+  assert.notEqual(traditionStart, -1);
+  assert.notEqual(traditionEnd, -1);
+  const sources = [
+    html.slice(traditionStart, traditionEnd),
+    getFunctionSource(html, 'getCultureLabel'),
+    getFunctionSource(html, 'formatArtworkMeta'),
+  ].join('\n');
+  const { TRADITION_LABELS, formatArtworkMeta } = Function(
+    `"use strict"; ${sources}; return { TRADITION_LABELS, formatArtworkMeta };`,
+  )();
+
+  assert.deepEqual(
+    [...new Set(artworks.map(({ culture }) => culture))]
+      .filter((culture) => !TRADITION_LABELS[culture]),
+    [],
+  );
+  const chartres = artworks.find(({ apNumber }) => apNumber === 60);
+  const metadata = formatArtworkMeta(chartres);
+  assert.match(metadata, /· 法国哥特式 ·/);
+  assert.doesNotMatch(metadata, /中世纪与伊斯兰/);
+  assert.equal(chartres.culture, 'frenchGothic');
+  assert.equal(chartres.traditionGroup, 'medievalIslamic');
+});
+
 test('comparison navigation resolves targets without rewriting artwork data', async () => {
   const html = await loadHtml();
   const selectComparison = html.match(
