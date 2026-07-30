@@ -333,6 +333,15 @@ nav.topnav {
 .home-events .rt-stop.done .rt-dot { background: #8fa878; }
 .home-events .rt-stop.now { border-color: #8b1a1a; box-shadow: 0 0 0 2px rgba(139,26,26,0.14); }
 .home-events .rt-stop.now .rt-dot { background: #8b1a1a; }
+/* 因果链:竖排 + 箭头机制 */
+.home-events .rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; }
+.home-events .rt-stops-chain .rt-stop { justify-content: flex-start; text-align: left; }
+.home-events .rt-stop .rt-sub { margin-left: 7px; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
+.home-events .rt-link { display: flex; gap: 8px; padding: 7px 0 7px 13px; margin: 2px 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
+.home-events .rt-arrow { flex: 0 0 auto; color: #5a2d7a; font-weight: 800; }
+.home-events .rt-evidence { margin: 11px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
+.home-events .rt-evidence span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(90,45,122,0.13); color: #5a2d7a; font-size: 11px; font-weight: 800; }
+.home-events .chain-chip .rc-dot { box-shadow: 0 0 0 3px rgba(90,45,122,0.12); }
 .home-events .rt-ctrl { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; }
 .home-events .rt-btn { min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .home-events .rt-btn.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
@@ -517,13 +526,15 @@ nav.topnav {
             <div class="he-empty">点地图上的数字标点，<br>这里会显示那一站的历史事件
               <div class="route-picker-title">Practice</div>
               <div id="homePracticeBlock"></div>
+              <div class="route-picker-title">因果链</div>
+              <div class="route-picker" id="homeChainPicker"></div>
               <div class="route-picker-title">或者跟着商队走一趟</div>
               <div class="route-picker" id="homeRoutePicker"></div>
             </div>
           </div>
         </div>
       </div>
-      <div class="home-map-caption" id="homeMapCaption">5 regions · 233 events · 104 pins · 6 trade routes</div>
+      <div class="home-map-caption" id="homeMapCaption">5 regions · 234 events · 104 pins · 6 trade routes</div>
 
       <div class="features">
         <div class="feature">
@@ -720,6 +731,14 @@ nav.topnav {
   // 这份快照是在商路 chip 填进去之前拍的,所以每次用它复位后都得把 chip 补回来,
   // 否则退出商路会看到一个只剩标题、下面空荡荡的空态。
   let homeRouteOptions = null;
+  function fillHomeChainPicker() {
+    const box = document.getElementById('homeChainPicker');
+    if (!box || !hostApi || !hostApi.getChains) return;
+    box.innerHTML = hostApi.getChains().map(c =>
+      `<button type="button" class="route-chip chain-chip" data-route-go="${c.id}">`
+      + `<span class="rc-dot" style="background:#5a2d7a"></span>${c.name.replace('Unit 4 主干链 · ', '')}`
+      + `<span style="color:var(--ink-soft);font-weight:600">${c.stops} 环</span></button>`).join('');
+  }
   function fillHomeRoutePicker() {
     const picker = document.getElementById('homeRoutePicker');
     if (!picker || !homeRouteOptions) return;
@@ -747,6 +766,7 @@ nav.topnav {
     if (!homeEvents) return;
     homeEvents.innerHTML = HOME_EVENTS_EMPTY;
     fillHomeRoutePicker();
+    fillHomeChainPicker();
     fillHomePractice();
   }
 
@@ -872,6 +892,7 @@ nav.topnav {
     fill(periodSel, api.getPeriodOptions());
     // 空态里的商路入口,选项由地图那边给
     if (api.getRoutes) { homeRouteOptions = api.getRoutes(); fillHomeRoutePicker(); }
+    fillHomeChainPicker();
     if (api.onRouteStep) api.onRouteStep(() => syncHomeEvents());
     if (api.onQuizStep) api.onQuizStep(() => syncHomeEvents());
     fillHomePractice();
@@ -1046,7 +1067,7 @@ nav.topnav {
     if (homeMapCaption) {
       homeMapCaption.textContent = key === 'art'
         ? '36 AP works · Ancient Mediterranean · filter, compare and study'
-        : '5 regions · 233 events · 104 pins · 6 trade routes';
+        : '5 regions · 234 events · 104 pins · 6 trade routes';
       homeMapCaption.hidden = !s.live;
     }
     skLabel.textContent = '正在加载 ' + s.label + ' 地图…';

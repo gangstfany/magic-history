@@ -153,6 +153,15 @@ h1 .en { color: var(--accent); }
 .rt-stop.now { border-color: #8b1a1a; box-shadow: 0 0 0 2px rgba(139,26,26,0.14); }
 .rt-stop.now .rt-dot { background: #8b1a1a; }
 .rt-stop:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+/* 因果链:竖排,每一环下面挂"箭头机制" */
+.rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; }
+.rt-stops-chain .rt-stop { justify-content: flex-start; text-align: left; }
+.rt-stop .rt-sub { margin-left: 7px; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
+.rt-link { display: flex; gap: 8px; padding: 7px 0 7px 13px; margin: 2px 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
+.rt-arrow { flex: 0 0 auto; color: #5a2d7a; font-weight: 800; }
+.rt-evidence { margin: 11px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
+.rt-evidence span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(90,45,122,0.13); color: #5a2d7a; font-size: 11px; font-weight: 800; }
+.chain-chip .rc-dot { box-shadow: 0 0 0 3px rgba(90,45,122,0.12); }
 .rt-ctrl { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; }
 .rt-btn { min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .rt-btn.primary { background: var(--ink, #211f1c); border-color: var(--ink, #211f1c); color: #fff; }
@@ -1473,7 +1482,7 @@ h1 .en { color: var(--accent); }
 </div>
 </div>
 <div class="panel">
-<div class="panel-head" style="background:#a0620b">SIO <span class="full">社会与劳动</span><span class="cnt">44 条</span></div>
+<div class="panel-head" style="background:#a0620b">SIO <span class="full">社会与劳动</span><span class="cnt">45 条</span></div>
 <div class="panel-body">
 <div class="century">6世纪</div>
 <div class="entry">
@@ -1546,6 +1555,10 @@ h1 .en { color: var(--accent); }
 <div class="entry alt">
 <div class="entry-top"><span class="citynum" style="background:#6f9bc7">39</span><span class="yr">1500s–1807</span><span class="city2" style="color:#6f9bc7">Liverpool</span></div>
 <div class="trig"><span class="hl">Atlantic Slave Trade</span> — 欧洲主导·约1200万被掳→种植园强制劳动→1807英废奴</div>
+</div>
+<div class="entry">
+<div class="entry-top"><span class="citynum" style="background:#e0949a">68</span><span class="yr">1493–1600</span><span class="city2" style="color:#e0949a">Santo Domingo</span></div>
+<div class="trig"><span class="hl">smallpox</span> 天花与人口崩溃 — 旧大陆病菌随人畜登陆,原住民无免疫→部分地区死亡率达 90%→种植园劳动力真空</div>
 </div>
 <div class="entry">
 <div class="entry-top"><span class="citynum" style="background:#e0949a">68</span><span class="yr">1500s</span><span class="city2" style="color:#e0949a">Santo Domingo</span></div>
@@ -2104,6 +2117,32 @@ h1 .en { color: var(--accent); }
       label: 'Mansa Musa 朝觐路线 · Hajj to Mecca(Timbuktu → Cairo)' },
   ];
 
+  // ============ 因果链 ============
+  // 链条骨架、每一环的名称和"箭头机制"都出自你的讲义(因果链/Unit45_主干因果链_大航海到工业革命.docx),
+  // 这里只承载骨架:环名 + 连接词 + 核心证据。完整讲法留在 docx 里,两边不重复。
+  // 结构与 ROUTES 同构,所以商路模式那套步进界面可以整套复用;唯一多出来的是 links(连接词)。
+  const CHAINS = [
+    { id: 'u4_atlantic', kind: 'chain',
+      name: 'Unit 4 主干链 · 从大航海到大西洋体系',
+      blurb: 'Unit 4 回答一个问题:欧洲如何在 200 年内,从陆基帝国体系的边缘变成全球贸易网络的中心?答案是一条由技术、国家权力、生态交换和劳动力系统串起来的连续因果链。',
+      exam: '这条链是 AP 最爱考的因果序列。写 LEQ 时,"人口崩溃→劳动力真空→转向非洲"这一环不能跳 —— 跳了就成了"欧洲人because贪婪所以买奴隶",拿不到因果分。',
+      stops: [42, 104, 45, 68, 87, 78, 49],
+      labels: ['技术储备积累', '国家支持的海洋探索', '哥伦布大交换', '天花与人口崩溃', '大西洋贸易体系', '对殖民权力的抵抗', '全球社会等级重构'],
+      evidence: ['Compass · Astrolabe · Lateen sail · Caravel · Prince Henry',
+                 'Dias 1488 · da Gama 1498 · Columbus 1492 · Tordesillas 1494',
+                 'Smallpox · Potato · Maize · Sugar plantation demand',
+                 '90% indigenous decline · 劳动力真空 · encomienda',
+                 '12M 被掳 · Middle Passage · Potosí · mercantilism',
+                 'Ana Nzinga · Quilombo · Maroon societies · Candomblé',
+                 'Peninsulares · Criollos · Mestizos · limpieza de sangre'],
+      links: ['技术储备 + Ottoman 贸易封锁 + 国家竞争压力 = 欧洲各国开始系统性支持海洋探索',
+              '欧洲航海者横渡大西洋建立接触 → 东西半球从隔离数千年后首次持续连接 → 生物交换不可逆地开始',
+              '旧大陆病菌随人与牲畜一起登陆,美洲原住民从未接触过、毫无免疫',
+              '美洲原住民大规模死亡 → 种植园劳动力严重短缺 → 欧洲殖民者转向非洲获取被奴役劳动力',
+              '被奴役者与非洲统治者从不是被动接受 —— 从 Ndongo 到巴西内陆,抵抗贯穿整个体系',
+              '殖民扩张重构了全球的种族、阶级与性别等级,创造了 Unit 5 革命所要反抗的那个不平等秩序'] },
+  ];
+
   const routesLayer = document.getElementById('routes-layer');
   const pinToRoutes = {};
   ROUTES.forEach(route => {
@@ -2253,6 +2292,14 @@ h1 .en { color: var(--accent); }
   let routeMode = null;   // { route, i, playing, timer, visited }
   let routeStepCb = null; // 首页订阅:自动播放时步进在 iframe 内发生,不通知的话父页面面板不会跟着变
 
+  // 链条没有 SVG 路径,但 goToStop/spotlightTrail 都要读 stopWindows —— 补一份形状兼容的,
+  // passThrough 留空(链条不画连线,没有"途经国家"这回事)。
+  CHAINS.forEach(c => {
+    c.stopWindows = c.stops.map(num => ({ num, region: pinRegion(num), passThrough: [] }));
+    c.durMs = 0;
+  });
+  const allTrails = () => ROUTES.concat(CHAINS);
+
   function routeVehicle(route) { return document.getElementById(`route-vehicle-${route.id}`); }
 
   // animateMotion 没写 begin,默认文档加载就开跑,而且 repeatCount="indefinite" —— endElement() 按不住它。
@@ -2345,7 +2392,7 @@ h1 .en { color: var(--accent); }
   }
 
   function enterRouteMode(id) {
-    const route = ROUTES.find(r => r.id === id);
+    const route = allTrails().find(r => r.id === id);
     if (!route) return;
     exitRouteMode(true);                       // 先清干净上一条
     hideAllRoutes();
@@ -2357,7 +2404,8 @@ h1 .en { color: var(--accent); }
     svg.querySelectorAll('.pin-group').forEach(g => g.classList.remove('revealed'));
     const stopGroups = route.stops.map(stopGroupFor).filter(Boolean);
     stopGroups.forEach(g => g.classList.add('revealed'));
-    document.getElementById(`route-line-${route.id}`).classList.add('on');
+    const line = document.getElementById(`route-line-${route.id}`);
+    if (line) line.classList.add('on');          // 链条没有连线
     const v = routeVehicle(route);
     if (v) v.classList.add('on');
     fitToPins(stopGroups);
@@ -2391,11 +2439,17 @@ h1 .en { color: var(--accent); }
 
   function itineraryHTML() {
     const { route, i, playing } = routeMode;
+    const isChain = route.kind === 'chain';
     const steps = route.stops.map((num, k) => {
       const state = k < i ? 'done' : k === i ? 'now' : 'todo';
+      const city = index[num] && index[num][0] ? index[num][0].city : '';
+      // 链条上的每一站显示"环名",城市名退到括号里 —— 学生要记的是环,不是地名
+      const label = isChain ? `${route.labels[k]}<span class="rt-sub">${city}</span>` : city;
+      const conn = (isChain && k < route.stops.length - 1)
+        ? `<div class="rt-link"><span class="rt-arrow">↓</span>${route.links[k]}</div>` : '';
       return `<button type="button" class="rt-stop ${state}" data-route-step="${k}">`
         + `<span class="rt-dot"></span><span class="rt-num">${num}</span>`
-        + `<span class="rt-city">${(index[num] && index[num][0] ? index[num][0].city : '')}</span></button>`;
+        + `<span class="rt-city">${label}</span></button>` + conn;
     }).join('');
     return `<div class="route-panel">
       <div class="rt-head">
@@ -2404,7 +2458,8 @@ h1 .en { color: var(--accent); }
       </div>
       <p class="rt-blurb">${route.blurb}</p>
       <p class="rt-exam"><span>考点</span>${route.exam}</p>
-      <div class="rt-stops">${steps}</div>
+      <div class="rt-stops${isChain ? ' rt-stops-chain' : ''}">${steps}</div>
+      ${isChain && route.evidence && route.evidence[i] ? `<p class="rt-evidence"><span>核心证据</span>${route.evidence[i]}</p>` : ''}
       <div class="rt-ctrl">
         <button type="button" class="rt-btn" data-route-action="prev" ${i <= 0 ? 'disabled' : ''}>← 上一站</button>
         <button type="button" class="rt-btn primary" data-route-action="next" ${i >= route.stops.length - 1 ? 'disabled' : ''}>下一站 →</button>
@@ -2428,6 +2483,12 @@ h1 .en { color: var(--accent); }
       + (st.practiced ? `<div class="qz-stats">已练 ${st.practiced} 条 · 待复习 ${st.review} 条`
           + (st.review ? ` · <button type="button" class="qz-link" data-quiz-book="1">看错题本</button>` : '')
           + ` · <button type="button" class="qz-link" data-quiz-reset="1">清空记录</button></div>` : '')
+      + `<div class="route-picker-title">因果链</div>`
+      + `<div class="route-picker">`
+      + CHAINS.map(c => `<button type="button" class="route-chip chain-chip" data-route-go="${c.id}">`
+        + `<span class="rc-dot" style="background:#5a2d7a"></span>${c.name.replace('Unit 4 主干链 · ', '')}`
+        + `<span style="color:var(--ink-soft);font-weight:600">${c.stops.length} 环</span></button>`).join('')
+      + `</div>`
       + `<div class="route-picker-title">或者跟着商队走一趟</div>`
       + `<div class="route-picker">`
       + ROUTES.map(r => `<button type="button" class="route-chip" data-route-go="${r.id}">`
@@ -3411,6 +3472,7 @@ h1 .en { color: var(--accent); }
       refresh: () => apply(),
       // 商路模式:首页据此建入口、并把行程面板镜像过去
       getRoutes: () => ROUTES.map(r => ({ id: r.id, name: r.name, color: r.color, stops: r.stops.length })),
+      getChains: () => CHAINS.map(c => ({ id: c.id, name: c.name, stops: c.stops.length })),
       enterRoute: id => enterRouteMode(id),
       exitRoute: () => exitRouteMode(),
       routeStep: i => goToStop(i),
