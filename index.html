@@ -347,7 +347,8 @@ nav.topnav {
 .home-events .rt-evidence { margin: 11px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
 .home-events .rt-evidence span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(90,45,122,0.13); color: #5a2d7a; font-size: 11px; font-weight: 800; }
 .home-events .chain-chip .rc-dot { box-shadow: 0 0 0 3px rgba(90,45,122,0.12); }
-.home-events .rt-ctrl { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; }
+/* 同 world-map.html:链条长到超过右栏高度时,控制条吸底,"下一站"始终在手边 */
+.home-events .rt-ctrl { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; position: sticky; bottom: 0; padding: 11px 0 6px; background: var(--card); }
 .home-events .rt-btn { min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .home-events .rt-btn.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
 .home-events .rt-btn.ghost { color: var(--ink-soft); }
@@ -535,12 +536,9 @@ nav.topnav {
           <!-- 右侧事件面板:点左边地图的数字标点,该站事件在这里完整显示 -->
           <div id="home-events" class="home-events" role="region" aria-label="历史事件" aria-live="polite">
             <div class="he-empty">点地图上的数字标点，<br>这里会显示那一站的历史事件
+              <!-- 因果链/商路的清单只留标题行那两个按钮一处入口,空态里不再重复铺一遍 -->
               <div class="route-picker-title">Practice</div>
               <div id="homePracticeBlock"></div>
-              <div class="route-picker-title">因果链</div>
-              <div class="route-picker" id="homeChainPicker"></div>
-              <div class="route-picker-title">或者跟着商队走一趟</div>
-              <div class="route-picker" id="homeRoutePicker"></div>
             </div>
           </div>
         </div>
@@ -740,25 +738,9 @@ nav.topnav {
   const prefersReducedMotion = () => reduceMotionMQ.matches;
   const homeEvents = document.getElementById('home-events');
   const HOME_EVENTS_EMPTY = homeEvents ? homeEvents.innerHTML : '';  // 空状态提示,复位时用
-  // 这份快照是在商路 chip 填进去之前拍的,所以每次用它复位后都得把 chip 补回来,
+  // 这份快照是在练习 chip 填进去之前拍的,所以每次用它复位后都得把 chip 补回来,
   // 否则退出商路会看到一个只剩标题、下面空荡荡的空态。
-  let homeRouteOptions = null;
-  function fillHomeChainPicker() {
-    const box = document.getElementById('homeChainPicker');
-    if (!box || !hostApi || !hostApi.getChains) return;
-    box.innerHTML = hostApi.getChains().map(c =>
-      `<button type="button" class="route-chip chain-chip" data-route-go="${c.id}">`
-      + `<span class="rc-dot" style="background:#5a2d7a"></span>${c.name.replace('Unit 4 主干链 · ', '')}`
-      + `<span style="color:var(--ink-soft);font-weight:600">${c.stops} 环</span></button>`).join('');
-  }
-  function fillHomeRoutePicker() {
-    const picker = document.getElementById('homeRoutePicker');
-    if (!picker || !homeRouteOptions) return;
-    picker.innerHTML = homeRouteOptions.map(r =>
-      `<button type="button" class="route-chip" data-route-go="${r.id}">`
-      + `<span class="rc-dot" style="background:${r.color}"></span>${r.name.split(' · ')[0]}`
-      + `<span style="color:var(--ink-soft);font-weight:600">${r.stops} 站</span></button>`).join('');
-  }
+  // 因果链和商路的清单不在空态里,由标题行的 因果链 / 商路 两个按钮打开(见 data-open-picker)。
   // 练习区要显示错题数,每次回到空态都得重新问一次地图
   function fillHomePractice() {
     const box = document.getElementById('homePracticeBlock');
@@ -777,8 +759,6 @@ nav.topnav {
   function resetHomeEvents() {
     if (!homeEvents) return;
     homeEvents.innerHTML = HOME_EVENTS_EMPTY;
-    fillHomeRoutePicker();
-    fillHomeChainPicker();
     fillHomePractice();
   }
 
@@ -808,6 +788,13 @@ nav.topnav {
     if (hasEvent) {
       homeEvents.innerHTML = panel.innerHTML;
       homeEvents.scrollTop = 0;
+      // 因果链的骨架比右栏高得多(Unit 2→3 有 10 环),每步都复位到顶会把"当前这一环"留在屏幕外。
+      // 与 world-map.html 的 goToStop 同一处理:滚到当前环,直接写 scrollTop(不用 smooth)。
+      const nowStop = homeEvents.querySelector('.rt-stops-chain .rt-stop.now');
+      if (nowStop) {
+        const offset = nowStop.getBoundingClientRect().top - homeEvents.getBoundingClientRect().top;
+        homeEvents.scrollTop = Math.max(0, offset - 140);
+      }
       // 窄屏(上下叠)时轻轻滚到事件;宽屏(左右并排)事件就在旁边,不用滚
       if (window.matchMedia('(max-width: 720px)').matches) {
         homeEvents.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
@@ -911,9 +898,6 @@ nav.topnav {
       opts.forEach(o => { const el = document.createElement('option'); el.value = o.value; el.textContent = o.label; sel.appendChild(el); });
     };
     fill(periodSel, api.getPeriodOptions());
-    // 空态里的商路入口,选项由地图那边给
-    if (api.getRoutes) { homeRouteOptions = api.getRoutes(); fillHomeRoutePicker(); }
-    fillHomeChainPicker();
     if (api.onRouteStep) api.onRouteStep(() => syncHomeEvents());
     if (api.onQuizStep) api.onQuizStep(() => syncHomeEvents());
     fillHomePractice();

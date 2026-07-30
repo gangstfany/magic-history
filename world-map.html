@@ -162,7 +162,9 @@ h1 .en { color: var(--accent); }
 .rt-evidence { margin: 11px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
 .rt-evidence span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(90,45,122,0.13); color: #5a2d7a; font-size: 11px; font-weight: 800; }
 .chain-chip .rc-dot { box-shadow: 0 0 0 3px rgba(90,45,122,0.12); }
-.rt-ctrl { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; }
+/* 链条一长(Unit 2→3 有 10 环),整条骨架加上箭头机制有 1500px 高,"下一站"会被推到滚动区外面 ——
+   所以控制条吸底,不管链条多长都够得着 */
+.rt-ctrl { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; position: sticky; bottom: 0; padding: 11px 0 6px; background: var(--paper); }
 .rt-btn { min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .rt-btn.primary { background: var(--ink, #211f1c); border-color: var(--ink, #211f1c); color: #fff; }
 .rt-btn.ghost { color: var(--ink-soft); }
@@ -2129,10 +2131,39 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   ];
 
   // ============ 因果链 ============
-  // 链条骨架、每一环的名称和"箭头机制"都出自你的讲义(因果链/Unit45_主干因果链_大航海到工业革命.docx),
+  // 链条骨架、每一环的名称和"箭头机制"都出自你的讲义(因果链/Unit23_跨单元因果链_讲义脚本.docx、
+  // 因果链/Unit45_主干因果链_大航海到工业革命.docx),
   // 这里只承载骨架:环名 + 连接词 + 核心证据。完整讲法留在 docx 里,两边不重复。
   // 结构与 ROUTES 同构,所以商路模式那套步进界面可以整套复用;唯一多出来的是 links(连接词)。
+  // 讲义里是 6 个 Link,地图上有的 Link 拆成两站 —— 因为同一个链节的两端落在不同的地块上
+  // (Link 2 的欧洲/伊斯兰双崩溃、Link 4 的奥斯曼/莫卧儿双实例),分开走地图才点得亮。
   const CHAINS = [
+    { id: 'u23_empires', kind: 'chain',
+      name: 'Unit 2→3 主干链 · 帝国如何从废墟中崛起',
+      blurb: 'Unit 2 和 Unit 3 不是两章,是一条链:贸易网络的连通性同时送出财富、技术和病菌 —— 财富制造竞争,病菌瓦解旧秩序,技术武装了新崛起的军事集团。c.1450 之后那几个超大帝国不是偶然同时出现的。',
+      exam: '这条链是 DBQ Contextualization 的通用素材(任何 c.1450 之后的帝国或航海题,都能用"c.1200–1450 跨区域贸易网络的扩张创造了……的物质与技术条件"开场)。最常见的失分写法是 "In Unit 2 trade expanded, then in Unit 3 empires emerged" —— then 不是 because,序列不等于因果。要说出三个条件:技术(火药)、真空(旧帝国崩溃)、利益(控制商路的财政动力),缺一个都不算完整 Causation。',
+      stops: [8, 9, 23, 3, 43, 18, 13, 5, 19, 12],
+      labels: ['三大贸易体系全速运转', '连通性反噬:瘟疫西传', '黑死病与封建松动', '旧权威真空', '火药军事化改写攻防', '火药帝国崛起:1453', '同一机制的第二个实例', '三套工具巩固帝国', '宗教断层线固化', '白银闭环与大航海铺垫'],
+      evidence: ['Pax Mongolica · yam 驿站 · 季风与 dhow · 跨撒哈拉黄金 · 奢侈品→政治竞争',
+                 'Silk Road decline · 蒙古开路→瘟疫沿路走 · Yersinia pestis · 商路下海',
+                 'Black Death 1347–1351 · 欧洲 1/3 人口 · 劳动力荒→工资上涨 · 农奴制松动',
+                 'Abbasid 1258 亡于蒙古 · 伊斯兰世界无单一中心 · Turkic 军事政权竞争 · 1335 Ilkhanate 解体 · 1368 Yuan 亡',
+                 '中国唐宋起源 · 沿丝路西传 · 铸炮技术成熟 · 大炮轰破城堡 → 中央集权常备军',
+                 'Urban 铸巨炮 · 1453 君士坦丁堡陷落 · 控制丝路西端 · 拜占庭已先衰弱',
+                 'Babur(Timurid-Mongol 后裔) · 1526 First Battle of Panipat 炮兵 · 灭 Delhi Sultanate · Mughal 即 Mongol 的波斯语变体',
+                 '官僚:devshirme/Janissaries · mansabdari · 科举 || 财政:包税制 · zamindar · 一条鞭法征银 || 意识形态:Sunni 哈里发 · Akbar Din-i-Ilahi · 天命',
+                 'Safavid 1501 Shia 立国 · Ottoman Sunni 哈里发 · Sunni–Shia 之争地缘政治化 · Protestant Reformation 1517',
+                 'Ming 税收征银 → Potosí 银矿 · Manila galleons · Ottoman 垄断陆路 → da Gama 1498 · Columbus 1492'],
+      links: ['同一批路线同时运货、运技术、运病菌 —— 连通性本身就是传播机制,不只是"贸易让帝国变富"',
+              '鼠疫沿商路进入地中海与西欧,击中的是一个既没有免疫、也没有备用治理方案的旧体系',
+              '欧洲丢的是劳动力,伊斯兰世界丢的是政治中心 —— 同一场系统性崩溃在两端各留下一个真空',
+              '旧帝国不是被某个外敌打败的,而是因为深度依赖贸易连通性(商业税收、Pax Mongolica 的稳定),才最容易被这种连通性传来的冲击击溃',
+              '真空只是机会,填空要工具:火药在此前一个世纪已沿同一批商路西传,铸炮技术恰好此时成熟 —— 火药的"存在"和它的"军事化应用"是两件事',
+              '技术 + 真空 + 商路税收支撑的军事投入,三者同时到位 —— 缺任何一个,1453 都攻不下守了千年的君堡',
+              '不是奥斯曼特别能打,而是同一套机制在别处复制:Babur 用炮兵在 1526 Panipat 一战改写印度政治版图,四大帝国都长在蒙古碎片化后的领土上',
+              '征服不等于统治 —— 占下多语言多宗教的广土之后,四个帝国面对的是同一个问题:如何用有限的行政资源真正管住它',
+              '意识形态是三套工具里最锋利的一件,也最容易反噬:Ottoman 以 Sunni 哈里发立身、Safavid 以 Shia 立国,合法性之争就此凝固成地缘断层',
+              '帝国秩序稳定 → 奥斯曼坐收丝路西端的过路费 → 欧洲商人被迫改走海路 → Unit 4 的大航海从这里出发;白银则先一步把两条链接上了'] },
     { id: 'u4_atlantic', kind: 'chain',
       name: 'Unit 4 主干链 · 从大航海到大西洋体系',
       blurb: 'Unit 4 回答一个问题:欧洲如何在 200 年内,从陆基帝国体系的边缘变成全球贸易网络的中心?答案是一条由技术、国家权力、生态交换和劳动力系统串起来的连续因果链。',
@@ -2153,6 +2184,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '被奴役者与非洲统治者从不是被动接受 —— 从 Ndongo 到巴西内陆,抵抗贯穿整个体系',
               '殖民扩张重构了全球的种族、阶级与性别等级,创造了 Unit 5 革命所要反抗的那个不平等秩序'] },
   ];
+
+  // 入口药丸上不重复"主干链"三个字(选单标题已经写着"因果链"),但单元号要留 —— 链条多起来之后
+  // 学生是按单元找链的。首页那份清单是把这里的选单 innerHTML 拷过去的,所以只有这一处真源。
+  const chainChipName = (name) => name.replace(' 主干链 ·', ' ·');
 
   const routesLayer = document.getElementById('routes-layer');
   const pinToRoutes = {};
@@ -2379,7 +2414,16 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     renderEventContent(num, pinBadgeColor(num));
     eventPanel.insertAdjacentHTML('afterbegin', itineraryHTML());
     eventZone.classList.remove('fit-content');   // 行程面板占位,别再按 1-2 条事件收窄
-    eventZone.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    // 商路的站点是横排的,复位到顶就行;链条是竖排骨架(Unit 2→3 有 10 环,整条 1500px 高),
+    // 复位到顶会把"当前这一环"留在视野外面 —— 所以链条改成把当前环滚进视野。
+    // 直接写 scrollTop 不用 smooth:隐藏标签页里滚动动画不推进(骆驼落位、标点可见性都栽过这个坑)。
+    const nowStop = route.kind === 'chain' ? eventPanel.querySelector('.rt-stop.now') : null;
+    if (nowStop) {
+      const offset = nowStop.getBoundingClientRect().top - eventZone.getBoundingClientRect().top;
+      eventZone.scrollTop = Math.max(0, eventZone.scrollTop + offset - 140);   // 留出上一环的箭头
+    } else {
+      eventZone.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    }
     if (routeStepCb) routeStepCb();
   }
 
@@ -2475,13 +2519,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         <button type="button" class="rt-btn" data-route-action="prev" ${i <= 0 ? 'disabled' : ''}>← 上一站</button>
         <button type="button" class="rt-btn primary" data-route-action="next" ${i >= route.stops.length - 1 ? 'disabled' : ''}>下一站 →</button>
         <button type="button" class="rt-btn" data-route-action="play">${playing ? '⏸ 暂停' : '▶ 自动播放'}</button>
-        <button type="button" class="rt-btn ghost" data-route-action="exit">退出商路</button>
+        <button type="button" class="rt-btn ghost" data-route-action="exit">${isChain ? '退出因果链' : '退出商路'}</button>
       </div>
     </div>`;
   }
 
-  // 空态那块地方原本只有一句说明文字,顺手当商路入口 —— 首页标语写着"跟着商队一路走",
-  // 可这功能以前只有点到恰好在路线上的 16/104 个标点才会撞见。
+  // 空态里只留练习入口。因果链和商路的清单交给标题行那两个常驻按钮(renderPicker),
+  // 上下两份清单是重复的 —— 链条越加越多,空态会先被撑成一张长名单。
   function routePickerHTML() {
     const st = quizStats();
     return `<div class="route-picker-title">Practice</div>`
@@ -2493,19 +2537,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       + `</div>`
       + (st.practiced ? `<div class="qz-stats">已练 ${st.practiced} 条 · 待复习 ${st.review} 条`
           + (st.review ? ` · <button type="button" class="qz-link" data-quiz-book="1">看错题本</button>` : '')
-          + ` · <button type="button" class="qz-link" data-quiz-reset="1">清空记录</button></div>` : '')
-      + `<div class="route-picker-title">因果链</div>`
-      + `<div class="route-picker">`
-      + CHAINS.map(c => `<button type="button" class="route-chip chain-chip" data-route-go="${c.id}">`
-        + `<span class="rc-dot" style="background:#5a2d7a"></span>${c.name.replace('Unit 4 主干链 · ', '')}`
-        + `<span style="color:var(--ink-soft);font-weight:600">${c.stops.length} 环</span></button>`).join('')
-      + `</div>`
-      + `<div class="route-picker-title">或者跟着商队走一趟</div>`
-      + `<div class="route-picker">`
-      + ROUTES.map(r => `<button type="button" class="route-chip" data-route-go="${r.id}">`
-        + `<span class="rc-dot" style="background:${r.color}"></span>${r.name.split(' · ')[0]}`
-        + `<span style="color:var(--ink-soft);font-weight:600">${r.stops.length} 站</span></button>`).join('')
-      + `</div>`;
+          + ` · <button type="button" class="qz-link" data-quiz-reset="1">清空记录</button></div>` : '');
   }
   function mountRoutePicker() {
     if (!eventEmpty || eventEmpty.querySelector('.route-picker')) return;
@@ -2758,7 +2790,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (kind === 'chain') {
       body = `<div class="route-picker">` + CHAINS.map(c =>
         `<button type="button" class="route-chip chain-chip" data-route-go="${c.id}">`
-        + `<span class="rc-dot" style="background:#5a2d7a"></span>${c.name}`
+        + `<span class="rc-dot" style="background:#5a2d7a"></span>${chainChipName(c.name)}`
         + `<span style="color:var(--ink-soft);font-weight:600">${c.stops.length} 环</span></button>`).join('') + `</div>`;
     } else if (kind === 'route') {
       body = `<div class="route-picker">` + ROUTES.map(r =>
@@ -2967,6 +2999,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       else if (a === 'exit') exitQuiz();
       return;
     }
+    // 选单(标题行按钮打开的那张)也渲染在这块面板里,里面的链条/商路药丸得能点 ——
+    // 以前只有空态里的药丸绑了 enterRouteMode,选单里的点了没反应
+    const goChip = e.target.closest('[data-route-go]');
+    if (goChip) { enterRouteMode(goChip.dataset.routeGo); return; }
     const act = e.target.closest('[data-route-action]');
     if (!act || !routeMode) return;
     const a = act.dataset.routeAction;
