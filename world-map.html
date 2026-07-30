@@ -181,6 +181,11 @@ h1 .en { color: var(--accent); }
 .qz-stats { margin: 12px 0 0; font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
 .qz-link { border: none; background: none; padding: 0; font: inherit; font-size: 11.5px; font-weight: 700; color: var(--terracotta, #a8552f); text-decoration: underline; cursor: pointer; }
 .qz-link:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+/* 结算页 */
+.qz-result { display: flex; align-items: baseline; gap: 14px; margin: 14px 0 0; flex-wrap: wrap; }
+.qz-big { font-size: 38px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.qz-big span { font-size: 20px; font-weight: 700; color: var(--ink-soft); }
+.qz-verdict-text { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
 .qz-note { margin-left: auto; padding: 2px 8px; border-radius: 999px; background: rgba(33,31,28,0.08); font-size: 11px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
 .qz-card { margin: 11px 0 0; padding: 13px 16px; border: 1px solid var(--line); border-left: 4px solid var(--ink-soft); border-radius: 10px; background: #fff; }
 .qz-meta { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
@@ -2238,6 +2243,7 @@ h1 .en { color: var(--accent); }
   // 筛选器的挂起/恢复由下面的 initSearchFilter 赋值(它在闭包里,外面拿不到内部状态)
   let suspendFilters = null, restoreFilters = null;
   let currentEventPass = null;   // 同上:出题时用它拿"当前筛选下的题库"
+  let onRegionChange = null, filterIsActive = null;   // 地区现在是筛选的一个维度,两边要互相知道
   let PERIODS_REF = null, inPeriodRef = null, CATS_REF = null;   // 时期/主题定义都在那个闭包里,出题要用
 
   // ============ 商路模式 ============
@@ -2469,6 +2475,7 @@ h1 .en { color: var(--accent); }
   // 这是可以接受的:内容变了,那条掌握度本来也该重算。
   const QUIZ_STORE_KEY = 'mh.quiz.v1';
   const MASTER_STREAK = 2;   // 错过之后要连续答对 2 次才移出错题本 —— 蒙对一次不算掌握
+  const SESSION_SIZE = 10;   // 一组多少题 —— 有终点才有"练完了"
   function eventKey(num, it) {
     const plain = (it.trigHTML || '').replace(/<[^>]*>/g, '').trim().slice(0, 24);
     return `${num}|${it.yr}|${plain}`;
@@ -2554,7 +2561,21 @@ h1 .en { color: var(--accent); }
       quizMode = { pools: { period: [], region: [], theme: [], term: [] }, q: null, answered: true, asked: 0, right: 0, mode: mode || 'all' };
       return;
     }
-    quizMode = { pools, q: null, answered: false, asked: 0, right: 0, mode: mode || 'all' };
+    // 开局就把这一组的题排好。同一条事件会同时落进多个题库(主题/区域/术语/时期),
+    // 所以洗牌后要按事件去重 —— 否则一组里会把同一条事件换个问法再问一遍,
+    // 而且"只练错题 (8)"会给出 10 题,和入口承诺的数字不符。
+    const flat = Object.values(pools).flat();
+    for (let i = flat.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [flat[i], flat[j]] = [flat[j], flat[i]]; }
+    const usedEvent = new Set();
+    const queue = [];
+    for (const item of flat) {
+      const k = eventKey(item.num, item.it);
+      if (usedEvent.has(k)) continue;
+      usedEvent.add(k);
+      queue.push(item);
+      if (queue.length >= SESSION_SIZE) break;
+    }
+    quizMode = { pools, queue, i: -1, q: null, answered: false, asked: 0, right: 0, wrong: [], mode: mode || 'all' };
     if (suspendFilters) suspendFilters();
     deactivateRegion();
     dismissFirstClickHint();
@@ -2563,11 +2584,9 @@ h1 .en { color: var(--accent); }
 
   function nextQuestion() {
     if (!quizMode) return;
-    // 四种题型混着出,只从当前筛选下确实有题的那几种里挑
-    const avail = Object.keys(quizMode.pools).filter(k => quizMode.pools[k].length);
-    const kind = avail[Math.floor(Math.random() * avail.length)];
-    const pool = quizMode.pools[kind];
-    const q = Object.assign({}, pool[Math.floor(Math.random() * pool.length)]);
+    quizMode.i++;
+    if (quizMode.i >= quizMode.queue.length) { renderSummary(); return; }
+    const q = Object.assign({}, quizMode.queue[quizMode.i]);
     // 术语题的三个干扰项在出题时定好,免得重绘时换来换去。优先同主题,读起来才像样。
     if (q.type === 'term') {
       const others = quizMode.pools.term.filter(x => x.answer !== q.answer);
@@ -2592,6 +2611,7 @@ h1 .en { color: var(--accent); }
     quizMode.verdict = correct ? 'right' : 'wrong';
     quizMode.pickedLabel = pickedLabel;
     if (correct) quizMode.right++;
+    else quizMode.wrong.push(quizMode.q);
     const q = quizMode.q;
     const before = loadStore()[eventKey(q.num, q.it)];
     recordAnswer(q.num, q.it, correct);
@@ -2621,6 +2641,39 @@ h1 .en { color: var(--accent); }
     const picked = (PERIODS_REF || []).find(p => p.id === pid);
     judge(pid === quizMode.q.answer.id, picked ? picked.label : pid);
     renderQuiz();
+  }
+
+  // 一组做完给结算:分数 + 这一组答错的、可点回地图
+  function renderSummary() {
+    const { right, queue, wrong, mode } = quizMode;
+    const total = queue.length;
+    const pct = Math.round(right / total * 100);
+    const verdict = pct === 100 ? '全对' : pct >= 80 ? '不错' : pct >= 50 ? '还行,错的这些再看看' : '这一组问题不少,建议按错题再练一轮';
+    eventEmpty.style.display = 'none';
+    eventPanel.innerHTML = `<div class="quiz-panel">
+        <div class="qz-head"><div class="qz-title">这一组做完了</div>
+          <div class="qz-score">${mode === 'review' ? '只练错题' : '随堂练习'}</div></div>
+        <div class="qz-result"><span class="qz-big">${right}<span>/${total}</span></span><span class="qz-verdict-text">${verdict}</span></div>
+        ${wrong.length ? `<p class="qz-stem">这 ${wrong.length} 条答错了,已经收进错题本。点任意一条可以在地图上打开那一站。</p>` : `<p class="qz-stem">这一组没有错题。</p>`}
+        <div class="qz-ctrl">
+          <button type="button" class="rt-btn primary" data-quiz-start="${mode === 'review' ? 'review' : 'all'}">再来一组</button>
+          ${quizStats().review ? `<button type="button" class="rt-btn" data-quiz-start="review">只练错题 (${quizStats().review})</button>` : ''}
+          <button type="button" class="rt-btn ghost" data-quiz-action="exit">退出练习</button>
+        </div>
+      </div>`
+      + (wrong.length ? `<div class="event-list">`
+        + wrong.map(r => `<div class="event-card is-result" data-pin="${r.num}" data-region="${pinRegion(r.num) || ''}" role="button" tabindex="0" style="border-left-color:${r.it.catColor}">`
+          + `<div class="ec-top"><span class="ec-yr">${r.it.yr}</span><span class="ec-cat">${r.it.catFull}</span></div>`
+          + `<div class="ec-trig">${r.it.trigHTML}</div>`
+          + `<div class="ec-where"><span class="ew-pin">${r.num}</span>${r.it.city}<span class="ew-go">在地图上打开 →</span></div></div>`).join('')
+        + `</div>` : '');
+    eventPanel.classList.remove('show');
+    void eventPanel.offsetWidth;
+    eventPanel.classList.add('show');
+    eventZone.classList.remove('fit-content');
+    eventZone.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    quizMode = null;   // 结算页是只读的,不再接受作答
+    if (quizStepCb) quizStepCb();
   }
 
   function renderMistakeBook() {
@@ -2725,7 +2778,7 @@ h1 .en { color: var(--accent); }
     eventPanel.innerHTML = `<div class="quiz-panel">
         <div class="qz-head">
           <div class="qz-title">${quizMode.mode === 'review' ? '只练错题' : '随堂练习'}</div>
-          <div class="qz-score">第 ${asked} 题 · 答对 ${right}</div>
+          <div class="qz-score">第 ${asked} / ${quizMode.queue.length} 题 · 答对 ${right}</div>
         </div>
         <p class="qz-ask">${ask}</p>
         <div class="qz-card" style="border-left-color:${q.it.catColor}">
@@ -2738,7 +2791,7 @@ h1 .en { color: var(--accent); }
         ${options}
         ${verdict}
         <div class="qz-ctrl">
-          ${answered ? `<button type="button" class="rt-btn primary" data-quiz-action="next">下一题 →</button>`
+          ${answered ? `<button type="button" class="rt-btn primary" data-quiz-action="next">${quizMode.i >= quizMode.queue.length - 1 ? '看结果 →' : '下一题 →'}</button>`
                      : (isRegion ? `<span class="qz-hint">点地图上的地区色块作答</span>` : '')}
           <button type="button" class="rt-btn ghost" data-quiz-action="exit">退出练习</button>
         </div>
@@ -2950,6 +3003,9 @@ h1 .en { color: var(--accent); }
   }
 
   function revealRegionPins(region, on) {
+    // 有筛选在生效时,谁该亮由 apply() 统一决定(它会把地区当成再收窄一层),
+    // 这里一股脑全亮会把不符合筛选的标点也放出来。
+    if (filterIsActive && filterIsActive()) { if (onRegionChange) onRegionChange(); return; }
     svg.querySelectorAll(`.pin-group[data-region="${region}"]`).forEach(g => {
       g.classList.toggle('revealed', on);
     });
@@ -2973,13 +3029,20 @@ h1 .en { color: var(--accent); }
 
   function deactivateRegion() {
     if (!activeRegion) return;
+    const filtering = !!(filterIsActive && filterIsActive());
     paintRegion(activeRegion, false);
     activeRegion = null;
     syncRegionPressed();
-    // 该地区的标点一起收起了,下方展开的事件也跟着清空
-    eventPanel.classList.remove('show');
-    eventPanel.innerHTML = '';
-    eventEmpty.style.display = 'block';
+    if (filtering) {
+      // 收起地区 = 把筛选的范围放回全球。activeRegion 是在 paintRegion 之后才清的,
+      // 所以那次重算用的还是旧范围,这里必须再算一次。
+      if (onRegionChange) onRegionChange();
+    } else {
+      // 该地区的标点一起收起了,下方展开的事件也跟着清空
+      eventPanel.classList.remove('show');
+      eventPanel.innerHTML = '';
+      eventEmpty.style.display = 'block';
+    }
     activeNum = null;
     hideAllRoutes();
     animateTransform(MIN_ZOOM, 0, 0, 500);
@@ -2991,9 +3054,11 @@ h1 .en { color: var(--accent); }
     activeRegion = region;
     syncRegionPressed();
     paintRegion(region, true);
-    eventPanel.classList.remove('show');
-    eventPanel.innerHTML = '';
-    eventEmpty.style.display = 'block';
+    if (!(filterIsActive && filterIsActive())) {   // 筛选生效时结果列表要留着,只是收窄到这个地区
+      eventPanel.classList.remove('show');
+      eventPanel.innerHTML = '';
+      eventEmpty.style.display = 'block';
+    }
     activeNum = null;
     hideAllRoutes();
     // 标点比较挤的地区(欧洲/西非那些)点开后自动把镜头推近框住,不用手动去找
@@ -3141,6 +3206,7 @@ h1 .en { color: var(--accent); }
     let query = '';
     let tokens = [];          // query 按空格切出来的词,全部命中才算命中
     let onCountChange = null; // 首页父页面订阅计数变化
+    // 这两个由外层的地区交互回调进来(见下方赋值)
 
     const norm = s => (s || '').toLowerCase();
     const plain = it => norm(it.city + ' ' + it.yr + ' ' + it.catFull + ' ' + it.catAbbr + ' ' + (it.trigHTML || '').replace(/<[^>]*>/g, ''));
@@ -3211,15 +3277,21 @@ h1 .en { color: var(--accent); }
         if (activeRegion) paintRegion(activeRegion, true);
         clearResults();
       } else {
+        // 筛选生效时,点开的地区是"再收窄一层",不是把筛选清掉 ——
+        // 否则界面写着 Period 2、地图却亮着不属于 Period 2 的标点,两边对不上。
         const hits = [];
         pinGroups().forEach(g => {
           const num = pinNum(g);
-          const passed = (index[num] || []).filter(eventPass);
+          const inScope = !activeRegion || g.dataset.region === activeRegion;
+          const passed = inScope ? (index[num] || []).filter(eventPass) : [];
           g.classList.toggle('revealed', passed.length > 0);
           passed.forEach(it => hits.push({ num, region: g.dataset.region, it }));
         });
         const pinCount = new Set(hits.map(h => h.num)).size;
-        countText = hits.length ? `${pinCount} 个地点 · ${hits.length} 条` : '没有匹配';
+        const scope = activeRegion && REGION_INFO[activeRegion]
+          ? REGION_INFO[activeRegion].name.split(' ')[0] + ' · ' : '';
+        countText = hits.length ? `${scope}${pinCount} 个地点 · ${hits.length} 条`
+                                : `${scope}没有匹配`;
         hits.length ? renderResults(hits) : renderNoResults();
         dismissFirstClickHint();                 // 搜索时那个"点一下试试"的气泡正好挡住命中标点
       }
@@ -3260,6 +3332,10 @@ h1 .en { color: var(--accent); }
         b.setAttribute('aria-pressed', activeCats.has(b.dataset.cat) ? 'true' : 'false'));
     }
     function setPeriod(id) { activePeriod = id || ''; if (periodSel) periodSel.value = activePeriod; apply(); }
+    // 地区变了要重算(它现在是筛选的一个维度);外面的 activateRegion/deactivateRegion 会调它
+    onRegionChange = () => { if (filterActive()) apply(); };
+    filterIsActive = () => filterActive();
+
     function reset() {
       takeQuery(''); if (searchInput) searchInput.value = '';
       activeCats = new Set(allCats); activePeriod = '';
@@ -3331,6 +3407,8 @@ h1 .en { color: var(--accent); }
       getActiveCats: () => new Set(activeCats),
       getState: () => ({ query, cats: new Set(activeCats), period: activePeriod }),
       setQuery, toggleCat, setPeriod, reset, openHit,
+      // 切科目回来时用:按当前筛选状态重算一遍,让面板和工具栏对齐
+      refresh: () => apply(),
       // 商路模式:首页据此建入口、并把行程面板镜像过去
       getRoutes: () => ROUTES.map(r => ({ id: r.id, name: r.name, color: r.color, stops: r.stops.length })),
       enterRoute: id => enterRouteMode(id),

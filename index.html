@@ -296,6 +296,10 @@ nav.topnav {
 .home-events .qz-stats { margin: 12px 0 0; font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
 .home-events .qz-link { border: none; background: none; padding: 0; font: inherit; font-size: 11.5px; font-weight: 700; color: var(--terracotta); text-decoration: underline; cursor: pointer; }
 .home-events .qz-link:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.home-events .qz-result { display: flex; align-items: baseline; gap: 14px; margin: 14px 0 0; flex-wrap: wrap; }
+.home-events .qz-big { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.home-events .qz-big span { font-size: 18px; font-weight: 700; color: var(--ink-soft); }
+.home-events .qz-verdict-text { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
 .home-events .qz-note { margin-left: auto; padding: 2px 8px; border-radius: 999px; background: rgba(33,31,28,0.08); font-size: 11px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
 .home-events .qz-card { margin: 11px 0 0; padding: 13px 16px; border: 1px solid var(--line); border-left: 4px solid var(--ink-soft); border-radius: 10px; background: #fff; }
 .home-events .qz-meta { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
@@ -1050,7 +1054,12 @@ nav.topnav {
       mapComingSoon.classList.remove('show');
       showLiveFrame(s);
       if (homeEvents) homeEvents.hidden = key !== 'world';
-      if (key === 'world') syncHomeEvents();
+      if (key === 'world') {
+        // 切走再切回来时,面板里往往还是离开前那一站的事件卡,而工具栏上的筛选还在 ——
+        // 两边对不上。让地图按当前筛选重算一遍:有筛选就回到结果列表,没有就回到空态。
+        if (hostApi && hostApi.refresh) hostApi.refresh();
+        syncHomeEvents();
+      }
       todayPick.style.display = key === 'world' && todayPick.dataset.pinNum ? 'block' : 'none';
       return;
     }
