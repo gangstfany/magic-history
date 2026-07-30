@@ -215,6 +215,12 @@ h1 .en { color: var(--accent); }
 .quiz-chip .rc-dot { box-shadow: 0 0 0 3px rgba(139,26,26,0.12); }
 
 /* ---- 商路入口 ---- */
+/* 标题行的常驻入口 */
+.hdr-menu { display: flex; gap: 6px; margin-left: auto; }
+.hdr-btn { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.hdr-btn:hover { border-color: var(--ink-soft); }
+.hdr-btn:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+header.topbar { display: flex; align-items: center; gap: 12px; }
 .route-launch { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .route-launch:hover { border-color: var(--ink-soft); }
 .route-picker { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 14px 0 0; }
@@ -358,6 +364,11 @@ h1 .en { color: var(--accent); }
 <div class="app-shell">
 <header class="topbar">
 <h1><span class="en">History World Map</span></h1>
+<nav class="hdr-menu" aria-label="专题与练习">
+  <button type="button" class="hdr-btn" data-open-picker="chain">因果链</button>
+  <button type="button" class="hdr-btn" data-open-picker="route">商路</button>
+  <button type="button" class="hdr-btn" data-open-picker="quiz">练习</button>
+</nav>
 </header>
 
 <div class="map-toolbar" id="mapToolbar" role="group" aria-label="筛选历史事件">
@@ -2737,6 +2748,45 @@ h1 .en { color: var(--accent); }
     if (quizStepCb) quizStepCb();
   }
 
+  // 三组功能原本只在事件面板的空态里露出,学生一旦点开某一站、或搜了个词,入口就全没了 ——
+  // 唯一回去的办法是再点一次同一地块取消选中,没人会知道。所以标题行放常驻入口,任何状态下都能打开。
+  function renderPicker(kind) {
+    exitRouteMode(true);
+    quizMode = null;
+    const title = { chain: '因果链', route: '商路', quiz: '随堂练习' }[kind];
+    let body = '';
+    if (kind === 'chain') {
+      body = `<div class="route-picker">` + CHAINS.map(c =>
+        `<button type="button" class="route-chip chain-chip" data-route-go="${c.id}">`
+        + `<span class="rc-dot" style="background:#5a2d7a"></span>${c.name}`
+        + `<span style="color:var(--ink-soft);font-weight:600">${c.stops.length} 环</span></button>`).join('') + `</div>`;
+    } else if (kind === 'route') {
+      body = `<div class="route-picker">` + ROUTES.map(r =>
+        `<button type="button" class="route-chip" data-route-go="${r.id}">`
+        + `<span class="rc-dot" style="background:${r.color}"></span>${r.name.split(' · ')[0]}`
+        + `<span style="color:var(--ink-soft);font-weight:600">${r.stops.length} 站</span></button>`).join('') + `</div>`;
+    } else {
+      const st = quizStats();
+      body = `<div class="route-picker">`
+        + `<button type="button" class="route-chip quiz-chip" data-quiz-start="all">`
+        + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">一组 10 题</span></button>`
+        + (st.review ? `<button type="button" class="route-chip quiz-chip" data-quiz-start="review">`
+            + `<span class="rc-dot" style="background:#d9a441"></span>只练错题<span style="color:var(--ink-soft);font-weight:600">${st.review} 条</span></button>` : '')
+        + `</div>`
+        + (st.practiced ? `<div class="qz-stats">已练 ${st.practiced} 条 · 待复习 ${st.review} 条`
+            + (st.review ? ` · <button type="button" class="qz-link" data-quiz-book="1">看错题本</button>` : '') + `</div>` : '');
+    }
+    eventEmpty.style.display = 'none';
+    eventPanel.innerHTML = `<div class="quiz-panel"><div class="qz-head"><div class="qz-title">${title}</div></div>`
+      + body
+      + `<div class="qz-ctrl"><button type="button" class="rt-btn ghost" data-quiz-action="exit">返回</button></div></div>`;
+    eventPanel.classList.remove('show');
+    void eventPanel.offsetWidth;
+    eventPanel.classList.add('show');
+    eventZone.classList.remove('fit-content');
+    if (quizStepCb) quizStepCb();
+  }
+
   function renderMistakeBook() {
     const st = loadStore();
     const rows = [];
@@ -2925,6 +2975,9 @@ h1 .en { color: var(--accent); }
     else if (a === 'play') toggleAutoPlay();
     else if (a === 'exit') exitRouteMode();
   });
+
+  document.querySelectorAll('[data-open-picker]').forEach(b =>
+    b.addEventListener('click', () => renderPicker(b.dataset.openPicker)));
 
   mountRoutePicker();
   eventEmpty.addEventListener('click', e => {
@@ -3483,6 +3536,7 @@ h1 .en { color: var(--accent); }
         else if (a === 'exit') exitRouteMode();
       },
       inRoute: () => !!routeMode,
+      openPicker: kind => renderPicker(kind),
       // 随堂练习
       startQuiz: mode => startQuiz(mode),
       quizStats: () => quizStats(),
