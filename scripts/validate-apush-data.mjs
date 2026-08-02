@@ -69,6 +69,19 @@ export function validateDataset(data, manifest, ledgerText) {
   if (JSON.stringify(themeRows.map((theme) => theme?.id).sort()) !== JSON.stringify([...OFFICIAL_THEME_IDS].sort())) {
     errors.push('dataset themes must exactly match official APUSH theme IDs');
   }
+  for (const period of periodRows) {
+    const periodId = period?.id || '(unknown)';
+    requiredString(period, 'labelEn', 'period');
+    requiredString(period, 'labelZh', 'period');
+    if (period?.number !== 1) errors.push(`period ${periodId} number must be 1`);
+    if (period?.startYear !== 1491) errors.push(`period ${periodId} startYear must be 1491`);
+    if (period?.endYear !== 1607) errors.push(`period ${periodId} endYear must be 1607`);
+  }
+  for (const source of sourceRows) {
+    requiredString(source, 'title', 'source');
+    requiredString(source, 'kind', 'source');
+    requiredString(source, 'locator', 'source');
+  }
   for (const site of siteRows) {
     requiredString(site, 'nameEn', 'site');
     requiredString(site, 'nameZh', 'site');
@@ -83,6 +96,8 @@ export function validateDataset(data, manifest, ledgerText) {
     if (!periodIds.has(event?.periodId) || event?.periodId !== 'p1') errors.push(`event ${eventId} has invalid periodId`);
     if (!Number.isFinite(event?.startYear) || !Number.isFinite(event?.endYear) || event.startYear > event.endYear) {
       errors.push(`event ${eventId} has invalid date range`);
+    } else if (event.startYear < 1491 || event.endYear > 1607) {
+      errors.push(`event ${eventId} outside Period 1: 1491-1607`);
     }
     const eventSiteIds = requiredArray(event, 'siteIds', eventId);
     const eventThemeIds = requiredArray(event, 'themeIds', eventId);

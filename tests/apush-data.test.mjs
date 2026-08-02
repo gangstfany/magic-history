@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { validateDataset } from '../scripts/validate-apush-data.mjs';
+import { startServer } from '../scripts/verify-apush-browser.mjs';
 
 const readJson = async (path) => JSON.parse(await readFile(new URL(path, import.meta.url), 'utf8'));
 
@@ -52,9 +53,13 @@ function validPeriodOneFixture() {
   return {
     data: {
       schemaVersion: 1,
-      periods: [{ id: 'p1' }],
+      periods: [{
+        id: 'p1', number: 1,
+        labelEn: 'Period 1: 1491-1607', labelZh: '时期一：1491-1607',
+        startYear: 1491, endYear: 1607,
+      }],
       themes: OFFICIAL_THEME_IDS.map((id) => ({ id })),
-      sources: [{ id: 'source-1' }],
+      sources: [{ id: 'source-1', title: 'Source', kind: 'course-framework', locator: 'PDF p. 1' }],
       sites: [{ id: 'site-1', nameEn: 'Site', nameZh: '地点', x: 0, y: 0 }],
       events,
     },
@@ -73,6 +78,28 @@ test('the dataset exposes the official eight APUSH themes exactly once', async (
   const { data } = await loadFixtures();
   assert.deepEqual(data.themes.map(({ id }) => id).sort(),
     ['ARC', 'GEO', 'MIG', 'NAT', 'PCE', 'SOC', 'WOR', 'WXT']);
+});
+
+test('runtime sources expose title, kind, and locator strings without the legacy type field', async () => {
+  const { data } = await loadFixtures();
+  for (const source of data.sources) {
+    for (const field of ['title', 'kind', 'locator']) {
+      assert.equal(typeof source[field], 'string', `source ${source.id} ${field} must be a string`);
+      assert.ok(source[field].trim(), `source ${source.id} ${field} must not be empty`);
+    }
+    assert.equal(Object.hasOwn(source, 'type'), false, `source ${source.id} must not expose legacy type`);
+  }
+});
+
+test('the source ledger records reproducible relative paths and a precise CED range', async () => {
+  const { data, ledger } = await loadFixtures();
+  assert.match(ledger, /Source root: `\/Users\/rachel\/Documents\/AP美国史资料`/);
+  assert.match(ledger, /Local file path \(relative to source root\)/);
+  assert.match(ledger, /教材\/AP美国历史 【考纲】2025\/2023 AP® U\.S\. History\.pdf/);
+  assert.match(ledger, /PDF pp\. 42–67 \(Course Framework pp\. 35–60; Unit 1 Topics 1\.1–1\.7\)/);
+  const ced = data.sources.find((source) => source.id === 'ced-2023');
+  assert.equal(ced.locator, 'PDF pp. 42–67; Course Framework pp. 35–60 (Unit 1, Topics 1.1–1.7)');
+  assert.doesNotMatch(JSON.stringify(data.sources), /\/Users\/rachel\/Documents/);
 });
 
 test('validation rejects duplicate identifiers', async () => {
@@ -116,6 +143,43 @@ test('validation rejects invalid date order and out-of-bounds coordinates', asyn
     `site ${invalid.sites[0].id} x out of bounds`,
     `site ${invalid.sites[0].id} y out of bounds`,
     `event ${invalid.events[0].id} has invalid date range`,
+  ]);
+});
+
+test('validation requires the exact Period 1 metadata contract', () => {
+  const { data, manifest, ledger } = validPeriodOneFixture();
+  data.periods[0] = {
+    id: 'p1', number: 2, labelEn: '', labelZh: ' ', startYear: 1490, endYear: 1608,
+  };
+  assert.deepEqual(validateDataset(data, manifest, ledger).filter((error) => error.startsWith('period p1')), [
+    'period p1 missing labelEn',
+    'period p1 missing labelZh',
+    'period p1 number must be 1',
+    'period p1 startYear must be 1491',
+    'period p1 endYear must be 1607',
+  ]);
+});
+
+test('validation rejects event years outside 1491-1607 even when ordered', () => {
+  const { data, manifest, ledger } = validPeriodOneFixture();
+  data.events[0].startYear = 1490;
+  data.events[0].endYear = 1491;
+  data.events[1].startYear = 1607;
+  data.events[1].endYear = 1608;
+  const errors = validateDataset(data, manifest, ledger);
+  assert.ok(errors.includes(`event ${data.events[0].id} outside Period 1: 1491-1607`));
+  assert.ok(errors.includes(`event ${data.events[1].id} outside Period 1: 1491-1607`));
+});
+
+test('validation requires source title, kind, and locator strings', () => {
+  const { data, manifest, ledger } = validPeriodOneFixture();
+  data.sources[0].title = '';
+  data.sources[0].kind = ' ';
+  delete data.sources[0].locator;
+  assert.deepEqual(validateDataset(data, manifest, ledger).filter((error) => error.startsWith('source source-1')), [
+    'source source-1 missing title',
+    'source source-1 missing kind',
+    'source source-1 missing locator',
   ]);
 });
 
@@ -202,4 +266,10 @@ test('validation accumulates defects for a null event without throwing', () => {
   assert.ok(errors.includes('event is missing id'));
   assert.ok(errors.includes('event (unknown) missing titleEn'));
   assert.ok(errors.includes('event (unknown) siteIds must be an array'));
+});
+
+test('browser verifier server cleanup is idempotent before listen and when repeated', async () => {
+  const server = startServer();
+  await assert.doesNotReject(server.close());
+  await assert.doesNotReject(server.close());
 });

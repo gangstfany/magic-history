@@ -19,13 +19,13 @@
     { "id": "SOC", "labelEn": "Social Structures", "labelZh": "社会结构", "color": "#6d6775" }
   ],
   "sources": [
-    { "id": "ced-2023", "title": "College Board AP U.S. History Course and Exam Description (effective Fall 2023)", "type": "course-and-exam-description", "locator": "Period 1 identity and course framework" },
-    { "id": "amsco-4e", "title": "AMSCO Advanced Placement United States History, 4th Edition", "type": "textbook", "locator": "PDF pp. 6-11, 34-37, 59-89" },
-    { "id": "note-1-1-native-societies", "title": "Period 1 review note: Native American Societies Before European Contact", "type": "review-note", "locator": "PDF pp. 4-14" },
-    { "id": "note-1-2-european-exploration", "title": "Period 1 review note: European Exploration in the Americas", "type": "review-note", "locator": "PDF pp. 2-8" },
-    { "id": "note-1-3-exchange-conquest", "title": "Period 1 review note: Columbian Exchange, Spanish Exploration and Conquest", "type": "review-note", "locator": "PDF pp. 2-5" },
-    { "id": "note-1-4-labor-caste", "title": "Period 1 review note: Labor, Slavery, and Caste in the Spanish Colonial System", "type": "review-note", "locator": "PDF pp. 2-3" },
-    { "id": "note-1-5-cultural-interactions", "title": "Period 1 review note: Cultural Interactions Between Europeans, Native Americans, and Africans", "type": "review-note", "locator": "PDF pp. 2-5" }
+    { "id": "ced-2023", "title": "College Board AP U.S. History Course and Exam Description (effective Fall 2023)", "kind": "course-and-exam-description", "locator": "PDF pp. 42–67; Course Framework pp. 35–60 (Unit 1, Topics 1.1–1.7)" },
+    { "id": "amsco-4e", "title": "AMSCO Advanced Placement United States History, 4th Edition", "kind": "textbook", "locator": "PDF pp. 6-11, 34-37, 59-89" },
+    { "id": "note-1-1-native-societies", "title": "Period 1 review note: Native American Societies Before European Contact", "kind": "review-note", "locator": "PDF pp. 4-14" },
+    { "id": "note-1-2-european-exploration", "title": "Period 1 review note: European Exploration in the Americas", "kind": "review-note", "locator": "PDF pp. 2-8" },
+    { "id": "note-1-3-exchange-conquest", "title": "Period 1 review note: Columbian Exchange, Spanish Exploration and Conquest", "kind": "review-note", "locator": "PDF pp. 2-5" },
+    { "id": "note-1-4-labor-caste", "title": "Period 1 review note: Labor, Slavery, and Caste in the Spanish Colonial System", "kind": "review-note", "locator": "PDF pp. 2-3" },
+    { "id": "note-1-5-cultural-interactions", "title": "Period 1 review note: Cultural Interactions Between Europeans, Native Americans, and Africans", "kind": "review-note", "locator": "PDF pp. 2-5" }
   ],
   "sites": [
     { "id": "southwest-pueblo", "nameEn": "Southwest Pueblo societies", "nameZh": "美国西南部普韦布洛社会", "x": 300, "y": 340, "region": "North America", "qualifier": "Representative regional anchor; not a single settlement." },

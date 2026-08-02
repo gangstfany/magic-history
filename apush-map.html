@@ -38,7 +38,7 @@
       outline: 3px solid #247b79;
       outline-offset: 2px;
     }
-    .page-header, .filter-toolbar, .workspace, .load-error {
+    .page-header, .filter-toolbar, .no-results, .workspace, .load-error {
       width: min(1380px, calc(100% - 32px));
       margin-inline: auto;
     }
@@ -112,6 +112,24 @@
       text-align: center;
     }
     #clearFilters { border-color: var(--accent); color: var(--accent-dark); }
+    .no-results {
+      margin-bottom: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      background: rgba(255, 252, 244, .88);
+    }
+    .no-results p { margin: 0 0 10px; color: var(--muted); line-height: 1.5; }
+    .no-results button {
+      min-height: 44px;
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      padding: 7px 13px;
+      background: #fffaf0;
+      color: var(--accent-dark);
+      cursor: pointer;
+      font: 700 .78rem/1.15 ui-sans-serif, system-ui, sans-serif;
+    }
     .workspace {
       display: grid;
       grid-template-columns: minmax(0, 2fr) minmax(290px, .95fr);
@@ -229,7 +247,7 @@
     .load-error p { margin: 0 0 12px; }
     .load-error button { min-width: 88px; min-height: 44px; border: 1px solid #6d2923; border-radius: 8px; background: #fff9ef; cursor: pointer; }
     @media (max-width: 700px) {
-      .page-header, .filter-toolbar, .workspace, .load-error { width: min(100% - 20px, 680px); }
+      .page-header, .filter-toolbar, .no-results, .workspace, .load-error { width: min(100% - 20px, 680px); }
       .page-header { align-items: start; padding-top: 16px; }
       .prototype-label { margin-top: 2px; }
       .filter-toolbar { align-items: stretch; }
@@ -246,6 +264,9 @@
       body[data-layout="c"] .map-panel { min-height: 320px; }
       .detail-panel { max-height: 72vh; overflow: auto; }
     }
+    @media (prefers-reduced-motion: reduce) {
+      .map-geography path { transition: none; }
+    }
   </style>
 </head>
 <body>
@@ -259,6 +280,10 @@
     <div id="themeFilters" role="group" aria-label="APUSH 主题"></div>
     <span id="resultCount" role="status"></span>
     <button id="clearFilters" type="button">清除筛选</button>
+  </section>
+  <section id="noResults" class="no-results" aria-live="polite" hidden>
+    <p id="noResultsMessage"></p>
+    <button id="noResultsClear" type="button">清除筛选</button>
   </section>
   <main id="workspace" class="workspace">
     <section class="map-column">
@@ -509,6 +534,9 @@
         themeFilters: document.querySelector('#themeFilters'),
         resultCount: document.querySelector('#resultCount'),
         clearFilters: document.querySelector('#clearFilters'),
+        noResults: document.querySelector('#noResults'),
+        noResultsMessage: document.querySelector('#noResultsMessage'),
+        noResultsClear: document.querySelector('#noResultsClear'),
         timelineMount: document.querySelector('#timelineMount'),
         detailPanel: document.querySelector('#detailPanel'),
         mapPanel: document.querySelector('#mapPanel'),
@@ -698,7 +726,11 @@
             marker.dataset.siteY = String(site.y);
             marker.setAttribute('role', 'button');
             marker.setAttribute('tabindex', '0');
-            marker.setAttribute('aria-label', `${event.titleEn} · ${event.titleZh} — ${site.nameEn} · ${site.nameZh}`);
+            const qualifier = site.qualifier ? ` — ${site.qualifier}` : '';
+            const sharedRecord = event.siteIds.length > 1
+              ? ' — Opens the same transregional learning record · 打开同一跨区域学习记录'
+              : '';
+            marker.setAttribute('aria-label', `${event.titleEn} · ${event.titleZh} — ${site.nameEn} · ${site.nameZh}${qualifier}${sharedRecord}`);
 
             const hit = document.createElementNS(SVG_NS, 'circle');
             hit.setAttribute('r', '22');
@@ -834,7 +866,15 @@
         if (!model) return false;
         const visible = filterEvents(model.events, state.query, state.activeThemes, model.sitesById, model.themesById);
         state.visibleEventIds = visible.map((event) => event.id);
+        if (state.selectedEventId && !state.visibleEventIds.includes(state.selectedEventId)) {
+          state.selectedEventId = null;
+          state.relationStatus = '';
+        }
         elements.resultCount.textContent = `${visible.length} / ${model.events.length} 事件`;
+        elements.noResults.hidden = visible.length !== 0;
+        elements.noResultsMessage.textContent = state.query
+          ? `没有找到与“${state.query}”匹配的事件。`
+          : '当前筛选条件没有匹配的事件。';
         elements.searchInput.value = state.query;
         elements.themeFilters.querySelectorAll('[data-theme-id]').forEach((button) => {
           button.setAttribute('aria-pressed', String(state.activeThemes.has(button.dataset.themeId)));
@@ -870,6 +910,7 @@
         elements.searchInput.value = '';
         if (!model) return false;
         applyFilters();
+        resetMap();
         return true;
       }
 
@@ -943,6 +984,7 @@
 
       elements.searchInput.addEventListener('input', (event) => setQuery(event.target.value));
       elements.clearFilters.addEventListener('click', clearFilters);
+      elements.noResultsClear.addEventListener('click', clearFilters);
       elements.retryLoad.addEventListener('click', loadData);
       elements.mapPanel.querySelector('[data-map-control="zoom-in"]').addEventListener('click', () => changeZoom(1.3));
       elements.mapPanel.querySelector('[data-map-control="zoom-out"]').addEventListener('click', () => changeZoom(1 / 1.3));

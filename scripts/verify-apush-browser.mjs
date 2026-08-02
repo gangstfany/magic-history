@@ -90,7 +90,7 @@ async function discoverChromium(chromium) {
   throw new Error(`Chromium could not be discovered. Tried: ${candidates.join(', ')}`);
 }
 
-function startServer() {
+export function startServer() {
   let invalidDatasetRequests = 0;
   const server = createServer(async (request, response) => {
     try {
@@ -129,6 +129,7 @@ function startServer() {
       return server.address().port;
     },
     async close() {
+      if (!server.listening) return;
       await new Promise((resolveClose, rejectClose) => server.close((error) => error ? rejectClose(error) : resolveClose()));
     },
   };
@@ -237,6 +238,143 @@ async function assertTimeline(page, layout) {
   required(await timeline.evaluate((node) => node.isConnected), 'layout C timeline must be connected');
   required(await timeline.isVisible(), 'layout C timeline must be visible');
   required(await timeline.locator('[data-event-id]').count() > 0, 'layout C timeline must contain interactive stops');
+}
+
+async function loadPrototype(page, port, layout) {
+  const response = await page.goto(pageUrl(port, layout), { waitUntil: 'networkidle' });
+  required(response?.ok(), `apush-map.html is unavailable for layout ${layout} (HTTP ${response?.status() || 'no response'})`);
+  await page.waitForFunction(() => Boolean(window.__apushMap), undefined, { timeout: 8_000 });
+}
+
+async function firstRenderedMarker(page, eventId) {
+  const markers = page.locator(`#mapPanel [data-event-id="${eventId}"]`);
+  const count = await markers.count();
+  required(count > 0, `rendered map must expose a marker for ${eventId}`);
+  return markers.first();
+}
+
+async function verifyFilterSelectionFlow(page, port, layout) {
+  await loadPrototype(page, port, layout);
+  await (await firstRenderedMarker(page, 'columbian-exchange')).click();
+  assert.equal((await stateOf(page)).selectedEventId, 'columbian-exchange',
+    `${layout}: fixture selection must start on Columbian Exchange`);
+  await page.locator('#searchInput').fill('Columbian Exchange');
+  assert.equal((await stateOf(page)).selectedEventId, 'columbian-exchange',
+    `${layout}: filtering must retain a selected event while it remains visible`);
+  await page.locator('#searchInput').fill('Spanish Labor and Caste Systems');
+  const filtered = await stateOf(page);
+  assert.deepEqual(filtered.visibleEventIds, ['spanish-labor-caste'], `${layout}: fixture filter must leave one visible event`);
+  assert.equal(filtered.selectedEventId, null, `${layout}: filtering must clear a selection that is no longer visible`);
+  assert.match(await page.locator('#detailPanel').innerText(), /选择地图上的编号地点/,
+    `${layout}: cleared selection must restore the instructional detail state`);
+}
+
+async function verifyNoResultsUi(page, port, layout, manifestIds) {
+  await loadPrototype(page, port, layout);
+  const query = 'no-such-period-1-event';
+  await page.locator('#searchInput').fill(query);
+  assert.deepEqual((await stateOf(page)).visibleEventIds, [], `${layout}: no-match query must produce zero results`);
+  const noResults = page.locator('#noResults:not([hidden])');
+  assert.equal(await noResults.count(), 1, `${layout}: zero results must show one in-context empty state`);
+  assert.match(await noResults.innerText(), new RegExp(query), `${layout}: no-results state must display the current query`);
+  const clear = noResults.locator('button');
+  assert.equal(await clear.count(), 1, `${layout}: no-results state must expose one clear-filters button`);
+  await clear.click();
+  const restored = await stateOf(page);
+  assert.equal(restored.query, '', `${layout}: in-context clear must clear the query`);
+  assert.deepEqual(restored.visibleEventIds, manifestIds, `${layout}: in-context clear must restore all events`);
+  assert.equal(await page.locator('#noResults:not([hidden])').count(), 0, `${layout}: restored results must hide the empty state`);
+}
+
+async function verifyClearRestoresOverview(page, port, layout, manifestIds) {
+  await loadPrototype(page, port, layout);
+  const initial = await stateOf(page);
+  await (await firstRenderedMarker(page, 'columbian-exchange')).click();
+  assert.notDeepEqual((await stateOf(page)).mapTransform, initial.mapTransform,
+    `${layout}: selecting the fixture must move the map from its overview`);
+  await page.locator('#clearFilters').click();
+  const cleared = await stateOf(page);
+  assert.deepEqual(cleared.visibleEventIds, manifestIds, `${layout}: clearFilters must restore all events`);
+  assert.deepEqual(cleared.mapTransform, initial.mapTransform, `${layout}: clearFilters must restore the map overview`);
+}
+
+async function verifyRenderedManifestControls(page, port, layout, events) {
+  await loadPrototype(page, port, layout);
+  for (const event of events) {
+    await (await firstRenderedMarker(page, event.id)).press('Enter');
+    assert.equal((await stateOf(page)).selectedEventId, event.id, `${layout}: rendered marker must select ${event.id}`);
+    const detail = await page.locator('#detailPanel').innerText();
+    required(detail.includes(event.titleEn) && detail.includes(event.titleZh),
+      `${layout}: rendered marker must show bilingual detail for ${event.id}`);
+    if (layout === 'c') {
+      const stop = page.locator(`#timelineMount [data-event-id="${event.id}"]`);
+      assert.equal(await stop.count(), 1, `layout c: timeline must expose exactly one stop for ${event.id}`);
+      await stop.click();
+      assert.equal((await stateOf(page)).selectedEventId, event.id, `layout c: timeline click must select ${event.id}`);
+    }
+  }
+}
+
+async function verifyKeyboardAndDragControls(page, port) {
+  await loadPrototype(page, port, 'a');
+  const enterMarker = await firstRenderedMarker(page, 'columbus-caribbean-1492');
+  await enterMarker.press('Enter');
+  assert.equal((await stateOf(page)).selectedEventId, 'columbus-caribbean-1492', 'marker Enter must select its event');
+  await page.locator('[data-map-control="reset"]').click();
+  const spaceMarker = await firstRenderedMarker(page, 'columbian-exchange');
+  await spaceMarker.press('Space');
+  assert.equal((await stateOf(page)).selectedEventId, 'columbian-exchange', 'marker Space must select its event');
+  await page.locator('[data-map-control="reset"]').click();
+
+  const beforeDrag = await stateOf(page);
+  const mapBox = await page.locator('#historyMap').boundingBox();
+  required(mapBox, 'map must expose a pointer target for drag verification');
+  const startX = mapBox.x + mapBox.width * 0.65;
+  const startY = mapBox.y + mapBox.height * 0.7;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 70, startY + 35, { steps: 4 });
+  await page.mouse.up();
+  assert.notDeepEqual((await stateOf(page)).mapTransform, beforeDrag.mapTransform, 'pointer drag must change mapTransform');
+  await page.locator('[data-map-control="reset"]').click();
+  assert.deepEqual((await stateOf(page)).mapTransform, beforeDrag.mapTransform, 'rendered reset control must restore overview after drag');
+
+  await loadPrototype(page, port, 'c');
+  const enterStop = page.locator('#timelineMount [data-event-id="conquest-mexica"]');
+  assert.equal(await enterStop.count(), 1, 'timeline must expose the Enter fixture');
+  await enterStop.press('Enter');
+  assert.equal((await stateOf(page)).selectedEventId, 'conquest-mexica', 'timeline Enter must select its event');
+  const spaceStop = page.locator('#timelineMount [data-event-id="conquest-inca"]');
+  assert.equal(await spaceStop.count(), 1, 'timeline must expose the Space fixture');
+  await spaceStop.press('Space');
+  assert.equal((await stateOf(page)).selectedEventId, 'conquest-inca', 'timeline Space must select its event');
+  const clickStop = page.locator('#timelineMount [data-event-id="st-augustine-borderlands"]');
+  assert.equal(await clickStop.count(), 1, 'timeline must expose the click fixture');
+  await clickStop.click();
+  assert.equal((await stateOf(page)).selectedEventId, 'st-augustine-borderlands', 'timeline click must select its event');
+}
+
+async function verifyReducedMotion(page, port) {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await loadPrototype(page, port, 'a');
+  const transition = await page.locator('.map-geography path').first().evaluate((path) => ({
+    duration: getComputedStyle(path).transitionDuration,
+    property: getComputedStyle(path).transitionProperty,
+  }));
+  assert.equal(transition.duration, '0s', `reduced motion must disable geography transitions: ${JSON.stringify(transition)}`);
+}
+
+async function verifyMultiAnchorLabel(page, port, data) {
+  await loadPrototype(page, port, 'a');
+  const event = data.events.find((candidate) => candidate.siteIds.length > 1);
+  const site = event?.siteIds.map((id) => data.sites.find((candidate) => candidate.id === id)).find((candidate) => candidate?.qualifier);
+  required(event && site, 'dataset must provide a qualified multi-anchor fixture');
+  const marker = page.locator(`#mapPanel [data-event-id="${event.id}"][data-site-x="${site.x}"][data-site-y="${site.y}"]`);
+  assert.equal(await marker.count(), 1, 'qualified multi-anchor fixture must render exactly one marker');
+  const label = await marker.getAttribute('aria-label');
+  required(label?.includes(site.qualifier), `multi-anchor label must include the site qualifier: ${label}`);
+  assert.match(label, /same transregional learning record|同一跨区域学习记录/i,
+    `multi-anchor label must explain that anchors open one shared record: ${label}`);
 }
 
 async function verifyViewport(page, port, layout, viewport, manifestIds, events) {
@@ -474,6 +612,40 @@ export async function verifyBrowser() {
     required(a.mapHeight - c.mapHeight >= 80, 'layout C map panel must be at least 80px shorter than layout A at desktop size');
 
     const regressionErrors = [];
+
+    for (const layout of LAYOUTS) {
+      for (const [label, verify] of [
+        ['filter selection flow', (page) => verifyFilterSelectionFlow(page, port, layout)],
+        ['no-results UI', (page) => verifyNoResultsUi(page, port, layout, manifest.eventIds)],
+        ['clear restores overview', (page) => verifyClearRestoresOverview(page, port, layout, manifest.eventIds)],
+        ['rendered manifest controls', (page) => verifyRenderedManifestControls(page, port, layout, data.events)],
+      ]) {
+        const acceptancePage = await browser.newPage({ viewport: REQUIRED_VIEWPORTS[0] });
+        try {
+          await verify(acceptancePage);
+        } catch (error) {
+          regressionErrors.push(`${layout} ${label}: ${error.message}`);
+        } finally {
+          await acceptancePage.close();
+        }
+      }
+    }
+
+    for (const [label, verify] of [
+      ['keyboard and drag controls', (page) => verifyKeyboardAndDragControls(page, port)],
+      ['reduced motion', (page) => verifyReducedMotion(page, port)],
+      ['multi-anchor label', (page) => verifyMultiAnchorLabel(page, port, data)],
+    ]) {
+      const interactionPage = await browser.newPage({ viewport: REQUIRED_VIEWPORTS[0] });
+      try {
+        await verify(interactionPage);
+      } catch (error) {
+        regressionErrors.push(`${label}: ${error.message}`);
+      } finally {
+        await interactionPage.close();
+      }
+    }
+
     const markerPage = await browser.newPage({ viewport: { width: 375, height: 812 } });
     try {
       await verifyMobilePrimaryMarker(markerPage, port, data);
