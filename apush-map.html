@@ -820,6 +820,13 @@
         focusPrimary(event);
         updateSelectionStyles();
         renderDetail();
+        if (fromRelationship) {
+          const heading = elements.detailPanel.querySelector('.detail-title');
+          if (heading) {
+            heading.tabIndex = -1;
+            heading.focus();
+          }
+        }
         return true;
       }
 
@@ -835,6 +842,7 @@
         renderMarkers();
         renderTimeline();
         updateSelectionStyles();
+        renderDetail();
         return true;
       }
 

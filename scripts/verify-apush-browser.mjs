@@ -149,6 +149,23 @@ async function assertNoConsoleOrPageErrors(errors) {
   assert.deepEqual(errors, [], `page emitted errors:\n${errors.join('\n')}`);
 }
 
+function contrastRatio(foreground, background) {
+  const channels = (color) => {
+    const values = color.match(/[\d.]+/g)?.slice(0, 3).map(Number);
+    required(values?.length === 3, `could not parse computed color: ${color}`);
+    return values.map((value) => {
+      const channel = value / 255;
+      return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+  };
+  const luminance = (color) => {
+    const [red, green, blue] = channels(color);
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+  };
+  const [lighter, darker] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 async function assertStateCopies(page) {
   const first = await stateOf(page);
   first.activeThemes.push('mutated');
@@ -365,6 +382,59 @@ async function verifyMobilePrimaryMarker(page, port, data) {
   );
 }
 
+async function prepareRelationshipNavigation(page, port) {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const response = await page.goto(pageUrl(port, 'c'), { waitUntil: 'networkidle' });
+  required(response?.ok(), `apush-map.html is unavailable during relationship checks (HTTP ${response?.status() || 'no response'})`);
+  await page.waitForFunction(() => Boolean(window.__apushMap), undefined, { timeout: 8_000 });
+  await page.locator('#searchInput').fill('Columbian Exchange');
+  await page.evaluate(() => window.__apushMap.selectEvent('columbian-exchange'));
+  const relationship = page.locator('.relationship-button', { hasText: 'European Exploration of the Americas' });
+  assert.equal(await relationship.count(), 1, 'Columbian Exchange must expose one European Exploration relationship');
+  await relationship.click();
+  assert.equal((await stateOf(page)).selectedEventId, 'european-exploration', 'relationship click must select European Exploration');
+}
+
+async function verifyRelationshipFocus(page, port) {
+  await prepareRelationshipNavigation(page, port);
+  required(
+    await page.locator('#detailPanel .detail-title').evaluate((heading) => document.activeElement === heading),
+    'relationship navigation must move keyboard focus to the rerendered detail heading',
+  );
+}
+
+async function verifyRelationStatusRefresh(page, port) {
+  await prepareRelationshipNavigation(page, port);
+  await page.locator('#clearFilters').click();
+  assert.equal(await page.locator('#detailPanel .detail-status').count(), 0,
+    'clearing filters must remove the stale out-of-filter relationship notice');
+}
+
+async function verifyWxtContrast(page, port) {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const response = await page.goto(pageUrl(port, 'c'), { waitUntil: 'networkidle' });
+  required(response?.ok(), `apush-map.html is unavailable during WXT contrast checks (HTTP ${response?.status() || 'no response'})`);
+  await page.waitForFunction(() => Boolean(window.__apushMap), undefined, { timeout: 8_000 });
+  const wxtButton = page.locator('[data-theme-id="WXT"]');
+  await wxtButton.click();
+  const colors = await page.evaluate(() => {
+    const button = document.querySelector('[data-theme-id="WXT"]');
+    const marker = document.querySelector('[data-event-id="columbian-exchange"]');
+    const number = marker?.querySelector('.marker-number');
+    const dot = marker?.querySelector('.marker-dot');
+    return {
+      buttonBackground: getComputedStyle(button).backgroundColor,
+      buttonForeground: getComputedStyle(button).color,
+      markerBackground: getComputedStyle(dot).fill,
+      markerForeground: getComputedStyle(number).fill,
+    };
+  });
+  required(contrastRatio(colors.buttonForeground, colors.buttonBackground) >= 4.5,
+    `active WXT filter contrast must be at least 4.5:1: ${JSON.stringify(colors)}`);
+  required(contrastRatio(colors.markerForeground, colors.markerBackground) >= 4.5,
+    `WXT marker contrast must be at least 4.5:1: ${JSON.stringify(colors)}`);
+}
+
 export async function verifyBrowser() {
   try {
     await stat(PAGE_FILE);
@@ -406,6 +476,21 @@ export async function verifyBrowser() {
       regressionErrors.push(`mobile primary marker: ${error.message}`);
     } finally {
       await markerPage.close();
+    }
+
+    for (const [label, verify] of [
+      ['relationship focus', verifyRelationshipFocus],
+      ['relationship status refresh', verifyRelationStatusRefresh],
+      ['WXT contrast', verifyWxtContrast],
+    ]) {
+      const deferredUxPage = await browser.newPage({ viewport: { width: 375, height: 812 } });
+      try {
+        await verify(deferredUxPage, port);
+      } catch (error) {
+        regressionErrors.push(`${label}: ${error.message}`);
+      } finally {
+        await deferredUxPage.close();
+      }
     }
 
     server.setInvalidDatasetRequests(1);

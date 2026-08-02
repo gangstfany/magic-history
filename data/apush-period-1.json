@@ -10,7 +10,7 @@
   }],
   "themes": [
     { "id": "NAT", "labelEn": "American and National Identity", "labelZh": "美国与国家身份", "color": "#7b4f88" },
-    { "id": "WXT", "labelEn": "Work, Exchange, and Technology", "labelZh": "劳动、交换与技术", "color": "#b4663b" },
+    { "id": "WXT", "labelEn": "Work, Exchange, and Technology", "labelZh": "劳动、交换与技术", "color": "#af6239" },
     { "id": "GEO", "labelEn": "Geography and the Environment", "labelZh": "地理与环境", "color": "#557c68" },
     { "id": "MIG", "labelEn": "Migration and Settlement", "labelZh": "迁移与定居", "color": "#b04f59" },
     { "id": "PCE", "labelEn": "Politics and Power", "labelZh": "政治与权力", "color": "#4f6994" },
