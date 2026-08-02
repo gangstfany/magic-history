@@ -93,6 +93,7 @@ test('validation rejects unknown site, theme, source, and relationship reference
   event.sourceIds = ['missing-source'];
   event.relatedIds = ['missing-event'];
   assert.deepEqual(validateDataset(invalid, manifest, ledger).filter((error) => error.includes(event.id)), [
+    `event ${event.id} primarySiteId must reference an item in siteIds`,
     `event ${event.id} unknown site: missing-site`,
     `event ${event.id} unknown theme: missing-theme`,
     `event ${event.id} unknown source: missing-source`,
