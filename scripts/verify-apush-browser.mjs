@@ -299,13 +299,70 @@ async function verifyViewport(page, port, layout, viewport, manifestIds, events)
 }
 
 async function verifyRetry(page, port) {
+  const errors = [];
+  const onPageError = (error) => errors.push(`pageerror: ${error.message}`);
+  const onConsole = (message) => {
+    if (message.type() === 'error') errors.push(`console: ${message.text()}`);
+  };
+  page.on('pageerror', onPageError);
+  page.on('console', onConsole);
+  try {
+    const response = await page.goto(pageUrl(port, 'a'), { waitUntil: 'networkidle' });
+    required(response?.ok(), `apush-map.html is unavailable during retry test (HTTP ${response?.status() || 'no response'})`);
+    await page.waitForSelector('#loadError:not([hidden])', { state: 'visible', timeout: 8_000 });
+    await page.locator('#searchInput').fill('Columbian Exchange');
+    await page.locator('#clearFilters').click();
+    await page.evaluate(() => new Promise((resolveFrame) => requestAnimationFrame(resolveFrame)));
+    const retry = page.locator('#retryLoad');
+    required(await retry.isVisible(), 'invalid data must expose a visible retry action');
+    await retry.click();
+    await page.waitForFunction(() => Boolean(window.__apushMap), undefined, { timeout: 8_000 });
+    assert.equal((await stateOf(page)).visibleEventIds.length, 9, 'retry must initialize all nine events');
+    await assertNoConsoleOrPageErrors(errors);
+  } finally {
+    page.off('pageerror', onPageError);
+    page.off('console', onConsole);
+  }
+}
+
+async function verifyMobilePrimaryMarker(page, port, data) {
+  const eventId = 'spanish-labor-caste';
+  const event = data.events.find((candidate) => candidate.id === eventId);
+  const primarySite = data.sites.find((site) => site.id === event?.primarySiteId);
+  required(event && primarySite, `missing mobile marker fixture for ${eventId}`);
+  await page.setViewportSize({ width: 375, height: 812 });
   const response = await page.goto(pageUrl(port, 'a'), { waitUntil: 'networkidle' });
-  required(response?.ok(), `apush-map.html is unavailable during retry test (HTTP ${response?.status() || 'no response'})`);
-  await page.waitForSelector('#loadError:not([hidden])', { state: 'visible', timeout: 8_000 });
-  const retry = page.locator('#retryLoad');
-  required(await retry.isVisible(), 'invalid data must expose a visible retry action');
-  await retry.click();
+  required(response?.ok(), `apush-map.html is unavailable during mobile marker test (HTTP ${response?.status() || 'no response'})`);
   await page.waitForFunction(() => Boolean(window.__apushMap), undefined, { timeout: 8_000 });
+  await page.evaluate((id) => window.__apushMap.selectEvent(id), eventId);
+  assert.equal((await stateOf(page)).selectedEventId, eventId, `mobile marker fixture must select ${eventId}`);
+
+  const geometry = await page.locator(`#mapPanel [data-event-id="${eventId}"]`).evaluateAll((markers, site) => {
+    const marker = markers.find((candidate) =>
+      Number(candidate.dataset.siteX) === site.x && Number(candidate.dataset.siteY) === site.y);
+    if (!marker) return null;
+    const markerRect = marker.getBoundingClientRect();
+    const panelRect = document.querySelector('#mapPanel').getBoundingClientRect();
+    return {
+      moved: Number(marker.dataset.mapX) !== site.x || Number(marker.dataset.mapY) !== site.y,
+      marker: {
+        left: markerRect.left, top: markerRect.top, right: markerRect.right, bottom: markerRect.bottom,
+        width: markerRect.width, height: markerRect.height,
+      },
+      panel: { left: panelRect.left, top: panelRect.top, right: panelRect.right, bottom: panelRect.bottom },
+    };
+  }, primarySite);
+  required(geometry, `primary marker for ${eventId} must be rendered`);
+  required(geometry.moved, `primary marker for ${eventId} must exercise collision-offset placement`);
+  required(Math.abs(geometry.marker.width - 48) <= 1 && Math.abs(geometry.marker.height - 48) <= 1,
+    `primary marker for ${eventId} must expose a 48px hit target`);
+  required(
+    geometry.marker.left >= geometry.panel.left - 1
+      && geometry.marker.top >= geometry.panel.top - 1
+      && geometry.marker.right <= geometry.panel.right + 1
+      && geometry.marker.bottom <= geometry.panel.bottom + 1,
+    `collision-shifted primary marker for ${eventId} must remain inside #mapPanel: ${JSON.stringify(geometry)}`,
+  );
 }
 
 export async function verifyBrowser() {
@@ -341,10 +398,26 @@ export async function verifyBrowser() {
     assert.equal(a.initialDetail, c.initialDetail, 'layouts A and C must start with matching detail content');
     required(a.mapHeight - c.mapHeight >= 80, 'layout C map panel must be at least 80px shorter than layout A at desktop size');
 
+    const regressionErrors = [];
+    const markerPage = await browser.newPage({ viewport: { width: 375, height: 812 } });
+    try {
+      await verifyMobilePrimaryMarker(markerPage, port, data);
+    } catch (error) {
+      regressionErrors.push(`mobile primary marker: ${error.message}`);
+    } finally {
+      await markerPage.close();
+    }
+
     server.setInvalidDatasetRequests(1);
     const retryPage = await browser.newPage({ viewport: REQUIRED_VIEWPORTS[0] });
-    await verifyRetry(retryPage, port);
-    await retryPage.close();
+    try {
+      await verifyRetry(retryPage, port);
+    } catch (error) {
+      regressionErrors.push(`malformed-data interactions: ${error.message}`);
+    } finally {
+      await retryPage.close();
+    }
+    assert.deepEqual(regressionErrors, [], `browser regression failures:\n${regressionErrors.join('\n')}`);
   } finally {
     if (browser) await browser.close();
     await server.close();
