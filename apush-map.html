@@ -504,6 +504,7 @@
         loadError: document.querySelector('#loadError'),
         retryLoad: document.querySelector('#retryLoad'),
         prototypeLabel: document.querySelector('#prototypeLabel'),
+        periodFilter: document.querySelector('#periodFilter'),
         searchInput: document.querySelector('#searchInput'),
         themeFilters: document.querySelector('#themeFilters'),
         resultCount: document.querySelector('#resultCount'),
@@ -534,6 +535,13 @@
       function validDataset(data) {
         return data && data.schemaVersion === 1
           && ['periods', 'themes', 'sources', 'sites', 'events'].every((key) => Array.isArray(data[key]));
+      }
+
+      function setToolbarDisabled(disabled) {
+        elements.periodFilter.disabled = disabled;
+        elements.searchInput.disabled = disabled;
+        elements.clearFilters.disabled = disabled;
+        elements.themeFilters.querySelectorAll('button').forEach((button) => { button.disabled = disabled; });
       }
 
       function buildModel(data) {
@@ -776,8 +784,16 @@
       function focusPrimary(event) {
         const site = model.sitesById.get(event.primarySiteId);
         if (!site) return;
+        const marker = [...elements.markerLayer.querySelectorAll('.event-marker')].find((candidate) =>
+          candidate.dataset.eventId === event.id
+            && Number(candidate.dataset.siteX) === site.x
+            && Number(candidate.dataset.siteY) === site.y);
+        if (!marker) return;
+        const markerX = Number(marker.dataset.mapX);
+        const markerY = Number(marker.dataset.mapY);
+        if (!Number.isFinite(markerX) || !Number.isFinite(markerY)) return;
         const scale = state.mapTransform.scale;
-        setTransform({ scale, x: MAP_WIDTH / 2 - site.x * scale, y: MAP_HEIGHT / 2 - site.y * scale });
+        setTransform({ scale, x: MAP_WIDTH / 2 - markerX * scale, y: MAP_HEIGHT / 2 - markerY * scale });
       }
 
       function updateSelectionStyles() {
@@ -808,6 +824,7 @@
       }
 
       function applyFilters() {
+        if (!model) return false;
         const visible = filterEvents(model.events, state.query, state.activeThemes, model.sitesById, model.themesById);
         state.visibleEventIds = visible.map((event) => event.id);
         elements.resultCount.textContent = `${visible.length} / ${model.events.length} 事件`;
@@ -818,12 +835,15 @@
         renderMarkers();
         renderTimeline();
         updateSelectionStyles();
+        return true;
       }
 
       function setQuery(value) {
+        if (!model) return false;
         state.query = String(value || '');
         state.relationStatus = '';
         applyFilters();
+        return true;
       }
 
       function toggleTheme(themeId) {
@@ -839,7 +859,10 @@
         state.query = '';
         state.activeThemes.clear();
         state.relationStatus = '';
+        elements.searchInput.value = '';
+        if (!model) return false;
         applyFilters();
+        return true;
       }
 
       function resetMap() {
@@ -880,6 +903,8 @@
 
       async function loadData() {
         delete window.__apushMap;
+        model = null;
+        setToolbarDisabled(true);
         elements.loadError.hidden = true;
         try {
           const response = await fetch('data/apush-period-1.json', { cache: 'no-store' });
@@ -895,11 +920,14 @@
           state.mapTransform = { ...INITIAL_TRANSFORM };
           elements.workspace.hidden = false;
           renderThemeControls();
+          setToolbarDisabled(false);
           applyFilters();
           updateTransform();
           renderDetail();
           publishApi();
         } catch (error) {
+          model = null;
+          setToolbarDisabled(false);
           elements.workspace.hidden = true;
           elements.loadError.hidden = false;
         }
