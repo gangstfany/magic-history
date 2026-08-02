@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "periodId": "p1",
+  "eventIds": [
+    "indigenous-north-america-1491",
+    "european-exploration",
+    "columbus-caribbean-1492",
+    "columbian-exchange",
+    "conquest-mexica",
+    "conquest-inca",
+    "spanish-labor-caste",
+    "cultural-interactions",
+    "st-augustine-borderlands"
+  ]
+}
