@@ -34,10 +34,14 @@ function required(condition, message) {
 }
 
 async function importFirst(candidates) {
+  const require = createRequire(import.meta.url);
   const failures = [];
   for (const candidate of candidates.filter(Boolean)) {
     try {
-      return await import(candidate);
+      const entry = candidate.startsWith('.') || candidate.startsWith('/')
+        ? require.resolve(candidate)
+        : candidate;
+      return await import(entry.startsWith('/') ? pathToFileURL(entry).href : entry);
     } catch (error) {
       failures.push(`${candidate}: ${error.code || error.message}`);
     }
@@ -47,10 +51,6 @@ async function importFirst(candidates) {
 
 async function discoverPlaywright() {
   const require = createRequire(import.meta.url);
-  const runtimeRoots = [
-    '/Users/rachel/.codex/plugins/cache/openai-primary-runtime',
-    '/opt/codex/primary-runtime',
-  ];
   const cachedCandidates = [
     process.env.HOME && join(process.env.HOME, '.cache/ms-playwright/node_modules/playwright'),
     process.env.HOME && join(process.env.HOME, 'Library/Caches/ms-playwright/node_modules/playwright'),
@@ -58,19 +58,13 @@ async function discoverPlaywright() {
   ];
   const candidates = [process.env.APUSH_PLAYWRIGHT_PATH];
   try { candidates.push(require.resolve('playwright')); } catch {}
-  for (const root of runtimeRoots) {
-    try {
-      const entries = await (await import('node:fs/promises')).readdir(root, { withFileTypes: true });
-      for (const entry of entries) {
-        if (entry.isDirectory()) candidates.push(join(root, entry.name, 'node_modules/playwright'));
-      }
-    } catch {}
-  }
+  candidates.push(
+    '/Users/rachel/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs',
+    '/Users/rachel/.codex/plugins/cache/openai-primary-runtime/node_modules/playwright',
+    '/opt/codex/primary-runtime/node_modules/playwright',
+  );
   candidates.push(...cachedCandidates);
-  const module = await importFirst(candidates.map((candidate) => {
-    if (!candidate) return candidate;
-    return candidate.startsWith('.') || candidate.startsWith('/') ? pathToFileURL(candidate).href : candidate;
-  }));
+  const module = await importFirst(candidates);
   if (!module.chromium) throw new Error('Discovered Playwright does not export chromium');
   return module;
 }
