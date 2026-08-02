@@ -405,6 +405,11 @@ async function verifyRelationshipFocus(page, port) {
 
 async function verifyRelationStatusRefresh(page, port) {
   await prepareRelationshipNavigation(page, port);
+  const status = page.locator('#detailPanel .detail-status');
+  assert.equal(await status.count(), 1,
+    'out-of-filter relationship navigation must render exactly one status notice');
+  assert.match(await status.innerText(), /不在当前筛选结果中/,
+    'relationship status must explain that the linked event is outside the current filters');
   await page.locator('#clearFilters').click();
   assert.equal(await page.locator('#detailPanel .detail-status').count(), 0,
     'clearing filters must remove the stale out-of-filter relationship notice');
