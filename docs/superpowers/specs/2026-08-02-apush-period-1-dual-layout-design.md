@@ -341,7 +341,6 @@ cross-boundary fixes.
 - `scripts/verify-apush-browser.mjs`
 - `scripts/verify-apush-release.mjs`
 - `tests/apush-data.test.mjs`
-- `tests/apush-page.test.mjs`
 
 Homepage integration files and tests are intentionally deferred until the
 user selects layout A or C.

@@ -35,7 +35,6 @@ The three implementation agents must use these non-overlapping boundaries:
   - `scripts/verify-apush-browser.mjs`
   - `scripts/verify-apush-release.mjs`
   - `tests/apush-data.test.mjs`
-  - `tests/apush-page.test.mjs`
 - Data agent owns only:
   - `data/apush-period-1.json`
   - `data/apush-period-1-manifest.json`
@@ -115,11 +114,10 @@ window.__apushMap = Object.freeze({
 - Create: `scripts/verify-apush-browser.mjs`
 - Create: `scripts/verify-apush-release.mjs`
 - Create: `tests/apush-data.test.mjs`
-- Create: `tests/apush-page.test.mjs`
 
 **Interfaces:**
 - Consumes: the exact dataset, manifest, ledger, page DOM, and `window.__apushMap` contracts defined above.
-- Produces: `validateDataset(dataset, manifest, ledgerText): string[]`, a strict CLI, static Node tests, browser verification, and one release command.
+- Produces: `validateDataset(dataset, manifest, ledgerText): string[]`, a strict CLI, data-focused Node tests, browser behavior verification, and one release command.
 
 - [ ] **Step 1: Write strict dataset tests before the data files exist**
 
@@ -222,30 +220,7 @@ Use `fileURLToPath(import.meta.url) === process.argv[1]` to detect CLI mode.
 Print each defect to stderr and exit `1`; print a count summary and exit `0`
 when valid. The validator must not depend on browser code.
 
-- [ ] **Step 3: Write page contract tests before `apush-map.html` exists**
-
-Create `tests/apush-page.test.mjs` and assert the durable DOM/JavaScript
-contract instead of a full-text snapshot:
-
-```js
-test('one page supports A and C without changing other project pages', async () => {
-  const html = await readFile(new URL('../apush-map.html', import.meta.url), 'utf8');
-  assert.match(html, /new URLSearchParams\(window\.location\.search\)/);
-  assert.match(html, /layout === 'c'/);
-  assert.match(html, /data\/apush-period-1\.json/);
-  assert.match(html, /id="mapPanel"/);
-  assert.match(html, /id="detailPanel"/);
-  assert.match(html, /id="timelineMount"/);
-  assert.match(html, /window\.__apushMap/);
-});
-```
-
-Add assertions for search, theme group, result status, clear action, zoom/pan
-controls, reduced-motion CSS, a mobile breakpoint, the `44px` hit-target
-contract, visible prototype labels, escaped text rendering (no event study
-copy passed into `innerHTML`), and retryable dataset failure UI.
-
-- [ ] **Step 4: Write the browser verifier**
+- [ ] **Step 3: Write the browser verifier before `apush-map.html` exists**
 
 Create `scripts/verify-apush-browser.mjs` with:
 
@@ -281,17 +256,22 @@ errors and console errors, and assert:
 - no interactive element has a computed hit box below 44 pixels when it uses
   the marker/control hit-target contract.
 
+Also exercise malformed data by serving a controlled invalid dataset response
+for one request. Assert the real page shows a visible retry action and that
+retrying after restoring the valid response initializes `window.__apushMap`.
+This replaces source-code grep tests with observable browser behavior.
+
 Compare A and C initial `visibleEventIds` and detail text to prove content
 parity. At desktop size, assert C's map panel height is at least 80 pixels less
 than A's because the timeline consumes visible space.
 
-- [ ] **Step 5: Write the release aggregator**
+- [ ] **Step 4: Write the release aggregator**
 
 Create `scripts/verify-apush-release.mjs` to run, in order:
 
 ```js
 const steps = [
-  ['Node tests', ['--test', 'tests/apush-data.test.mjs', 'tests/apush-page.test.mjs']],
+  ['Node tests', ['--test', 'tests/apush-data.test.mjs']],
   ['strict Period 1 validator', ['scripts/validate-apush-data.mjs']],
   ['browser matrix', ['scripts/verify-apush-browser.mjs']],
 ];
@@ -300,23 +280,24 @@ const steps = [
 Use `spawnSync(process.execPath, args, { cwd: PROJECT_ROOT, stdio: 'inherit' })`
 and exit immediately on the first nonzero result.
 
-- [ ] **Step 6: Run the contracts and record the expected red state**
+- [ ] **Step 5: Run the contracts and record the expected red state**
 
 Run:
 
 ```bash
-node --test tests/apush-data.test.mjs tests/apush-page.test.mjs
+node --test tests/apush-data.test.mjs
 node scripts/validate-apush-data.mjs
+node scripts/verify-apush-browser.mjs
 ```
 
 Expected: failures identify missing `data/apush-period-1.json`, manifest,
-ledger, and `apush-map.html`; no syntax error or failure inside the test
-harness itself.
+ledger, and `apush-map.html`; the browser verifier reaches the intended missing
+page/data assertion rather than failing from a syntax error in the harness.
 
-- [ ] **Step 7: Commit the verification contracts**
+- [ ] **Step 6: Commit the verification contracts**
 
 ```bash
-git add scripts/validate-apush-data.mjs scripts/verify-apush-browser.mjs scripts/verify-apush-release.mjs tests/apush-data.test.mjs tests/apush-page.test.mjs
+git add scripts/validate-apush-data.mjs scripts/verify-apush-browser.mjs scripts/verify-apush-release.mjs tests/apush-data.test.mjs
 git commit -m "test: define APUSH Period 1 prototype contracts"
 ```
 
@@ -432,7 +413,7 @@ git commit -m "feat: add APUSH Period 1 study data"
 
 **Files:**
 - Create: `apush-map.html`
-- Test: `tests/apush-page.test.mjs`
+- Test: `scripts/verify-apush-browser.mjs`
 - Verify: `scripts/verify-apush-browser.mjs`
 
 **Interfaces:**
@@ -572,14 +553,14 @@ Initialize in this order: resolve layout, set prototype label/body dataset,
 load data, render theme controls, set initial visible IDs, fit map, render
 markers/timeline/detail empty state, publish API.
 
-- [ ] **Step 8: Run static and browser verification**
+- [ ] **Step 8: Run data and browser verification**
 
 ```bash
-node --test tests/apush-page.test.mjs
+node --test tests/apush-data.test.mjs
 node scripts/verify-apush-browser.mjs
 ```
 
-Expected: all static contracts and both A/C browser matrices pass with no
+Expected: data contracts and both A/C browser behavior matrices pass with no
 console errors or viewport overflow.
 
 - [ ] **Step 9: Commit the browser application**
