@@ -15,6 +15,53 @@ async function loadFixtures() {
 }
 
 const clone = (value) => structuredClone(value);
+const APPROVED_EVENT_IDS = Object.freeze([
+  'indigenous-north-america-1491',
+  'european-exploration',
+  'columbus-caribbean-1492',
+  'columbian-exchange',
+  'conquest-mexica',
+  'conquest-inca',
+  'spanish-labor-caste',
+  'cultural-interactions',
+  'st-augustine-borderlands',
+]);
+const OFFICIAL_THEME_IDS = Object.freeze(['NAT', 'WXT', 'GEO', 'MIG', 'PCE', 'WOR', 'ARC', 'SOC']);
+
+function validPeriodOneFixture() {
+  const events = APPROVED_EVENT_IDS.map((id) => ({
+    id,
+    titleEn: `English ${id}`,
+    titleZh: `中文 ${id}`,
+    periodId: 'p1',
+    dateLabel: '1491',
+    startYear: 1491,
+    endYear: 1491,
+    siteIds: ['site-1'],
+    primarySiteId: 'site-1',
+    themeIds: ['NAT'],
+    summary: 'summary',
+    significance: 'significance',
+    examConnection: 'exam connection',
+    causeIds: [],
+    effectIds: [],
+    relatedIds: [],
+    keywords: [],
+    sourceIds: ['source-1'],
+  }));
+  return {
+    data: {
+      schemaVersion: 1,
+      periods: [{ id: 'p1' }],
+      themes: OFFICIAL_THEME_IDS.map((id) => ({ id })),
+      sources: [{ id: 'source-1' }],
+      sites: [{ id: 'site-1', nameEn: 'Site', nameZh: '地点', x: 0, y: 0 }],
+      events,
+    },
+    manifest: { schemaVersion: 1, periodId: 'p1', eventIds: [...APPROVED_EVENT_IDS] },
+    ledger: APPROVED_EVENT_IDS.map((id) => `\`${id}\``).join('\n'),
+  };
+}
 
 test('Period 1 data matches the approved nine-event manifest', async () => {
   const { data, manifest, ledger } = await loadFixtures();
@@ -95,4 +142,63 @@ test('validation rejects an event absent from the source ledger', async () => {
   assert.ok(validateDataset(data, manifest, ledger.replaceAll(`\`${target}\``, '')).includes(
     `ledger missing event: ${target}`,
   ));
+});
+
+test('validation anchors synchronized dataset and manifest IDs to the approved literal baseline', () => {
+  const { data, manifest, ledger } = validPeriodOneFixture();
+  data.events = [];
+  manifest.eventIds = [];
+  const errors = validateDataset(data, manifest, ledger);
+  assert.ok(errors.includes('dataset event order must exactly match approved Period 1 event IDs'));
+  assert.ok(errors.includes('manifest eventIds must exactly match approved Period 1 event IDs'));
+});
+
+test('validation anchors themes to the official eight-theme literal baseline', () => {
+  const { data, manifest, ledger } = validPeriodOneFixture();
+  data.themes = [];
+  assert.ok(validateDataset(data, manifest, ledger).includes(
+    'dataset themes must exactly match official APUSH theme IDs',
+  ));
+});
+
+test('validation requires every event reference collection to be an array', () => {
+  const { data, manifest, ledger } = validPeriodOneFixture();
+  const event = data.events[0];
+  for (const field of ['siteIds', 'themeIds', 'causeIds', 'effectIds', 'relatedIds', 'keywords', 'sourceIds']) {
+    event[field] = 'not-an-array';
+  }
+  const errors = validateDataset(data, manifest, ledger);
+  for (const field of ['siteIds', 'themeIds', 'causeIds', 'effectIds', 'relatedIds', 'keywords', 'sourceIds']) {
+    assert.ok(errors.includes(`event ${event.id} ${field} must be an array`));
+  }
+});
+
+test('validation requires populated event references and a primary site from siteIds', () => {
+  const { data, manifest, ledger } = validPeriodOneFixture();
+  const event = data.events[0];
+  event.siteIds = [];
+  event.themeIds = [];
+  event.sourceIds = [];
+  event.primarySiteId = '';
+  const errors = validateDataset(data, manifest, ledger);
+  assert.ok(errors.includes(`event ${event.id} siteIds must contain at least one item`));
+  assert.ok(errors.includes(`event ${event.id} themeIds must contain at least one item`));
+  assert.ok(errors.includes(`event ${event.id} sourceIds must contain at least one item`));
+  assert.ok(errors.includes(`event ${event.id} missing primarySiteId`));
+
+  event.siteIds = ['site-1'];
+  event.primarySiteId = 'other-site';
+  assert.ok(validateDataset(data, manifest, ledger).includes(
+    `event ${event.id} primarySiteId must reference an item in siteIds`,
+  ));
+});
+
+test('validation accumulates defects for a null event without throwing', () => {
+  const { data, manifest, ledger } = validPeriodOneFixture();
+  data.events[0] = null;
+  let errors;
+  assert.doesNotThrow(() => { errors = validateDataset(data, manifest, ledger); });
+  assert.ok(errors.includes('event is missing id'));
+  assert.ok(errors.includes('event (unknown) missing titleEn'));
+  assert.ok(errors.includes('event (unknown) siteIds must be an array'));
 });

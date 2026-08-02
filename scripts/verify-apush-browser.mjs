@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { access, readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
+import { homedir } from 'node:os';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -51,6 +52,8 @@ async function importFirst(candidates) {
 
 async function discoverPlaywright() {
   const require = createRequire(import.meta.url);
+  const codexRuntime = process.env.CODEX_PRIMARY_RUNTIME
+    || join(homedir(), '.cache/codex-runtimes/codex-primary-runtime');
   const cachedCandidates = [
     process.env.HOME && join(process.env.HOME, '.cache/ms-playwright/node_modules/playwright'),
     process.env.HOME && join(process.env.HOME, 'Library/Caches/ms-playwright/node_modules/playwright'),
@@ -59,8 +62,8 @@ async function discoverPlaywright() {
   const candidates = [process.env.APUSH_PLAYWRIGHT_PATH];
   try { candidates.push(require.resolve('playwright')); } catch {}
   candidates.push(
-    '/Users/rachel/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs',
-    '/Users/rachel/.codex/plugins/cache/openai-primary-runtime/node_modules/playwright',
+    join(codexRuntime, 'dependencies/node/node_modules/playwright/index.mjs'),
+    join(homedir(), '.codex/plugins/cache/openai-primary-runtime/node_modules/playwright'),
     '/opt/codex/primary-runtime/node_modules/playwright',
   );
   candidates.push(...cachedCandidates);
@@ -157,6 +160,38 @@ async function assertStateCopies(page) {
   assert.notEqual(second.mapTransform.scale, 999, 'getState must copy mapTransform');
 }
 
+async function assertPublicApi(page, manifestIds, events) {
+  const methods = await page.evaluate(() => Object.fromEntries([
+    'getState', 'selectEvent', 'setQuery', 'toggleTheme', 'clearFilters', 'resetMap',
+  ].map((name) => [name, typeof window.__apushMap?.[name]])));
+  assert.deepEqual(methods, {
+    getState: 'function',
+    selectEvent: 'function',
+    setQuery: 'function',
+    toggleTheme: 'function',
+    clearFilters: 'function',
+    resetMap: 'function',
+  }, 'window.__apushMap must expose the complete callable state API');
+
+  await page.evaluate(() => window.__apushMap.setQuery('Columbian Exchange'));
+  let state = await stateOf(page);
+  assert.equal(state.query, 'Columbian Exchange', 'setQuery must update query state');
+  required(state.visibleEventIds.includes('columbian-exchange'), 'setQuery must filter to Columbian Exchange');
+
+  await page.evaluate(() => window.__apushMap.setQuery(''));
+  const themeId = events.find((event) => event.themeIds?.length)?.themeIds[0];
+  required(themeId, 'dataset must provide a theme for API verification');
+  await page.evaluate((id) => window.__apushMap.toggleTheme(id), themeId);
+  state = await stateOf(page);
+  assert.equal(state.activeThemes.includes(themeId), true, 'toggleTheme must activate the supplied theme');
+
+  await page.evaluate(() => window.__apushMap.clearFilters());
+  state = await stateOf(page);
+  assert.equal(state.query, '', 'clearFilters must clear the query');
+  assert.deepEqual(state.activeThemes, [], 'clearFilters must clear active themes');
+  assert.deepEqual(state.visibleEventIds, manifestIds, 'clearFilters must restore all manifest events');
+}
+
 async function assertHitTargets(page) {
   const hitTargets = page.locator([
     '#mapPanel button',
@@ -205,6 +240,7 @@ async function verifyViewport(page, port, layout, viewport, manifestIds, events)
   assert.deepEqual(initial.visibleEventIds, manifestIds, 'initial visible events must exactly match manifest order');
   assert.match(await page.locator('#prototypeLabel').innerText(), new RegExp(`\\b${layout.toUpperCase()}\\b`), 'prototype label must identify the current layout');
   await assertStateCopies(page);
+  await assertPublicApi(page, manifestIds, events);
   await assertTimeline(page, layout);
 
   await page.locator('[data-event-id="columbus-caribbean-1492"]').first().click();
@@ -238,6 +274,9 @@ async function verifyViewport(page, port, layout, viewport, manifestIds, events)
   assert.notDeepEqual(afterZoom.mapTransform, beforeZoom.mapTransform, 'zoom control must change mapTransform');
   await (await controlLocator(page, /reset|重置/i)).click();
   assert.deepEqual((await stateOf(page)).mapTransform, initial.mapTransform, 'reset must restore the overview transform');
+  await (await controlLocator(page, /zoom in|放大/i)).click();
+  await page.evaluate(() => window.__apushMap.resetMap());
+  assert.deepEqual((await stateOf(page)).mapTransform, initial.mapTransform, 'resetMap must restore the overview transform');
 
   for (const event of events) {
     await page.evaluate((eventId) => window.__apushMap.selectEvent(eventId), event.id);
@@ -282,9 +321,11 @@ export async function verifyBrowser() {
   ]);
   const browserPath = await discoverChromium(playwright.chromium);
   const server = startServer();
-  const port = await server.listen();
-  const browser = await playwright.chromium.launch({ executablePath: browserPath, headless: true });
+  let browser;
+  let port;
   try {
+    port = await server.listen();
+    browser = await playwright.chromium.launch({ executablePath: browserPath, headless: true });
     const initialByLayout = new Map();
     for (const layout of LAYOUTS) {
       for (const viewport of REQUIRED_VIEWPORTS) {
@@ -305,7 +346,7 @@ export async function verifyBrowser() {
     await verifyRetry(retryPage, port);
     await retryPage.close();
   } finally {
-    await browser.close();
+    if (browser) await browser.close();
     await server.close();
   }
 }
