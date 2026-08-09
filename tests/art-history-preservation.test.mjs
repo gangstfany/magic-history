@@ -23,6 +23,26 @@ const CORRECTED_FIXTURE_PATH = new URL(
   './fixtures/u2-corrected-and-imported.json',
   import.meta.url,
 );
+const U4_MANIFEST_PATH = new URL(
+  '../data/ap-art-history-unit-4-manifest.json',
+  import.meta.url,
+);
+const U4_CANONICAL_PATH = new URL(
+  './fixtures/u4-canonical.json',
+  import.meta.url,
+);
+const U4_RIGHTS_PATH = new URL(
+  '../data/ap-art-history-unit-4-rights.json',
+  import.meta.url,
+);
+const U4_PLACEHOLDERS_PATH = new URL(
+  '../data/ap-art-history-unit-4-public-placeholders.json',
+  import.meta.url,
+);
+const U4_LEDGER_PATH = new URL(
+  '../docs/data-sources/u4-source-ledger.md',
+  import.meta.url,
+);
 
 const UNAFFECTED_IDS = [
   'ap13-palette-of-king-narmer',
@@ -73,6 +93,17 @@ const REQUIRED_U3_CROSS_UNIT_COMPARISONS = new Map([
   ['ap81-codex-mendoza-frontispiece', 'ap19-code-of-hammurabi'],
   ['ap89-ecstasy-saint-teresa', 'ap46-pantheon'],
 ]);
+
+const U4_RESTRICTED_MEDIA_KEYS = [
+  'ap140-two-fridas::primary',
+  'ap143-dream-alameda-central::primary',
+  'ap146-marilyn-diptych::primary',
+  'ap148-narcissus-garden::primary',
+  'ap149-bay::primary',
+  'ap150-lipstick-caterpillar-tracks::primary',
+  'ap152-house-new-castle-county::exterior',
+  'ap152-house-new-castle-county::interior',
+];
 
 const COMPLETE_ARTWORK_FIELDS = [
   'id',
@@ -459,4 +490,39 @@ test('U1 source ledger matches all 11 records and 12 media views', async () => {
     stonehengeRows.map(([, view]) => view),
     ['Aerial overview', 'Ground-level view'],
   );
+});
+
+test('U4 audited source bundle is complete while live data remains frozen at Units 1-3', async () => {
+  const [
+    { artworks, credits },
+    manifest,
+    fixture,
+    rights,
+    placeholders,
+    ledger,
+  ] = await Promise.all([
+    loadActualData(),
+    loadFixture(U4_MANIFEST_PATH),
+    loadFixture(U4_CANONICAL_PATH),
+    loadFixture(U4_RIGHTS_PATH),
+    loadFixture(U4_PLACEHOLDERS_PATH),
+    readFile(U4_LEDGER_PATH, 'utf8'),
+  ]);
+  const expectedWorkIds = Object.values(manifest).map(({ id }) => id);
+  const expectedMediaKeys = Object.values(manifest).flatMap((work) => (
+    work.requiredViewIds.map((viewId) => `${work.id}::${viewId}`)
+  ));
+  const ledgerKeys = parseLedger(ledger).map((cells) => (
+    `${cells[1].replaceAll('`', '')}::${cells[2]}`
+  ));
+
+  assert.equal(artworks.length, 98, 'Task 2 must not import U4 into live HTML');
+  assert.ok(artworks.every(({ unit }) => unit <= 3), 'live HTML must remain Units 1-3 only');
+  assert.ok(expectedWorkIds.every((id) => !artworks.some((work) => work.id === id)));
+  assert.ok(expectedWorkIds.every((id) => !(id in credits)));
+  assert.deepEqual(fixture.artworks.map(({ id }) => id), expectedWorkIds);
+  assert.deepEqual(Object.keys(fixture.credits), expectedWorkIds);
+  assert.deepEqual(Object.keys(rights), expectedMediaKeys);
+  assert.deepEqual(Object.keys(placeholders), U4_RESTRICTED_MEDIA_KEYS);
+  assert.deepEqual(ledgerKeys, expectedMediaKeys);
 });
