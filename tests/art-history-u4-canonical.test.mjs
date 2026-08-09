@@ -100,6 +100,68 @@ const NORMAL_RELEASE_CLASSES = new Set([
   'noncommercial',
   'institutionalEducational',
 ]);
+const APPROVED_NORMAL_LICENSE_POLICIES = new Map([
+  ['CC BY 2.0', {
+    licenseUrl: 'https://creativecommons.org/licenses/by/2.0/',
+    releaseClass: 'open',
+  }],
+  ['CC BY 4.0', {
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    releaseClass: 'open',
+  }],
+  ['CC BY-NC-SA 4.0', {
+    licenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+    releaseClass: 'noncommercial',
+  }],
+  ['CC BY-SA 2.0', {
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.0/',
+    releaseClass: 'open',
+  }],
+  ['CC BY-SA 2.5', {
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.5/',
+    releaseClass: 'open',
+  }],
+  ['CC BY-SA 3.0', {
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/',
+    releaseClass: 'open',
+  }],
+  ['CC BY-SA 4.0', {
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+    releaseClass: 'open',
+  }],
+  ['CC0 1.0', {
+    licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
+    releaseClass: 'open',
+  }],
+  ['Free Art License 1.3', {
+    licenseUrl: 'https://artlibre.org/licence/lal/en/',
+    releaseClass: 'open',
+  }],
+  ['LACMA collection image; reuse subject to museum terms', {
+    licenseUrl: 'https://www.lacma.org/terms-use',
+    releaseClass: 'institutionalEducational',
+  }],
+  ['Louvre educational-use terms; commercial permission required', {
+    licenseUrl: 'https://collections.louvre.fr/en/page/cgu',
+    releaseClass: 'institutionalEducational',
+  }],
+  ['No known copyright restrictions', {
+    licenseUrl: 'https://commons.wikimedia.org/wiki/Commons:Copyright_rules_by_subject_matter#Photographs_of_old_artworks',
+    releaseClass: 'open',
+  }],
+  ['Public Domain Mark 1.0', {
+    licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/',
+    releaseClass: 'open',
+  }],
+  ['Public domain (anonymous EU work)', {
+    licenseUrl: 'https://commons.wikimedia.org/wiki/Template:PD-anon-70-EU',
+    releaseClass: 'open',
+  }],
+  ['Public domain (self-dedicated)', {
+    licenseUrl: 'https://commons.wikimedia.org/wiki/Template:PD-self',
+    releaseClass: 'open',
+  }],
+]);
 const LEDGER_HEADER = [
   'AP #',
   'Artwork id',
@@ -412,10 +474,37 @@ function parseJsonBlock(html, id) {
   return JSON.parse(match[1]);
 }
 
+function assertHttpsUrl(value, identity) {
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    assert.fail(`${identity}: expected valid HTTPS URL`);
+  }
+  assert.equal(parsed.protocol, 'https:', `${identity}: expected valid HTTPS URL`);
+  assert.ok(parsed.hostname, `${identity}: expected valid HTTPS URL`);
+  return parsed;
+}
+
 function markdownLink(value, identity = 'ledger') {
-  const match = value.match(/^\[([^\]]+)\]\((https:\/\/[^)]+)\)$/);
+  const match = value.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
   assert.ok(match, `${identity}: malformed HTTPS Markdown link: ${value}`);
+  assert.match(match[2], /^https:\/\//, `${identity}: malformed HTTPS Markdown link: ${value}`);
+  assertHttpsUrl(match[2], `${identity}: HTTPS Markdown link`);
   return { label: match[1], url: match[2] };
+}
+
+function assertApprovedNormalLicensePolicy(entry, identity) {
+  const expected = APPROVED_NORMAL_LICENSE_POLICIES.get(entry.licenseName);
+  assert.ok(expected, `${identity}: approved license policy`);
+  assert.deepEqual(
+    {
+      licenseUrl: entry.licenseUrl,
+      releaseClass: entry.releaseClass,
+    },
+    expected,
+    `${identity}: approved license policy`,
+  );
 }
 
 function assertPlaceholderAuthority(placeholders) {
@@ -441,12 +530,12 @@ function assertPlaceholderAuthority(placeholders) {
       EXPECTED_PLACEHOLDER_SOURCES[identity].imageSourceName,
       `${identity}.imageSourceName: frozen source identity`,
     );
+    assertHttpsUrl(entry.imageSourceUrl, `${identity}.imageSourceUrl`);
     assert.equal(
       entry.imageSourceUrl,
       EXPECTED_PLACEHOLDER_SOURCES[identity].imageSourceUrl,
       `${identity}.imageSourceUrl: frozen source page`,
     );
-    assert.match(entry.imageSourceUrl, /^https:\/\//, `${identity}.imageSourceUrl`);
     assert.equal(entry.rightsNote, PLACEHOLDER_RIGHTS_NOTE, `${identity}.rightsNote`);
     assert.doesNotMatch(entry.rightsNote, /fair use|open licen[cs]e/i, `${identity}.rightsNote`);
   }
@@ -473,9 +562,11 @@ function parseU4Ledger(markdown) {
   assert.deepEqual(splitLedgerRow(lines[headerIndex]), LEDGER_HEADER, 'exact ledger header');
   assert.equal(lines[headerIndex + 1], LEDGER_DIVIDER, 'exact ledger divider');
 
-  const rows = lines
-    .filter((line) => /^\|\s*\d+\s*\|/.test(line))
-    .map(splitLedgerRow);
+  const rows = [];
+  for (const line of lines.slice(headerIndex + 2)) {
+    if (!/^\|\s*\d+\s*\|/.test(line)) break;
+    rows.push(splitLedgerRow(line));
+  }
   const identities = new Set();
   rows.forEach((cells, index) => {
     assert.equal(cells.length, 8, `ledger row ${index + 1}: expected 8 cells`);
@@ -583,7 +674,7 @@ function assertCanonicalRightsMatch(fixture, rights, expectedKeys, placeholders)
       assertFinishedString(credit[field], identity, field);
       assert.equal(rights[identity][field], credit[field], `${identity}.${field}: rights mismatch`);
     });
-    assert.match(credit.licenseUrl, /^https:\/\//, `${identity}.licenseUrl`);
+    assertHttpsUrl(credit.licenseUrl, `${identity}.licenseUrl`);
     assert.ok(RELEASE_CLASSES.has(rights[identity].releaseClass), `${identity}: release class`);
     assertRestrictedStatus({
       identity,
@@ -591,6 +682,9 @@ function assertCanonicalRightsMatch(fixture, rights, expectedKeys, placeholders)
       rightsEntry: rights[identity],
       placeholders,
     });
+    if (!isRestrictedMediaKey(identity)) {
+      assertApprovedNormalLicensePolicy(rights[identity], identity);
+    }
   });
 }
 
@@ -738,7 +832,7 @@ function assertCanonicalMediaContract(fixture, manifest, placeholders) {
           PUBLIC_IMAGE_FIELDS,
           `${identity}: exact public image schema and order`,
         );
-        assert.match(view.imageUrl, /^https:\/\//, `${identity}: public HTTPS image`);
+        assertHttpsUrl(view.imageUrl, `${identity}: public HTTPS image`);
         assert.ok(!Object.hasOwn(view, 'mediaStatus'), `${identity}: no placeholder status`);
         assert.ok(!imageUrls.has(view.imageUrl), `${identity}: duplicate imageUrl`);
         imageUrls.add(view.imageUrl);
@@ -746,7 +840,7 @@ function assertCanonicalMediaContract(fixture, manifest, placeholders) {
       for (const field of ['id', 'label', 'imageAlt', 'imageSourceName', 'imageSourceUrl']) {
         assertFinishedString(view[field], identity, field);
       }
-      assert.match(image.imageSourceUrl, /^https:\/\//, `${identity}.imageSourceUrl`);
+      assertHttpsUrl(image.imageSourceUrl, `${identity}.imageSourceUrl`);
       assert.match(image.imageAlt, HAN_SCRIPT, `${identity}.imageAlt: Chinese visible-content description`);
       assert.doesNotMatch(image.imageAlt, /primary view|主视图|主要视图/i, `${identity}.imageAlt: generic alt`);
       assert.ok(!imageAlts.has(image.imageAlt), `${identity}: duplicate imageAlt`);
@@ -869,6 +963,44 @@ test('U4 placeholder authority validation rejects missing, extra, wrong, and mis
   const mismatchedSource = structuredClone(placeholders);
   mismatchedSource[firstKey].imageSourceName = 'Altered source identity';
   assert.throws(() => assertPlaceholderAuthority(mismatchedSource), /frozen source identity/);
+
+  const malformedSourceUrl = structuredClone(placeholders);
+  malformedSourceUrl[firstKey].imageSourceUrl = 'https:// not-a-url';
+  assert.throws(
+    () => assertPlaceholderAuthority(malformedSourceUrl),
+    /valid HTTPS URL/,
+  );
+});
+
+test('U4 URL validation rejects malformed pseudo-HTTPS values', () => {
+  assert.doesNotThrow(() => assertHttpsUrl('https://example.com/path', 'valid URL'));
+  for (const value of ['https:// not-a-url', 'https://?']) {
+    assert.throws(() => assertHttpsUrl(value, 'malformed URL'), /valid HTTPS URL/);
+  }
+});
+
+test('U4 normal rights policy requires an approved exact license triple', () => {
+  const approved = {
+    licenseName: 'CC BY 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    releaseClass: 'open',
+  };
+  assert.doesNotThrow(() => assertApprovedNormalLicensePolicy(approved, 'approved'));
+  assert.throws(
+    () => assertApprovedNormalLicensePolicy(
+      { ...approved, releaseClass: 'noncommercial' },
+      'class drift',
+    ),
+    /approved license policy/,
+  );
+  assert.throws(
+    () => assertApprovedNormalLicensePolicy({
+      licenseName: 'Unreviewed license policy',
+      licenseUrl: 'https://example.com/unreviewed-license',
+      releaseClass: 'open',
+    }, 'unknown policy'),
+    /approved license policy/,
+  );
 });
 
 test('U4 ledger parser accepts only HTTPS image links or the exact restricted placeholder literal', () => {
@@ -878,7 +1010,19 @@ test('U4 ledger parser accepts only HTTPS image links or the exact restricted pl
     `| ${LEDGER_HEADER.join(' | ')} |`,
     LEDGER_DIVIDER,
   ];
-  assert.doesNotThrow(() => parseU4Ledger([...table, row, restrictedRow].join('\n')));
+  const unrelatedNumericTable = '| 2026 | unrelated document table |';
+  const boundedDocument = [
+    unrelatedNumericTable,
+    '',
+    ...table,
+    row,
+    restrictedRow,
+    '',
+    '| Other | Table |',
+    '| ---: | --- |',
+    unrelatedNumericTable,
+  ].join('\n');
+  assert.equal(parseU4Ledger(boundedDocument).length, 2, 'only consecutive U4 ledger rows');
   assert.throws(
     () => parseU4Ledger([...table, row.replace(' | Example institution', '')].join('\n')),
     /expected 8 cells/,
@@ -891,6 +1035,14 @@ test('U4 ledger parser accepts only HTTPS image links or the exact restricted pl
   assert.throws(
     () => parseU4Ledger([...table, row.replace('https://example.com/image.jpg', 'http://example.com/image.jpg')].join('\n')),
     /HTTPS Markdown link/,
+  );
+  assert.throws(
+    () => parseU4Ledger([...table, row.replace('https://example.com/image.jpg', 'https:// not-a-url')].join('\n')),
+    /valid HTTPS URL/,
+  );
+  assert.throws(
+    () => parseU4Ledger([...table, row.replace('[Object page](https://example.com/source)', '[Object page](https://?)')].join('\n')),
+    /valid HTTPS URL/,
   );
   assert.throws(
     () => parseU4Ledger([...table, row.replace('[Object page](https://example.com/source)', 'https://example.com/source')].join('\n')),
@@ -974,6 +1126,20 @@ test('U4 canonical media validation rejects placeholder leaks/status/source drif
   const http = structuredClone(fixture);
   http.artworks[0].images[0].imageUrl = 'http://example.com/image.jpg';
   assert.throws(() => assertCanonicalMediaContract(http, manifest, placeholders), /public HTTPS image/);
+
+  const malformedImageUrl = structuredClone(fixture);
+  malformedImageUrl.artworks[0].images[0].imageUrl = 'https:// not-a-url';
+  assert.throws(
+    () => assertCanonicalMediaContract(malformedImageUrl, manifest, placeholders),
+    /valid HTTPS URL/,
+  );
+
+  const malformedSourceUrl = structuredClone(fixture);
+  malformedSourceUrl.artworks[0].images[0].imageSourceUrl = 'https://?';
+  assert.throws(
+    () => assertCanonicalMediaContract(malformedSourceUrl, manifest, placeholders),
+    /valid HTTPS URL/,
+  );
 
   const duplicateUrl = structuredClone(fixture);
   duplicateUrl.artworks[1].images[0].imageUrl = duplicateUrl.artworks[0].images[0].imageUrl;
@@ -1099,6 +1265,33 @@ test('U4 rights validation rejects key, credit, URL, release-class, and placehol
     /restricted class must match/,
   );
 
+  const allowedClassDrift = structuredClone(rights);
+  allowedClassDrift[firstKey].releaseClass = [
+    'open',
+    'noncommercial',
+    'institutionalEducational',
+  ].find((releaseClass) => releaseClass !== rights[firstKey].releaseClass);
+  assert.throws(
+    () => assertCanonicalRightsMatch(fixture, allowedClassDrift, expectedKeys, placeholders),
+    /approved license policy/,
+  );
+
+  const unknownPolicy = structuredClone(rights);
+  const unknownPolicyFixture = structuredClone(fixture);
+  unknownPolicy[firstKey].licenseName = 'Unreviewed license policy';
+  unknownPolicy[firstKey].licenseUrl = 'https://example.com/unreviewed-license';
+  unknownPolicyFixture.credits[unknownPolicyFixture.artworks[0].id].licenseName = 'Unreviewed license policy';
+  unknownPolicyFixture.credits[unknownPolicyFixture.artworks[0].id].licenseUrl = 'https://example.com/unreviewed-license';
+  assert.throws(
+    () => assertCanonicalRightsMatch(
+      unknownPolicyFixture,
+      unknownPolicy,
+      expectedKeys,
+      placeholders,
+    ),
+    /approved license policy/,
+  );
+
   const nonRestrictedPlaceholder = structuredClone(rights);
   nonRestrictedPlaceholder[RESTRICTED_MEDIA_KEYS[0]].releaseClass = 'institutionalEducational';
   assert.throws(
@@ -1117,5 +1310,19 @@ test('U4 rights validation rejects key, credit, URL, release-class, and placehol
       placeholders,
     ),
     /restricted media status/,
+  );
+
+  const malformedLicenseUrl = structuredClone(rights);
+  const malformedLicenseFixture = structuredClone(fixture);
+  malformedLicenseUrl[firstKey].licenseUrl = 'https:// not-a-url';
+  malformedLicenseFixture.credits[malformedLicenseFixture.artworks[0].id].licenseUrl = 'https:// not-a-url';
+  assert.throws(
+    () => assertCanonicalRightsMatch(
+      malformedLicenseFixture,
+      malformedLicenseUrl,
+      expectedKeys,
+      placeholders,
+    ),
+    /valid HTTPS URL/,
   );
 });
