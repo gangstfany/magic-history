@@ -34,6 +34,10 @@ function required(condition, message) {
   assert.ok(condition, message);
 }
 
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function importFirst(candidates) {
   const require = createRequire(import.meta.url);
   const failures = [];
@@ -265,6 +269,12 @@ async function assertTimelineDock(page, events) {
     .map((button) => button.dataset.eventId)));
   assert.deepEqual(itemStops, events.map((event) => [event.id]),
     'each ordered-list item must contain exactly one direct button.timeline-stop[data-event-id] for its event');
+  for (const event of events) {
+    const title = event.timelineTitleZh || event.titleZh || event.titleEn;
+    const accessibleName = new RegExp(`${escapeRegex(event.dateLabel)}\\s*${escapeRegex(title)}`);
+    assert.equal(await dock.getByRole('button', { name: accessibleName }).count(), 1,
+      `Dock button accessible name must include its date and title for ${event.id}`);
+  }
 }
 
 async function assertTimelineDockGeometry(page, viewport) {
@@ -431,6 +441,12 @@ async function verifyTimelineDockSync(page, port, layout, events) {
   const selectedDockNode = page.locator('#timelineMount [data-event-id="columbian-exchange"]');
   assert.equal(await selectedDockNode.getAttribute('aria-current'), 'step',
     `${layout}: marker selection must set the matching Dock node aria-current=step`);
+  const currentCue = selectedDockNode.locator('.timeline-current-cue');
+  assert.equal(await currentCue.count(), 1, `${layout}: selected Dock node must expose one visible current-state cue`);
+  required(await currentCue.isVisible(), `${layout}: selected Dock current-state cue must be visible`);
+  assert.equal(await currentCue.getAttribute('aria-hidden'), 'true',
+    `${layout}: visual current-state cue must not pollute the button accessible name`);
+  assert.match(await currentCue.innerText(), /当前/, `${layout}: visual cue must explicitly identify the current event`);
 
   const conquest = events.find((event) => event.id === 'conquest-mexica');
   required(conquest, 'dataset must provide the conquest-mexica Dock fixture');
@@ -499,13 +515,39 @@ async function verifyReducedMotion(page, port) {
   assert.equal(transition.duration, '0s', `reduced motion must disable geography transitions: ${JSON.stringify(transition)}`);
   await page.evaluate(() => {
     window.__dockScrollBehavior = null;
-    Element.prototype.scrollIntoView = function scrollIntoView(options) {
-      if (this.closest?.('#timelineMount')) window.__dockScrollBehavior = options?.behavior;
+    const track = document.querySelector('#timelineMount .timeline-track');
+    track.scrollLeft = 0;
+    track.scrollTo = function scrollTo(options) {
+      window.__dockScrollBehavior = options?.behavior;
+      this.scrollLeft = options?.left || 0;
     };
-    window.__apushMap.selectEvent('conquest-mexica');
+    window.__apushMap.selectEvent('st-augustine-borderlands');
   });
   assert.equal(await page.evaluate(() => window.__dockScrollBehavior), 'auto',
     'reduced motion must make Dock selection scroll without smooth animation');
+}
+
+async function verifyDockOwnsSelectionScrolling(page, port) {
+  await page.setViewportSize({ width: 1024, height: 600 });
+  await loadPrototype(page, port, 'a');
+  const before = await page.evaluate(() => {
+    window.scrollTo(0, 0);
+    const track = document.querySelector('#timelineMount .timeline-track');
+    track.scrollLeft = 0;
+    return { scrollY: window.scrollY, trackLeft: track.scrollLeft };
+  });
+  await (await firstRenderedMarker(page, 'st-augustine-borderlands')).evaluate((marker) => {
+    marker.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+  await page.waitForFunction(() => document.querySelector('#timelineMount .timeline-track').scrollLeft > 0);
+  const after = await page.evaluate(() => ({
+    scrollY: window.scrollY,
+    trackLeft: document.querySelector('#timelineMount .timeline-track').scrollLeft,
+  }));
+  assert.equal(after.scrollY, before.scrollY,
+    'marker selection must not move the document when the selected Dock node is offscreen');
+  required(after.trackLeft > before.trackLeft,
+    `marker selection must move only the Timeline Dock track when its node is outside the track viewport: ${JSON.stringify({ before, after })}`);
 }
 
 async function verifyMultiAnchorLabel(page, port, data) {
@@ -791,6 +833,7 @@ export async function verifyBrowser() {
     for (const [label, verify] of [
       ['keyboard and drag controls', (page) => verifyKeyboardAndDragControls(page, port, data.events)],
       ['reduced motion', (page) => verifyReducedMotion(page, port)],
+      ['Dock-local selection scrolling', (page) => verifyDockOwnsSelectionScrolling(page, port)],
       ['multi-anchor label', (page) => verifyMultiAnchorLabel(page, port, data)],
     ]) {
       const interactionPage = await browser.newPage({ viewport: REQUIRED_VIEWPORTS[0] });

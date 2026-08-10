@@ -281,6 +281,15 @@
     .timeline-stop:focus-visible { outline: 3px solid #247b79; outline-offset: 2px; }
     .timeline-date { display: block; color: var(--accent); font: 800 .7rem/1.2 ui-sans-serif, system-ui, sans-serif; }
     .timeline-title { display: block; margin-top: 4px; overflow: hidden; font: 700 .72rem/1.25 ui-sans-serif, system-ui, sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+    .timeline-current-cue {
+      display: inline-flex;
+      margin-top: 7px;
+      border: 1px solid currentColor;
+      border-radius: 999px;
+      padding: 1px 6px;
+      font: 800 .65rem/1.35 ui-sans-serif, system-ui, sans-serif;
+    }
+    .timeline-current-cue[hidden] { display: none; }
     .timeline-empty { min-height: 44px; padding: 12px; color: var(--muted); font: 700 .78rem/1.4 ui-sans-serif, system-ui, sans-serif; }
     .load-error {
       margin-top: 20px;
@@ -826,6 +835,10 @@
             text('span', 'timeline-date', event.dateLabel),
             text('span', 'timeline-title', event.timelineTitleZh || event.titleZh || event.titleEn),
           );
+          const currentCue = text('span', 'timeline-current-cue', '当前');
+          currentCue.hidden = event.id !== state.selectedEventId;
+          currentCue.setAttribute('aria-hidden', 'true');
+          button.append(currentCue);
           button.addEventListener('click', () => selectEvent(event.id));
           item.append(button);
           track.append(item);
@@ -878,11 +891,22 @@
           const selected = stop.dataset.eventId === state.selectedEventId;
           stop.classList.toggle('is-selected', selected);
           stop.setAttribute('aria-current', selected ? 'step' : 'false');
+          const currentCue = stop.querySelector('.timeline-current-cue');
+          if (currentCue) currentCue.hidden = !selected;
         });
         const active = elements.timelineMount.querySelector(`[data-event-id="${CSS.escape(state.selectedEventId || '')}"]`);
         if (active) {
+          const track = elements.timelineMount.querySelector('.timeline-track');
+          const activeRect = active.getBoundingClientRect();
+          const trackRect = track.getBoundingClientRect();
+          let left = track.scrollLeft;
+          if (activeRect.left < trackRect.left) left += activeRect.left - trackRect.left;
+          else if (activeRect.right > trackRect.right) left += activeRect.right - trackRect.right;
+          left = Math.max(0, Math.min(track.scrollWidth - track.clientWidth, left));
           const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-          active.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'nearest', inline: 'nearest' });
+          if (Math.abs(left - track.scrollLeft) > 1) {
+            track.scrollTo({ left, behavior: reducedMotion ? 'auto' : 'smooth' });
+          }
         }
       }
 
