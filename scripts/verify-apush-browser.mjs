@@ -228,16 +228,88 @@ async function assertHitTargets(page) {
   }
 }
 
-async function assertTimeline(page, layout) {
-  const timeline = page.locator('#timelineMount');
-  if (layout === 'a') {
-    assert.equal(await timeline.count(), 0, 'layout A must not retain a hidden interactive timeline');
+async function visibleEvents(page, events) {
+  const visibleIds = (await stateOf(page)).visibleEventIds;
+  return visibleIds.map((id) => events.find((event) => event.id === id)).filter(Boolean);
+}
+
+async function assertTimelineDock(page, events) {
+  const dock = page.locator('#timelineMount');
+  assert.equal(await dock.count(), 1, 'the embedded timeline Dock must expose exactly one #timelineMount');
+  required(await dock.isVisible(), 'the embedded timeline Dock must be visible');
+  assert.equal(await dock.getAttribute('aria-label'), 'Period 1 timeline',
+    'the embedded timeline Dock must have the accessible label "Period 1 timeline"');
+
+  const list = dock.locator('ol');
+  assert.equal(await list.count(), 1, 'the embedded timeline Dock must contain one ordered list');
+  const items = list.locator(':scope > li');
+  const nodes = dock.locator('[data-event-id]');
+  assert.equal(await nodes.count(), events.length,
+    'the embedded timeline Dock must render one event node per visible event');
+  const emptyItems = list.locator(':scope > li.timeline-empty');
+  if (events.length === 0) {
+    assert.equal(await items.count(), 1, 'an empty Dock must render exactly one ordered-list item');
+    assert.equal(await emptyItems.count(), 1, 'an empty Dock must render exactly one li.timeline-empty');
     return;
   }
-  assert.equal(await timeline.count(), 1, 'layout C must include a timeline mount');
-  required(await timeline.evaluate((node) => node.isConnected), 'layout C timeline must be connected');
-  required(await timeline.isVisible(), 'layout C timeline must be visible');
-  required(await timeline.locator('[data-event-id]').count() > 0, 'layout C timeline must contain interactive stops');
+
+  assert.equal(await items.count(), events.length,
+    'the embedded timeline Dock must render one ordered-list item per visible event');
+  assert.equal(await emptyItems.count(), 0, 'a nonempty Dock must not render li.timeline-empty');
+  assert.deepEqual(await nodes.evaluateAll((elements) => elements.map((element) => element.dataset.eventId)), events.map((event) => event.id),
+    'the embedded timeline Dock must preserve visible event order');
+  const itemStops = await items.evaluateAll((listItems) => listItems.map((item) => [...item.children]
+    .filter((child) => child.matches('button.timeline-stop[data-event-id]'))
+    .map((button) => button.dataset.eventId)));
+  assert.deepEqual(itemStops, events.map((event) => [event.id]),
+    'each ordered-list item must contain exactly one direct button.timeline-stop[data-event-id] for its event');
+}
+
+async function assertTimelineDockGeometry(page, viewport) {
+  const geometry = await page.evaluate(() => {
+    const map = document.querySelector('#mapPanel');
+    const dock = document.querySelector('#timelineMount');
+    const track = dock?.querySelector('.timeline-track');
+    if (!map || !dock || !track) return null;
+    const mapRect = map.getBoundingClientRect();
+    const dockRect = dock.getBoundingClientRect();
+    return {
+      mapBottom: mapRect.bottom,
+      dockTop: dockRect.top,
+      pageScrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+      dockOverflowX: getComputedStyle(dock).overflowX,
+      dockScrollWidth: dock.scrollWidth,
+      dockClientWidth: dock.clientWidth,
+      trackOverflowX: getComputedStyle(track).overflowX,
+      trackScrollWidth: track.scrollWidth,
+      trackClientWidth: track.clientWidth,
+      trackScrollLeftBefore: track.scrollLeft,
+      trackScrollLeftAfter: (() => {
+        const maximum = track.scrollWidth - track.clientWidth;
+        if (maximum <= 0) return track.scrollLeft;
+        track.scrollLeft = Math.min(64, maximum);
+        const after = track.scrollLeft;
+        track.scrollLeft = 0;
+        return after;
+      })(),
+    };
+  });
+  required(geometry, 'the embedded timeline Dock must expose a timeline track');
+  required(geometry.dockTop >= geometry.mapBottom,
+    `the embedded timeline Dock must occupy a separate row below the map at ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
+  required(geometry.pageScrollWidth <= geometry.viewportWidth,
+    `page must not overflow horizontally at ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
+  required(['auto', 'scroll'].includes(geometry.trackOverflowX),
+    `the timeline track must own horizontal scrolling at ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
+  required(!['auto', 'scroll'].includes(geometry.dockOverflowX),
+    `the Dock itself must not horizontally scroll at ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
+  required(geometry.dockScrollWidth <= geometry.dockClientWidth,
+    `Dock content must not create its own horizontal scroll range at ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
+  if (geometry.trackScrollWidth > geometry.trackClientWidth) {
+    required(geometry.trackScrollLeftAfter > geometry.trackScrollLeftBefore,
+      `the overflowing timeline track must be horizontally scrollable at ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
+  }
 }
 
 async function loadPrototype(page, port, layout) {
@@ -253,27 +325,30 @@ async function firstRenderedMarker(page, eventId) {
   return markers.first();
 }
 
-async function verifyFilterSelectionFlow(page, port, layout) {
+async function verifyFilterSelectionFlow(page, port, layout, events) {
   await loadPrototype(page, port, layout);
   await (await firstRenderedMarker(page, 'columbian-exchange')).click();
   assert.equal((await stateOf(page)).selectedEventId, 'columbian-exchange',
     `${layout}: fixture selection must start on Columbian Exchange`);
   await page.locator('#searchInput').fill('Columbian Exchange');
+  await assertTimelineDock(page, await visibleEvents(page, events));
   assert.equal((await stateOf(page)).selectedEventId, 'columbian-exchange',
     `${layout}: filtering must retain a selected event while it remains visible`);
   await page.locator('#searchInput').fill('Spanish Labor and Caste Systems');
   const filtered = await stateOf(page);
   assert.deepEqual(filtered.visibleEventIds, ['spanish-labor-caste'], `${layout}: fixture filter must leave one visible event`);
+  await assertTimelineDock(page, await visibleEvents(page, events));
   assert.equal(filtered.selectedEventId, null, `${layout}: filtering must clear a selection that is no longer visible`);
   assert.match(await page.locator('#detailPanel').innerText(), /选择地图上的编号地点/,
     `${layout}: cleared selection must restore the instructional detail state`);
 }
 
-async function verifyNoResultsUi(page, port, layout, manifestIds) {
+async function verifyNoResultsUi(page, port, layout, manifestIds, events) {
   await loadPrototype(page, port, layout);
   const query = 'no-such-period-1-event';
   await page.locator('#searchInput').fill(query);
   assert.deepEqual((await stateOf(page)).visibleEventIds, [], `${layout}: no-match query must produce zero results`);
+  await assertTimelineDock(page, []);
   const noResults = page.locator('#noResults:not([hidden])');
   assert.equal(await noResults.count(), 1, `${layout}: zero results must show one in-context empty state`);
   assert.match(await noResults.innerText(), new RegExp(query), `${layout}: no-results state must display the current query`);
@@ -283,6 +358,7 @@ async function verifyNoResultsUi(page, port, layout, manifestIds) {
   const restored = await stateOf(page);
   assert.equal(restored.query, '', `${layout}: in-context clear must clear the query`);
   assert.deepEqual(restored.visibleEventIds, manifestIds, `${layout}: in-context clear must restore all events`);
+  await assertTimelineDock(page, events);
   assert.equal(await page.locator('#noResults:not([hidden])').count(), 0, `${layout}: restored results must hide the empty state`);
 }
 
@@ -300,23 +376,43 @@ async function verifyClearRestoresOverview(page, port, layout, manifestIds) {
 
 async function verifyRenderedManifestControls(page, port, layout, events) {
   await loadPrototype(page, port, layout);
+  await assertTimelineDock(page, events);
   for (const event of events) {
     await (await firstRenderedMarker(page, event.id)).press('Enter');
     assert.equal((await stateOf(page)).selectedEventId, event.id, `${layout}: rendered marker must select ${event.id}`);
     const detail = await page.locator('#detailPanel').innerText();
     required(detail.includes(event.titleEn) && detail.includes(event.titleZh),
       `${layout}: rendered marker must show bilingual detail for ${event.id}`);
-    if (layout === 'c') {
-      const stop = page.locator(`#timelineMount [data-event-id="${event.id}"]`);
-      assert.equal(await stop.count(), 1, `layout c: timeline must expose exactly one stop for ${event.id}`);
-      await stop.click();
-      assert.equal((await stateOf(page)).selectedEventId, event.id, `layout c: timeline click must select ${event.id}`);
-    }
+    const stop = page.locator(`#timelineMount [data-event-id="${event.id}"]`);
+    assert.equal(await stop.count(), 1, `${layout}: Dock must expose exactly one stop for ${event.id}`);
+    await stop.click();
+    assert.equal((await stateOf(page)).selectedEventId, event.id, `${layout}: Dock click must select ${event.id}`);
   }
 }
 
-async function verifyKeyboardAndDragControls(page, port) {
+async function verifyTimelineDockSync(page, port, layout, events) {
+  await loadPrototype(page, port, layout);
+  await assertTimelineDock(page, events);
+  await (await firstRenderedMarker(page, 'columbian-exchange')).click();
+  const selectedDockNode = page.locator('#timelineMount [data-event-id="columbian-exchange"]');
+  assert.equal(await selectedDockNode.getAttribute('aria-current'), 'step',
+    `${layout}: marker selection must set the matching Dock node aria-current=step`);
+
+  const conquest = events.find((event) => event.id === 'conquest-mexica');
+  required(conquest, 'dataset must provide the conquest-mexica Dock fixture');
+  await page.locator('#timelineMount [data-event-id="conquest-mexica"]').click();
+  assert.equal((await stateOf(page)).selectedEventId, 'conquest-mexica',
+    `${layout}: Dock selection must update __apushMap selectedEventId`);
+  required(await (await firstRenderedMarker(page, 'conquest-mexica')).evaluate((marker) => marker.classList.contains('is-selected')),
+    `${layout}: Dock selection must mark the matching map marker as selected`);
+  const detail = await page.locator('#detailPanel').innerText();
+  required(detail.includes(conquest.titleEn) && detail.includes(conquest.titleZh),
+    `${layout}: Dock selection must update the bilingual detail panel for conquest-mexica`);
+}
+
+async function verifyKeyboardAndDragControls(page, port, events) {
   await loadPrototype(page, port, 'a');
+  await assertTimelineDock(page, events);
   const enterMarker = await firstRenderedMarker(page, 'columbus-caribbean-1492');
   await enterMarker.press('Enter');
   assert.equal((await stateOf(page)).selectedEventId, 'columbus-caribbean-1492', 'marker Enter must select its event');
@@ -338,18 +434,23 @@ async function verifyKeyboardAndDragControls(page, port) {
   assert.notDeepEqual((await stateOf(page)).mapTransform, beforeDrag.mapTransform, 'pointer drag must change mapTransform');
   await page.locator('[data-map-control="reset"]').click();
   assert.deepEqual((await stateOf(page)).mapTransform, beforeDrag.mapTransform, 'rendered reset control must restore overview after drag');
+  await (await controlLocator(page, /zoom in|放大/i)).click();
+  assert.notDeepEqual((await stateOf(page)).mapTransform, beforeDrag.mapTransform,
+    'zoom control must change mapTransform after the Dock is present');
+  await page.locator('[data-map-control="reset"]').click();
 
-  await loadPrototype(page, port, 'c');
+  await loadPrototype(page, port, 'a');
+  await assertTimelineDock(page, events);
   const enterStop = page.locator('#timelineMount [data-event-id="conquest-mexica"]');
-  assert.equal(await enterStop.count(), 1, 'timeline must expose the Enter fixture');
+  assert.equal(await enterStop.count(), 1, 'Dock must expose the Enter fixture');
   await enterStop.press('Enter');
   assert.equal((await stateOf(page)).selectedEventId, 'conquest-mexica', 'timeline Enter must select its event');
   const spaceStop = page.locator('#timelineMount [data-event-id="conquest-inca"]');
-  assert.equal(await spaceStop.count(), 1, 'timeline must expose the Space fixture');
+  assert.equal(await spaceStop.count(), 1, 'Dock must expose the Space fixture');
   await spaceStop.press('Space');
   assert.equal((await stateOf(page)).selectedEventId, 'conquest-inca', 'timeline Space must select its event');
   const clickStop = page.locator('#timelineMount [data-event-id="st-augustine-borderlands"]');
-  assert.equal(await clickStop.count(), 1, 'timeline must expose the click fixture');
+  assert.equal(await clickStop.count(), 1, 'Dock must expose the click fixture');
   await clickStop.click();
   assert.equal((await stateOf(page)).selectedEventId, 'st-augustine-borderlands', 'timeline click must select its event');
 }
@@ -393,10 +494,12 @@ async function verifyViewport(page, port, layout, viewport, manifestIds, events)
   const initialDetail = await page.locator('#detailPanel').innerText();
   assert.equal(initial.layout, layout, 'getState must report the requested layout');
   assert.deepEqual(initial.visibleEventIds, manifestIds, 'initial visible events must exactly match manifest order');
-  assert.match(await page.locator('#prototypeLabel').innerText(), new RegExp(`\\b${layout.toUpperCase()}\\b`), 'prototype label must identify the current layout');
   await assertStateCopies(page);
   await assertPublicApi(page, manifestIds, events);
-  await assertTimeline(page, layout);
+  await assertTimelineDock(page, events);
+  assert.equal(await page.locator('#prototypeLabel').innerText(), 'Timeline Dock Preview',
+    'the visible prototype label must present the unified Timeline Dock rather than a compatibility layout');
+  await assertTimelineDockGeometry(page, viewport);
 
   await page.locator('[data-event-id="columbus-caribbean-1492"]').first().click();
   assert.equal((await stateOf(page)).selectedEventId, 'columbus-caribbean-1492', 'event click must select Columbus');
@@ -413,12 +516,15 @@ async function verifyViewport(page, port, layout, viewport, manifestIds, events)
     await page.locator('#clearFilters').click();
   }
   required(changedResultSet, 'clicking a theme must change the result set');
+  await assertTimelineDock(page, await visibleEvents(page, events));
   await page.locator('#clearFilters').click();
   assert.deepEqual((await stateOf(page)).visibleEventIds, manifestIds, 'clearing filters must restore all nine events');
+  await assertTimelineDock(page, events);
 
   await page.locator('#searchInput').fill('Columbian Exchange');
   const afterSearch = await stateOf(page);
   required(afterSearch.visibleEventIds.includes('columbian-exchange'), 'search must return Columbian Exchange');
+  await assertTimelineDock(page, await visibleEvents(page, events));
   await page.locator('[data-event-id="columbian-exchange"]').first().click();
   assert.equal((await stateOf(page)).selectedEventId, 'columbian-exchange', 'search result must be selectable');
   await page.locator('#clearFilters').click();
@@ -609,16 +715,18 @@ export async function verifyBrowser() {
     const c = initialByLayout.get('c');
     assert.deepEqual(a.initialVisibleEventIds, c.initialVisibleEventIds, 'layouts A and C must start with matching visible events');
     assert.equal(a.initialDetail, c.initialDetail, 'layouts A and C must start with matching detail content');
-    required(a.mapHeight - c.mapHeight >= 80, 'layout C map panel must be at least 80px shorter than layout A at desktop size');
+    required(Math.abs(a.mapHeight - c.mapHeight) <= 1,
+      `compatibility URLs must retain near-identical map geometry: A=${a.mapHeight}, C=${c.mapHeight}`);
 
     const regressionErrors = [];
 
     for (const layout of LAYOUTS) {
       for (const [label, verify] of [
-        ['filter selection flow', (page) => verifyFilterSelectionFlow(page, port, layout)],
-        ['no-results UI', (page) => verifyNoResultsUi(page, port, layout, manifest.eventIds)],
+        ['filter selection flow', (page) => verifyFilterSelectionFlow(page, port, layout, data.events)],
+        ['no-results UI', (page) => verifyNoResultsUi(page, port, layout, manifest.eventIds, data.events)],
         ['clear restores overview', (page) => verifyClearRestoresOverview(page, port, layout, manifest.eventIds)],
         ['rendered manifest controls', (page) => verifyRenderedManifestControls(page, port, layout, data.events)],
+        ['timeline Dock sync', (page) => verifyTimelineDockSync(page, port, layout, data.events)],
       ]) {
         const acceptancePage = await browser.newPage({ viewport: REQUIRED_VIEWPORTS[0] });
         try {
@@ -632,7 +740,7 @@ export async function verifyBrowser() {
     }
 
     for (const [label, verify] of [
-      ['keyboard and drag controls', (page) => verifyKeyboardAndDragControls(page, port)],
+      ['keyboard and drag controls', (page) => verifyKeyboardAndDragControls(page, port, data.events)],
       ['reduced motion', (page) => verifyReducedMotion(page, port)],
       ['multi-anchor label', (page) => verifyMultiAnchorLabel(page, port, data)],
     ]) {
