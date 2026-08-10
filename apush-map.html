@@ -149,7 +149,6 @@
       box-shadow: var(--shadow);
       touch-action: none;
     }
-    body[data-layout="c"] .map-panel { min-height: 480px; }
     .map-canvas { position: absolute; inset: 0; min-width: 0; }
     .map-canvas svg { display: block; width: 100%; height: 100%; cursor: grab; user-select: none; }
     .map-canvas svg.is-dragging { cursor: grabbing; }
@@ -212,30 +211,77 @@
       cursor: pointer;
       font: 700 .78rem/1.35 ui-sans-serif, system-ui, sans-serif;
     }
-    #timelineMount {
+    .timeline-dock {
+      width: 100%;
       min-width: 0;
-      height: 120px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: rgba(255, 252, 244, .88);
-      overflow: hidden;
+      border-top: 1px solid var(--line);
+      background: var(--paper);
+      padding: 12px 14px 14px;
     }
-    .timeline-region { height: 100%; padding: 8px 10px; }
-    .timeline-label { margin: 0 0 6px; color: var(--muted); font: 800 .7rem/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
-    .timeline-track { display: flex; gap: 8px; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; padding: 0 0 8px; }
+    .timeline-dock-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font: 700 .72rem/1.2 ui-sans-serif, system-ui, sans-serif;
+    }
+    .timeline-dock-head strong {
+      color: var(--ink);
+      font-size: .78rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .timeline-track {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      min-width: 0;
+      margin: 0;
+      padding: 4px 2px 8px;
+      list-style: none;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x proximity;
+    }
+    .timeline-track > li { position: relative; flex: 1 0 138px; min-width: 0; }
+    .timeline-track > li:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      top: 0;
+      right: -8px;
+      width: 8px;
+      border-top: 2px solid var(--line);
+      pointer-events: none;
+    }
     .timeline-stop {
-      flex: 0 0 190px;
-      min-height: 64px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 7px 9px;
-      background: #fffaf0;
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      min-width: 44px;
+      min-height: 72px;
+      padding: 10px 12px;
+      border: 0;
+      border-top: 2px solid var(--line);
+      background: transparent;
+      color: var(--muted);
       text-align: left;
       cursor: pointer;
+      scroll-snap-align: center;
     }
-    .timeline-stop[aria-current="true"] { border-color: var(--accent); background: #f2dec5; box-shadow: inset 0 0 0 1px var(--accent); }
+    .timeline-stop[aria-current="step"], .timeline-stop.is-selected {
+      border-top-color: var(--accent);
+      background: #f2e5d5;
+      color: var(--ink);
+      box-shadow: inset 0 -3px var(--accent);
+      font-weight: 800;
+    }
+    .timeline-stop:focus-visible { outline: 3px solid #247b79; outline-offset: 2px; }
     .timeline-date { display: block; color: var(--accent); font: 800 .7rem/1.2 ui-sans-serif, system-ui, sans-serif; }
-    .timeline-title { display: block; margin-top: 3px; font: 700 .72rem/1.25 ui-sans-serif, system-ui, sans-serif; }
+    .timeline-title { display: block; margin-top: 4px; overflow: hidden; font: 700 .72rem/1.25 ui-sans-serif, system-ui, sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+    .timeline-empty { min-height: 44px; padding: 12px; color: var(--muted); font: 700 .78rem/1.4 ui-sans-serif, system-ui, sans-serif; }
     .load-error {
       margin-top: 20px;
       border: 1px solid #a64b3f;
@@ -256,12 +302,12 @@
       .workspace { display: block; }
       .map-column { margin-bottom: 12px; }
       .map-panel { min-height: 430px; }
-      body[data-layout="c"] .map-panel { min-height: 360px; }
+      .timeline-dock { padding-inline: 8px; }
+      .timeline-track > li { flex-basis: 126px; }
       .detail-panel { max-height: none; }
     }
     @media (max-width: 700px) and (orientation: landscape) {
       .map-panel { min-height: 360px; }
-      body[data-layout="c"] .map-panel { min-height: 320px; }
       .detail-panel { max-height: 72vh; overflow: auto; }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -482,8 +528,8 @@
           <button type="button" data-map-control="reset" aria-label="Reset 重置">⌂</button>
         </div>
       </section>
-      <nav id="timelineMount" aria-label="Period 1 timeline">
-        <p class="timeline-label">Period 1 Timeline</p>
+      <nav id="timelineMount" class="timeline-dock" aria-label="Period 1 timeline">
+        <div class="timeline-dock-head"><strong>Period 1 Timeline</strong><span>年代＋短事件名</span></div>
         <ol class="timeline-track"></ol>
       </nav>
     </section>
