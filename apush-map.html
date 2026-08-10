@@ -239,7 +239,7 @@
       gap: 8px;
       min-width: 0;
       margin: 0;
-      padding: 4px 2px 8px;
+      padding: 6px 6px 8px;
       list-style: none;
       overflow-x: auto;
       overscroll-behavior-x: contain;
@@ -547,9 +547,6 @@
       const MAP_HEIGHT = 800;
       const INITIAL_TRANSFORM = Object.freeze({ scale: 1.35, x: 120, y: -70 });
       const normalize = (value) => String(value || '').normalize('NFKC').toLowerCase().trim();
-      function getLayout(params = new URLSearchParams(location.search)) {
-        return params.get('layout') === 'c' ? 'c' : 'a';
-      }
       function eventSearchText(event, sitesById, themesById) {
         return normalize([
           event.titleEn, event.titleZh, event.dateLabel, event.summary,
@@ -572,7 +569,7 @@
         return node;
       }
 
-      const layout = getLayout();
+      const layout = 'dock';
       const elements = {
         workspace: document.querySelector('#workspace'),
         loadError: document.querySelector('#loadError'),
@@ -605,7 +602,6 @@
       let drag = null;
       let suppressClick = false;
 
-      document.body.dataset.layout = layout;
       elements.prototypeLabel.textContent = 'Timeline Dock Preview';
 
       function validDataset(data) {

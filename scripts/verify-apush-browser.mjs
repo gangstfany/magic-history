@@ -250,6 +250,8 @@ async function assertTimelineDock(page, events) {
   if (events.length === 0) {
     assert.equal(await items.count(), 1, 'an empty Dock must render exactly one ordered-list item');
     assert.equal(await emptyItems.count(), 1, 'an empty Dock must render exactly one li.timeline-empty');
+    assert.equal(await emptyItems.locator('button, a, input, select, textarea, [tabindex]').count(), 0,
+      'the empty Dock message must be noninteractive');
     return;
   }
 
@@ -285,6 +287,32 @@ async function assertTimelineDockGeometry(page, viewport) {
       trackScrollWidth: track.scrollWidth,
       trackClientWidth: track.clientWidth,
       trackScrollLeftBefore: track.scrollLeft,
+      focusedOutlineFits: (() => {
+        const stops = [...track.querySelectorAll('.timeline-stop')];
+        if (!stops.length) return { first: true, last: true };
+        const fits = (stop) => {
+          stop.focus();
+          const stopRect = stop.getBoundingClientRect();
+          const trackRect = track.getBoundingClientRect();
+          const style = getComputedStyle(stop);
+          const extent = parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+          return {
+            fits: stopRect.top - extent >= trackRect.top
+            && stopRect.right + extent <= trackRect.right
+            && stopRect.bottom + extent <= trackRect.bottom
+            && stopRect.left - extent >= trackRect.left,
+            extent,
+            stop: { top: stopRect.top, right: stopRect.right, bottom: stopRect.bottom, left: stopRect.left },
+            track: { top: trackRect.top, right: trackRect.right, bottom: trackRect.bottom, left: trackRect.left },
+          };
+        };
+        track.scrollLeft = 0;
+        const firstFits = fits(stops[0]);
+        track.scrollLeft = track.scrollWidth - track.clientWidth;
+        const lastFits = fits(stops.at(-1));
+        track.scrollLeft = 0;
+        return { first: firstFits, last: lastFits };
+      })(),
       trackScrollLeftAfter: (() => {
         const maximum = track.scrollWidth - track.clientWidth;
         if (maximum <= 0) return track.scrollLeft;
@@ -306,6 +334,8 @@ async function assertTimelineDockGeometry(page, viewport) {
     `the Dock itself must not horizontally scroll at ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
   required(geometry.dockScrollWidth <= geometry.dockClientWidth,
     `Dock content must not create its own horizontal scroll range at ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
+  required(geometry.focusedOutlineFits.first.fits && geometry.focusedOutlineFits.last.fits,
+    `Dock track padding must keep focused-node outlines inside its scrollport at ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
   if (geometry.trackScrollWidth > geometry.trackClientWidth) {
     required(geometry.trackScrollLeftAfter > geometry.trackScrollLeftBefore,
       `the overflowing timeline track must be horizontally scrollable at ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
@@ -334,11 +364,15 @@ async function verifyFilterSelectionFlow(page, port, layout, events) {
   await assertTimelineDock(page, await visibleEvents(page, events));
   assert.equal((await stateOf(page)).selectedEventId, 'columbian-exchange',
     `${layout}: filtering must retain a selected event while it remains visible`);
+  assert.equal(await page.locator('#timelineMount [data-event-id="columbian-exchange"]').getAttribute('aria-current'), 'step',
+    `${layout}: a selected event retained by filtering must remain the current Dock node`);
   await page.locator('#searchInput').fill('Spanish Labor and Caste Systems');
   const filtered = await stateOf(page);
   assert.deepEqual(filtered.visibleEventIds, ['spanish-labor-caste'], `${layout}: fixture filter must leave one visible event`);
   await assertTimelineDock(page, await visibleEvents(page, events));
   assert.equal(filtered.selectedEventId, null, `${layout}: filtering must clear a selection that is no longer visible`);
+  assert.equal(await page.locator('#timelineMount [aria-current="step"]').count(), 0,
+    `${layout}: filtering out the selected event must leave no current Dock node`);
   assert.match(await page.locator('#detailPanel').innerText(), /选择地图上的编号地点/,
     `${layout}: cleared selection must restore the instructional detail state`);
 }
@@ -463,6 +497,15 @@ async function verifyReducedMotion(page, port) {
     property: getComputedStyle(path).transitionProperty,
   }));
   assert.equal(transition.duration, '0s', `reduced motion must disable geography transitions: ${JSON.stringify(transition)}`);
+  await page.evaluate(() => {
+    window.__dockScrollBehavior = null;
+    Element.prototype.scrollIntoView = function scrollIntoView(options) {
+      if (this.closest?.('#timelineMount')) window.__dockScrollBehavior = options?.behavior;
+    };
+    window.__apushMap.selectEvent('conquest-mexica');
+  });
+  assert.equal(await page.evaluate(() => window.__dockScrollBehavior), 'auto',
+    'reduced motion must make Dock selection scroll without smooth animation');
 }
 
 async function verifyMultiAnchorLabel(page, port, data) {
@@ -492,7 +535,7 @@ async function verifyViewport(page, port, layout, viewport, manifestIds, events)
   await page.waitForFunction(() => Boolean(window.__apushMap), undefined, { timeout: 8_000 });
   const initial = await stateOf(page);
   const initialDetail = await page.locator('#detailPanel').innerText();
-  assert.equal(initial.layout, layout, 'getState must report the requested layout');
+  assert.equal(initial.layout, 'dock', 'legacy layout query values must resolve to the one canonical Dock UI');
   assert.deepEqual(initial.visibleEventIds, manifestIds, 'initial visible events must exactly match manifest order');
   await assertStateCopies(page);
   await assertPublicApi(page, manifestIds, events);
@@ -654,9 +697,15 @@ async function verifyRelationStatusRefresh(page, port) {
     'out-of-filter relationship navigation must render exactly one status notice');
   assert.match(await status.innerText(), /不在当前筛选结果中/,
     'relationship status must explain that the linked event is outside the current filters');
+  assert.equal(await page.locator('#timelineMount [aria-current="step"]').count(), 0,
+    'an out-of-filter relationship target must not make any visible Dock node current');
   await page.locator('#clearFilters').click();
   assert.equal(await page.locator('#detailPanel .detail-status').count(), 0,
     'clearing filters must remove the stale out-of-filter relationship notice');
+  assert.equal(await page.locator('#timelineMount [data-event-id="european-exploration"]').getAttribute('aria-current'), 'step',
+    'clearing filters must restore the relationship target and make only its Dock node current');
+  assert.equal(await page.locator('#timelineMount [aria-current="step"]').count(), 1,
+    'relationship navigation must never expose more than one current Dock node');
 }
 
 async function verifyWxtContrast(page, port) {
