@@ -67,7 +67,7 @@
       background: #fff8e9;
       font: 800 .78rem/1 ui-sans-serif, system-ui, sans-serif;
       letter-spacing: .08em;
-      text-transform: uppercase;
+      text-transform: none;
     }
     .filter-toolbar {
       display: flex;
@@ -482,7 +482,10 @@
           <button type="button" data-map-control="reset" aria-label="Reset 重置">⌂</button>
         </div>
       </section>
-      <div id="timelineMount"></div>
+      <nav id="timelineMount" aria-label="Period 1 timeline">
+        <p class="timeline-label">Period 1 Timeline</p>
+        <ol class="timeline-track"></ol>
+      </nav>
     </section>
     <aside id="detailPanel" class="detail-panel" aria-live="polite"></aside>
   </main>
@@ -557,8 +560,7 @@
       let suppressClick = false;
 
       document.body.dataset.layout = layout;
-      elements.prototypeLabel.textContent = `Prototype ${layout.toUpperCase()}`;
-      if (layout === 'a') elements.timelineMount.remove();
+      elements.prototypeLabel.textContent = 'Timeline Dock Preview';
 
       function validDataset(data) {
         return data && data.schemaVersion === 1
@@ -766,31 +768,29 @@
       }
 
       function renderTimeline() {
-        if (layout !== 'c' || !elements.timelineMount.isConnected) return;
-        elements.timelineMount.replaceChildren();
-        const region = document.createElement('section');
-        region.className = 'timeline-region';
-        region.setAttribute('aria-label', 'Period 1 时间线');
-        region.append(text('p', 'timeline-label', 'Period 1 Timeline · 时序导航'));
-        const track = document.createElement('div');
-        track.className = 'timeline-track';
+        const track = elements.timelineMount.querySelector('.timeline-track');
+        track.replaceChildren();
         const visible = new Set(state.visibleEventIds);
         model.events.forEach((event) => {
           if (!visible.has(event.id)) return;
+          const item = document.createElement('li');
           const button = document.createElement('button');
           button.type = 'button';
           button.className = 'timeline-stop';
           button.dataset.eventId = event.id;
-          button.setAttribute('aria-current', String(event.id === state.selectedEventId));
+          button.classList.toggle('is-selected', event.id === state.selectedEventId);
+          button.setAttribute('aria-current', event.id === state.selectedEventId ? 'step' : 'false');
           button.append(
             text('span', 'timeline-date', event.dateLabel),
-            text('span', 'timeline-title', `${event.titleEn} · ${event.titleZh}`),
+            text('span', 'timeline-title', event.timelineTitleZh || event.titleZh || event.titleEn),
           );
           button.addEventListener('click', () => selectEvent(event.id));
-          track.append(button);
+          item.append(button);
+          track.append(item);
         });
-        region.append(track);
-        elements.timelineMount.append(region);
+        if (!track.children.length) {
+          track.append(text('li', 'timeline-empty', 'No events match the current filters.'));
+        }
       }
 
       function updateTransform() {
@@ -832,12 +832,15 @@
         elements.markerLayer.querySelectorAll('.event-marker').forEach((marker) => {
           marker.classList.toggle('is-selected', marker.dataset.eventId === state.selectedEventId);
         });
-        if (layout === 'c' && elements.timelineMount.isConnected) {
-          elements.timelineMount.querySelectorAll('[data-event-id]').forEach((stop) => {
-            stop.setAttribute('aria-current', String(stop.dataset.eventId === state.selectedEventId));
-          });
-          const active = elements.timelineMount.querySelector(`[data-event-id="${CSS.escape(state.selectedEventId || '')}"]`);
-          if (active) active.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
+        elements.timelineMount.querySelectorAll('[data-event-id]').forEach((stop) => {
+          const selected = stop.dataset.eventId === state.selectedEventId;
+          stop.classList.toggle('is-selected', selected);
+          stop.setAttribute('aria-current', selected ? 'step' : 'false');
+        });
+        const active = elements.timelineMount.querySelector(`[data-event-id="${CSS.escape(state.selectedEventId || '')}"]`);
+        if (active) {
+          const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          active.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'nearest', inline: 'nearest' });
         }
       }
 
