@@ -85,6 +85,35 @@ const EXPECTED_CED_LOCATORS_5_TO_7 = Object.freeze({
   p6: 'PDF pp. 261–316; Course Framework pp. 255–310 (Unit 6, Topics 6.1–6.14)',
   p7: 'PDF pp. 317–378; Course Framework pp. 311–372 (Unit 7, Topics 7.1–7.15)',
 });
+const EXPECTED_EVENT_IDS_8_TO_9 = Object.freeze({
+  p8: [
+    'postwar-suburbs-baby-boom-1945-1960', 'truman-doctrine-containment-1947', 'brown-board-1954',
+    'civil-rights-movement-1955-1965', 'rights-counterculture-1960s-1970s', 'great-society-1964-1965',
+    'vietnam-escalation-withdrawal-1964-1973', 'nixon-watergate-1968-1974', 'conservative-resurgence-1970s-1980',
+  ],
+  p9: [
+    'immigration-globalization-1980-2001', 'reaganomics-new-right-1981-1988', 'cold-war-ends-1989-1991',
+    'clinton-new-economy-1993-2000', 'september-eleven-2001', 'war-on-terror-2001-2011',
+    'great-recession-2008', 'demographic-digital-polarization-2008-2026',
+  ],
+});
+const EXPECTED_CED_LOCATORS_8_TO_9 = Object.freeze({
+  p8: 'PDF pp. 386–447; Course Framework pp. 379–440 (Unit 8, Topics 8.1–8.15)',
+  p9: 'PDF pp. 454–478; Course Framework pp. 447–471 (Unit 9, Topics 9.1–9.7)',
+});
+const EXPECTED_SOURCE_LOCATORS_8_TO_9 = Object.freeze({
+  'archives-brown': 'https://www.archives.gov/milestone-documents/brown-v-board-of-education',
+  'nps-civil-rights': 'https://www.nps.gov/subjects/civilrights/index.htm',
+  'archives-watergate': 'https://www.archives.gov/education/lessons/watergate-constitution',
+  'reagan-library-economy': 'https://www.reaganlibrary.gov/sites/default/files/archives/textual/topics/econpolicy.pdf',
+  'state-cold-war-end': 'https://history.state.gov/milestones/1989-1992/collapse-soviet-union',
+  'nine-eleven-memorial-timeline': 'https://www.911memorial.org/learn/resources/911-primer',
+  'fed-great-recession': 'https://www.federalreservehistory.org/essays/great-recession-and-its-aftermath',
+  'census-diversity-2020': 'https://www.census.gov/newsroom/press-releases/2021/population-changes-nations-diversity.html',
+  'census-internet-2021': 'https://www.census.gov/newsroom/press-releases/2024/computer-internet-use-2021.html',
+  'pew-internet-election-2008': 'https://www.pewresearch.org/internet/2009/04/15/the-internets-role-in-campaign-2008/',
+  'pew-partisan-hostility-2022': 'https://www.pewresearch.org/politics/2022/08/09/as-partisan-hostility-grows-signs-of-frustration-with-the-two-party-system/',
+});
 
 for (const periodId of ['p2', 'p3', 'p4']) {
   test(`${periodId.toUpperCase()} data validates and preserves the approved Timeline Dock order`, async () => {
@@ -230,6 +259,110 @@ for (const periodId of ['p5', 'p6', 'p7']) {
     const [causeId, effectId] = namedCausalLink;
     assert.ok(data.events.find(({ id }) => id === causeId).effectIds.includes(effectId));
     assert.ok(data.events.find(({ id }) => id === effectId).causeIds.includes(causeId));
+  });
+}
+
+for (const periodId of ['p8', 'p9']) {
+  test(`${periodId.toUpperCase()} data validates and preserves chronological Timeline Dock order`, async () => {
+    const number = Number(periodId.slice(1));
+    const [data, manifest, ledger, registry] = await Promise.all([
+      readJson(`../data/apush-period-${number}.json`),
+      readJson(`../data/apush-period-${number}-manifest.json`),
+      readFile(new URL(`../docs/data-sources/apush-period-${number}-source-ledger.md`, import.meta.url), 'utf8'),
+      readJson('../data/apush-period-registry.json'),
+    ]);
+    const expectedPeriod = registry.periods.find((period) => period.id === periodId);
+    const expectedIds = EXPECTED_EVENT_IDS_8_TO_9[periodId];
+    assert.deepEqual(manifest.eventIds, expectedIds);
+    assert.deepEqual(data.events.map(({ id }) => id), expectedIds);
+    assert.equal(data.events.length, { p8: 9, p9: 8 }[periodId]);
+    assert.deepEqual(validateDataset(data, manifest, ledger, expectedPeriod), []);
+    assert.ok(data.events.every((event) => event.themeIds.length >= 1 && event.themeIds.length <= 3));
+    assert.ok(data.events.every((event) => event.sourceIds.length >= 1));
+    assert.ok(data.events.some((event) => event.siteIds.length === 0 && event.primarySiteId === null));
+    const referencedSourceIds = new Set(data.events.flatMap((event) => event.sourceIds));
+    const referencedSiteIds = new Set(data.events.flatMap((event) => event.siteIds));
+    assert.deepEqual(data.sources.filter(({ id }) => !referencedSourceIds.has(id)).map(({ id }) => id), []);
+    assert.deepEqual(data.sites.filter(({ id }) => !referencedSiteIds.has(id)).map(({ id }) => id), []);
+    const allowedAuthoritativeHosts = new Set([
+      'www.archives.gov', 'www.nps.gov', 'www.loc.gov', 'guides.loc.gov',
+      'www.reaganlibrary.gov', 'history.state.gov', 'www.911memorial.org', 'www.federalreservehistory.org',
+      'www.census.gov', 'www.pewresearch.org',
+    ]);
+    for (const source of data.sources.filter(({ kind }) => kind !== 'course-and-exam-description')) {
+      const locator = new URL(source.locator);
+      assert.equal(locator.protocol, 'https:', `${source.id} must use an HTTPS locator`);
+      assert.ok(allowedAuthoritativeHosts.has(locator.hostname), `${source.id} must use an approved authoritative host`);
+      assert.equal(source.locator, EXPECTED_SOURCE_LOCATORS_8_TO_9[source.id],
+        `${source.id} must retain its reviewed immutable locator`);
+    }
+    assert.equal(data.sources.find(({ id }) => id === `ced-2026-${periodId}`)?.locator,
+      EXPECTED_CED_LOCATORS_8_TO_9[periodId]);
+    assert.ok(ledger.includes(EXPECTED_CED_LOCATORS_8_TO_9[periodId]));
+    assert.match(ledger, /^\| Event ID \| CED unit topic\(s\) \| Dataset source ID \| Locator \| Geography rationale \|$/m);
+    for (const event of data.events) {
+      const chineseSummaryLength = (event.summary.match(/[\u3400-\u9fff]/g) || []).length;
+      const chineseTimelineTitleLength = (event.timelineTitleZh.match(/[\u3400-\u9fff]/g) || []).length;
+      assert.ok(chineseSummaryLength >= 35 && chineseSummaryLength <= 90,
+        `${event.id} summary must contain 35–90 Chinese characters, got ${chineseSummaryLength}`);
+      assert.ok(chineseTimelineTitleLength <= 10,
+        `${event.id} timelineTitleZh must contain at most 10 Chinese characters, got ${chineseTimelineTitleLength}`);
+      const ledgerRows = ledger.split('\n').filter((line) => line.startsWith(`| \`${event.id}\` |`));
+      assert.equal(ledgerRows.length, 1, `${event.id} must have exactly one ledger data row`);
+      for (const sourceId of event.sourceIds) assert.ok(ledgerRows[0].includes(`\`${sourceId}\``));
+      for (const effectId of event.effectIds) {
+        assert.ok(data.events.find(({ id }) => id === effectId).causeIds.includes(event.id));
+      }
+      for (const causeId of event.causeIds) {
+        assert.ok(data.events.find(({ id }) => id === causeId).effectIds.includes(event.id));
+      }
+      for (const relatedId of event.relatedIds) {
+        assert.ok(data.events.find(({ id }) => id === relatedId).relatedIds.includes(event.id));
+      }
+    }
+    for (let index = 1; index < data.events.length; index += 1) {
+      assert.ok(data.events[index - 1].startYear <= data.events[index].startYear);
+    }
+    if (periodId === 'p9') {
+      const warOnTerror = data.events.find(({ id }) => id === 'war-on-terror-2001-2011');
+      assert.deepEqual(warOnTerror.siteIds, []);
+      assert.equal(warOnTerror.primarySiteId, null);
+      assert.equal(warOnTerror.titleEn, 'War on Terror: First Decade');
+      assert.equal(warOnTerror.timelineTitleZh, '反恐战争首个十年');
+      assert.match(`${warOnTerror.summary}${warOnTerror.significance}${warOnTerror.examConnection}`, /2011.*选定|选定.*2011/);
+      assert.match(`${warOnTerror.summary}${warOnTerror.significance}${warOnTerror.examConnection}`, /并非.*结束|未.*结束/);
+      const recent = data.events.at(-1);
+      assert.equal(recent.id, 'demographic-digital-polarization-2008-2026');
+      assert.equal(recent.dateLabel, '2008–Present');
+      assert.equal(recent.endYear, 2026);
+      assert.doesNotMatch(`${recent.summary}${recent.significance}${recent.examConnection}`, /验证上限|2026/);
+      assert.deepEqual(recent.causeIds, []);
+      assert.deepEqual(data.events.find(({ id }) => id === 'great-recession-2008').effectIds, []);
+      assert.deepEqual(recent.sourceIds,
+        ['ced-2026-p9', 'pew-internet-election-2008', 'census-diversity-2020', 'census-internet-2021', 'pew-partisan-hostility-2022']);
+      const recentLedgerRow = ledger.split('\n').find((line) => line.startsWith('| `demographic-digital-polarization-2008-2026` |'));
+      const recessionLedgerRow = ledger.split('\n').find((line) => line.startsWith('| `great-recession-2008` |'));
+      assert.match(recessionLedgerRow, /\| 9\.4 A Changing Economy \|/);
+      assert.doesNotMatch(recessionLedgerRow, /9\.6/);
+      assert.match(recentLedgerRow, /9\.4 A Changing Economy/);
+      assert.match(recentLedgerRow, /9\.5 Migration and Immigration in the 1990s and 2000s/);
+      assert.doesNotMatch(recentLedgerRow, /9\.6/);
+      assert.match(recentLedgerRow, /2020 Census/);
+      assert.match(recentLedgerRow, /2021 American Community Survey/);
+      assert.match(recentLedgerRow, /August 9, 2022/);
+      assert.match(recentLedgerRow, /April 15, 2009.*2008 election/);
+      assert.match(ledger, /2026 is a fixed validation ceiling/);
+    } else {
+      const brownRow = ledger.split('\n').find((line) => line.startsWith('| `brown-board-1954` |'));
+      const movementRow = ledger.split('\n').find((line) => line.startsWith('| `civil-rights-movement-1955-1965` |'));
+      const nixonRow = ledger.split('\n').find((line) => line.startsWith('| `nixon-watergate-1968-1974` |'));
+      const nixon = data.events.find(({ id }) => id === 'nixon-watergate-1968-1974');
+      assert.match(brownRow, /8\.6 Early Steps in the Civil Rights Movement \(1940s and 1950s\)/);
+      assert.match(movementRow, /8\.6 Early Steps in the Civil Rights Movement \(1940s and 1950s\); 8\.10 The African American Civil Rights Movement \(1960s\)/);
+      assert.match(nixonRow, /8\.7 America as a World Power; 8\.14 Society in Transition/);
+      assert.equal(nixon.titleEn, "Nixon's Election, Presidency, and Watergate");
+      assert.match(nixon.titleZh, /当选.*水门/);
+    }
   });
 }
 

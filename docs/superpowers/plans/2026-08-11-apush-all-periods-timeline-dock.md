@@ -308,19 +308,21 @@ Use these exact anchors:
 ```js
 const EXPECTED_EVENT_IDS_8_TO_9 = {
   p8: [
-    'truman-doctrine-containment-1947', 'postwar-suburbs-baby-boom-1945-1960', 'brown-board-1954',
-    'civil-rights-movement-1955-1965', 'great-society-1964-1965', 'vietnam-escalation-withdrawal-1964-1973',
-    'rights-counterculture-1960s-1970s', 'nixon-watergate-1968-1974', 'conservative-resurgence-1970s-1980',
+    'postwar-suburbs-baby-boom-1945-1960', 'truman-doctrine-containment-1947', 'brown-board-1954',
+    'civil-rights-movement-1955-1965', 'rights-counterculture-1960s-1970s', 'great-society-1964-1965',
+    'vietnam-escalation-withdrawal-1964-1973', 'nixon-watergate-1968-1974', 'conservative-resurgence-1970s-1980',
   ],
   p9: [
-    'reaganomics-new-right-1981-1988', 'cold-war-ends-1989-1991', 'immigration-globalization-1980-2001',
+    'immigration-globalization-1980-2001', 'reaganomics-new-right-1981-1988', 'cold-war-ends-1989-1991',
     'clinton-new-economy-1993-2000', 'september-eleven-2001', 'war-on-terror-2001-2011',
     'great-recession-2008', 'demographic-digital-polarization-2008-2026',
   ],
 };
 ```
 
-P9's last event may end at the registry validation ceiling, but its display label must use `2008–Present`, not `2008–2026`.
+Order is monotonic by `startYear`: P8 begins with the 1945 postwar process before the 1947 Truman Doctrine, and the 1960 rights/counterculture process precedes both 1964 anchors. P9 begins with the 1980 immigration/globalization process before Reagan's 1981 term. For deterministic ties, keep September 11 before the resulting War on Terror in 2001, and the point event Great Recession before the longer demographic/digital process in 2008.
+
+P9's last event ends at the fixed 2026 registry validation ceiling, but its display label must use `2008–Present`, not `2008–2026`; “Present” does not claim live updating beyond that ceiling.
 
 - [ ] **Step 2: Run tests and confirm red state**
 
