@@ -41,6 +41,92 @@ const EXPECTED_PERIODS = Object.freeze([
   { id: 'p9', number: 9, labelEn: 'Period 9', labelZh: '时期九', dates: '1980–Present', startYear: 1980, endYear: 2026, dataPath: 'data/apush-period-9.json', manifestPath: 'data/apush-period-9-manifest.json' },
 ]);
 const PERIOD_ONE = EXPECTED_PERIODS[0];
+const EXPECTED_EVENT_IDS_2_TO_4 = Object.freeze({
+  p2: [
+    'jamestown-1607', 'virginia-tobacco-headright-1618', 'house-of-burgesses-1619',
+    'atlantic-slavery-expands-1619-1754', 'plymouth-mayflower-1620', 'puritan-great-migration-1630',
+    'imperial-mercantilism-salutary-neglect-1651-1754', 'bacon-rebellion-1676', 'first-great-awakening-1730s',
+  ],
+  p3: [
+    'french-indian-war-1754-1763', 'stamp-act-resistance-1765', 'boston-tea-intolerable-1773-1774',
+    'declaration-independence-1776', 'saratoga-french-alliance-1777-1778', 'yorktown-1781',
+    'articles-shays-1781-1787', 'constitution-ratification-1787-1788', 'new-republic-parties-1789-1800',
+  ],
+  p4: [
+    'louisiana-purchase-1803', 'market-revolution-1815-1848', 'missouri-compromise-1820',
+    'second-great-awakening-reform-1820-1848', 'jacksonian-democracy-1828', 'indian-removal-1830-1838',
+    'nullification-crisis-1832-1833', 'texas-mexican-war-1845-1848', 'seneca-falls-1848',
+  ],
+});
+const EXPECTED_CED_LOCATORS_2_TO_4 = Object.freeze({
+  p2: 'PDF pp. 68–103; Course Framework pp. 61–96 (Unit 2, Topics 2.1–2.8)',
+  p3: 'PDF pp. 104–155; Course Framework pp. 97–148 (Unit 3, Topics 3.1–3.13)',
+  p4: 'PDF pp. 156–211; Course Framework pp. 149–204 (Unit 4, Topics 4.1–4.14)',
+});
+
+for (const periodId of ['p2', 'p3', 'p4']) {
+  test(`${periodId.toUpperCase()} data validates and preserves the approved Timeline Dock order`, async () => {
+    const number = Number(periodId.slice(1));
+    const [data, manifest, ledger, registry] = await Promise.all([
+      readJson(`../data/apush-period-${number}.json`),
+      readJson(`../data/apush-period-${number}-manifest.json`),
+      readFile(new URL(`../docs/data-sources/apush-period-${number}-source-ledger.md`, import.meta.url), 'utf8'),
+      readJson('../data/apush-period-registry.json'),
+    ]);
+    const expectedPeriod = registry.periods.find((period) => period.id === periodId);
+    assert.deepEqual(manifest.eventIds, EXPECTED_EVENT_IDS_2_TO_4[periodId]);
+    assert.deepEqual(data.events.map(({ id }) => id), EXPECTED_EVENT_IDS_2_TO_4[periodId]);
+    assert.deepEqual(validateDataset(data, manifest, ledger, expectedPeriod), []);
+    assert.ok(data.events.every((event) => event.themeIds.length >= 1 && event.themeIds.length <= 3));
+    assert.ok(data.events.every((event) => event.sourceIds.length >= 1));
+    assert.ok(data.events.some((event) => event.siteIds.length === 0 && event.primarySiteId === null));
+    assert.match(ledger, /^\| Event ID \| CED unit topic\(s\) \| Dataset source ID \| Locator \| Geography rationale \|$/m);
+    assert.equal(data.sources.find(({ id }) => id === `ced-2026-${periodId}`)?.locator,
+      EXPECTED_CED_LOCATORS_2_TO_4[periodId]);
+    assert.ok(ledger.includes(EXPECTED_CED_LOCATORS_2_TO_4[periodId]),
+      `${periodId} ledger must include the reproducible CED locator`);
+    if (periodId === 'p4') {
+      assert.equal(data.sources.find(({ id }) => id === 'ced-2026-p5-topics-5-2-5-3')?.locator,
+        'PDF pp. 219–226; Course Framework pp. 212–219 (Unit 5, Topics 5.2–5.3)');
+      assert.ok(ledger.includes('PDF pp. 219–226; Course Framework pp. 212–219 (Unit 5, Topics 5.2–5.3)'));
+      assert.ok(data.events.find(({ id }) => id === 'texas-mexican-war-1845-1848').sourceIds
+        .includes('ced-2026-p5-topics-5-2-5-3'));
+    }
+    for (const event of data.events) {
+      const chineseSummaryLength = (event.summary.match(/[\u3400-\u9fff]/g) || []).length;
+      const chineseTimelineTitleLength = (event.timelineTitleZh.match(/[\u3400-\u9fff]/g) || []).length;
+      assert.ok(chineseSummaryLength >= 35 && chineseSummaryLength <= 90,
+        `${event.id} summary must contain 35–90 Chinese characters, got ${chineseSummaryLength}`);
+      assert.ok(chineseTimelineTitleLength <= 10,
+        `${event.id} timelineTitleZh must contain at most 10 Chinese characters, got ${chineseTimelineTitleLength}`);
+      const ledgerRows = ledger.split('\n').filter((line) => line.startsWith(`| \`${event.id}\` |`));
+      assert.equal(ledgerRows.length, 1,
+        `${event.id} must have exactly one ledger data row`);
+      for (const sourceId of event.sourceIds) {
+        assert.ok(ledgerRows[0].includes(`\`${sourceId}\``),
+          `${event.id} source ${sourceId} must appear in its own ledger row`);
+      }
+      for (const effectId of event.effectIds) {
+        assert.ok(data.events.find(({ id }) => id === effectId).causeIds.includes(event.id),
+          `${event.id} -> ${effectId} must be reciprocal`);
+      }
+      for (const causeId of event.causeIds) {
+        assert.ok(data.events.find(({ id }) => id === causeId).effectIds.includes(event.id),
+          `${causeId} -> ${event.id} must be reciprocal`);
+      }
+    }
+    for (let index = 1; index < data.events.length; index += 1) {
+      assert.ok(data.events[index - 1].startYear <= data.events[index].startYear,
+        `${periodId} Timeline order must be monotonic by startYear at index ${index}`);
+    }
+    if (periodId === 'p2') {
+      const burgesses = data.events.find(({ id }) => id === 'house-of-burgesses-1619');
+      const mercantilism = data.events.find(({ id }) => id === 'imperial-mercantilism-salutary-neglect-1651-1754');
+      assert.ok(burgesses.relatedIds.includes(mercantilism.id));
+      assert.ok(mercantilism.relatedIds.includes(burgesses.id));
+    }
+  });
+}
 
 function validPeriodOneFixture() {
   const events = APPROVED_EVENT_IDS.map((id) => ({

@@ -167,8 +167,8 @@ Lock these anchors and orders:
 const EXPECTED_EVENT_IDS = {
   p2: [
     'jamestown-1607', 'virginia-tobacco-headright-1618', 'house-of-burgesses-1619',
-    'plymouth-mayflower-1620', 'puritan-great-migration-1630', 'atlantic-slavery-expands-1619-1754',
-    'bacon-rebellion-1676', 'imperial-mercantilism-salutary-neglect-1651-1754', 'first-great-awakening-1730s',
+    'atlantic-slavery-expands-1619-1754', 'plymouth-mayflower-1620', 'puritan-great-migration-1630',
+    'imperial-mercantilism-salutary-neglect-1651-1754', 'bacon-rebellion-1676', 'first-great-awakening-1730s',
   ],
   p3: [
     'french-indian-war-1754-1763', 'stamp-act-resistance-1765', 'boston-tea-intolerable-1773-1774',
@@ -182,6 +182,8 @@ const EXPECTED_EVENT_IDS = {
   ],
 };
 ```
+
+Order every period monotonically by `startYear`. For the P2 tie at 1619, retain the deterministic manifest order of the House of Burgesses before the longer-running expansion of Atlantic slavery.
 
 For each period, assert `validateDataset(...)` returns `[]`, manifest order matches the literal array, every event has 1–3 themes and at least one source, and at least one event intentionally has no site.
 
