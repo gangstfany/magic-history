@@ -63,6 +63,28 @@ const EXPECTED_CED_LOCATORS_2_TO_4 = Object.freeze({
   p3: 'PDF pp. 104–155; Course Framework pp. 97–148 (Unit 3, Topics 3.1–3.13)',
   p4: 'PDF pp. 156–211; Course Framework pp. 149–204 (Unit 4, Topics 4.1–4.14)',
 });
+const EXPECTED_EVENT_IDS_5_TO_7 = Object.freeze({
+  p5: [
+    'manifest-destiny-mexican-war-1844-1848', 'compromise-1850', 'kansas-nebraska-bleeding-kansas-1854-1856',
+    'dred-scott-1857', 'election-secession-1860-1861', 'emancipation-gettysburg-1863',
+    'appomattox-1865', 'reconstruction-amendments-1865-1870', 'compromise-1877',
+  ],
+  p6: [
+    'transcontinental-railroad-western-settlement-1869-1890', 'industrial-capitalism-1870-1898',
+    'gilded-age-reform-1870-1898', 'labor-conflict-1877-1894', 'new-immigration-urbanization-1880-1898',
+    'dawes-ghost-dance-1887-1890', 'jim-crow-plessy-1890-1896', 'populist-movement-1892-1896',
+  ],
+  p7: [
+    'spanish-american-war-1898', 'progressive-reform-1901-1917', 'great-migration-1910-1945', 'world-war-one-us-1917-1918',
+    'red-scare-immigration-restriction-1919-1924', 'harlem-mass-culture-1920s', 'crash-great-depression-1929',
+    'new-deal-1933-1939', 'world-war-two-homefront-victory-1941-1945', 'japanese-incarceration-1942',
+  ],
+});
+const EXPECTED_CED_LOCATORS_5_TO_7 = Object.freeze({
+  p5: 'PDF pp. 211–259; Course Framework pp. 205–252 (Unit 5, Topics 5.1–5.12)',
+  p6: 'PDF pp. 261–316; Course Framework pp. 255–310 (Unit 6, Topics 6.1–6.14)',
+  p7: 'PDF pp. 317–378; Course Framework pp. 311–372 (Unit 7, Topics 7.1–7.15)',
+});
 
 for (const periodId of ['p2', 'p3', 'p4']) {
   test(`${periodId.toUpperCase()} data validates and preserves the approved Timeline Dock order`, async () => {
@@ -125,6 +147,89 @@ for (const periodId of ['p2', 'p3', 'p4']) {
       assert.ok(burgesses.relatedIds.includes(mercantilism.id));
       assert.ok(mercantilism.relatedIds.includes(burgesses.id));
     }
+  });
+}
+
+for (const periodId of ['p5', 'p6', 'p7']) {
+  test(`${periodId.toUpperCase()} data validates and preserves chronological Timeline Dock order`, async () => {
+    const number = Number(periodId.slice(1));
+    const [data, manifest, ledger, registry] = await Promise.all([
+      readJson(`../data/apush-period-${number}.json`),
+      readJson(`../data/apush-period-${number}-manifest.json`),
+      readFile(new URL(`../docs/data-sources/apush-period-${number}-source-ledger.md`, import.meta.url), 'utf8'),
+      readJson('../data/apush-period-registry.json'),
+    ]);
+    const expectedPeriod = registry.periods.find((period) => period.id === periodId);
+    const expectedIds = EXPECTED_EVENT_IDS_5_TO_7[periodId];
+    assert.deepEqual(manifest.eventIds, expectedIds);
+    assert.deepEqual(data.events.map(({ id }) => id), expectedIds);
+    assert.equal(data.events.length, { p5: 9, p6: 8, p7: 10 }[periodId]);
+    assert.deepEqual(validateDataset(data, manifest, ledger, expectedPeriod), []);
+    assert.ok(data.events.every((event) => event.themeIds.length >= 1 && event.themeIds.length <= 3));
+    assert.ok(data.events.every((event) => event.sourceIds.length >= 1));
+    assert.ok(data.events.some((event) => event.siteIds.length === 0 && event.primarySiteId === null));
+    const referencedSourceIds = new Set(data.events.flatMap((event) => event.sourceIds));
+    const referencedSiteIds = new Set(data.events.flatMap((event) => event.siteIds));
+    assert.deepEqual(data.sources.filter(({ id }) => !referencedSourceIds.has(id)).map(({ id }) => id), [],
+      `${periodId} must not retain orphan sources`);
+    assert.deepEqual(data.sites.filter(({ id }) => !referencedSiteIds.has(id)).map(({ id }) => id), [],
+      `${periodId} must not retain orphan sites`);
+    const supplementalSources = data.sources.filter(({ kind }) => kind !== 'course-and-exam-description');
+    const allowedOfficialHosts = new Set(['www.archives.gov', 'www.nps.gov', 'www.loc.gov', 'guides.loc.gov', 'www.fdrlibrary.org']);
+    for (const source of supplementalSources) {
+      const locator = new URL(source.locator);
+      assert.equal(locator.protocol, 'https:', `${source.id} must use an HTTPS locator`);
+      assert.ok(allowedOfficialHosts.has(locator.hostname), `${source.id} must use an approved authoritative host`);
+    }
+    assert.ok(data.events.some((event) => event.effectIds.length > 0),
+      `${periodId} must preserve at least one explicitly explained cause/effect mechanism`);
+    assert.equal(data.sources.find(({ id }) => id === `ced-2026-${periodId}`)?.locator,
+      EXPECTED_CED_LOCATORS_5_TO_7[periodId]);
+    assert.ok(ledger.includes(EXPECTED_CED_LOCATORS_5_TO_7[periodId]));
+    assert.match(ledger, /^\| Event ID \| CED unit topic\(s\) \| Dataset source ID \| Locator \| Geography rationale \|$/m);
+
+    for (const event of data.events) {
+      const chineseSummaryLength = (event.summary.match(/[\u3400-\u9fff]/g) || []).length;
+      const chineseTimelineTitleLength = (event.timelineTitleZh.match(/[\u3400-\u9fff]/g) || []).length;
+      assert.ok(chineseSummaryLength >= 35 && chineseSummaryLength <= 90,
+        `${event.id} summary must contain 35–90 Chinese characters, got ${chineseSummaryLength}`);
+      assert.ok(chineseTimelineTitleLength <= 10,
+        `${event.id} timelineTitleZh must contain at most 10 Chinese characters, got ${chineseTimelineTitleLength}`);
+      const ledgerRows = ledger.split('\n').filter((line) => line.startsWith(`| \`${event.id}\` |`));
+      assert.equal(ledgerRows.length, 1, `${event.id} must have exactly one ledger data row`);
+      for (const sourceId of event.sourceIds) {
+        assert.ok(ledgerRows[0].includes(`\`${sourceId}\``),
+          `${event.id} source ${sourceId} must appear in its own ledger row`);
+      }
+      for (const effectId of event.effectIds) {
+        assert.ok(data.events.find(({ id }) => id === effectId).causeIds.includes(event.id),
+          `${event.id} -> ${effectId} must be reciprocal`);
+      }
+      for (const causeId of event.causeIds) {
+        assert.ok(data.events.find(({ id }) => id === causeId).effectIds.includes(event.id),
+          `${causeId} -> ${event.id} must be reciprocal`);
+      }
+      for (const relatedId of event.relatedIds) {
+        assert.ok(data.events.find(({ id }) => id === relatedId).relatedIds.includes(event.id),
+          `${event.id} <-> ${relatedId} must be reciprocal`);
+      }
+    }
+    for (let index = 1; index < data.events.length; index += 1) {
+      assert.ok(data.events[index - 1].startYear <= data.events[index].startYear,
+        `${periodId} Timeline order must be monotonic by startYear at index ${index}`);
+    }
+    if (periodId === 'p6') {
+      assert.deepEqual(data.events.filter(({ startYear }) => startYear === 1870).map(({ id }) => id),
+        ['industrial-capitalism-1870-1898', 'gilded-age-reform-1870-1898']);
+    }
+    const namedCausalLink = {
+      p5: ['manifest-destiny-mexican-war-1844-1848', 'compromise-1850'],
+      p6: ['industrial-capitalism-1870-1898', 'labor-conflict-1877-1894'],
+      p7: ['crash-great-depression-1929', 'new-deal-1933-1939'],
+    }[periodId];
+    const [causeId, effectId] = namedCausalLink;
+    assert.ok(data.events.find(({ id }) => id === causeId).effectIds.includes(effectId));
+    assert.ok(data.events.find(({ id }) => id === effectId).causeIds.includes(causeId));
   });
 }
 

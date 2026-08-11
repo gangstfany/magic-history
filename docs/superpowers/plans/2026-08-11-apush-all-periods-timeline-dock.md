@@ -249,14 +249,14 @@ const EXPECTED_EVENT_IDS_5_TO_7 = {
   ],
   p6: [
     'transcontinental-railroad-western-settlement-1869-1890', 'industrial-capitalism-1870-1898',
-    'labor-conflict-1877-1894', 'new-immigration-urbanization-1880-1898',
-    'dawes-ghost-dance-1887-1890', 'populist-movement-1892-1896',
-    'jim-crow-plessy-1890-1896', 'spanish-american-war-1898', 'gilded-age-reform-1870-1898',
+    'gilded-age-reform-1870-1898', 'labor-conflict-1877-1894',
+    'new-immigration-urbanization-1880-1898', 'dawes-ghost-dance-1887-1890',
+    'jim-crow-plessy-1890-1896', 'populist-movement-1892-1896',
   ],
   p7: [
-    'progressive-reform-1901-1917', 'great-migration-1910-1945', 'world-war-one-us-1917-1918',
+    'spanish-american-war-1898', 'progressive-reform-1901-1917', 'great-migration-1910-1945', 'world-war-one-us-1917-1918',
     'red-scare-immigration-restriction-1919-1924', 'harlem-mass-culture-1920s', 'crash-great-depression-1929',
-    'new-deal-1933-1939', 'japanese-incarceration-1942', 'world-war-two-homefront-victory-1941-1945',
+    'new-deal-1933-1939', 'world-war-two-homefront-victory-1941-1945', 'japanese-incarceration-1942',
   ],
 };
 ```
@@ -274,6 +274,8 @@ Expected: FAIL because P5–P7 files do not exist.
 - [ ] **Step 3: Author P5–P7 data and source ledgers**
 
 Encode the anchors above using the shared schema. Keep Civil War and Reconstruction as distinct spatial/causal phases; do not collapse all industrialization or Progressive reform onto one city. Use transregional or no-coordinate records when the development is national.
+
+Unit 6 ends with domestic Gilded Age developments on the eve of war. Following the governing Fall 2026 CED assignment, Unit 7 begins with the 1898 Spanish–American War in Topic 7.3 even though the period boundaries overlap.
 
 For World War II, keep Japanese American incarceration as its own node rather than hiding it inside a general home-front summary. For P6, distinguish western Indigenous dispossession from urban/industrial labor history.
 
