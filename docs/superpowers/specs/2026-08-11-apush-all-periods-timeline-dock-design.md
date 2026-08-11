@@ -165,7 +165,7 @@ Browser verification covers:
 - Dock-local scrolling and no document overflow across existing desktop, tablet, portrait-mobile, and landscape-mobile viewports;
 - an empty browser console during the complete period matrix.
 
-Existing Period 1 acceptance behavior remains a regression requirement.
+Existing Period 1 map gestures, filtering, marker/Dock synchronization, accessibility, and responsive behavior remain regression requirements. The approved compact summary card intentionally replaces the prior long-form Period 1 detail sections.
 
 ## Delivery Boundary
 
@@ -182,5 +182,5 @@ The design is successful when:
 3. The map, summary card, and Dock share one selection without creating false geography.
 4. Period changes cannot leak old selection, filters, content, or failed network responses.
 5. The Dock remains subordinate, accessible, responsive, and isolated from page scrolling.
-6. Period 1 behavior remains intact.
+6. Period 1 map and Dock behavior remains intact while its event card adopts the approved compact summary format.
 7. The implementation exposes a clean course-data boundary that can later support AP World History without duplicating the page.
