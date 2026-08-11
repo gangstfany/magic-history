@@ -191,26 +191,8 @@
     .empty-detail { color: var(--muted); line-height: 1.7; }
     .detail-kicker { margin: 0 0 7px; color: var(--accent); font: 800 .75rem/1.3 ui-sans-serif, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
     .detail-title { margin: 0; font-size: clamp(1.35rem, 2.3vw, 2rem); line-height: 1.15; }
-    .detail-title-zh { margin: 5px 0 0; color: var(--muted); font-size: 1.05rem; }
-    .detail-status { margin: 12px 0; border-left: 4px solid #b4663b; padding: 9px 11px; background: #fff3d8; color: #644328; font: 700 .82rem/1.5 ui-sans-serif, system-ui, sans-serif; }
-    .chip-row { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0; }
-    .chip { display: inline-flex; align-items: center; min-height: 30px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 9px; background: #f5ead5; font: 700 .72rem/1.2 ui-sans-serif, system-ui, sans-serif; }
-    .detail-section { margin-top: 18px; }
-    .detail-section h3 { margin: 0 0 6px; color: var(--accent-dark); font-size: .92rem; }
-    .detail-section p, .detail-section li { color: #493f36; line-height: 1.65; }
-    .detail-section p { margin: 0; }
-    .detail-section ul { margin: 6px 0 0; padding-left: 20px; }
-    .relationship-list { display: flex; flex-wrap: wrap; gap: 8px; }
-    .relationship-button {
-      min-height: 44px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 7px 10px;
-      background: #fffaf0;
-      text-align: left;
-      cursor: pointer;
-      font: 700 .78rem/1.35 ui-sans-serif, system-ui, sans-serif;
-    }
+    .detail-summary { margin: 10px 0 0; color: #493f36; line-height: 1.65; }
+    .detail-scope { margin: 10px 0 0; color: var(--muted); font: 700 .78rem/1.45 ui-sans-serif, system-ui, sans-serif; }
     .timeline-dock {
       width: 100%;
       min-width: 0;
@@ -639,35 +621,7 @@
           eventsById: new Map(data.events.map((item) => [item.id, item])),
           sitesById: new Map(data.sites.map((item) => [item.id, item])),
           themesById: new Map(data.themes.map((item) => [item.id, item])),
-          sourcesById: new Map(data.sources.map((item) => [item.id, item])),
-          periodsById: new Map(data.periods.map((item) => [item.id, item])),
         };
-      }
-
-      function appendSection(panel, heading, value) {
-        if (!value) return;
-        const section = document.createElement('section');
-        section.className = 'detail-section';
-        section.append(text('h3', '', heading), text('p', '', value));
-        panel.append(section);
-      }
-
-      function renderRelationshipSection(panel, heading, ids) {
-        const existing = (ids || []).map((id) => model.eventsById.get(id)).filter(Boolean);
-        if (!existing.length) return;
-        const section = document.createElement('section');
-        section.className = 'detail-section';
-        section.append(text('h3', '', heading));
-        const list = document.createElement('div');
-        list.className = 'relationship-list';
-        existing.forEach((event) => {
-          const button = text('button', 'relationship-button', `${event.titleEn} · ${event.titleZh}`);
-          button.type = 'button';
-          button.addEventListener('click', () => selectEvent(event.id, true));
-          list.append(button);
-        });
-        section.append(list);
-        panel.append(section);
       }
 
       function renderDetail() {
@@ -676,52 +630,16 @@
         const event = model && model.eventsById.get(state.selectedEventId);
         if (!event) {
           const period = periodsById.get(state.periodId);
-          panel.append(text('p', 'empty-detail', `选择地图上的编号地点，查看 ${period?.labelEn || '当前时期'} 事件的双语标题、史学意义与 AP 考试连接。`));
+          panel.append(text('p', 'empty-detail', `选择地图上的编号或底部时间线，查看 ${period?.labelEn || '当前时期'} 的事件摘要。`));
           return;
         }
+        const primaryPlace = event.primarySiteId ? model.sitesById.get(event.primarySiteId) : null;
         panel.append(
-          text('p', 'detail-kicker', `${event.dateLabel} · APUSH ${periodsById.get(state.periodId)?.labelEn || ''}`),
-          text('h2', 'detail-title', event.titleEn),
-          text('p', 'detail-title-zh', event.titleZh),
+          text('p', 'detail-kicker', `${event.dateLabel}${primaryPlace ? ` · ${primaryPlace.nameZh}` : ''}`),
+          text('h2', 'detail-title', event.titleZh),
+          text('p', 'detail-summary', event.summary),
         );
-        if (state.relationStatus) panel.append(text('p', 'detail-status', state.relationStatus));
-
-        const chips = document.createElement('div');
-        chips.className = 'chip-row';
-        const period = model.periodsById.get(event.periodId);
-        if (period) chips.append(text('span', 'chip', `${period.labelEn} · ${period.labelZh}`));
-        event.themeIds.forEach((id) => {
-          const theme = model.themesById.get(id);
-          if (theme) chips.append(text('span', 'chip', `${theme.id} · ${theme.labelZh}`));
-        });
-        panel.append(chips);
-
-        const places = event.siteIds.map((id) => model.sitesById.get(id)).filter(Boolean);
-        const placeSection = document.createElement('section');
-        placeSection.className = 'detail-section';
-        placeSection.append(text('h3', '', '地点 · Places'));
-        const placeList = document.createElement('ul');
-        places.forEach((site) => placeList.append(text('li', '', `${site.nameEn} · ${site.nameZh}${site.qualifier ? ` — ${site.qualifier}` : ''}`)));
-        placeSection.append(placeList);
-        panel.append(placeSection);
-
-        appendSection(panel, '概述 · Summary', event.summary);
-        appendSection(panel, '历史意义 · Significance', event.significance);
-        appendSection(panel, '考试连接 · Exam Connection', event.examConnection);
-        renderRelationshipSection(panel, '原因 · Causes', event.causeIds);
-        renderRelationshipSection(panel, '结果 · Effects', event.effectIds);
-        renderRelationshipSection(panel, '相关事件 · Related Events', event.relatedIds);
-
-        const sources = event.sourceIds.map((id) => model.sourcesById.get(id)).filter(Boolean);
-        if (sources.length) {
-          const sourceSection = document.createElement('section');
-          sourceSection.className = 'detail-section';
-          sourceSection.append(text('h3', '', '来源 · Sources'));
-          const sourceList = document.createElement('ul');
-          sources.forEach((source) => sourceList.append(text('li', '', `${source.title} — ${source.locator}`)));
-          sourceSection.append(sourceList);
-          panel.append(sourceSection);
-        }
+        if (!primaryPlace) panel.append(text('p', 'detail-scope', '全国性／制度性发展 · National / Institutional development'));
       }
 
       function renderThemeControls() {

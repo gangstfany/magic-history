@@ -31,6 +31,23 @@ const pageUrl = (port, layout) => `http://127.0.0.1:${port}/apush-map.html?layou
 const readJson = async (path) => JSON.parse(await readFile(path, 'utf8'));
 const stateOf = (page) => page.evaluate(() => window.__apushMap?.getState());
 
+async function assertCompactCard(page, event, { scopeCue = false } = {}) {
+  const panel = page.locator('#detailPanel');
+  assert.equal(await panel.locator('h2.detail-title').count(), 1, 'the compact card must expose one accessible h2');
+  const copy = await panel.innerText();
+  required(copy.includes(event.dateLabel), `compact card must include the date for ${event.id}`);
+  required(copy.includes(event.titleZh), `compact card must include the Chinese title for ${event.id}`);
+  required(copy.includes(event.summary), `compact card must include the one-sentence summary for ${event.id}`);
+  assert.equal(await panel.locator('.detail-section, .relationship-button, textarea').count(), 0,
+    'compact card must not expose long-form sections, relationship navigation, or learning inputs');
+  assert.doesNotMatch(copy, /Significance|Exam Connection|Sources|Causes|Effects|Related Events|历史意义|考试连接|来源|原因|结果|相关事件|学习进度|掌握度/,
+    'compact card must not expose long-form or learning-module copy');
+  if (scopeCue) {
+    assert.match(copy, /全国性|制度性/, `Dock-only event ${event.id} must explain its nongeographic scope in Chinese`);
+    assert.match(copy, /National|Institutional/, `Dock-only event ${event.id} must expose an English scope cue`);
+  }
+}
+
 function required(condition, message) {
   assert.ok(condition, message);
 }
@@ -539,8 +556,13 @@ async function verifyFilterSelectionFlow(page, port, layout, events) {
   assert.equal(filtered.selectedEventId, null, `${layout}: filtering must clear a selection that is no longer visible`);
   assert.equal(await page.locator('#timelineMount [aria-current="step"]').count(), 0,
     `${layout}: filtering out the selected event must leave no current Dock node`);
-  assert.match(await page.locator('#detailPanel').innerText(), /选择地图上的编号地点/,
-    `${layout}: cleared selection must restore the instructional detail state`);
+  const emptyCopy = await page.locator('#detailPanel').innerText();
+  assert.match(emptyCopy, /Period 1/,
+    `${layout}: cleared selection must identify the active period`);
+  assert.match(emptyCopy, /地图上的编号|底部时间线/,
+    `${layout}: cleared selection must invite selection from either the map or Dock`);
+  assert.doesNotMatch(emptyCopy, /所有事件.*地图|每个事件.*地图/,
+    `${layout}: empty copy must not claim that all events have markers`);
 }
 
 async function verifyNoResultsUi(page, port, layout, manifestIds, events) {
@@ -581,8 +603,8 @@ async function verifyRenderedManifestControls(page, port, layout, events) {
     await (await firstRenderedMarker(page, event.id)).press('Enter');
     assert.equal((await stateOf(page)).selectedEventId, event.id, `${layout}: rendered marker must select ${event.id}`);
     const detail = await page.locator('#detailPanel').innerText();
-    required(detail.includes(event.titleEn) && detail.includes(event.titleZh),
-      `${layout}: rendered marker must show bilingual detail for ${event.id}`);
+    required(detail.includes(event.titleZh) && detail.includes(event.summary),
+      `${layout}: rendered marker must show compact Chinese detail for ${event.id}`);
     const stop = page.locator(`#timelineMount [data-event-id="${event.id}"]`);
     assert.equal(await stop.count(), 1, `${layout}: Dock must expose exactly one stop for ${event.id}`);
     await stop.click();
@@ -612,8 +634,8 @@ async function verifyTimelineDockSync(page, port, layout, events) {
   required(await (await firstRenderedMarker(page, 'conquest-mexica')).evaluate((marker) => marker.classList.contains('is-selected')),
     `${layout}: Dock selection must mark the matching map marker as selected`);
   const detail = await page.locator('#detailPanel').innerText();
-  required(detail.includes(conquest.titleEn) && detail.includes(conquest.titleZh),
-    `${layout}: Dock selection must update the bilingual detail panel for conquest-mexica`);
+  required(detail.includes(conquest.titleZh) && detail.includes(conquest.summary),
+    `${layout}: Dock selection must update the compact detail panel for conquest-mexica`);
 }
 
 async function verifyKeyboardAndDragControls(page, port, events) {
@@ -784,7 +806,7 @@ async function verifyViewport(page, port, layout, viewport, manifestIds, events)
     await page.evaluate((eventId) => window.__apushMap.selectEvent(eventId), event.id);
     assert.equal((await stateOf(page)).selectedEventId, event.id, `selectEvent must select ${event.id}`);
     const detail = await page.locator('#detailPanel').innerText();
-    required(detail.includes(event.titleEn) && detail.includes(event.titleZh), `detail panel must show bilingual content for ${event.id}`);
+    required(detail.includes(event.titleZh) && detail.includes(event.summary), `detail panel must show compact Chinese content for ${event.id}`);
   }
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
@@ -867,43 +889,73 @@ async function verifyMobilePrimaryMarker(page, port, data) {
   );
 }
 
-async function prepareRelationshipNavigation(page, port) {
-  await page.setViewportSize({ width: 375, height: 812 });
-  const response = await page.goto(pageUrl(port, 'c'), { waitUntil: 'networkidle' });
-  required(response?.ok(), `apush-map.html is unavailable during relationship checks (HTTP ${response?.status() || 'no response'})`);
-  await page.waitForFunction(() => Boolean(window.__apushMap), undefined, { timeout: 8_000 });
-  await page.locator('#searchInput').fill('Columbian Exchange');
-  await page.evaluate(() => window.__apushMap.selectEvent('columbian-exchange'));
-  const relationship = page.locator('.relationship-button', { hasText: 'European Exploration of the Americas' });
-  assert.equal(await relationship.count(), 1, 'Columbian Exchange must expose one European Exploration relationship');
-  await relationship.click();
-  assert.equal((await stateOf(page)).selectedEventId, 'european-exploration', 'relationship click must select European Exploration');
+async function verifyCompactGeographicCard(page, port, datasets) {
+  await loadPrototype(page, port, 'a');
+  const event = datasets.p1.events.find(({ id }) => id === 'columbian-exchange');
+  required(event?.primarySiteId, 'P1 geographic compact-card fixture must have a primary site');
+  const primarySite = datasets.p1.sites.find(({ id }) => id === event.primarySiteId);
+  required(primarySite, 'P1 geographic compact-card fixture must resolve its primary site');
+  const before = (await stateOf(page)).mapTransform;
+  await page.locator(`#timelineMount [data-event-id="${event.id}"]`).click();
+  await assertCompactCard(page, event);
+  assert.match(await page.locator('#detailPanel .detail-kicker').innerText(), new RegExp(escapeRegex(primarySite.nameZh)),
+    'geographic compact card must identify the primary place in Chinese');
+  assert.notDeepEqual((await stateOf(page)).mapTransform, before,
+    'geographic Dock selection must focus the primary marker');
+  const primaryMarker = page.locator(`.event-marker[data-event-id="${event.id}"][data-site-x="${primarySite.x}"][data-site-y="${primarySite.y}"]`);
+  assert.equal(await primaryMarker.count(), 1, 'geographic event must expose exactly one matching primary marker');
+  required(await primaryMarker.evaluate((marker) => marker.classList.contains('is-selected')),
+    'geographic Dock selection must select its matching marker');
+  await primaryMarker.click();
+  assert.equal(await page.locator(`#timelineMount [data-event-id="${event.id}"]`).getAttribute('aria-current'), 'step',
+    'geographic marker selection must synchronize back to the Dock');
 }
 
-async function verifyRelationshipFocus(page, port) {
-  await prepareRelationshipNavigation(page, port);
-  required(
-    await page.locator('#detailPanel .detail-title').evaluate((heading) => document.activeElement === heading),
-    'relationship navigation must move keyboard focus to the rerendered detail heading',
-  );
+async function verifyDockOnlyEvents(page, port, registry, datasets) {
+  await loadPrototype(page, port, 'a');
+  for (const period of registry.periods) {
+    const event = datasets[period.id].events.find(({ primarySiteId }) => primarySiteId === null);
+    if (!event) continue;
+    await page.locator('#periodFilter').selectOption(period.id);
+    await page.waitForFunction((id) => window.__apushMap?.getState().periodId === id, period.id);
+    const before = (await stateOf(page)).mapTransform;
+    const stop = page.locator(`#timelineMount [data-event-id="${event.id}"]`);
+    await stop.click();
+    const after = await stateOf(page);
+    assert.equal(after.selectedEventId, event.id, `${period.id}: Dock-only event must become selected`);
+    assert.deepEqual(after.mapTransform, before, `${period.id}: Dock-only event must not recenter the map`);
+    assert.equal(await page.locator(`.event-marker[data-event-id="${event.id}"]`).count(), 0,
+      `${period.id}: Dock-only event must not receive a fabricated marker`);
+    assert.equal(await stop.getAttribute('aria-current'), 'step', `${period.id}: Dock-only stop must be current`);
+    required(await stop.locator('.timeline-current-cue').isVisible(), `${period.id}: Dock-only stop must show its current cue`);
+    await assertCompactCard(page, event, { scopeCue: true });
+  }
 }
 
-async function verifyRelationStatusRefresh(page, port) {
-  await prepareRelationshipNavigation(page, port);
-  const status = page.locator('#detailPanel .detail-status');
-  assert.equal(await status.count(), 1,
-    'out-of-filter relationship navigation must render exactly one status notice');
-  assert.match(await status.innerText(), /不在当前筛选结果中/,
-    'relationship status must explain that the linked event is outside the current filters');
-  assert.equal(await page.locator('#timelineMount [aria-current="step"]').count(), 0,
-    'an out-of-filter relationship target must not make any visible Dock node current');
-  await page.locator('#clearFilters').click();
-  assert.equal(await page.locator('#detailPanel .detail-status').count(), 0,
-    'clearing filters must remove the stale out-of-filter relationship notice');
-  assert.equal(await page.locator('#timelineMount [data-event-id="european-exploration"]').getAttribute('aria-current'), 'step',
-    'clearing filters must restore the relationship target and make only its Dock node current');
-  assert.equal(await page.locator('#timelineMount [aria-current="step"]').count(), 1,
-    'relationship navigation must never expose more than one current Dock node');
+async function verifyAllGeographicEvents(page, port, registry, datasets) {
+  await loadPrototype(page, port, 'a');
+  for (const period of registry.periods) {
+    await page.locator('#periodFilter').selectOption(period.id);
+    await page.waitForFunction((id) => window.__apushMap?.getState().periodId === id, period.id);
+    const geographicEvents = datasets[period.id].events.filter(({ primarySiteId }) => primarySiteId !== null);
+    for (const [eventIndex, event] of geographicEvents.entries()) {
+      await page.evaluate(() => window.__apushMap.resetMap());
+      const primarySite = datasets[period.id].sites.find(({ id }) => id === event.primarySiteId);
+      required(primarySite, `${period.id}: ${event.id} must resolve its primary site fixture`);
+      const primaryMarker = page.locator(`.event-marker[data-event-id="${event.id}"][data-site-x="${primarySite.x}"][data-site-y="${primarySite.y}"]`);
+      assert.equal(await primaryMarker.count(), 1,
+        `${period.id}: ${event.id} must expose exactly one marker at its primary-site coordinates`);
+      await primaryMarker.dispatchEvent('click');
+      assert.equal((await stateOf(page)).selectedEventId, event.id,
+        `${period.id}: clicking the primary marker must select ${event.id}`);
+      assert.equal(await page.locator(`#timelineMount [data-event-id="${event.id}"]`).getAttribute('aria-current'), 'step',
+        `${period.id}: primary-marker selection must synchronize ${event.id} to the Dock`);
+      if (eventIndex === 0) {
+        assert.match(await page.locator('#detailPanel .detail-kicker').innerText(), new RegExp(escapeRegex(primarySite.nameZh)),
+          `${period.id}: compact card must show the selected event's primary place in Chinese`);
+      }
+    }
+  }
 }
 
 async function verifyWxtContrast(page, port) {
@@ -1035,8 +1087,9 @@ export async function verifyBrowser() {
     }
 
     for (const [label, verify] of [
-      ['relationship focus', verifyRelationshipFocus],
-      ['relationship status refresh', verifyRelationStatusRefresh],
+      ['compact geographic card', (page, activePort) => verifyCompactGeographicCard(page, activePort, datasets)],
+      ['Dock-only events', (page, activePort) => verifyDockOnlyEvents(page, activePort, registry, datasets)],
+      ['all geographic events', (page, activePort) => verifyAllGeographicEvents(page, activePort, registry, datasets)],
       ['WXT contrast', verifyWxtContrast],
     ]) {
       const deferredUxPage = await browser.newPage({ viewport: { width: 375, height: 812 } });
