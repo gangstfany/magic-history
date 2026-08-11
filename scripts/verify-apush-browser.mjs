@@ -17,6 +17,7 @@ export const LAYOUTS = Object.freeze(['a', 'c']);
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PAGE_FILE = join(PROJECT_ROOT, 'apush-map.html');
 const DATA_PATH = '/data/apush-period-1.json';
+const REGISTRY_FILE = join(PROJECT_ROOT, 'data/apush-period-registry.json');
 const MIME_TYPES = Object.freeze({
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
@@ -356,6 +357,161 @@ async function loadPrototype(page, port, layout) {
   const response = await page.goto(pageUrl(port, layout), { waitUntil: 'networkidle' });
   required(response?.ok(), `apush-map.html is unavailable for layout ${layout} (HTTP ${response?.status() || 'no response'})`);
   await page.waitForFunction(() => Boolean(window.__apushMap), undefined, { timeout: 8_000 });
+}
+
+const dockIds = (page) => page.locator('#timelineMount [data-event-id]')
+  .evaluateAll((nodes) => nodes.map((node) => node.dataset.eventId));
+
+async function selectPeriod(page, periodId) {
+  await page.locator('#periodFilter').selectOption(periodId);
+  await page.waitForFunction((id) => window.__apushMap?.getState().periodId === id, periodId, { timeout: 8_000 });
+}
+
+async function verifyAllPeriodSwitching(page, port, registry, datasets, manifests) {
+  await loadPrototype(page, port, 'a');
+  const options = page.locator('#periodFilter option');
+  assert.equal(await options.count(), 9, 'the Period selector must expose exactly P1–P9');
+  assert.deepEqual(await options.evaluateAll((nodes) => nodes.map((node) => ({ value: node.value, copy: node.textContent.trim() }))),
+    registry.periods.map((period) => ({ value: period.id, copy: `${period.labelEn} · ${period.dates}` })),
+    'the Period selector must use registry IDs, labels, and date ranges');
+
+  for (const period of registry.periods) {
+    if (period.id !== 'p1') {
+      await page.locator('#searchInput').fill('temporary query');
+      const theme = (await stateOf(page)).activeThemes[0]
+        || await page.locator('[data-theme-id]').first().getAttribute('data-theme-id');
+      if (theme && !(await stateOf(page)).activeThemes.includes(theme)) {
+        await page.evaluate((id) => window.__apushMap.toggleTheme(id), theme);
+      }
+      await page.evaluate(() => {
+        window.__apushMap.resetMap();
+        document.querySelector('[data-map-control="zoom-in"]')?.click();
+      });
+    }
+    await selectPeriod(page, period.id);
+    const expectedIds = manifests[period.id].eventIds;
+    const state = await stateOf(page);
+    assert.equal(state.periodId, period.id, `${period.id}: public state must expose the active period`);
+    assert.equal(state.query, '', `${period.id}: switching must clear the query`);
+    assert.deepEqual(state.activeThemes, [], `${period.id}: switching must clear active themes`);
+    assert.deepEqual(state.visibleEventIds, expectedIds, `${period.id}: switching must restore manifest order`);
+    assert.equal(state.selectedEventId, null, `${period.id}: switching must clear selection`);
+    assert.equal(state.relationStatus, '', `${period.id}: switching must clear relationship status`);
+    assert.deepEqual(state.mapTransform, { scale: 1.35, x: 120, y: -70 }, `${period.id}: switching must reset the map`);
+    assert.equal(await page.locator('#periodFilter').inputValue(), period.id);
+    assert.equal(await page.title(), `APUSH ${period.labelEn} · American History Map`);
+    assert.match(await page.locator('.eyebrow').innerText(), new RegExp(`${escapeRegex(period.labelEn)}$`, 'i'));
+    assert.match(await page.locator('h1').innerText(), /American History Map/);
+    assert.equal(await page.locator('#mapPanel').getAttribute('aria-label'), `${period.labelEn} 互动地图`);
+    assert.equal(await page.locator('#timelineMount').getAttribute('aria-label'), `${period.labelEn} timeline`);
+    assert.equal((await page.locator('.timeline-dock-head strong').textContent()).trim(), `${period.labelEn} Timeline`);
+    assert.equal(await page.locator('#resultCount').innerText(), `${datasets[period.id].events.length} / ${datasets[period.id].events.length} 事件`);
+    assert.deepEqual(await dockIds(page), expectedIds, `${period.id}: Dock must preserve its manifest order`);
+    for (const prior of registry.periods.filter((candidate) => candidate.id !== period.id)) {
+      const leaked = manifests[prior.id].eventIds.filter((id) => !expectedIds.includes(id));
+      assert.equal((await dockIds(page)).some((id) => leaked.includes(id)), false, `${period.id}: Dock must not leak ${prior.id} events`);
+    }
+  }
+
+  await page.goto(pageUrl(port, 'c'), { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => window.__apushMap?.getState().periodId === 'p1');
+  await selectPeriod(page, 'p9');
+  assert.deepEqual(await dockIds(page), manifests.p9.eventIds, 'legacy layout=c must use the same canonical Dock loader');
+}
+
+async function verifyStalePeriodRequests(page, port, manifests) {
+  let releaseP2;
+  const p2Released = new Promise((resolve) => { releaseP2 = resolve; });
+  let resolveP2Handled;
+  const p2Handled = new Promise((resolve) => { resolveP2Handled = resolve; });
+  await page.route('**/data/apush-period-2.json', async (route) => {
+    await p2Released;
+    const response = await route.fetch();
+    await route.fulfill({ response });
+    resolveP2Handled();
+  });
+  await loadPrototype(page, port, 'a');
+  await page.locator('#periodFilter').selectOption('p2');
+  await page.locator('#periodFilter').selectOption('p3');
+  await page.waitForFunction(() => window.__apushMap?.getState().periodId === 'p3');
+  releaseP2();
+  await p2Handled;
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal((await stateOf(page)).periodId, 'p3', 'a stale P2 success must not replace P3');
+  assert.equal(await page.locator('#periodFilter').inputValue(), 'p3', 'a stale P2 success must not rewind the selector');
+  assert.match(await page.locator('.eyebrow').innerText(), /Period 3$/i);
+  assert.deepEqual(await dockIds(page), manifests.p3.eventIds, 'a stale P2 success must not replace the P3 Dock');
+}
+
+async function verifyPeriodFailureRecovery(page, port, manifests) {
+  let p2Attempts = 0;
+  await page.route('**/data/apush-period-2.json', async (route) => {
+    p2Attempts += 1;
+    if (p2Attempts === 1) await route.abort('failed');
+    else await route.continue();
+  });
+  await loadPrototype(page, port, 'a');
+  await page.locator('#periodFilter').selectOption('p2');
+  const error = page.locator('#loadError:not([hidden])');
+  await error.waitFor();
+  assert.equal(await page.locator('#loadError').getAttribute('role'), 'alert', 'load errors must expose an alert role');
+  assert.equal(await page.locator('#loadError').getAttribute('aria-live'), 'assertive', 'load errors must be announced when revealed');
+  assert.match(await error.innerText(), /Period 2/, 'load failure must identify the requested period');
+  assert.equal(await page.locator('#periodFilter').isEnabled(), true, 'period selector must remain enabled after a load failure');
+  assert.notEqual((await stateOf(page))?.periodId, 'p2', 'failed P2 must not falsely publish P2 state');
+  await page.locator('#retryLoad').click();
+  await page.waitForFunction(() => window.__apushMap?.getState().periodId === 'p2');
+  assert.equal(p2Attempts, 2, 'retry must target the failed selected period');
+  assert.deepEqual(await dockIds(page), manifests.p2.eventIds);
+
+  await page.route('**/data/apush-period-4.json', (route) => route.abort('failed'));
+  await page.locator('#periodFilter').selectOption('p4');
+  await error.waitFor();
+  await page.locator('#periodFilter').selectOption('p3');
+  await page.waitForFunction(() => window.__apushMap?.getState().periodId === 'p3');
+  assert.equal(await error.isHidden(), true, 'a newer successful selection must dismiss an older failure');
+  assert.deepEqual(await dockIds(page), manifests.p3.eventIds);
+
+  let releaseP5Failure;
+  const p5FailureReleased = new Promise((resolve) => { releaseP5Failure = resolve; });
+  let resolveP5Handled;
+  const p5Handled = new Promise((resolve) => { resolveP5Handled = resolve; });
+  await page.route('**/data/apush-period-5.json', async (route) => {
+    await p5FailureReleased;
+    await route.abort('failed');
+    resolveP5Handled();
+  });
+  await page.locator('#periodFilter').selectOption('p5');
+  await page.locator('#periodFilter').selectOption('p6');
+  await page.waitForFunction(() => window.__apushMap?.getState().periodId === 'p6');
+  releaseP5Failure();
+  await p5Handled;
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal((await stateOf(page)).periodId, 'p6', 'a stale P5 failure must not replace newer P6 success');
+  assert.equal(await error.isHidden(), true, 'a stale failure must not reveal the load error over newer success');
+  assert.deepEqual(await dockIds(page), manifests.p6.eventIds);
+}
+
+async function verifyRegistryFailureRecovery(page, port, manifests) {
+  let registryAttempts = 0;
+  await page.route('**/data/apush-period-registry.json', async (route) => {
+    registryAttempts += 1;
+    if (registryAttempts === 1) await route.abort('failed');
+    else await route.continue();
+  });
+  const response = await page.goto(pageUrl(port, 'a'), { waitUntil: 'networkidle' });
+  required(response?.ok(), 'page must remain available when the registry request fails');
+  const error = page.locator('#loadError:not([hidden])');
+  await error.waitFor();
+  assert.equal(await page.locator('#periodFilter option').count(), 0, 'failed registry load must not invent period options');
+  assert.equal(await page.locator('#periodFilter').isDisabled(), true, 'selector with no registry options must be disabled');
+  await page.locator('#retryLoad').click();
+  await page.waitForFunction(() => window.__apushMap?.getState().periodId === 'p1');
+  assert.equal(registryAttempts, 2, 'Retry must fetch the failed registry again');
+  assert.equal(await page.locator('#periodFilter option').count(), 9, 'registry retry must populate all Period options');
+  assert.equal(await page.locator('#periodFilter').isEnabled(), true, 'successful registry retry must re-enable the Period selector');
+  await selectPeriod(page, 'p2');
+  assert.deepEqual(await dockIds(page), manifests.p2.eventIds, 'selector must be switchable after registry recovery');
 }
 
 async function firstRenderedMarker(page, eventId) {
@@ -781,11 +937,19 @@ export async function verifyBrowser() {
   } catch {
     throw new Error('missing required page: apush-map.html');
   }
-  const [manifest, data, playwright] = await Promise.all([
+  const [manifest, data, registry, playwright] = await Promise.all([
     readJson(join(PROJECT_ROOT, 'data/apush-period-1-manifest.json')),
     readJson(join(PROJECT_ROOT, 'data/apush-period-1.json')),
+    readJson(REGISTRY_FILE),
     discoverPlaywright(),
   ]);
+  const periodFixtures = await Promise.all(registry.periods.map(async (period) => ({
+    period,
+    data: await readJson(join(PROJECT_ROOT, period.dataPath)),
+    manifest: await readJson(join(PROJECT_ROOT, period.manifestPath)),
+  })));
+  const datasets = Object.fromEntries(periodFixtures.map(({ period, data: periodData }) => [period.id, periodData]));
+  const manifests = Object.fromEntries(periodFixtures.map(({ period, manifest: periodManifest }) => [period.id, periodManifest]));
   const browserPath = await discoverChromium(playwright.chromium);
   const server = startServer();
   let browser;
@@ -793,6 +957,21 @@ export async function verifyBrowser() {
   try {
     port = await server.listen();
     browser = await playwright.chromium.launch({ executablePath: browserPath, headless: true });
+    for (const [label, verify] of [
+      ['all-period switching', (page) => verifyAllPeriodSwitching(page, port, registry, datasets, manifests)],
+      ['stale period requests', (page) => verifyStalePeriodRequests(page, port, manifests)],
+      ['period failure recovery', (page) => verifyPeriodFailureRecovery(page, port, manifests)],
+      ['registry failure recovery', (page) => verifyRegistryFailureRecovery(page, port, manifests)],
+    ]) {
+      const periodPage = await browser.newPage({ viewport: REQUIRED_VIEWPORTS[0] });
+      try {
+        await verify(periodPage);
+      } catch (error) {
+        throw new Error(`${label}: ${error.message}`);
+      } finally {
+        await periodPage.close();
+      }
+    }
     const initialByLayout = new Map();
     for (const layout of LAYOUTS) {
       for (const viewport of REQUIRED_VIEWPORTS) {

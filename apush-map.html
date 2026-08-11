@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:,">
-  <title>APUSH Period 1 · American History Map</title>
+  <title>APUSH · American History Map</title>
   <style>
     :root {
       --paper: #f7f0df;
@@ -326,11 +326,11 @@
 </head>
 <body>
   <header class="page-header">
-    <div><p class="eyebrow">AP U.S. History · Period 1</p><h1>American History Map</h1></div>
+    <div><p class="eyebrow">AP U.S. History</p><h1>American History Map</h1></div>
     <span id="prototypeLabel" class="prototype-label"></span>
   </header>
   <section id="filterToolbar" class="filter-toolbar" aria-label="筛选美国史事件">
-    <label>时期<select id="periodFilter"><option value="p1">Period 1 · 1491-1607</option></select></label>
+    <label>时期<select id="periodFilter" aria-label="APUSH Period"></select></label>
     <label class="search-field">搜索<input id="searchInput" type="search" autocomplete="off"></label>
     <div id="themeFilters" role="group" aria-label="APUSH 主题"></div>
     <span id="resultCount" role="status"></span>
@@ -342,7 +342,7 @@
   </section>
   <main id="workspace" class="workspace">
     <section class="map-column">
-      <section id="mapPanel" class="map-panel" aria-label="Period 1 互动地图">
+      <section id="mapPanel" class="map-panel" aria-label="APUSH 互动地图">
         <div class="map-canvas">
           <svg id="historyMap" viewBox="0 0 1600 800" xmlns="http://www.w3.org/2000/svg" aria-label="大西洋世界与美洲地图">
             <g id="mapViewport">
@@ -537,15 +537,15 @@
           <button type="button" data-map-control="reset" aria-label="Reset 重置">⌂</button>
         </div>
       </section>
-      <nav id="timelineMount" class="timeline-dock" aria-label="Period 1 timeline">
-        <div class="timeline-dock-head"><strong>Period 1 Timeline</strong><span>年代＋短事件名</span></div>
+      <nav id="timelineMount" class="timeline-dock" aria-label="APUSH timeline">
+        <div class="timeline-dock-head"><strong>APUSH Timeline</strong><span>年代＋短事件名</span></div>
         <ol class="timeline-track"></ol>
       </nav>
     </section>
     <aside id="detailPanel" class="detail-panel" aria-live="polite"></aside>
   </main>
-  <section id="loadError" class="load-error" hidden>
-    <p>Period 1 资料暂时没有载入。</p><button id="retryLoad" type="button">重试</button>
+  <section id="loadError" class="load-error" role="alert" aria-live="assertive" hidden>
+    <p>所选时期资料暂时没有载入。</p><button id="retryLoad" type="button">重试</button>
   </section>
   <script>
     (() => {
@@ -582,6 +582,7 @@
       const elements = {
         workspace: document.querySelector('#workspace'),
         loadError: document.querySelector('#loadError'),
+        loadErrorMessage: document.querySelector('#loadError p'),
         retryLoad: document.querySelector('#retryLoad'),
         prototypeLabel: document.querySelector('#prototypeLabel'),
         periodFilter: document.querySelector('#periodFilter'),
@@ -600,6 +601,7 @@
         markerLayer: document.querySelector('#apushMarkerLayer'),
       };
       const state = {
+        periodId: null,
         query: '',
         activeThemes: new Set(),
         visibleEventIds: [],
@@ -608,18 +610,23 @@
         relationStatus: '',
       };
       let model = null;
+      let registry = null;
+      let periodsById = new Map();
+      let loadSequence = 0;
+      let failedPeriodId = null;
       let drag = null;
       let suppressClick = false;
 
       elements.prototypeLabel.textContent = 'Timeline Dock Preview';
 
-      function validDataset(data) {
+      function validDataset(data, periodId) {
         return data && data.schemaVersion === 1
-          && ['periods', 'themes', 'sources', 'sites', 'events'].every((key) => Array.isArray(data[key]));
+          && ['periods', 'themes', 'sources', 'sites', 'events'].every((key) => Array.isArray(data[key]))
+          && data.periods.some((period) => period.id === periodId)
+          && data.events.every((event) => event.periodId === periodId);
       }
 
       function setToolbarDisabled(disabled) {
-        elements.periodFilter.disabled = disabled;
         elements.searchInput.disabled = disabled;
         elements.clearFilters.disabled = disabled;
         elements.themeFilters.querySelectorAll('button').forEach((button) => { button.disabled = disabled; });
@@ -668,11 +675,12 @@
         panel.replaceChildren();
         const event = model && model.eventsById.get(state.selectedEventId);
         if (!event) {
-          panel.append(text('p', 'empty-detail', '选择地图上的编号地点，查看 Period 1 事件的双语标题、史学意义与 AP 考试连接。'));
+          const period = periodsById.get(state.periodId);
+          panel.append(text('p', 'empty-detail', `选择地图上的编号地点，查看 ${period?.labelEn || '当前时期'} 事件的双语标题、史学意义与 AP 考试连接。`));
           return;
         }
         panel.append(
-          text('p', 'detail-kicker', `${event.dateLabel} · APUSH Period 1`),
+          text('p', 'detail-kicker', `${event.dateLabel} · APUSH ${periodsById.get(state.periodId)?.labelEn || ''}`),
           text('h2', 'detail-title', event.titleEn),
           text('p', 'detail-title-zh', event.titleZh),
         );
@@ -1004,11 +1012,13 @@
           getState() {
             return {
               layout,
+              periodId: state.periodId,
               query: state.query,
               activeThemes: [...state.activeThemes],
               visibleEventIds: [...state.visibleEventIds],
               selectedEventId: state.selectedEventId,
               mapTransform: { ...state.mapTransform },
+              relationStatus: state.relationStatus,
             };
           },
           selectEvent,
@@ -1019,42 +1029,111 @@
         });
       }
 
-      async function loadData() {
+      function resetPeriodState() {
+        state.query = '';
+        state.activeThemes.clear();
+        state.visibleEventIds = [];
+        state.selectedEventId = null;
+        state.relationStatus = '';
+        state.mapTransform = { ...INITIAL_TRANSFORM };
+        elements.searchInput.value = '';
+      }
+
+      function updatePeriodCopy(period) {
+        document.title = `APUSH ${period.labelEn} · American History Map`;
+        document.querySelector('.eyebrow').textContent = `AP U.S. History · ${period.labelEn}`;
+        elements.mapPanel.setAttribute('aria-label', `${period.labelEn} 互动地图`);
+        elements.timelineMount.setAttribute('aria-label', `${period.labelEn} timeline`);
+        elements.timelineMount.querySelector('.timeline-dock-head strong').textContent = `${period.labelEn} Timeline`;
+      }
+
+      function populatePeriodFilter(periods) {
+        elements.periodFilter.replaceChildren();
+        periods.forEach((period) => {
+          const option = document.createElement('option');
+          option.value = period.id;
+          option.textContent = `${period.labelEn} · ${period.dates}`;
+          elements.periodFilter.append(option);
+        });
+        elements.periodFilter.disabled = false;
+      }
+
+      function activatePeriod(period, data) {
+        model = buildModel(data);
+        state.periodId = period.id;
+        state.visibleEventIds = model.events.map((event) => event.id);
+        failedPeriodId = null;
+        updatePeriodCopy(period);
+        elements.workspace.hidden = false;
+        elements.loadError.hidden = true;
+        renderThemeControls();
+        setToolbarDisabled(false);
+        applyFilters();
+        updateTransform();
+        renderDetail();
+        publishApi();
+      }
+
+      async function loadPeriod(periodId = elements.periodFilter.value) {
+        const requestId = ++loadSequence;
+        const period = periodsById.get(periodId);
+        if (!period) return false;
         delete window.__apushMap;
         model = null;
+        resetPeriodState();
         setToolbarDisabled(true);
+        elements.periodFilter.value = periodId;
         elements.loadError.hidden = true;
+        elements.workspace.hidden = true;
         try {
-          const response = await fetch('data/apush-period-1.json', { cache: 'no-store' });
+          const response = await fetch(period.dataPath, { cache: 'no-store' });
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const data = await response.json();
-          if (!validDataset(data)) throw new Error('Invalid APUSH Period 1 dataset');
-          model = buildModel(data);
-          state.query = '';
-          state.activeThemes.clear();
-          state.visibleEventIds = model.events.map((event) => event.id);
-          state.selectedEventId = null;
-          state.relationStatus = '';
-          state.mapTransform = { ...INITIAL_TRANSFORM };
-          elements.workspace.hidden = false;
-          renderThemeControls();
-          setToolbarDisabled(false);
-          applyFilters();
-          updateTransform();
-          renderDetail();
-          publishApi();
+          if (requestId !== loadSequence) return false;
+          if (!validDataset(data, periodId)) throw new Error(`Invalid APUSH ${period.labelEn} dataset`);
+          activatePeriod(period, data);
+          return true;
         } catch (error) {
+          if (requestId !== loadSequence) return false;
           model = null;
+          failedPeriodId = periodId;
           setToolbarDisabled(false);
           elements.workspace.hidden = true;
+          elements.loadErrorMessage.textContent = `${period.labelEn} 资料暂时没有载入。`;
+          elements.loadError.hidden = false;
+          return false;
+        }
+      }
+
+      async function loadRegistry() {
+        try {
+          const response = await fetch('data/apush-period-registry.json', { cache: 'no-store' });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          if (!data || data.schemaVersion !== 1 || !Array.isArray(data.periods) || data.periods.length !== 9) {
+            throw new Error('Invalid APUSH period registry');
+          }
+          registry = data;
+          periodsById = new Map(data.periods.map((period) => [period.id, period]));
+          populatePeriodFilter(data.periods);
+          await loadPeriod(data.periods[0].id);
+        } catch (error) {
+          setToolbarDisabled(false);
+          elements.periodFilter.disabled = true;
+          elements.workspace.hidden = true;
+          elements.loadErrorMessage.textContent = 'APUSH 时期资料暂时没有载入。';
           elements.loadError.hidden = false;
         }
       }
 
       elements.searchInput.addEventListener('input', (event) => setQuery(event.target.value));
+      elements.periodFilter.addEventListener('change', (event) => loadPeriod(event.target.value));
       elements.clearFilters.addEventListener('click', clearFilters);
       elements.noResultsClear.addEventListener('click', clearFilters);
-      elements.retryLoad.addEventListener('click', loadData);
+      elements.retryLoad.addEventListener('click', () => {
+        if (!registry) loadRegistry();
+        else loadPeriod(failedPeriodId || elements.periodFilter.value);
+      });
       elements.mapPanel.querySelector('[data-map-control="zoom-in"]').addEventListener('click', () => changeZoom(1.3));
       elements.mapPanel.querySelector('[data-map-control="zoom-out"]').addEventListener('click', () => changeZoom(1 / 1.3));
       elements.mapPanel.querySelector('[data-map-control="reset"]').addEventListener('click', resetMap);
@@ -1095,7 +1174,7 @@
 
       resetMap();
       renderDetail();
-      loadData();
+      loadRegistry();
     })();
   </script>
 </body>
