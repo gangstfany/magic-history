@@ -755,6 +755,7 @@
           button.type = 'button';
           button.className = 'timeline-stop';
           button.dataset.eventId = event.id;
+          button.setAttribute('aria-label', `${event.dateLabel} · ${event.titleZh || event.titleEn}`);
           button.classList.toggle('is-selected', event.id === state.selectedEventId);
           button.setAttribute('aria-current', event.id === state.selectedEventId ? 'step' : 'false');
           button.append(

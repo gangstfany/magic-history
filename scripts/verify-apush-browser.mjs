@@ -16,7 +16,6 @@ export const LAYOUTS = Object.freeze(['a', 'c']);
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PAGE_FILE = join(PROJECT_ROOT, 'apush-map.html');
-const DATA_PATH = '/data/apush-period-1.json';
 const REGISTRY_FILE = join(PROJECT_ROOT, 'data/apush-period-registry.json');
 const MIME_TYPES = Object.freeze({
   '.css': 'text/css; charset=utf-8',
@@ -114,10 +113,11 @@ async function discoverChromium(chromium) {
 
 export function startServer() {
   let invalidDatasetRequests = 0;
+  let invalidDatasetPath = null;
   const server = createServer(async (request, response) => {
     try {
       const requestUrl = new URL(request.url, 'http://127.0.0.1');
-      if (requestUrl.pathname === DATA_PATH && invalidDatasetRequests > 0) {
+      if (requestUrl.pathname === invalidDatasetPath && invalidDatasetRequests > 0) {
         invalidDatasetRequests -= 1;
         response.writeHead(200, { 'cache-control': 'no-store', 'content-type': 'application/json; charset=utf-8' });
         response.end('{"schemaVersion":0}');
@@ -142,7 +142,10 @@ export function startServer() {
     }
   });
   return {
-    setInvalidDatasetRequests(value) { invalidDatasetRequests = value; },
+    setInvalidDatasetRequests(value, dataPath) {
+      invalidDatasetRequests = value;
+      invalidDatasetPath = `/${String(dataPath).replace(/^\//, '')}`;
+    },
     async listen() {
       await new Promise((resolveListen, rejectListen) => {
         server.once('error', rejectListen);
@@ -255,12 +258,12 @@ async function visibleEvents(page, events) {
   return visibleIds.map((id) => events.find((event) => event.id === id)).filter(Boolean);
 }
 
-async function assertTimelineDock(page, events) {
+async function assertTimelineDock(page, events, periodLabel = 'Period 1') {
   const dock = page.locator('#timelineMount');
   assert.equal(await dock.count(), 1, 'the embedded timeline Dock must expose exactly one #timelineMount');
   required(await dock.isVisible(), 'the embedded timeline Dock must be visible');
-  assert.equal(await dock.getAttribute('aria-label'), 'Period 1 timeline',
-    'the embedded timeline Dock must have the accessible label "Period 1 timeline"');
+  assert.equal(await dock.getAttribute('aria-label'), `${periodLabel} timeline`,
+    `the embedded timeline Dock must have the accessible label "${periodLabel} timeline"`);
 
   const list = dock.locator('ol');
   assert.equal(await list.count(), 1, 'the embedded timeline Dock must contain one ordered list');
@@ -288,10 +291,9 @@ async function assertTimelineDock(page, events) {
   assert.deepEqual(itemStops, events.map((event) => [event.id]),
     'each ordered-list item must contain exactly one direct button.timeline-stop[data-event-id] for its event');
   for (const event of events) {
-    const title = event.timelineTitleZh || event.titleZh || event.titleEn;
-    const accessibleName = new RegExp(`${escapeRegex(event.dateLabel)}\\s*${escapeRegex(title)}`);
+    const accessibleName = new RegExp(`${escapeRegex(event.dateLabel)}.*${escapeRegex(event.titleZh)}`);
     assert.equal(await dock.getByRole('button', { name: accessibleName }).count(), 1,
-      `Dock button accessible name must include its date and title for ${event.id}`);
+      `Dock button accessible name must include its date and full event title for ${event.id}`);
   }
 }
 
@@ -314,7 +316,7 @@ async function assertTimelineDockGeometry(page, viewport) {
       trackOverflowX: getComputedStyle(track).overflowX,
       trackScrollWidth: track.scrollWidth,
       trackClientWidth: track.clientWidth,
-      trackScrollLeftBefore: track.scrollLeft,
+      trackScrollLeftBefore: 0,
       focusedOutlineFits: (() => {
         const stops = [...track.querySelectorAll('.timeline-stop')];
         if (!stops.length) return { first: true, last: true };
@@ -342,6 +344,7 @@ async function assertTimelineDockGeometry(page, viewport) {
         return { first: firstFits, last: lastFits };
       })(),
       trackScrollLeftAfter: (() => {
+        track.scrollLeft = 0;
         const maximum = track.scrollWidth - track.clientWidth;
         if (maximum <= 0) return track.scrollLeft;
         track.scrollLeft = Math.min(64, maximum);
@@ -385,55 +388,76 @@ async function selectPeriod(page, periodId) {
 }
 
 async function verifyAllPeriodSwitching(page, port, registry, datasets, manifests) {
-  await loadPrototype(page, port, 'a');
-  const options = page.locator('#periodFilter option');
-  assert.equal(await options.count(), 9, 'the Period selector must expose exactly P1–P9');
-  assert.deepEqual(await options.evaluateAll((nodes) => nodes.map((node) => ({ value: node.value, copy: node.textContent.trim() }))),
-    registry.periods.map((period) => ({ value: period.id, copy: `${period.labelEn} · ${period.dates}` })),
-    'the Period selector must use registry IDs, labels, and date ranges');
+  const errors = [];
+  const onPageError = (error) => errors.push(`pageerror: ${error.stack || error.message}`);
+  const onConsole = (message) => {
+    if (message.type() === 'error') errors.push(`console: ${message.text()}`);
+  };
+  page.on('pageerror', onPageError);
+  page.on('console', onConsole);
+  try {
+    await loadPrototype(page, port, 'a');
+    const options = page.locator('#periodFilter option');
+    assert.equal(await options.count(), 9, 'the Period selector must expose exactly P1–P9');
+    assert.deepEqual(await options.evaluateAll((nodes) => nodes.map((node) => ({ value: node.value, copy: node.textContent.trim() }))),
+      registry.periods.map((period) => ({ value: period.id, copy: `${period.labelEn} · ${period.dates}` })),
+      'the Period selector must use registry IDs, labels, and date ranges');
 
-  for (const period of registry.periods) {
-    if (period.id !== 'p1') {
-      await page.locator('#searchInput').fill('temporary query');
-      const theme = (await stateOf(page)).activeThemes[0]
-        || await page.locator('[data-theme-id]').first().getAttribute('data-theme-id');
-      if (theme && !(await stateOf(page)).activeThemes.includes(theme)) {
-        await page.evaluate((id) => window.__apushMap.toggleTheme(id), theme);
+    for (const period of registry.periods) {
+      if (period.id !== 'p1') {
+        const currentState = await stateOf(page);
+        const transientEventId = currentState.visibleEventIds[0];
+        await page.evaluate((eventId) => window.__apushMap.selectEvent(eventId), transientEventId);
+        await page.locator('#searchInput').fill('temporary query');
+        await page.evaluate((eventId) => window.__apushMap.selectEvent(eventId, true), transientEventId);
+        const transientState = await stateOf(page);
+        assert.equal(transientState.selectedEventId, transientEventId, 'fixture must establish selection before switching periods');
+        required(transientState.relationStatus.length > 0, 'fixture must establish transient relationship status before switching periods');
+        const theme = (await stateOf(page)).activeThemes[0]
+          || await page.locator('[data-theme-id]').first().getAttribute('data-theme-id');
+        if (theme && !(await stateOf(page)).activeThemes.includes(theme)) {
+          await page.evaluate((id) => window.__apushMap.toggleTheme(id), theme);
+        }
+        await page.evaluate(() => {
+          window.__apushMap.resetMap();
+          document.querySelector('[data-map-control="zoom-in"]')?.click();
+        });
       }
-      await page.evaluate(() => {
-        window.__apushMap.resetMap();
-        document.querySelector('[data-map-control="zoom-in"]')?.click();
-      });
+      await selectPeriod(page, period.id);
+      const expectedIds = manifests[period.id].eventIds;
+      const state = await stateOf(page);
+      assert.equal(state.periodId, period.id, `${period.id}: public state must expose the active period`);
+      assert.equal(state.query, '', `${period.id}: switching must clear the query`);
+      assert.deepEqual(state.activeThemes, [], `${period.id}: switching must clear active themes`);
+      assert.deepEqual(state.visibleEventIds, expectedIds, `${period.id}: switching must restore manifest order`);
+      assert.equal(state.selectedEventId, null, `${period.id}: switching must clear selection`);
+      assert.equal(state.relationStatus, '', `${period.id}: switching must clear relationship status`);
+      assert.deepEqual(state.mapTransform, { scale: 1.35, x: 120, y: -70 }, `${period.id}: switching must reset the map`);
+      assert.equal(await page.locator('#periodFilter').inputValue(), period.id);
+      assert.equal(await page.title(), `APUSH ${period.labelEn} · American History Map`);
+      assert.match(await page.locator('.eyebrow').innerText(), new RegExp(`${escapeRegex(period.labelEn)}$`, 'i'));
+      assert.match(await page.locator('h1').innerText(), /American History Map/);
+      assert.equal(await page.locator('#mapPanel').getAttribute('aria-label'), `${period.labelEn} 互动地图`);
+      assert.equal(await page.locator('#timelineMount').getAttribute('aria-label'), `${period.labelEn} timeline`);
+      assert.equal((await page.locator('.timeline-dock-head strong').textContent()).trim(), `${period.labelEn} Timeline`);
+      assert.equal(await page.locator('#resultCount').innerText(), `${datasets[period.id].events.length} / ${datasets[period.id].events.length} 事件`);
+      assert.deepEqual(await dockIds(page), expectedIds, `${period.id}: Dock must preserve its manifest order`);
+      await assertTimelineDock(page, datasets[period.id].events, period.labelEn);
+      for (const prior of registry.periods.filter((candidate) => candidate.id !== period.id)) {
+        const leaked = manifests[prior.id].eventIds.filter((id) => !expectedIds.includes(id));
+        assert.equal((await dockIds(page)).some((id) => leaked.includes(id)), false, `${period.id}: Dock must not leak ${prior.id} events`);
+      }
     }
-    await selectPeriod(page, period.id);
-    const expectedIds = manifests[period.id].eventIds;
-    const state = await stateOf(page);
-    assert.equal(state.periodId, period.id, `${period.id}: public state must expose the active period`);
-    assert.equal(state.query, '', `${period.id}: switching must clear the query`);
-    assert.deepEqual(state.activeThemes, [], `${period.id}: switching must clear active themes`);
-    assert.deepEqual(state.visibleEventIds, expectedIds, `${period.id}: switching must restore manifest order`);
-    assert.equal(state.selectedEventId, null, `${period.id}: switching must clear selection`);
-    assert.equal(state.relationStatus, '', `${period.id}: switching must clear relationship status`);
-    assert.deepEqual(state.mapTransform, { scale: 1.35, x: 120, y: -70 }, `${period.id}: switching must reset the map`);
-    assert.equal(await page.locator('#periodFilter').inputValue(), period.id);
-    assert.equal(await page.title(), `APUSH ${period.labelEn} · American History Map`);
-    assert.match(await page.locator('.eyebrow').innerText(), new RegExp(`${escapeRegex(period.labelEn)}$`, 'i'));
-    assert.match(await page.locator('h1').innerText(), /American History Map/);
-    assert.equal(await page.locator('#mapPanel').getAttribute('aria-label'), `${period.labelEn} 互动地图`);
-    assert.equal(await page.locator('#timelineMount').getAttribute('aria-label'), `${period.labelEn} timeline`);
-    assert.equal((await page.locator('.timeline-dock-head strong').textContent()).trim(), `${period.labelEn} Timeline`);
-    assert.equal(await page.locator('#resultCount').innerText(), `${datasets[period.id].events.length} / ${datasets[period.id].events.length} 事件`);
-    assert.deepEqual(await dockIds(page), expectedIds, `${period.id}: Dock must preserve its manifest order`);
-    for (const prior of registry.periods.filter((candidate) => candidate.id !== period.id)) {
-      const leaked = manifests[prior.id].eventIds.filter((id) => !expectedIds.includes(id));
-      assert.equal((await dockIds(page)).some((id) => leaked.includes(id)), false, `${period.id}: Dock must not leak ${prior.id} events`);
-    }
-  }
 
-  await page.goto(pageUrl(port, 'c'), { waitUntil: 'networkidle' });
-  await page.waitForFunction(() => window.__apushMap?.getState().periodId === 'p1');
-  await selectPeriod(page, 'p9');
-  assert.deepEqual(await dockIds(page), manifests.p9.eventIds, 'legacy layout=c must use the same canonical Dock loader');
+    await page.goto(pageUrl(port, 'c'), { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => window.__apushMap?.getState().periodId === 'p1');
+    await selectPeriod(page, 'p9');
+    assert.deepEqual(await dockIds(page), manifests.p9.eventIds, 'legacy layout=c must use the same canonical Dock loader');
+    await assertNoConsoleOrPageErrors(errors);
+  } finally {
+    page.off('pageerror', onPageError);
+    page.off('console', onConsole);
+  }
 }
 
 async function verifyStalePeriodRequests(page, port, manifests) {
@@ -683,9 +707,10 @@ async function verifyKeyboardAndDragControls(page, port, events) {
   assert.equal((await stateOf(page)).selectedEventId, 'st-augustine-borderlands', 'timeline click must select its event');
 }
 
-async function verifyReducedMotion(page, port) {
+async function verifyReducedMotion(page, port, datasets) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await loadPrototype(page, port, 'a');
+  await selectPeriod(page, 'p9');
   const transition = await page.locator('.map-geography path').first().evaluate((path) => ({
     duration: getComputedStyle(path).transitionDuration,
     property: getComputedStyle(path).transitionProperty,
@@ -699,8 +724,8 @@ async function verifyReducedMotion(page, port) {
       window.__dockScrollBehavior = options?.behavior;
       this.scrollLeft = options?.left || 0;
     };
-    window.__apushMap.selectEvent('st-augustine-borderlands');
   });
+  await page.evaluate((eventId) => window.__apushMap.selectEvent(eventId), datasets.p9.events.at(-1).id);
   assert.equal(await page.evaluate(() => window.__dockScrollBehavior), 'auto',
     'reduced motion must make Dock selection scroll without smooth animation');
 }
@@ -739,6 +764,102 @@ async function verifyMultiAnchorLabel(page, port, data) {
   required(label?.includes(site.qualifier), `multi-anchor label must include the site qualifier: ${label}`);
   assert.match(label, /same transregional learning record|同一跨区域学习记录/i,
     `multi-anchor label must explain that anchors open one shared record: ${label}`);
+}
+
+async function assertSelectedDockCue(page, eventId, context) {
+  const stop = page.locator(`#timelineMount [data-event-id="${eventId}"]`);
+  assert.equal(await stop.getAttribute('aria-current'), 'step', `${context}: selected Dock stop must expose aria-current=step`);
+  const cue = stop.locator('.timeline-current-cue');
+  required(await cue.isVisible(), `${context}: selected Dock stop must expose a visible current cue`);
+  assert.match(await cue.innerText(), /当前/, `${context}: selected Dock cue must say 当前`);
+}
+
+async function assertMapInteractionsAfterSwitch(page, dataset, context) {
+  const geographic = dataset.events.filter((event) => event.primarySiteId !== null);
+  required(geographic.length >= 2, `${context}: fixture must provide two geographic events`);
+  await (await firstRenderedMarker(page, geographic[0].id)).press('Enter');
+  assert.equal((await stateOf(page)).selectedEventId, geographic[0].id, `${context}: marker Enter must select after switching`);
+  await (await firstRenderedMarker(page, geographic[1].id)).press('Space');
+  assert.equal((await stateOf(page)).selectedEventId, geographic[1].id, `${context}: marker Space must select after switching`);
+
+  await page.evaluate(() => window.__apushMap.resetMap());
+  const before = (await stateOf(page)).mapTransform;
+  const mapBox = await page.locator('#historyMap').boundingBox();
+  required(mapBox, `${context}: map must expose a drag target`);
+  const startX = mapBox.x + mapBox.width * 0.78;
+  const startY = mapBox.y + mapBox.height * 0.78;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 45, startY + 24, { steps: 3 });
+  await page.mouse.up();
+  assert.notDeepEqual((await stateOf(page)).mapTransform, before, `${context}: pointer drag must change mapTransform`);
+  await page.locator('[data-map-control="reset"]').click();
+  assert.deepEqual((await stateOf(page)).mapTransform, before, `${context}: reset must restore overview after drag`);
+  await page.locator('[data-map-control="zoom-in"]').click();
+  assert.notDeepEqual((await stateOf(page)).mapTransform, before, `${context}: zoom must change mapTransform`);
+  await page.locator('[data-map-control="reset"]').click();
+}
+
+async function assertDockKeyboardAfterSwitch(page, dataset, context) {
+  const [enterEvent, spaceEvent] = dataset.events;
+  const enterStop = page.locator(`#timelineMount [data-event-id="${enterEvent.id}"]`);
+  await enterStop.press('Enter');
+  assert.equal((await stateOf(page)).selectedEventId, enterEvent.id, `${context}: Dock Enter must select after switching`);
+  await assertSelectedDockCue(page, enterEvent.id, context);
+  const spaceStop = page.locator(`#timelineMount [data-event-id="${spaceEvent.id}"]`);
+  await spaceStop.press('Space');
+  assert.equal((await stateOf(page)).selectedEventId, spaceEvent.id, `${context}: Dock Space must select after switching`);
+  await assertSelectedDockCue(page, spaceEvent.id, context);
+
+  const lastEvent = dataset.events.at(-1);
+  const beforeScroll = await page.evaluate(() => {
+    const track = document.querySelector('#timelineMount .timeline-track');
+    track.scrollLeft = 0;
+    return { windowY: window.scrollY, trackLeft: track.scrollLeft, overflow: track.scrollWidth > track.clientWidth };
+  });
+  await page.evaluate((eventId) => window.__apushMap.selectEvent(eventId), lastEvent.id);
+  if (beforeScroll.overflow) {
+    await page.waitForFunction(() => document.querySelector('#timelineMount .timeline-track').scrollLeft > 0);
+  }
+  const afterScroll = await page.evaluate(() => ({
+    windowY: window.scrollY,
+    trackLeft: document.querySelector('#timelineMount .timeline-track').scrollLeft,
+  }));
+  assert.equal(afterScroll.windowY, beforeScroll.windowY, `${context}: Dock selection must not scroll the document`);
+  if (beforeScroll.overflow) required(afterScroll.trackLeft > beforeScroll.trackLeft, `${context}: only the Dock track must scroll`);
+}
+
+async function verifyFullPeriodViewport(page, port, layout, viewport, registry, datasets, manifests) {
+  const errors = [];
+  const onPageError = (error) => errors.push(`pageerror: ${error.message}`);
+  const onConsole = (message) => { if (message.type() === 'error') errors.push(`console: ${message.text()}`); };
+  page.on('pageerror', onPageError);
+  page.on('console', onConsole);
+  await page.setViewportSize(viewport);
+  await loadPrototype(page, port, layout);
+  try {
+    for (const periodId of ['p1', 'p5', 'p9']) {
+      const period = registry.periods.find(({ id }) => id === periodId);
+      if ((await stateOf(page)).periodId !== periodId) await selectPeriod(page, periodId);
+      const context = `${layout} ${periodId} ${viewport.width}x${viewport.height}`;
+      const dataset = datasets[periodId];
+      assert.deepEqual((await stateOf(page)).visibleEventIds, manifests[periodId].eventIds,
+        `${context}: visible events must preserve manifest order`);
+      assert.equal(await page.locator('#resultCount').innerText(), `${dataset.events.length} / ${dataset.events.length} 事件`);
+      assert.equal(await page.locator('#mapPanel').getAttribute('aria-label'), `${period.labelEn} 互动地图`);
+      await assertTimelineDock(page, dataset.events, period.labelEn);
+      await assertTimelineDockGeometry(page, viewport);
+      await assertHitTargets(page);
+      await assertDockKeyboardAfterSwitch(page, dataset, context);
+      await assertMapInteractionsAfterSwitch(page, dataset, context);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true,
+        `${context}: document must not overflow horizontally`);
+    }
+    await assertNoConsoleOrPageErrors(errors);
+  } finally {
+    page.off('pageerror', onPageError);
+    page.off('console', onConsole);
+  }
 }
 
 async function verifyViewport(page, port, layout, viewport, manifestIds, events) {
@@ -989,9 +1110,7 @@ export async function verifyBrowser() {
   } catch {
     throw new Error('missing required page: apush-map.html');
   }
-  const [manifest, data, registry, playwright] = await Promise.all([
-    readJson(join(PROJECT_ROOT, 'data/apush-period-1-manifest.json')),
-    readJson(join(PROJECT_ROOT, 'data/apush-period-1.json')),
+  const [registry, playwright] = await Promise.all([
     readJson(REGISTRY_FILE),
     discoverPlaywright(),
   ]);
@@ -1002,6 +1121,8 @@ export async function verifyBrowser() {
   })));
   const datasets = Object.fromEntries(periodFixtures.map(({ period, data: periodData }) => [period.id, periodData]));
   const manifests = Object.fromEntries(periodFixtures.map(({ period, manifest: periodManifest }) => [period.id, periodManifest]));
+  const data = datasets.p1;
+  const manifest = manifests.p1;
   const browserPath = await discoverChromium(playwright.chromium);
   const server = startServer();
   let browser;
@@ -1024,21 +1145,15 @@ export async function verifyBrowser() {
         await periodPage.close();
       }
     }
-    const initialByLayout = new Map();
-    for (const layout of LAYOUTS) {
-      for (const viewport of REQUIRED_VIEWPORTS) {
-        const page = await browser.newPage({ viewport });
-        const result = await verifyViewport(page, port, layout, viewport, manifest.eventIds, data.events);
-        if (viewport.width === 1440) initialByLayout.set(layout, result);
+    for (const [index, viewport] of REQUIRED_VIEWPORTS.entries()) {
+      const layout = LAYOUTS[index % LAYOUTS.length];
+      const page = await browser.newPage({ viewport });
+      try {
+        await verifyFullPeriodViewport(page, port, layout, viewport, registry, datasets, manifests);
+      } finally {
         await page.close();
       }
     }
-    const a = initialByLayout.get('a');
-    const c = initialByLayout.get('c');
-    assert.deepEqual(a.initialVisibleEventIds, c.initialVisibleEventIds, 'layouts A and C must start with matching visible events');
-    assert.equal(a.initialDetail, c.initialDetail, 'layouts A and C must start with matching detail content');
-    required(Math.abs(a.mapHeight - c.mapHeight) <= 1,
-      `compatibility URLs must retain near-identical map geometry: A=${a.mapHeight}, C=${c.mapHeight}`);
 
     const regressionErrors = [];
 
@@ -1063,7 +1178,7 @@ export async function verifyBrowser() {
 
     for (const [label, verify] of [
       ['keyboard and drag controls', (page) => verifyKeyboardAndDragControls(page, port, data.events)],
-      ['reduced motion', (page) => verifyReducedMotion(page, port)],
+      ['reduced motion', (page) => verifyReducedMotion(page, port, datasets)],
       ['Dock-local selection scrolling', (page) => verifyDockOwnsSelectionScrolling(page, port)],
       ['multi-anchor label', (page) => verifyMultiAnchorLabel(page, port, data)],
     ]) {
@@ -1102,7 +1217,7 @@ export async function verifyBrowser() {
       }
     }
 
-    server.setInvalidDatasetRequests(1);
+    server.setInvalidDatasetRequests(1, registry.periods[0].dataPath);
     const retryPage = await browser.newPage({ viewport: REQUIRED_VIEWPORTS[0] });
     try {
       await verifyRetry(retryPage, port);
