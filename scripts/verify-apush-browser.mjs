@@ -1034,9 +1034,10 @@ async function verifyCompactGeographicCard(page, port, datasets) {
 
 async function verifyDockOnlyEvents(page, port, registry, datasets) {
   await loadPrototype(page, port, 'a');
-  for (const period of registry.periods) {
+  // P1 intentionally predates the shared Dock-only fixture contract; P2–P9 must each retain one honest nongeographic event.
+  for (const period of registry.periods.filter(({ id }) => id !== 'p1')) {
     const event = datasets[period.id].events.find(({ primarySiteId }) => primarySiteId === null);
-    if (!event) continue;
+    required(event, `${period.id}: required Dock-only event fixture is missing`);
     await page.locator('#periodFilter').selectOption(period.id);
     await page.waitForFunction((id) => window.__apushMap?.getState().periodId === id, period.id);
     const before = (await stateOf(page)).mapTransform;

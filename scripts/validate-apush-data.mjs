@@ -210,6 +210,7 @@ export async function validateAllPeriods({ rootUrl = PROJECT_ROOT_URL, readText 
   if (registryErrors.length) return { periods: [], periodCount: 0, eventCount: 0, errors: registryErrors };
 
   const periods = [];
+  const globalEventPeriods = new Map();
   for (const expectedPeriod of registry.periods) {
     const number = expectedPeriod?.number ?? '(unknown)';
     let ledgerPath;
@@ -241,6 +242,20 @@ export async function validateAllPeriods({ rootUrl = PROJECT_ROOT_URL, readText 
       errors.push(...periodErrors);
       continue;
     }
+    const duplicateEventErrors = [];
+    for (const event of data.events) {
+      const firstPeriodId = globalEventPeriods.get(event.id);
+      if (firstPeriodId) {
+        duplicateEventErrors.push(
+          `Global event ID ${event.id} is reused in ${expectedPeriod.id}; first declared in ${firstPeriodId}`,
+        );
+      }
+    }
+    if (duplicateEventErrors.length) {
+      errors.push(...duplicateEventErrors);
+      continue;
+    }
+    for (const event of data.events) globalEventPeriods.set(event.id, expectedPeriod.id);
     periods.push({ id: expectedPeriod.id, number, eventCount: data.events.length });
   }
 

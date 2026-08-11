@@ -108,6 +108,39 @@ test('all-period validator rejects unsafe or noncanonical registry paths before 
   }
 });
 
+test('all-period validator rejects event IDs reused across periods', async () => {
+  const duplicateId = APPROVED_EVENT_IDS[0];
+  const originalP2Id = 'jamestown-1607';
+  const result = await validateAllPeriods({
+    readText: async (url) => {
+      const text = await readFile(url, 'utf8');
+      if (url.pathname.endsWith('/data/apush-period-2.json')) {
+        const data = JSON.parse(text);
+        data.events[0].id = duplicateId;
+        for (const event of data.events) {
+          for (const field of ['causeIds', 'effectIds', 'relatedIds']) {
+            event[field] = event[field].map((id) => id === originalP2Id ? duplicateId : id);
+          }
+        }
+        return JSON.stringify(data);
+      }
+      if (url.pathname.endsWith('/data/apush-period-2-manifest.json')) {
+        const manifest = JSON.parse(text);
+        manifest.eventIds[0] = duplicateId;
+        return JSON.stringify(manifest);
+      }
+      if (url.pathname.endsWith('/docs/data-sources/apush-period-2-source-ledger.md')) {
+        return text.replaceAll(originalP2Id, duplicateId);
+      }
+      return text;
+    },
+  });
+  assert.deepEqual(result.errors,
+    [`Global event ID ${duplicateId} is reused in p2; first declared in p1`]);
+  assert.equal(result.periodCount, 8, 'the period reusing a global event ID must not be certified');
+  assert.equal(result.eventCount, 71, 'the duplicate period must not contribute to the certified event total');
+});
+
 async function loadFixtures() {
   const [data, manifest, ledger, registry] = await Promise.all([
     readJson('../data/apush-period-1.json'),
