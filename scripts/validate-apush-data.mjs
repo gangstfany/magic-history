@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
-export const APPROVED_EVENT_IDS = Object.freeze([
+export const APPROVED_PERIOD_1_EVENT_IDS = Object.freeze([
   'indigenous-north-america-1491',
   'european-exploration',
   'columbus-caribbean-1492',
@@ -14,7 +14,7 @@ export const APPROVED_EVENT_IDS = Object.freeze([
 ]);
 export const OFFICIAL_THEME_IDS = Object.freeze(['NAT', 'WXT', 'GEO', 'MIG', 'PCE', 'WOR', 'ARC', 'SOC']);
 
-export function validateDataset(data, manifest, ledgerText) {
+export function validateDataset(data, manifest, ledgerText, expectedPeriod) {
   const errors = [];
   const rows = (value, kind) => {
     if (Array.isArray(value)) return value;
@@ -24,7 +24,7 @@ export function validateDataset(data, manifest, ledgerText) {
   const ids = (rows, kind) => {
     const seen = new Set();
     for (const row of rows || []) {
-      if (!row?.id) errors.push(`${kind} is missing id`);
+      if (typeof row?.id !== 'string' || !row.id.trim()) errors.push(`${kind} is missing id`);
       else if (seen.has(row.id)) errors.push(`duplicate ${kind} id: ${row.id}`);
       else seen.add(row.id);
     }
@@ -53,17 +53,19 @@ export function validateDataset(data, manifest, ledgerText) {
   const siteIds = ids(siteRows, 'site');
   const sourceIds = ids(sourceRows, 'source');
   const eventIds = ids(eventRows, 'event');
+  const expectedId = expectedPeriod?.id;
   if (data?.schemaVersion !== 1) errors.push('dataset schemaVersion must be 1');
   if (manifest?.schemaVersion !== 1) errors.push('manifest schemaVersion must be 1');
-  if (manifest?.periodId !== 'p1') errors.push('manifest periodId must be p1');
+  if (manifest?.periodId !== expectedId) errors.push(`manifest periodId must be ${expectedId}`);
+  if (eventRows.length < 7 || eventRows.length > 10) errors.push('dataset must contain between 7 and 10 events');
   const dataEventOrder = eventRows.map((event) => event?.id);
   if (JSON.stringify(dataEventOrder) !== JSON.stringify(manifestEventIds)) {
     errors.push('dataset event order must exactly match manifest eventIds');
   }
-  if (JSON.stringify(dataEventOrder) !== JSON.stringify(APPROVED_EVENT_IDS)) {
+  if (expectedId === 'p1' && JSON.stringify(dataEventOrder) !== JSON.stringify(APPROVED_PERIOD_1_EVENT_IDS)) {
     errors.push('dataset event order must exactly match approved Period 1 event IDs');
   }
-  if (JSON.stringify(manifestEventIds) !== JSON.stringify(APPROVED_EVENT_IDS)) {
+  if (expectedId === 'p1' && JSON.stringify(manifestEventIds) !== JSON.stringify(APPROVED_PERIOD_1_EVENT_IDS)) {
     errors.push('manifest eventIds must exactly match approved Period 1 event IDs');
   }
   if (JSON.stringify(themeRows.map((theme) => theme?.id).sort()) !== JSON.stringify([...OFFICIAL_THEME_IDS].sort())) {
@@ -73,9 +75,10 @@ export function validateDataset(data, manifest, ledgerText) {
     const periodId = period?.id || '(unknown)';
     requiredString(period, 'labelEn', 'period');
     requiredString(period, 'labelZh', 'period');
-    if (period?.number !== 1) errors.push(`period ${periodId} number must be 1`);
-    if (period?.startYear !== 1491) errors.push(`period ${periodId} startYear must be 1491`);
-    if (period?.endYear !== 1607) errors.push(`period ${periodId} endYear must be 1607`);
+    if (period?.id !== expectedId) errors.push(`period ${periodId} id must be ${expectedId}`);
+    if (period?.number !== expectedPeriod?.number) errors.push(`period ${periodId} number must be ${expectedPeriod?.number}`);
+    if (period?.startYear !== expectedPeriod?.startYear) errors.push(`period ${periodId} startYear must be ${expectedPeriod?.startYear}`);
+    if (period?.endYear !== expectedPeriod?.endYear) errors.push(`period ${periodId} endYear must be ${expectedPeriod?.endYear}`);
   }
   for (const source of sourceRows) {
     requiredString(source, 'title', 'source');
@@ -90,14 +93,14 @@ export function validateDataset(data, manifest, ledgerText) {
   }
   for (const event of eventRows) {
     const eventId = event?.id || '(unknown)';
-    for (const field of ['titleEn', 'titleZh', 'dateLabel', 'summary', 'significance', 'examConnection']) {
+    for (const field of ['titleEn', 'titleZh', 'timelineTitleZh', 'dateLabel', 'summary', 'significance', 'examConnection']) {
       requiredString(event, field, 'event');
     }
-    if (!periodIds.has(event?.periodId) || event?.periodId !== 'p1') errors.push(`event ${eventId} has invalid periodId`);
+    if (!periodIds.has(event?.periodId) || event?.periodId !== expectedId) errors.push(`event ${eventId} has invalid periodId`);
     if (!Number.isFinite(event?.startYear) || !Number.isFinite(event?.endYear) || event.startYear > event.endYear) {
       errors.push(`event ${eventId} has invalid date range`);
-    } else if (event.startYear < 1491 || event.endYear > 1607) {
-      errors.push(`event ${eventId} outside Period 1: 1491-1607`);
+    } else if (event.startYear < expectedPeriod?.startYear || event.endYear > expectedPeriod?.endYear) {
+      errors.push(`event ${eventId} outside Period ${expectedPeriod?.number}: ${expectedPeriod?.startYear}-${expectedPeriod?.endYear}`);
     }
     const eventSiteIds = requiredArray(event, 'siteIds', eventId);
     const eventThemeIds = requiredArray(event, 'themeIds', eventId);
@@ -106,10 +109,11 @@ export function validateDataset(data, manifest, ledgerText) {
     const relatedIds = requiredArray(event, 'relatedIds', eventId);
     requiredArray(event, 'keywords', eventId);
     const eventSourceIds = requiredArray(event, 'sourceIds', eventId);
-    if (eventSiteIds?.length === 0) errors.push(`event ${eventId} siteIds must contain at least one item`);
     if (eventThemeIds?.length === 0) errors.push(`event ${eventId} themeIds must contain at least one item`);
     if (eventSourceIds?.length === 0) errors.push(`event ${eventId} sourceIds must contain at least one item`);
-    if (typeof event?.primarySiteId !== 'string' || !event.primarySiteId.trim()) {
+    if (eventSiteIds?.length === 0) {
+      if (event?.primarySiteId !== null) errors.push(`event ${eventId} primarySiteId must be null when siteIds is empty`);
+    } else if (typeof event?.primarySiteId !== 'string' || !event.primarySiteId.trim()) {
       errors.push(`event ${eventId} missing primarySiteId`);
     } else {
       if (!siteIds.has(event.primarySiteId)) errors.push(`event ${eventId} unknown primary site`);
@@ -129,13 +133,16 @@ export function validateDataset(data, manifest, ledgerText) {
 }
 
 async function runCli() {
-  const [dataText, manifestText, ledgerText] = await Promise.all([
+  const [registryText, dataText, manifestText, ledgerText] = await Promise.all([
+    readFile(new URL('../data/apush-period-registry.json', import.meta.url), 'utf8'),
     readFile(new URL('../data/apush-period-1.json', import.meta.url), 'utf8'),
     readFile(new URL('../data/apush-period-1-manifest.json', import.meta.url), 'utf8'),
     readFile(new URL('../docs/data-sources/apush-period-1-source-ledger.md', import.meta.url), 'utf8'),
   ]);
+  const registry = JSON.parse(registryText);
+  const expectedPeriod = registry.periods.find((period) => period.id === 'p1');
   const data = JSON.parse(dataText);
-  const errors = validateDataset(data, JSON.parse(manifestText), ledgerText);
+  const errors = validateDataset(data, JSON.parse(manifestText), ledgerText, expectedPeriod);
   if (errors.length) {
     for (const error of errors) console.error(error);
     process.exitCode = 1;

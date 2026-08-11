@@ -7,12 +7,13 @@ import { startServer } from '../scripts/verify-apush-browser.mjs';
 const readJson = async (path) => JSON.parse(await readFile(new URL(path, import.meta.url), 'utf8'));
 
 async function loadFixtures() {
-  const [data, manifest, ledger] = await Promise.all([
+  const [data, manifest, ledger, registry] = await Promise.all([
     readJson('../data/apush-period-1.json'),
     readJson('../data/apush-period-1-manifest.json'),
     readFile(new URL('../docs/data-sources/apush-period-1-source-ledger.md', import.meta.url), 'utf8'),
+    readJson('../data/apush-period-registry.json'),
   ]);
-  return { data, manifest, ledger };
+  return { data, manifest, ledger, expectedPeriod: registry.periods[0] };
 }
 
 const clone = (value) => structuredClone(value);
@@ -28,12 +29,25 @@ const APPROVED_EVENT_IDS = Object.freeze([
   'st-augustine-borderlands',
 ]);
 const OFFICIAL_THEME_IDS = Object.freeze(['NAT', 'WXT', 'GEO', 'MIG', 'PCE', 'WOR', 'ARC', 'SOC']);
+const EXPECTED_PERIODS = Object.freeze([
+  { id: 'p1', number: 1, labelEn: 'Period 1', labelZh: '时期一', dates: '1491–1607', startYear: 1491, endYear: 1607, dataPath: 'data/apush-period-1.json', manifestPath: 'data/apush-period-1-manifest.json' },
+  { id: 'p2', number: 2, labelEn: 'Period 2', labelZh: '时期二', dates: '1607–1754', startYear: 1607, endYear: 1754, dataPath: 'data/apush-period-2.json', manifestPath: 'data/apush-period-2-manifest.json' },
+  { id: 'p3', number: 3, labelEn: 'Period 3', labelZh: '时期三', dates: '1754–1800', startYear: 1754, endYear: 1800, dataPath: 'data/apush-period-3.json', manifestPath: 'data/apush-period-3-manifest.json' },
+  { id: 'p4', number: 4, labelEn: 'Period 4', labelZh: '时期四', dates: '1800–1848', startYear: 1800, endYear: 1848, dataPath: 'data/apush-period-4.json', manifestPath: 'data/apush-period-4-manifest.json' },
+  { id: 'p5', number: 5, labelEn: 'Period 5', labelZh: '时期五', dates: '1844–1877', startYear: 1844, endYear: 1877, dataPath: 'data/apush-period-5.json', manifestPath: 'data/apush-period-5-manifest.json' },
+  { id: 'p6', number: 6, labelEn: 'Period 6', labelZh: '时期六', dates: '1865–1898', startYear: 1865, endYear: 1898, dataPath: 'data/apush-period-6.json', manifestPath: 'data/apush-period-6-manifest.json' },
+  { id: 'p7', number: 7, labelEn: 'Period 7', labelZh: '时期七', dates: '1890–1945', startYear: 1890, endYear: 1945, dataPath: 'data/apush-period-7.json', manifestPath: 'data/apush-period-7-manifest.json' },
+  { id: 'p8', number: 8, labelEn: 'Period 8', labelZh: '时期八', dates: '1945–1980', startYear: 1945, endYear: 1980, dataPath: 'data/apush-period-8.json', manifestPath: 'data/apush-period-8-manifest.json' },
+  { id: 'p9', number: 9, labelEn: 'Period 9', labelZh: '时期九', dates: '1980–Present', startYear: 1980, endYear: 2026, dataPath: 'data/apush-period-9.json', manifestPath: 'data/apush-period-9-manifest.json' },
+]);
+const PERIOD_ONE = EXPECTED_PERIODS[0];
 
 function validPeriodOneFixture() {
   const events = APPROVED_EVENT_IDS.map((id) => ({
     id,
     titleEn: `English ${id}`,
     titleZh: `中文 ${id}`,
+    timelineTitleZh: `短标题 ${id}`,
     periodId: 'p1',
     dateLabel: '1491',
     startYear: 1491,
@@ -68,10 +82,18 @@ function validPeriodOneFixture() {
   };
 }
 
+test('registry exposes the exact nine APUSH periods with unique paths', async () => {
+  const registry = await readJson('../data/apush-period-registry.json');
+  assert.equal(registry.schemaVersion, 1);
+  assert.deepEqual(registry.periods, EXPECTED_PERIODS);
+  assert.equal(new Set(registry.periods.map((period) => period.dataPath)).size, 9);
+  assert.equal(new Set(registry.periods.map((period) => period.manifestPath)).size, 9);
+});
+
 test('Period 1 data matches the approved nine-event manifest', async () => {
-  const { data, manifest, ledger } = await loadFixtures();
+  const { data, manifest, ledger, expectedPeriod } = await loadFixtures();
   assert.deepEqual(data.events.map((event) => event.id), manifest.eventIds);
-  assert.deepEqual(validateDataset(data, manifest, ledger), []);
+  assert.deepEqual(validateDataset(data, manifest, ledger, expectedPeriod), []);
 });
 
 test('the dataset exposes the official eight APUSH themes exactly once', async () => {
@@ -106,9 +128,29 @@ test('validation rejects duplicate identifiers', async () => {
   const { data, manifest, ledger } = await loadFixtures();
   const invalid = clone(data);
   invalid.events.push(clone(invalid.events[0]));
-  assert.ok(validateDataset(invalid, manifest, ledger).includes(
+  assert.ok(validateDataset(invalid, manifest, ledger, PERIOD_ONE).includes(
     `duplicate event id: ${invalid.events[0].id}`,
   ));
+});
+
+test('validation rejects whitespace-only and non-string row identifiers', () => {
+  const collections = [
+    ['periods', 'period'],
+    ['themes', 'theme'],
+    ['sites', 'site'],
+    ['sources', 'source'],
+    ['events', 'event'],
+  ];
+  for (const invalidId of ['   ', 42]) {
+    for (const [collection, kind] of collections) {
+      const { data, manifest, ledger } = validPeriodOneFixture();
+      data[collection][0].id = invalidId;
+      assert.ok(
+        validateDataset(data, manifest, ledger, PERIOD_ONE).includes(`${kind} is missing id`),
+        `${kind} should reject ${JSON.stringify(invalidId)}`,
+      );
+    }
+  }
 });
 
 test('validation rejects unknown site, theme, source, and relationship references', async () => {
@@ -119,7 +161,7 @@ test('validation rejects unknown site, theme, source, and relationship reference
   event.themeIds = ['missing-theme'];
   event.sourceIds = ['missing-source'];
   event.relatedIds = ['missing-event'];
-  assert.deepEqual(validateDataset(invalid, manifest, ledger).filter((error) => error.includes(event.id)), [
+  assert.deepEqual(validateDataset(invalid, manifest, ledger, PERIOD_ONE).filter((error) => error.includes(event.id)), [
     `event ${event.id} primarySiteId must reference an item in siteIds`,
     `event ${event.id} unknown site: missing-site`,
     `event ${event.id} unknown theme: missing-theme`,
@@ -135,7 +177,7 @@ test('validation rejects invalid date order and out-of-bounds coordinates', asyn
   invalid.events[0].endYear = 1491;
   invalid.sites[0].x = 1601;
   invalid.sites[0].y = -1;
-  assert.deepEqual(validateDataset(invalid, manifest, ledger).filter((error) =>
+  assert.deepEqual(validateDataset(invalid, manifest, ledger, PERIOD_ONE).filter((error) =>
     error === `event ${invalid.events[0].id} has invalid date range`
       || error === `site ${invalid.sites[0].id} x out of bounds`
       || error === `site ${invalid.sites[0].id} y out of bounds`,
@@ -151,7 +193,7 @@ test('validation requires the exact Period 1 metadata contract', () => {
   data.periods[0] = {
     id: 'p1', number: 2, labelEn: '', labelZh: ' ', startYear: 1490, endYear: 1608,
   };
-  assert.deepEqual(validateDataset(data, manifest, ledger).filter((error) => error.startsWith('period p1')), [
+  assert.deepEqual(validateDataset(data, manifest, ledger, PERIOD_ONE).filter((error) => error.startsWith('period p1')), [
     'period p1 missing labelEn',
     'period p1 missing labelZh',
     'period p1 number must be 1',
@@ -160,13 +202,63 @@ test('validation requires the exact Period 1 metadata contract', () => {
   ]);
 });
 
+test('validation binds manifest and dataset metadata to the selected registry period', () => {
+  const { data, manifest, ledger } = validPeriodOneFixture();
+  manifest.periodId = 'p2';
+  data.periods[0].id = 'p2';
+  const errors = validateDataset(data, manifest, ledger, PERIOD_ONE);
+  assert.ok(errors.includes('manifest periodId must be p1'));
+  assert.ok(errors.includes('period p2 id must be p1'));
+});
+
+test('validation requires between seven and ten events', () => {
+  for (const count of [6, 11]) {
+    const { data, manifest, ledger } = validPeriodOneFixture();
+    data.events = Array.from({ length: count }, (_, index) => ({
+      ...clone(data.events[index % data.events.length]),
+      id: `event-${index}`,
+      causeIds: [], effectIds: [], relatedIds: [],
+    }));
+    manifest.eventIds = data.events.map(({ id }) => id);
+    const errors = validateDataset(data, manifest, ledger, { ...PERIOD_ONE, id: 'fixture' });
+    assert.ok(errors.includes('dataset must contain between 7 and 10 events'));
+  }
+});
+
+test('validation requires timeline and summary copy plus every event collection', () => {
+  const { data, manifest, ledger } = validPeriodOneFixture();
+  const event = data.events[0];
+  delete event.timelineTitleZh;
+  delete event.summary;
+  for (const field of ['siteIds', 'themeIds', 'sourceIds', 'causeIds', 'effectIds', 'relatedIds', 'keywords']) {
+    delete event[field];
+  }
+  const errors = validateDataset(data, manifest, ledger, PERIOD_ONE);
+  assert.ok(errors.includes(`event ${event.id} missing timelineTitleZh`));
+  assert.ok(errors.includes(`event ${event.id} missing summary`));
+  for (const field of ['siteIds', 'themeIds', 'sourceIds', 'causeIds', 'effectIds', 'relatedIds', 'keywords']) {
+    assert.ok(errors.includes(`event ${event.id} ${field} must be an array`));
+  }
+});
+
+test('validation rejects partial coordinates and permits honest non-geographic events', () => {
+  const { data, manifest, ledger } = validPeriodOneFixture();
+  delete data.sites[0].y;
+  assert.ok(validateDataset(data, manifest, ledger, PERIOD_ONE).includes('site site-1 y out of bounds'));
+
+  data.sites[0].y = 0;
+  data.events[0].siteIds = [];
+  data.events[0].primarySiteId = null;
+  assert.deepEqual(validateDataset(data, manifest, ledger, PERIOD_ONE), []);
+});
+
 test('validation rejects event years outside 1491-1607 even when ordered', () => {
   const { data, manifest, ledger } = validPeriodOneFixture();
   data.events[0].startYear = 1490;
   data.events[0].endYear = 1491;
   data.events[1].startYear = 1607;
   data.events[1].endYear = 1608;
-  const errors = validateDataset(data, manifest, ledger);
+  const errors = validateDataset(data, manifest, ledger, PERIOD_ONE);
   assert.ok(errors.includes(`event ${data.events[0].id} outside Period 1: 1491-1607`));
   assert.ok(errors.includes(`event ${data.events[1].id} outside Period 1: 1491-1607`));
 });
@@ -176,7 +268,7 @@ test('validation requires source title, kind, and locator strings', () => {
   data.sources[0].title = '';
   data.sources[0].kind = ' ';
   delete data.sources[0].locator;
-  assert.deepEqual(validateDataset(data, manifest, ledger).filter((error) => error.startsWith('source source-1')), [
+  assert.deepEqual(validateDataset(data, manifest, ledger, PERIOD_ONE).filter((error) => error.startsWith('source source-1')), [
     'source source-1 missing title',
     'source source-1 missing kind',
     'source source-1 missing locator',
@@ -191,7 +283,7 @@ test('validation rejects events outside Period 1 and missing bilingual fields', 
   invalid.events[0].titleZh = '   ';
   invalid.sites[0].nameEn = '';
   invalid.sites[0].nameZh = '   ';
-  const errors = validateDataset(invalid, manifest, ledger);
+  const errors = validateDataset(invalid, manifest, ledger, PERIOD_ONE);
   assert.deepEqual(errors.filter((error) => error.includes(invalid.events[0].id)), [
     `event ${invalid.events[0].id} missing titleEn`,
     `event ${invalid.events[0].id} missing titleZh`,
@@ -204,7 +296,7 @@ test('validation rejects events outside Period 1 and missing bilingual fields', 
 test('validation rejects an event absent from the source ledger', async () => {
   const { data, manifest, ledger } = await loadFixtures();
   const target = data.events[0].id;
-  assert.ok(validateDataset(data, manifest, ledger.replaceAll(`\`${target}\``, '')).includes(
+  assert.ok(validateDataset(data, manifest, ledger.replaceAll(`\`${target}\``, ''), PERIOD_ONE).includes(
     `ledger missing event: ${target}`,
   ));
 });
@@ -213,7 +305,7 @@ test('validation anchors synchronized dataset and manifest IDs to the approved l
   const { data, manifest, ledger } = validPeriodOneFixture();
   data.events = [];
   manifest.eventIds = [];
-  const errors = validateDataset(data, manifest, ledger);
+  const errors = validateDataset(data, manifest, ledger, PERIOD_ONE);
   assert.ok(errors.includes('dataset event order must exactly match approved Period 1 event IDs'));
   assert.ok(errors.includes('manifest eventIds must exactly match approved Period 1 event IDs'));
 });
@@ -221,7 +313,7 @@ test('validation anchors synchronized dataset and manifest IDs to the approved l
 test('validation anchors themes to the official eight-theme literal baseline', () => {
   const { data, manifest, ledger } = validPeriodOneFixture();
   data.themes = [];
-  assert.ok(validateDataset(data, manifest, ledger).includes(
+  assert.ok(validateDataset(data, manifest, ledger, PERIOD_ONE).includes(
     'dataset themes must exactly match official APUSH theme IDs',
   ));
 });
@@ -232,28 +324,27 @@ test('validation requires every event reference collection to be an array', () =
   for (const field of ['siteIds', 'themeIds', 'causeIds', 'effectIds', 'relatedIds', 'keywords', 'sourceIds']) {
     event[field] = 'not-an-array';
   }
-  const errors = validateDataset(data, manifest, ledger);
+  const errors = validateDataset(data, manifest, ledger, PERIOD_ONE);
   for (const field of ['siteIds', 'themeIds', 'causeIds', 'effectIds', 'relatedIds', 'keywords', 'sourceIds']) {
     assert.ok(errors.includes(`event ${event.id} ${field} must be an array`));
   }
 });
 
-test('validation requires populated event references and a primary site from siteIds', () => {
+test('validation requires populated theme/source references and consistent primary geography', () => {
   const { data, manifest, ledger } = validPeriodOneFixture();
   const event = data.events[0];
   event.siteIds = [];
   event.themeIds = [];
   event.sourceIds = [];
   event.primarySiteId = '';
-  const errors = validateDataset(data, manifest, ledger);
-  assert.ok(errors.includes(`event ${event.id} siteIds must contain at least one item`));
+  const errors = validateDataset(data, manifest, ledger, PERIOD_ONE);
   assert.ok(errors.includes(`event ${event.id} themeIds must contain at least one item`));
   assert.ok(errors.includes(`event ${event.id} sourceIds must contain at least one item`));
-  assert.ok(errors.includes(`event ${event.id} missing primarySiteId`));
+  assert.ok(errors.includes(`event ${event.id} primarySiteId must be null when siteIds is empty`));
 
   event.siteIds = ['site-1'];
   event.primarySiteId = 'other-site';
-  assert.ok(validateDataset(data, manifest, ledger).includes(
+  assert.ok(validateDataset(data, manifest, ledger, PERIOD_ONE).includes(
     `event ${event.id} primarySiteId must reference an item in siteIds`,
   ));
 });
@@ -262,7 +353,7 @@ test('validation accumulates defects for a null event without throwing', () => {
   const { data, manifest, ledger } = validPeriodOneFixture();
   data.events[0] = null;
   let errors;
-  assert.doesNotThrow(() => { errors = validateDataset(data, manifest, ledger); });
+  assert.doesNotThrow(() => { errors = validateDataset(data, manifest, ledger, PERIOD_ONE); });
   assert.ok(errors.includes('event is missing id'));
   assert.ok(errors.includes('event (unknown) missing titleEn'));
   assert.ok(errors.includes('event (unknown) siteIds must be an array'));
