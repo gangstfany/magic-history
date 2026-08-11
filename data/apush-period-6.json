@@ -5,7 +5,7 @@
   "sources":[
     {"id":"ced-2026-p6","title":"College Board AP U.S. History Course and Exam Description, Effective Fall 2026","kind":"course-and-exam-description","locator":"PDF pp. 261–316; Course Framework pp. 255–310 (Unit 6, Topics 6.1–6.14)"},
     {"id":"nps-promontory","title":"Golden Spike National Historical Park: History and Culture","kind":"National Park Service history","locator":"https://www.nps.gov/gosp/learn/historyculture/index.htm"},
-    {"id":"nps-wounded-knee","title":"Wounded Knee National Historic Landmark","kind":"National Park Service history","locator":"https://www.nps.gov/places/wounded-knee.htm"},
+    {"id":"nps-wounded-knee","title":"Wounded Knee National Historic Landmark Nomination","kind":"National Park Service National Historic Landmark record","locator":"https://npgallery.nps.gov/GetAsset/135375ac-d166-414d-aae8-8f59568055e7"},
     {"id":"loc-immigration","title":"Immigration to the United States, 1851-1900","kind":"Library of Congress classroom resource","locator":"https://www.loc.gov/classroom-materials/united-states-history-primary-source-timeline/rise-of-industrial-america-1876-1900/immigration-to-united-states-1851-1900/"}
   ],
   "sites":[

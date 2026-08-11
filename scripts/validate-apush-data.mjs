@@ -14,6 +14,14 @@ export const APPROVED_PERIOD_1_EVENT_IDS = Object.freeze([
 ]);
 export const OFFICIAL_THEME_IDS = Object.freeze(['NAT', 'WXT', 'GEO', 'MIG', 'PCE', 'WOR', 'ARC', 'SOC']);
 
+export function ledgerPathForPeriod(period) {
+  const number = Number(period?.number);
+  if (!Number.isInteger(number) || number < 1 || period?.id !== `p${number}`) {
+    throw new Error(`period number ${period?.number ?? '(missing)'} does not match id ${period?.id ?? '(missing)'}`);
+  }
+  return `docs/data-sources/apush-period-${number}-source-ledger.md`;
+}
+
 export function validateDataset(data, manifest, ledgerText, expectedPeriod) {
   const errors = [];
   const rows = (value, kind) => {
@@ -132,23 +140,129 @@ export function validateDataset(data, manifest, ledgerText, expectedPeriod) {
   return errors;
 }
 
+const PROJECT_ROOT_URL = new URL('../', import.meta.url);
+const EXPECTED_REGISTRY_IDS = Object.freeze(Array.from({ length: 9 }, (_, index) => `p${index + 1}`));
+
+function validateRegistry(registry) {
+  const errors = [];
+  if (registry?.schemaVersion !== 1) errors.push('Registry: schemaVersion must be 1');
+  if (!Array.isArray(registry?.periods)) {
+    errors.push('Registry: periods must be an array');
+    return errors;
+  }
+  if (registry.periods.length !== EXPECTED_REGISTRY_IDS.length) {
+    errors.push(`Registry: expected exactly 9 periods, found ${registry.periods.length}`);
+  }
+  const seenIds = new Set();
+  const seenNumbers = new Set();
+  const seenDataPaths = new Set();
+  const seenManifestPaths = new Set();
+  for (const period of registry.periods) {
+    const id = period?.id;
+    const number = period?.number;
+    if (seenIds.has(id)) errors.push(`Registry: duplicate period id: ${id}`);
+    else seenIds.add(id);
+    if (seenNumbers.has(number)) errors.push(`Registry: duplicate period number: ${number}`);
+    else seenNumbers.add(number);
+    if (!EXPECTED_REGISTRY_IDS.includes(id)) {
+      errors.push(`Registry: unexpected period id: ${id ?? '(missing)'}`);
+    } else {
+      const expectedNumber = Number(id.slice(1));
+      if (number !== expectedNumber) errors.push(`Registry: period ${id} number must be ${expectedNumber}`);
+    }
+    const expectedDataPath = Number.isInteger(number) ? `data/apush-period-${number}.json` : null;
+    const expectedManifestPath = Number.isInteger(number) ? `data/apush-period-${number}-manifest.json` : null;
+    if (period?.dataPath !== expectedDataPath) {
+      errors.push(`Registry: period ${id ?? '(missing)'} dataPath must be ${expectedDataPath ?? 'a canonical period data path'}`);
+    }
+    if (period?.manifestPath !== expectedManifestPath) {
+      errors.push(`Registry: period ${id ?? '(missing)'} manifestPath must be ${expectedManifestPath ?? 'a canonical period manifest path'}`);
+    }
+    if (seenDataPaths.has(period?.dataPath)) errors.push(`Registry: duplicate dataPath: ${period?.dataPath}`);
+    else seenDataPaths.add(period?.dataPath);
+    if (seenManifestPaths.has(period?.manifestPath)) errors.push(`Registry: duplicate manifestPath: ${period?.manifestPath}`);
+    else seenManifestPaths.add(period?.manifestPath);
+  }
+  for (const id of EXPECTED_REGISTRY_IDS) {
+    if (!seenIds.has(id)) errors.push(`Registry: missing period id: ${id}`);
+  }
+  return errors;
+}
+
+async function readJsonForPeriod(readText, url, periodNumber, kind, errors) {
+  try {
+    return JSON.parse(await readText(url));
+  } catch (error) {
+    errors.push(`Period ${periodNumber}: unable to read ${kind} (${url.pathname}): ${error.message}`);
+    return null;
+  }
+}
+
+export async function validateAllPeriods({ rootUrl = PROJECT_ROOT_URL, readText = (url) => readFile(url, 'utf8') } = {}) {
+  const errors = [];
+  let registry;
+  try {
+    registry = JSON.parse(await readText(new URL('data/apush-period-registry.json', rootUrl)));
+  } catch (error) {
+    return { periods: [], periodCount: 0, eventCount: 0, errors: [`Registry: unable to read registry: ${error.message}`] };
+  }
+  const registryErrors = validateRegistry(registry);
+  if (registryErrors.length) return { periods: [], periodCount: 0, eventCount: 0, errors: registryErrors };
+
+  const periods = [];
+  for (const expectedPeriod of registry.periods) {
+    const number = expectedPeriod?.number ?? '(unknown)';
+    let ledgerPath;
+    try {
+      ledgerPath = ledgerPathForPeriod(expectedPeriod);
+    } catch (error) {
+      errors.push(`Period ${number}: ${error.message}`);
+      continue;
+    }
+    const periodErrors = [];
+    const [data, manifest, ledgerText] = await Promise.all([
+      readJsonForPeriod(readText, new URL(expectedPeriod.dataPath, rootUrl), number, 'dataset', periodErrors),
+      readJsonForPeriod(readText, new URL(expectedPeriod.manifestPath, rootUrl), number, 'manifest', periodErrors),
+      (async () => {
+        const url = new URL(ledgerPath, rootUrl);
+        try {
+          return await readText(url);
+        } catch (error) {
+          periodErrors.push(`Period ${number}: unable to read source ledger (${url.pathname}): ${error.message}`);
+          return null;
+        }
+      })(),
+    ]);
+    if (data && manifest && ledgerText !== null) {
+      periodErrors.push(...validateDataset(data, manifest, ledgerText, expectedPeriod)
+        .map((error) => `Period ${number}: ${error}`));
+    }
+    if (periodErrors.length) {
+      errors.push(...periodErrors);
+      continue;
+    }
+    periods.push({ id: expectedPeriod.id, number, eventCount: data.events.length });
+  }
+
+  return {
+    periods,
+    periodCount: periods.length,
+    eventCount: periods.reduce((total, period) => total + period.eventCount, 0),
+    errors,
+  };
+}
+
 async function runCli() {
-  const [registryText, dataText, manifestText, ledgerText] = await Promise.all([
-    readFile(new URL('../data/apush-period-registry.json', import.meta.url), 'utf8'),
-    readFile(new URL('../data/apush-period-1.json', import.meta.url), 'utf8'),
-    readFile(new URL('../data/apush-period-1-manifest.json', import.meta.url), 'utf8'),
-    readFile(new URL('../docs/data-sources/apush-period-1-source-ledger.md', import.meta.url), 'utf8'),
-  ]);
-  const registry = JSON.parse(registryText);
-  const expectedPeriod = registry.periods.find((period) => period.id === 'p1');
-  const data = JSON.parse(dataText);
-  const errors = validateDataset(data, JSON.parse(manifestText), ledgerText, expectedPeriod);
-  if (errors.length) {
-    for (const error of errors) console.error(error);
+  const result = await validateAllPeriods();
+  if (result.errors.length) {
+    for (const error of result.errors) console.error(error);
     process.exitCode = 1;
     return;
   }
-  console.log(`APUSH Period 1 dataset valid: ${data.events.length} events, 0 defects`);
+  for (const period of result.periods) {
+    console.log(`APUSH Period ${period.number} dataset valid: ${period.eventCount} events, 0 defects`);
+  }
+  console.log(`APUSH all-period data valid: ${result.periodCount} periods, ${result.eventCount} events, 0 defects`);
 }
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {

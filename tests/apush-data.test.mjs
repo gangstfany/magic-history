@@ -1,10 +1,112 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { validateDataset } from '../scripts/validate-apush-data.mjs';
+import { ledgerPathForPeriod, validateAllPeriods, validateDataset } from '../scripts/validate-apush-data.mjs';
 import { startServer } from '../scripts/verify-apush-browser.mjs';
 
 const readJson = async (path) => JSON.parse(await readFile(new URL(path, import.meta.url), 'utf8'));
+
+test('all-period validator derives exact ledger paths and validates the registry total', async () => {
+  assert.equal(ledgerPathForPeriod({ id: 'p5', number: 5 }),
+    'docs/data-sources/apush-period-5-source-ledger.md');
+  assert.throws(() => ledgerPathForPeriod({ id: 'p4', number: 5 }), /does not match id p4/);
+
+  const result = await validateAllPeriods();
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.periodCount, 9);
+  assert.equal(result.eventCount, 80);
+  assert.deepEqual(result.periods.map(({ number, eventCount }) => ({ number, eventCount })), [
+    { number: 1, eventCount: 9 }, { number: 2, eventCount: 9 }, { number: 3, eventCount: 9 },
+    { number: 4, eventCount: 9 }, { number: 5, eventCount: 9 }, { number: 6, eventCount: 8 },
+    { number: 7, eventCount: 10 }, { number: 8, eventCount: 9 }, { number: 9, eventCount: 8 },
+  ]);
+});
+
+test('all-period validator labels missing datasets and ledgers with their period', async () => {
+  const normalRead = (url) => readFile(url, 'utf8');
+  const missingDataset = await validateAllPeriods({
+    readText: async (url) => {
+      if (url.pathname.endsWith('/data/apush-period-4.json')) throw Object.assign(new Error('not found'), { code: 'ENOENT' });
+      return normalRead(url);
+    },
+  });
+  assert.ok(missingDataset.errors.some((error) => /Period 4: unable to read dataset/.test(error)));
+
+  const missingLedger = await validateAllPeriods({
+    readText: async (url) => {
+      if (url.pathname.endsWith('/docs/data-sources/apush-period-7-source-ledger.md')) {
+        throw Object.assign(new Error('not found'), { code: 'ENOENT' });
+      }
+      return normalRead(url);
+    },
+  });
+  assert.ok(missingLedger.errors.some((error) => /Period 7: unable to read source ledger/.test(error)));
+});
+
+test('all-period validator labels validation defects with their period', async () => {
+  const result = await validateAllPeriods({
+    readText: async (url) => {
+      const text = await readFile(url, 'utf8');
+      if (!url.pathname.endsWith('/data/apush-period-6.json')) return text;
+      const data = JSON.parse(text);
+      data.events[0].timelineTitleZh = '';
+      return JSON.stringify(data);
+    },
+  });
+  assert.ok(result.errors.some((error) => /Period 6: event .* missing timelineTitleZh/.test(error)));
+  assert.equal(result.eventCount, 72, 'invalid periods are excluded from the valid event total');
+});
+
+test('all-period validator rejects incomplete, duplicate, and mismatched registry contracts', async () => {
+  const registry = await readJson('../data/apush-period-registry.json');
+  const mutations = [
+    ['missing Period 9', (copy) => copy.periods.pop(), /Registry: expected exactly 9 periods/],
+    ['duplicate id', (copy) => { copy.periods[8].id = 'p8'; }, /Registry: duplicate period id: p8/],
+    ['duplicate number', (copy) => { copy.periods[8].number = 8; }, /Registry: duplicate period number: 8/],
+    ['duplicate data path', (copy) => { copy.periods[8].dataPath = copy.periods[7].dataPath; }, /Registry: duplicate dataPath/],
+    ['duplicate manifest path', (copy) => { copy.periods[8].manifestPath = copy.periods[7].manifestPath; }, /Registry: duplicate manifestPath/],
+    ['unexpected p10', (copy) => { copy.periods[8].id = 'p10'; copy.periods[8].number = 10; }, /Registry: unexpected period id: p10/],
+    ['wrong number', (copy) => { copy.periods[5].number = 7; }, /Registry: period p6 number must be 6/],
+  ];
+  for (const [label, mutate, expectedError] of mutations) {
+    const changed = clone(registry);
+    mutate(changed);
+    const result = await validateAllPeriods({
+      readText: (url) => url.pathname.endsWith('/data/apush-period-registry.json')
+        ? JSON.stringify(changed)
+        : readFile(url, 'utf8'),
+    });
+    assert.ok(result.errors.some((error) => expectedError.test(error)), `${label}: ${result.errors.join('; ')}`);
+    assert.equal(result.periodCount, 0, `${label} must not certify a partial registry`);
+  }
+});
+
+test('all-period validator rejects unsafe or noncanonical registry paths before reading them', async () => {
+  const registry = await readJson('../data/apush-period-registry.json');
+  const unsafePaths = [
+    ['absolute dataset', 'dataPath', '/tmp/apush-period-4.json'],
+    ['remote dataset', 'dataPath', 'https://example.com/apush-period-4.json'],
+    ['traversing dataset', 'dataPath', '../data/apush-period-4.json'],
+    ['absolute manifest', 'manifestPath', '/tmp/apush-period-4-manifest.json'],
+    ['remote manifest', 'manifestPath', 'https://example.com/apush-period-4-manifest.json'],
+    ['traversing manifest', 'manifestPath', 'data/../apush-period-4-manifest.json'],
+  ];
+  for (const [label, field, value] of unsafePaths) {
+    const changed = clone(registry);
+    changed.periods[3][field] = value;
+    let nonRegistryReads = 0;
+    const result = await validateAllPeriods({
+      readText: (url) => {
+        if (url.pathname.endsWith('/data/apush-period-registry.json')) return JSON.stringify(changed);
+        nonRegistryReads += 1;
+        return readFile(url, 'utf8');
+      },
+    });
+    assert.ok(result.errors.some((error) => new RegExp(`Registry: period p4 ${field} must be`).test(error)),
+      `${label}: ${result.errors.join('; ')}`);
+    assert.equal(nonRegistryReads, 0, `${label} must fail before any registry-controlled path is read`);
+  }
+});
 
 async function loadFixtures() {
   const [data, manifest, ledger, registry] = await Promise.all([
@@ -84,6 +186,11 @@ const EXPECTED_CED_LOCATORS_5_TO_7 = Object.freeze({
   p5: 'PDF pp. 211–259; Course Framework pp. 205–252 (Unit 5, Topics 5.1–5.12)',
   p6: 'PDF pp. 261–316; Course Framework pp. 255–310 (Unit 6, Topics 6.1–6.14)',
   p7: 'PDF pp. 317–378; Course Framework pp. 311–372 (Unit 7, Topics 7.1–7.15)',
+});
+const EXPECTED_SUPPLEMENTAL_LOCATORS_5_TO_7 = Object.freeze({
+  'nps-wounded-knee': 'https://npgallery.nps.gov/GetAsset/135375ac-d166-414d-aae8-8f59568055e7',
+  'loc-great-migration': 'https://www.loc.gov/classroom-materials/great-migration/',
+  'archives-new-deal': 'https://www.fdrlibrary.org/periodic-table',
 });
 const EXPECTED_EVENT_IDS_8_TO_9 = Object.freeze({
   p8: [
@@ -204,11 +311,17 @@ for (const periodId of ['p5', 'p6', 'p7']) {
     assert.deepEqual(data.sites.filter(({ id }) => !referencedSiteIds.has(id)).map(({ id }) => id), [],
       `${periodId} must not retain orphan sites`);
     const supplementalSources = data.sources.filter(({ kind }) => kind !== 'course-and-exam-description');
-    const allowedOfficialHosts = new Set(['www.archives.gov', 'www.nps.gov', 'www.loc.gov', 'guides.loc.gov', 'www.fdrlibrary.org']);
+    const allowedOfficialHosts = new Set([
+      'www.archives.gov', 'www.nps.gov', 'npgallery.nps.gov', 'www.loc.gov', 'guides.loc.gov', 'www.fdrlibrary.org',
+    ]);
     for (const source of supplementalSources) {
       const locator = new URL(source.locator);
       assert.equal(locator.protocol, 'https:', `${source.id} must use an HTTPS locator`);
       assert.ok(allowedOfficialHosts.has(locator.hostname), `${source.id} must use an approved authoritative host`);
+      if (EXPECTED_SUPPLEMENTAL_LOCATORS_5_TO_7[source.id]) {
+        assert.equal(source.locator, EXPECTED_SUPPLEMENTAL_LOCATORS_5_TO_7[source.id],
+          `${source.id} must retain its reviewed immutable locator`);
+      }
     }
     assert.ok(data.events.some((event) => event.effectIds.length > 0),
       `${periodId} must preserve at least one explicitly explained cause/effect mechanism`);

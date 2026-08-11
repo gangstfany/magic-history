@@ -4,9 +4,9 @@ import { fileURLToPath } from 'node:url';
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const steps = [
-  ['Node tests', ['--test', 'tests/apush-data.test.mjs']],
-  ['strict Period 1 validator', ['scripts/validate-apush-data.mjs']],
-  ['browser matrix', ['scripts/verify-apush-browser.mjs']],
+  ['APUSH data unit tests', ['--test', 'tests/apush-data.test.mjs']],
+  ['APUSH all-period validator', ['scripts/validate-apush-data.mjs']],
+  ['APUSH browser matrix', ['scripts/verify-apush-browser.mjs']],
 ];
 
 for (const [name, args] of steps) {
@@ -19,4 +19,4 @@ for (const [name, args] of steps) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-console.log('\nAPUSH Period 1 release verification passed');
+console.log('\nAPUSH all-period release verification passed');

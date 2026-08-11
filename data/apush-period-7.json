@@ -5,8 +5,8 @@
   "sources":[
     {"id":"ced-2026-p7","title":"College Board AP U.S. History Course and Exam Description, Effective Fall 2026","kind":"course-and-exam-description","locator":"PDF pp. 317–378; Course Framework pp. 311–372 (Unit 7, Topics 7.1–7.15)"},
     {"id":"ced-2026-p7-topic-7-3","title":"College Board AP U.S. History Course and Exam Description, Effective Fall 2026","kind":"course-and-exam-description","locator":"PDF pp. 329–331; Course Framework pp. 323–325 (Unit 7, Topic 7.3)"},
-    {"id":"loc-great-migration","title":"The Great Migration","kind":"Library of Congress research guide","locator":"https://guides.loc.gov/african-american-history/great-migration"},
-    {"id":"archives-new-deal","title":"The New Deal","kind":"Franklin D. Roosevelt Presidential Library education resource","locator":"https://www.fdrlibrary.org/new-deal"},
+    {"id":"loc-great-migration","title":"The Great Migration","kind":"Library of Congress primary source set","locator":"https://www.loc.gov/classroom-materials/great-migration/"},
+    {"id":"archives-new-deal","title":"Periodic Table of the New Deal","kind":"Franklin D. Roosevelt Presidential Library education resource","locator":"https://www.fdrlibrary.org/periodic-table"},
     {"id":"archives-eo9066","title":"Executive Order 9066","kind":"U.S. National Archives primary-source page","locator":"https://www.archives.gov/milestone-documents/executive-order-9066"}
   ],
   "sites":[
