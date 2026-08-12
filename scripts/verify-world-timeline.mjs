@@ -340,71 +340,108 @@ async function verifyLearningShell(page, port) {
   assert.ok(desktopMapBox && desktopPanelBox && desktopMapBox.x + desktopMapBox.width <= desktopPanelBox.x + 1,
     'at 900x700, map study view must sit to the left of the event panel');
 
+  await page.locator('[data-learning-view="practice"]').click();
+  assert.equal(await page.locator('.split > #eventZone').count(), 1,
+    'Practice must keep the shared event panel inside the combined layout');
+  await expectVisible(page.locator('#eventZone .quiz-panel'), 'Practice must render quiz controls in the shared event panel');
+  assert.equal(await page.locator('#practiceDrawer').count(), 0, 'the obsolete Practice drawer must be removed');
+  await expectVisible(page.locator('#mapStudyView'), 'Practice must leave the map visible');
+  await expectVisible(page.locator('#worldTimelineDock'), 'Practice must leave the Timeline Dock visible');
+  assert.deepEqual(await page.locator('.learning-view-tab[aria-pressed="true"]').allTextContents(), ['练习'],
+    'only Practice may be pressed while the shared panel shows quiz controls');
+  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '练习',
+    'practice event region must identify the practice context');
+
   await page.locator('[data-learning-view="map"]').click();
-  await expectVisible(page.locator('#mapStudyView'), 'map entry must show the map study view');
-  await expectVisible(page.locator('#worldTimelineDock'), 'Timeline remains embedded with the map');
+  await expectVisible(page.locator('#mapStudyView'), 'Map must show the map study view');
+  await expectVisible(page.locator('#worldTimelineDock'), 'Timeline remains embedded with Map');
   assert.equal(await page.locator('#eventPanel .rt-stops-chain').count(), 0,
-    'map entry must remove the causal-chain renderer from the event panel');
-  assert.equal(await page.locator('[data-learning-view="map"]').getAttribute('aria-pressed'), 'true',
-    'map entry must be marked pressed');
+    'Map must remove the causal-chain renderer from the event panel');
+  assert.deepEqual(await page.locator('.learning-view-tab[aria-pressed="true"]').allTextContents(), ['地图'],
+    'only Map may be pressed while its contextual tools are shown');
   assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '地图事件详情',
-    'map event region must identify ordinary map details');
+    'Map must open in its event-details context');
+  const mapModes = page.locator('[data-map-mode]');
+  assert.deepEqual(await mapModes.allTextContents(), ['事件详情', '商路'],
+    'Map must expose exactly the Event Details and Routes secondary modes');
+  assert.equal(await page.locator('[data-map-mode="events"]').getAttribute('aria-pressed'), 'true',
+    'Event Details must be the initially pressed Map secondary mode');
+  assert.deepEqual(await page.locator('[data-map-mode][aria-pressed="true"]').allTextContents(), ['事件详情'],
+    'only Event Details may be pressed when Map opens');
+  assert.doesNotMatch(await page.locator('#eventZone').innerText(), /Practice|随堂练习/,
+    'Map event details must not contain legacy Practice launchers');
+
+  const originalUnit = await page.locator('#periodFilter').inputValue();
+  await page.locator('[data-map-mode="routes"]').click();
+  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '地图商路',
+    'Routes must identify the Map routes context');
+  assert.equal(await page.locator('[data-map-mode="routes"]').getAttribute('aria-pressed'), 'true',
+    'Routes must be the pressed Map secondary mode');
+  assert.deepEqual(await page.locator('[data-map-mode][aria-pressed="true"]').allTextContents(), ['商路'],
+    'only Routes may be pressed in the Map routes context');
+  const firstRoute = await page.evaluate(() => window.__mapFilter.getRoutes()[0]);
+  assert.ok(firstRoute, 'the existing non-chain route catalog must provide a route');
+  const routeChoice = page.locator(`#eventZone [data-route-go="${firstRoute.id}"]`);
+  await expectVisible(routeChoice, 'Routes must show an existing non-chain route choice');
+  await routeChoice.click();
+  assert.equal(await page.evaluate(() => window.__mapFilter.inRoute()), true,
+    'selecting a visible route choice must enter route mode');
+  await expectVisible(page.locator(`#route-line-${firstRoute.id}.on`), 'the selected route line must be visible on the map');
+  await expectVisible(page.locator(`#route-vehicle-${firstRoute.id}.on`), 'the selected route vehicle must be visible on the map');
+  assert.equal(await page.locator('#periodFilter').inputValue(), '',
+    'an active non-chain route must temporarily suspend the Unit filter');
+  await page.locator('[data-map-mode="events"]').click();
+  assert.equal(await page.locator('#periodFilter').inputValue(), originalUnit,
+    'returning to Event Details must restore the original Unit');
+  assert.equal(await page.evaluate(() => window.__mapFilter.inRoute()), false,
+    'returning to Event Details must leave route mode');
+  assert.equal(await page.locator('.route-line.on, .route-vehicle.on').count(), 0,
+    'returning to Event Details must clear route visualization');
+  assert.equal(await page.locator('[data-map-mode="events"]').getAttribute('aria-pressed'), 'true',
+    'Event Details must become pressed after leaving Routes');
+  assert.deepEqual(await page.locator('[data-map-mode][aria-pressed="true"]').allTextContents(), ['事件详情'],
+    'only Event Details may remain pressed after leaving Routes');
 
   await page.locator('[data-learning-view="chain"]').click();
   await page.locator('#periodFilter').selectOption('u4');
   assert.match(await page.locator('#eventPanel').innerText(), /Unit 4|大西洋|Atlantic/i,
     'Unit 4 selection must render Unit 4 Atlantic causal-chain content');
-
   await page.locator('[data-learning-view="practice"]').click();
-  await expectVisible(page.locator('#practiceDrawer'), 'practice opens as a drawer');
-  await expectVisible(page.locator('#practiceDrawer .quiz-panel'), 'practice drawer must contain quiz controls');
-  await expectVisible(page.locator('#mapStudyView'), 'practice drawer must leave the map visible');
-  assert.equal(await page.locator('#practiceDrawer').getAttribute('role'), 'dialog',
-    'practice drawer must expose dialog semantics');
-  assert.equal(await page.locator('#practiceDrawer').getAttribute('aria-modal'), null,
-    'practice drawer must remain non-modal while the map stays available');
-  assert.deepEqual(await page.locator('.learning-view-tab[aria-pressed="true"]').allTextContents(), ['练习'],
-    'only Practice may remain pressed while its drawer is open');
-  assert.equal(await page.evaluate(() => document.activeElement?.id), 'practiceDrawerClose',
-    'opening Practice must move focus into the drawer');
-  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '练习',
-    'practice event region must identify the practice context');
-  await page.locator('#practiceDrawerClose').click();
-  assert.equal(await page.locator('#practiceDrawer').isVisible(), false, 'practice drawer closes independently');
-  assert.equal(await page.evaluate(() => document.activeElement?.dataset.learningView), 'practice',
-    'explicitly closing Practice must restore focus to its launcher');
-  assert.equal(await page.locator('#periodFilter').inputValue(), 'u4', 'closing practice must preserve Unit 4');
-  assert.equal(await page.locator('[data-learning-view="chain"]').getAttribute('aria-pressed'), 'true',
-    'closing practice must preserve the causal-chain selection');
+  await page.locator('#eventZone [data-quiz-start="all"]').click();
+  assert.equal(await page.evaluate(() => window.__mapFilter.inQuiz()), true,
+    'activating the visible Practice choice must start quiz state');
+  await expectVisible(page.locator('#eventZone .quiz-panel'), 'the existing quiz flow must start inside Practice');
+  assert.match(await page.locator('#eventZone .quiz-panel').innerText(), /随堂练习/,
+    'starting Practice must render an active quiz');
+  await page.locator('[data-learning-view="chain"]').click();
+  assert.equal(await page.evaluate(() => window.__mapFilter.inQuiz()), false,
+    'switching from Practice to Chain must exit quiz state');
+  assert.equal(await page.locator('#periodFilter').inputValue(), 'u4',
+    'switching from an active quiz to Chain must preserve Unit 4');
+  assert.deepEqual(await page.locator('.learning-view-tab[aria-pressed="true"]').allTextContents(), ['因果链'],
+    'exactly Chain must be pressed after leaving an active quiz');
   await expectVisible(page.locator('#eventPanel .rt-stops-chain'),
-    'closing practice must restore the Unit 4 causal chain');
-  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), 'Unit 因果链',
-    'closing Practice must restore the causal-chain event-region context');
+    'switching from Practice must restore the Unit 4 causal chain');
+  assert.match(await page.locator('#eventPanel').innerText(), /Unit 4|大西洋|Atlantic/i,
+    'the restored causal chain must still show Unit 4 content');
 
+  await page.locator('[data-learning-view="practice"]').click();
+  await page.locator('#eventZone [data-quiz-start="all"]').click();
+  assert.equal(await page.evaluate(() => window.__mapFilter.inQuiz()), true,
+    'the repeated visible Practice choice must start quiz state');
   await page.locator('[data-learning-view="map"]').click();
-  await page.locator('#periodFilter').selectOption('u2');
-  await page.evaluate(() => window.__mapFilter.enterRoute(window.__mapFilter.getRoutes()[0].id));
-  assert.equal(await page.locator('#periodFilter').inputValue(), '',
-    'a non-chain trade route must temporarily suspend the Unit filter');
-  await page.locator('[data-learning-view="practice"]').click();
-  assert.equal(await page.locator('#periodFilter').inputValue(), 'u2',
-    'opening Practice from a trade route must restore the selected Unit before rendering practice');
-  await page.locator('#practiceDrawerClose').click();
-  assert.equal(await page.locator('#periodFilter').inputValue(), 'u2',
-    'closing Practice after a trade route must restore the selected Unit');
-  assert.equal(await page.locator('[data-learning-view="map"]').getAttribute('aria-pressed'), 'true',
-    'closing Practice after a trade route must preserve Map mode');
-
-  await page.locator('[data-learning-view="practice"]').click();
-  assert.equal(await page.evaluate(() => document.activeElement?.id), 'practiceDrawerClose',
-    'Practice must focus its close control before Escape handling');
-  await page.keyboard.press('Escape');
-  assert.equal(await page.locator('#practiceDrawer').isVisible(), false,
-    'Escape must close the Practice drawer');
-  assert.equal(await page.evaluate(() => document.activeElement?.dataset.learningView), 'practice',
-    'Escape must restore focus to the Practice launcher');
-  assert.equal(await page.locator('[data-learning-view="map"]').getAttribute('aria-pressed'), 'true',
-    'Escape-closing Practice must preserve Map mode');
+  assert.equal(await page.evaluate(() => window.__mapFilter.inQuiz()), false,
+    'switching from Practice to Map must exit quiz state');
+  assert.equal(await page.locator('#periodFilter').inputValue(), 'u4',
+    'switching from an active quiz to Map must preserve Unit 4');
+  assert.deepEqual(await page.locator('.learning-view-tab[aria-pressed="true"]').allTextContents(), ['地图'],
+    'exactly Map must be pressed after leaving an active quiz');
+  assert.deepEqual(await page.locator('[data-map-mode]').allTextContents(), ['事件详情', '商路'],
+    'Map secondary controls must return after leaving an active quiz');
+  assert.equal(await page.locator('[data-map-mode="events"]').getAttribute('aria-pressed'), 'true',
+    'Map must return to Event Details after leaving an active quiz');
+  assert.deepEqual(await page.locator('[data-map-mode][aria-pressed="true"]').allTextContents(), ['事件详情'],
+    'only Event Details may be pressed after returning from Practice');
 
   await page.setViewportSize({ width: 700, height: 900 });
   const narrowMapBox = await page.locator('#mapStudyView').boundingBox();
