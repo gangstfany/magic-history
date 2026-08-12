@@ -3167,6 +3167,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   function openPracticeDrawer() {
     if (!practiceDrawer.hidden) return;
     practiceLauncher = learningTabs.find(tab => tab.dataset.learningView === 'practice') || document.activeElement;
+    if (routeMode && routeMode.route.kind !== 'chain') exitRouteMode();
     practiceDrawer.hidden = false;
     practiceDrawerBody.appendChild(eventZone);
     eventZone.setAttribute('aria-label', '练习');
@@ -3197,6 +3198,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
   learningTabs.forEach(tab => tab.addEventListener('click', () => showLearningView(tab.dataset.learningView)));
   practiceDrawerClose.addEventListener('click', () => closePracticeDrawer(true));
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || practiceDrawer.hidden) return;
+    event.preventDefault();
+    closePracticeDrawer(true);
+  });
 
   // ↓ 商路模式里这几句要立即执行,必须排在上面三个 const 之后(它们是 const,提前引用会 TDZ 报错)
   // 行程面板的按钮:事件面板是 innerHTML 重铺的,所以走事件委托

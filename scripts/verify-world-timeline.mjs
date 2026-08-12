@@ -381,6 +381,31 @@ async function verifyLearningShell(page, port) {
   assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), 'Unit 因果链',
     'closing Practice must restore the causal-chain event-region context');
 
+  await page.locator('[data-learning-view="map"]').click();
+  await page.locator('#periodFilter').selectOption('u2');
+  await page.evaluate(() => window.__mapFilter.enterRoute(window.__mapFilter.getRoutes()[0].id));
+  assert.equal(await page.locator('#periodFilter').inputValue(), '',
+    'a non-chain trade route must temporarily suspend the Unit filter');
+  await page.locator('[data-learning-view="practice"]').click();
+  assert.equal(await page.locator('#periodFilter').inputValue(), 'u2',
+    'opening Practice from a trade route must restore the selected Unit before rendering practice');
+  await page.locator('#practiceDrawerClose').click();
+  assert.equal(await page.locator('#periodFilter').inputValue(), 'u2',
+    'closing Practice after a trade route must restore the selected Unit');
+  assert.equal(await page.locator('[data-learning-view="map"]').getAttribute('aria-pressed'), 'true',
+    'closing Practice after a trade route must preserve Map mode');
+
+  await page.locator('[data-learning-view="practice"]').click();
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'practiceDrawerClose',
+    'Practice must focus its close control before Escape handling');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#practiceDrawer').isVisible(), false,
+    'Escape must close the Practice drawer');
+  assert.equal(await page.evaluate(() => document.activeElement?.dataset.learningView), 'practice',
+    'Escape must restore focus to the Practice launcher');
+  assert.equal(await page.locator('[data-learning-view="map"]').getAttribute('aria-pressed'), 'true',
+    'Escape-closing Practice must preserve Map mode');
+
   await page.setViewportSize({ width: 700, height: 900 });
   const narrowMapBox = await page.locator('#mapStudyView').boundingBox();
   const narrowPanelBox = await page.locator('#eventZone').boundingBox();
