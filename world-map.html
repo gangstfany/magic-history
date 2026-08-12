@@ -48,6 +48,27 @@ h1 .en { color: var(--accent); }
 .event-zone { flex: 0 0 auto; border-top: 1px solid var(--line); background: var(--paper); box-shadow: inset 0 6px 12px -10px rgba(28,33,40,0.25); }
 .event-zone.fit-content { max-height: none; }
 
+/* ---- AP World chronological card dock ---- */
+.world-timeline-dock { flex: 0 0 auto; padding: 12px 16px 14px; border-top: 1px solid var(--line); background: var(--surface); }
+.world-timeline-head { display:flex; align-items:baseline; gap:10px; margin-bottom:9px; }
+.world-timeline-heading { margin:0; font-size:14px; font-weight:800; color:var(--ink); }
+.world-timeline-scope { font-size:12px; color:var(--ink-soft); }
+.world-timeline-track { display:flex; gap:10px; overflow-x:auto; overflow-y:hidden; padding:2px 2px 9px; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; }
+.world-timeline-card { flex:0 0 220px; min-height:88px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); text-align:left; cursor:pointer; box-shadow:var(--shadow-sm); }
+.world-timeline-card:hover { border-color:var(--line-strong); background:#fffaf0; }
+.world-timeline-card[aria-current="step"] { background:#f7dfc2; border-color:#9b542f; box-shadow:0 0 0 1px #9b542f; }
+.world-timeline-card:focus-visible { outline:3px solid #28708a; outline-offset:2px; }
+.world-timeline-date { display:block; margin-bottom:5px; color:var(--accent); font-size:12px; font-weight:800; }
+.world-timeline-title-en, .world-timeline-title-zh { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.world-timeline-title-en { font-size:13px; font-weight:800; }
+.world-timeline-title-zh { margin-top:3px; color:var(--ink-soft); font-size:12px; }
+.world-timeline-empty { min-height:44px; display:flex; align-items:center; color:var(--ink-soft); font-size:12px; }
+.pin-group.timeline-selected .pin-dot { stroke:#7b2618; stroke-width:4; }
+@media (max-width:720px) {
+  .world-timeline-dock { padding-inline:14px; }
+  .world-timeline-card { flex-basis:210px; min-height:88px; }
+}
+
 .mapstage { position: absolute; inset: 0; overflow: hidden; }
 .mapstage svg { display:block; width:100%; height:100%; }
 .maplabel { margin: 4px 16px 14px 16px; font-size: 9pt; color:#666; max-width:1100px; }
@@ -790,6 +811,14 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 <text x="976.1" y="421.8" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">104</text></g>
 </g></svg></div></div>
 </div>
+
+<section class="world-timeline-dock" id="worldTimelineDock" aria-labelledby="worldTimelineHeading">
+  <div class="world-timeline-head">
+    <h2 class="world-timeline-heading" id="worldTimelineHeading">Timeline · 时间线</h2>
+    <span class="world-timeline-scope" id="worldTimelineScope">按时间顺序浏览</span>
+  </div>
+  <div class="world-timeline-track" id="worldTimelineTrack" role="group" aria-label="按时间顺序浏览事件"></div>
+</section>
 
 <div class="event-zone" id="eventZone" role="region" aria-label="历史事件" aria-live="polite">
 <div class="event-empty" id="eventEmpty">先在上面地图里点一个地块,再点冒出来的编号标点 —— 这里会显示那个地方的历史事件</div>
@@ -2000,6 +2029,45 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   function yearStart(yr) { const m = yr.match(/-?\d+/); return m ? parseInt(m[0], 10) : 0; }
   Object.values(index).forEach(arr => arr.sort((a, b) => yearStart(a.yr) - yearStart(b.yr)));
 
+  // Timeline 直接适配上面的 index,不维护第二份事件内容。相同年份/内容的多地点记录
+  // 共用一个事件键,所以只生成一张卡,但保留全部地图锚点。
+  const timelineEvents = [];
+  const timelineByKey = new Map();
+  const timelineSignature = it => `${it.yr}|${it.catAbbr}|${(it.trigHTML || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()}`;
+  const eventUnit = it => {
+    const y = yearStart(it.yr);
+    const words = `${it.catAbbr} ${(it.trigHTML || '').replace(/<[^>]*>/g, '')}`.toLowerCase();
+    if (y < 1450) return /econ|trade|silk|commerce|exchange|merchant/.test(words) ? 'u2' : 'u1';
+    if (y < 1750) return /econ|trade|exchange|columb|silver|plantation/.test(words) ? 'u4' : 'u3';
+    if (y < 1900) return /revolution|industrial|enlighten|national|liberal|constitution|abolition/.test(words) ? 'u5' : 'u6';
+    if (y < 1945) return 'u7';
+    if (y < 1991) return 'u8';
+    return 'u9';
+  };
+  Object.entries(index).forEach(([num, items]) => items.forEach((it, ordinal) => {
+    const signature = timelineSignature(it);
+    let event = timelineByKey.get(signature);
+    if (!event) {
+      const holder = document.createElement('div');
+      holder.innerHTML = it.trigHTML || '';
+      const plainTitle = holder.textContent.replace(/\s+/g, ' ').trim() || it.city;
+      const highlighted = holder.querySelector('.hl')?.textContent.trim();
+      const english = highlighted || (plainTitle.match(/[A-Za-z][A-Za-z0-9 '&.-]{2,}/)?.[0]) || it.city;
+      const chinese = (plainTitle.match(/[\u3400-\u9fff][^—;,，。]*/)?.[0] || plainTitle || it.city).trim();
+      event = {
+        key: `world-event-${timelineEvents.length + 1}`,
+        yr: it.yr, titleEn: english, titleZh: chinese,
+        unit: eventUnit(it), sortYear: yearStart(it.yr), it, anchors: []
+      };
+      timelineByKey.set(signature, event);
+      timelineEvents.push(event);
+    }
+    event.anchors.push({ num, region: pinRegion(num), it, ordinal });
+    it.timelineKey = event.key;
+  }));
+  timelineEvents.sort((a, b) => a.sortYear - b.sortYear || a.yr.localeCompare(b.yr) || a.key.localeCompare(b.key));
+  const timelineEventByKey = new Map(timelineEvents.map(event => [event.key, event]));
+
   // 1.5 地区间交互路线:点某个标点时,如果它是某条历史路线的一站,
   //     就画出连线并让一个小图标(骆驼/帆船)沿线循环移动
   function findPinGroup(num) {
@@ -3064,6 +3132,114 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     showRoutesFor(num);
   }
 
+  const timelineTrack = document.getElementById('worldTimelineTrack');
+  const timelineScope = document.getElementById('worldTimelineScope');
+  let selectedTimelineKey = null;
+  let visibleTimelineEvents = [];
+  const escapeTimelineText = value => String(value || '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[ch]);
+
+  function revealTimelineCard(key) {
+    const card = timelineTrack.querySelector(`[data-event-key="${CSS.escape(key)}"]`);
+    if (!card) return;
+    const left = card.offsetLeft;
+    const right = left + card.offsetWidth;
+    if (left < timelineTrack.scrollLeft) timelineTrack.scrollLeft = left;
+    else if (right > timelineTrack.scrollLeft + timelineTrack.clientWidth) {
+      timelineTrack.scrollLeft = right - timelineTrack.clientWidth;
+    }
+  }
+
+  function renderTimelineDetail(event) {
+    const anchor = event.anchors[0];
+    const it = anchor?.it || event.it;
+    const badge = anchor?.num || '·';
+    eventPanel.innerHTML = `<div class="event-head"><div class="badge" style="background:${it.catColor || '#8b1a1a'}">${escapeTimelineText(badge)}</div>`
+      + `<div class="city-name">${escapeTimelineText(anchor?.it.city || event.titleEn)}</div><div class="city-count">Timeline event</div></div>`
+      + `<div class="event-list count-1"><div class="event-card" style="border-left-color:${it.catColor || '#8b1a1a'}">`
+      + `<div class="ec-top"><span class="ec-yr">${escapeTimelineText(event.yr)}</span><span class="ec-cat">${escapeTimelineText(it.catFull)}</span></div>`
+      + `<div class="ec-trig">${it.trigHTML || escapeTimelineText(event.titleZh)}</div></div></div>`;
+    eventEmpty.style.display = 'none';
+    eventPanel.classList.add('show');
+    eventZone.classList.add('fit-content');
+    eventZone.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+  }
+
+  function syncTimelineSelection(event, { reveal = false, moveMap = false } = {}) {
+    timelineTrack.querySelectorAll('.world-timeline-card').forEach(card => {
+      const title = card.querySelector('.world-timeline-title-en');
+      if (card.dataset.eventKey === event.key) {
+        card.setAttribute('aria-current', 'step');
+        if (title) title.setAttribute('aria-current', 'step');
+      } else {
+        card.removeAttribute('aria-current');
+        if (title) title.removeAttribute('aria-current');
+      }
+    });
+    svg.querySelectorAll('.pin-group').forEach(group => group.classList.remove('timeline-selected'));
+    const groups = event.anchors.map(anchor => findPinGroup(anchor.num)).filter(Boolean);
+    groups.forEach(group => { group.classList.add('timeline-selected', 'revealed'); });
+    renderTimelineDetail(event);
+    if (moveMap && groups.length) fitToPins(groups, 450);
+    if (reveal) revealTimelineCard(event.key);
+  }
+
+  function selectTimelineEvent(key, options = {}) {
+    const event = timelineEventByKey.get(String(key));
+    if (!event || !visibleTimelineEvents.some(item => item.key === event.key)) return false;
+    selectedTimelineKey = event.key;
+    syncTimelineSelection(event, options);
+    return true;
+  }
+
+  function selectTimelineByPin(num, reveal = true) {
+    const event = visibleTimelineEvents.find(item => item.anchors.some(anchor => String(anchor.num) === String(num)));
+    return event ? selectTimelineEvent(event.key, { reveal, moveMap: false }) : false;
+  }
+
+  function renderTimeline(events, unitLabel) {
+    visibleTimelineEvents = events.slice().sort((a, b) => a.sortYear - b.sortYear || a.key.localeCompare(b.key));
+    timelineScope.textContent = `${unitLabel || '全部 Units'} · 按时间顺序浏览`;
+    if (!visibleTimelineEvents.length) {
+      timelineTrack.innerHTML = '<div class="world-timeline-empty">没有匹配的 Timeline 事件</div>';
+      selectedTimelineKey = null;
+      svg.querySelectorAll('.pin-group').forEach(group => group.classList.remove('timeline-selected'));
+      return;
+    }
+    timelineTrack.innerHTML = visibleTimelineEvents.map(event => {
+      const anchor = event.anchors[0] || {};
+      const label = `${event.yr}, ${event.titleEn}, ${event.titleZh}`;
+      return `<button type="button" class="world-timeline-card" data-event-key="${escapeTimelineText(event.key)}" data-pin="${escapeTimelineText(anchor.num)}" data-region="${escapeTimelineText(anchor.region)}" aria-label="${escapeTimelineText(label)}">`
+        + `<span class="world-timeline-date">${escapeTimelineText(event.yr)}</span>`
+        + `<span class="world-timeline-title-en">${escapeTimelineText(event.titleEn)}</span>`
+        + `<span class="world-timeline-title-zh">${escapeTimelineText(event.titleZh)}</span></button>`;
+    }).join('');
+    const nextKey = visibleTimelineEvents.some(event => event.key === selectedTimelineKey)
+      ? selectedTimelineKey : visibleTimelineEvents[0].key;
+    selectTimelineEvent(nextKey, { reveal: false, moveMap: false });
+  }
+
+  timelineTrack.addEventListener('click', event => {
+    const card = event.target.closest('.world-timeline-card');
+    if (card) selectTimelineEvent(card.dataset.eventKey, { moveMap: true });
+  });
+  timelineTrack.addEventListener('keydown', event => {
+    const card = event.target.closest('.world-timeline-card');
+    if (!card) return;
+    const cards = Array.from(timelineTrack.querySelectorAll('.world-timeline-card'));
+    const at = cards.indexOf(card);
+    let next = null;
+    if (event.key === 'ArrowRight') next = cards[Math.min(cards.length - 1, at + 1)];
+    else if (event.key === 'ArrowLeft') next = cards[Math.max(0, at - 1)];
+    else if (event.key === 'Home') next = cards[0];
+    else if (event.key === 'End') next = cards[cards.length - 1];
+    else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault(); selectTimelineEvent(card.dataset.eventKey, { moveMap: true }); return;
+    }
+    if (next) { event.preventDefault(); next.focus({ preventScroll: true }); revealTimelineCard(next.dataset.eventKey); }
+  });
+
   // 3. 给地图上每个编号圆点绑定交互(圆点后面紧跟着编号文字)
   const BASE_R = 11, HOVER_R = 14, HIT_R = 20; // HIT_R:透明热区半径,放大可点/可触范围,不改变视觉圆点
   const SVGNS = 'http://www.w3.org/2000/svg';
@@ -3088,7 +3264,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         if (at >= 0) { stopAutoPlay(); goToStop(at); }
         return;
       }
-      renderEventPanel(num, c.getAttribute('fill'));
+      if (!selectTimelineByPin(num, true)) renderEventPanel(num, c.getAttribute('fill'));
       // 路线动画(如果这一站在某条路线上)已经在 renderEventPanel → showRoutesFor 里排好队了;
       // 这里再点一次聚光灯,保证"点哪个标点,哪个国家立刻深色"就算它不在任何路线上也成立
       spotlightPin(num);
@@ -3196,6 +3372,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     activeNum = null;
     hideAllRoutes();
     animateTransform(MIN_ZOOM, 0, 0, 500);
+    if (!filtering && onRegionChange) onRegionChange();
   }
 
   function activateRegion(region) {
@@ -3213,6 +3390,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     hideAllRoutes();
     // 标点比较挤的地区(欧洲/西非那些)点开后自动把镜头推近框住,不用手动去找
     fitToPins(Array.from(svg.querySelectorAll(`.pin-group[data-region="${region}"]`)));
+    if (!(filterIsActive && filterIsActive()) && onRegionChange) onRegionChange();
   }
 
   // ---- 键盘 / 读屏可达性 ----
@@ -3300,14 +3478,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const catsBox = document.getElementById('mtCats');
     const countBox = document.getElementById('mtCount');
 
-    // ---- AP World 四个时期。Unit 推不出来(U1/U2 共用 1200–1450、U3/U4 共用 1450–1750…),
-    // 但时期可以直接由年份得到,而且正好对上考前冲刺那套 Period 1–4 记忆卡。 ----
-    const PERIODS = [
-      { id: 'p1', label: 'Period 1 · 1200–1450', from: 1200, to: 1450 },
-      { id: 'p2', label: 'Period 2 · 1450–1750', from: 1450, to: 1750 },
-      { id: 'p3', label: 'Period 3 · 1750–1900', from: 1750, to: 1900 },
-      { id: 'p4', label: 'Period 4 · 1900–至今', from: 1900, to: 2100 },
-    ];
+    // Unit 是地图、搜索结果与 Timeline 的共同筛选维度。归类使用 index 记录上方
+    // 已算好的 timelineKey,避免另建一份内容表。
+    const PERIODS = Array.from({ length: 9 }, (_, i) => ({
+      id: `u${i + 1}`, label: `Unit ${i + 1}`
+    }));
     // 年份写法有 "1206–1450" / "1215" / "1800s" / "1500s–1600s" / "c.1200" 五种,统一解析成 [起, 止]
     function yearSpan(yr) {
       const parts = String(yr).split(/[–—]|(?<=\d)-(?=\d)/);
@@ -3328,11 +3503,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     // 明治 1868–1900 同理只进 Period 3。全站有 26 条正好停在边界年上,这条规则专门管它们。
     // 单点年份(如 1450)不适用该规则,否则会一个时期都进不去。
     function inPeriod(it, p) {
-      const span = yearSpan(it.yr);
-      if (!span) return false;
-      const [s, e] = span;
-      if (s === e) return s >= p.from && s <= p.to;
-      return s < p.to && e > p.from;
+      const event = timelineEventByKey.get(it.timelineKey);
+      return !!event && event.unit === p.id;
     }
 
     // 从事件面板的 panel-head 收集全部分类(缩写/全称/颜色/图标),和数据保持同步
@@ -3445,6 +3617,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         hits.length ? renderResults(hits) : renderNoResults();
         dismissFirstClickHint();                 // 搜索时那个"点一下试试"的气泡正好挡住命中标点
       }
+      const timelineMatches = timelineEvents.filter(event => event.anchors.some(anchor =>
+        (!activeRegion || anchor.region === activeRegion) && eventPass(anchor.it)));
+      const activeUnit = PERIODS.find(period => period.id === activePeriod);
+      renderTimeline(timelineMatches, activeUnit ? activeUnit.label : '全部 Units');
       if (countBox) countBox.textContent = countText;
       if (onCountChange) onCountChange(countText);
     }
@@ -3452,11 +3628,15 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     // 点结果条 => 跟手动"点地块→点标点"完全一样:高亮国家、弹事件卡、跑路线动画
     function openHit(num, region) {
       const regionPath = document.querySelector(`.region-path[data-region="${region}"]`);
-      if (regionPath && region !== activeRegion) regionPath.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      // openHit 是“打开事件”而不是“更改地区筛选”。保留当前结果集合,只把目标地区
+      // 做视觉聚光,否则 Dock 会在滚到目标卡之前被地区筛选重建。
+      if (regionPath && region !== activeRegion) spotlightPin(num);
       const g = pinGroups().find(x => pinNum(x) === num);
       if (g) g.classList.add('revealed');        // 结果条对应的标点保持可见
       showingResults = false;                    // 交棒给标点自己的事件卡
-      renderEventPanel(num, g && g.querySelector('circle') ? g.querySelector('circle').getAttribute('fill') : '#8b1a1a');
+      if (!selectTimelineByPin(num, true)) {
+        renderEventPanel(num, g && g.querySelector('circle') ? g.querySelector('circle').getAttribute('fill') : '#8b1a1a');
+      }
       spotlightPin(num);
     }
     eventPanel.addEventListener('click', e => {
@@ -3483,7 +3663,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     }
     function setPeriod(id) { activePeriod = id || ''; if (periodSel) periodSel.value = activePeriod; apply(); }
     // 地区变了要重算(它现在是筛选的一个维度);外面的 activateRegion/deactivateRegion 会调它
-    onRegionChange = () => { if (filterActive()) apply(); };
+    onRegionChange = () => apply();
     filterIsActive = () => filterActive();
 
     function reset() {
@@ -3550,13 +3730,21 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (clearBtn) clearBtn.addEventListener('click', () => { setQuery(''); if (searchInput) searchInput.focus(); });
 
     // 对外 API:首页(父页面)满宽工具栏调它来驱动搜索/筛选
+    const getTimelineState = () => Object.freeze({
+      selectedEventKey: selectedTimelineKey,
+      visibleEventKeys: Object.freeze(visibleTimelineEvents.map(event => event.key)),
+      unit: activePeriod,
+    });
+    window.getTimelineState = getTimelineState;
+    window.selectTimelineEvent = key => selectTimelineEvent(key, { reveal: true, moveMap: true });
     window.__mapFilter = {
       // 首页直接拿这两组选项去铺自己的下拉,选项文案和计数只有一处真源(这里)
       getPeriodOptions: () => periodOptions.slice(),
       getCats: () => cats.map(c => ({ abbr: c.abbr, full: c.full, color: c.color, count: catCount(c.abbr) })),
       getActiveCats: () => new Set(activeCats),
       getState: () => ({ query, cats: new Set(activeCats), period: activePeriod }),
-      setQuery, toggleCat, setPeriod, reset, openHit,
+      setQuery, toggleCat, setPeriod, reset, openHit, getTimelineState,
+      selectTimelineEvent: key => selectTimelineEvent(key, { reveal: true, moveMap: true }),
       // 切科目回来时用:按当前筛选状态重算一遍,让面板和工具栏对齐
       refresh: () => apply(),
       // 商路模式:首页据此建入口、并把行程面板镜像过去
@@ -3587,6 +3775,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       onRouteStep: fn => { routeStepCb = fn; },
       onCountChange: fn => { onCountChange = fn; },
     };
+    apply();
   })();
 
   let firstHintTimer = setTimeout(() => firstClickHint.classList.add('show'), 1300);
