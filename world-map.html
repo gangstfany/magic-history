@@ -3155,6 +3155,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const timelineTrack = document.getElementById('worldTimelineTrack');
   const timelineScope = document.getElementById('worldTimelineScope');
   let selectedTimelineKey = null;
+  let selectedTimelineAnchor = null;
   let visibleTimelineEvents = [];
   let timelineRegionScope = null;
   const escapeTimelineText = value => String(value || '').replace(/[&<>"']/g, ch => ({
@@ -3172,8 +3173,15 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     }
   }
 
-  function renderTimelineDetail(event) {
-    const anchor = event.anchors[0];
+  function preferredTimelineAnchor(event, preferred) {
+    return event.anchors.find(anchor => preferred
+      && String(anchor.num) === String(preferred.num)
+      && (!preferred.region || anchor.region === preferred.region))
+      || event.anchors.find(anchor => timelineRegionScope && anchor.region === timelineRegionScope)
+      || event.anchors[0] || null;
+  }
+
+  function renderTimelineDetail(event, anchor) {
     const it = anchor?.it || event.it;
     const badge = anchor?.num || '·';
     eventPanel.innerHTML = `<div class="event-head"><div class="badge" style="background:${it.catColor || '#8b1a1a'}">${escapeTimelineText(badge)}</div>`
@@ -3187,15 +3195,16 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     eventZone.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }
 
-  function syncTimelineSelection(event, { reveal = false, moveMap = false } = {}) {
+  function syncTimelineSelection(event, { reveal = false, moveMap = false, preferredAnchor = null } = {}) {
+    const anchor = preferredTimelineAnchor(event, preferredAnchor);
+    selectedTimelineAnchor = anchor ? { num: String(anchor.num), region: anchor.region } : null;
     timelineTrack.querySelectorAll('.world-timeline-card').forEach(card => {
-      const title = card.querySelector('.world-timeline-title-en');
       if (card.dataset.eventKey === event.key) {
         card.setAttribute('aria-current', 'step');
-        if (title) title.setAttribute('aria-current', 'step');
+        card.dataset.pin = anchor?.num || '';
+        card.dataset.region = anchor?.region || '';
       } else {
         card.removeAttribute('aria-current');
-        if (title) title.removeAttribute('aria-current');
       }
     });
     svg.querySelectorAll('.pin-group').forEach(group => group.classList.remove('timeline-selected'));
@@ -3203,8 +3212,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       .filter(anchor => !timelineRegionScope || anchor.region === timelineRegionScope)
       .map(anchor => findPinGroup(anchor.num)).filter(Boolean);
     groups.forEach(group => { group.classList.add('timeline-selected', 'revealed'); });
-    renderTimelineDetail(event);
-    if (moveMap && groups.length) fitToPins(groups, 450);
+    renderTimelineDetail(event, anchor);
+    const preferredGroup = anchor && findPinGroup(anchor.num);
+    if (moveMap && preferredGroup) fitToPins([preferredGroup], 450);
     if (reveal) revealTimelineCard(event.key);
   }
 
@@ -3218,7 +3228,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
   function selectTimelineByPin(num, reveal = true) {
     const event = visibleTimelineEvents.find(item => item.anchors.some(anchor => String(anchor.num) === String(num)));
-    return event ? selectTimelineEvent(event.key, { reveal, moveMap: false }) : false;
+    const anchor = event?.anchors.find(item => String(item.num) === String(num));
+    return event ? selectTimelineEvent(event.key, { reveal, moveMap: false, preferredAnchor: anchor }) : false;
   }
 
   function renderTimeline(events, unitLabel) {
@@ -3227,11 +3238,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (!visibleTimelineEvents.length) {
       timelineTrack.innerHTML = '<div class="world-timeline-empty">没有匹配的 Timeline 事件</div>';
       selectedTimelineKey = null;
+      selectedTimelineAnchor = null;
       svg.querySelectorAll('.pin-group').forEach(group => group.classList.remove('timeline-selected'));
       return;
     }
     timelineTrack.innerHTML = visibleTimelineEvents.map(event => {
-      const anchor = event.anchors[0] || {};
+      const anchor = preferredTimelineAnchor(event, selectedTimelineKey === event.key ? selectedTimelineAnchor : null) || {};
       const label = `${event.yr}, ${event.titleEn}, ${event.titleZh}`;
       return `<button type="button" class="world-timeline-card" data-event-key="${escapeTimelineText(event.key)}" data-pin="${escapeTimelineText(anchor.num)}" data-region="${escapeTimelineText(anchor.region)}" aria-label="${escapeTimelineText(label)}">`
         + `<span class="world-timeline-date">${escapeTimelineText(event.yr)}</span>`
@@ -3245,7 +3257,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
   timelineTrack.addEventListener('click', event => {
     const card = event.target.closest('.world-timeline-card');
-    if (card) selectTimelineEvent(card.dataset.eventKey, { moveMap: true });
+    if (card) selectTimelineEvent(card.dataset.eventKey, {
+      moveMap: true, preferredAnchor: { num: card.dataset.pin, region: card.dataset.region }
+    });
   });
   timelineTrack.addEventListener('keydown', event => {
     const card = event.target.closest('.world-timeline-card');
@@ -3258,7 +3272,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     else if (event.key === 'Home') next = cards[0];
     else if (event.key === 'End') next = cards[cards.length - 1];
     else if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault(); selectTimelineEvent(card.dataset.eventKey, { moveMap: true }); return;
+      event.preventDefault(); selectTimelineEvent(card.dataset.eventKey, {
+        moveMap: true, preferredAnchor: { num: card.dataset.pin, region: card.dataset.region }
+      }); return;
     }
     if (next) { event.preventDefault(); next.focus({ preventScroll: true }); revealTimelineCard(next.dataset.eventKey); }
   });
@@ -3508,25 +3524,6 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       'Transoceanic Interconnections', 'Revolutions', 'Consequences of Industrialization',
       'Global Conflict', 'Cold War and Decolonization', 'Globalization',
     ].map((name, i) => ({ id: `u${i + 1}`, label: `Unit ${i + 1} · ${name}` }));
-    // 年份写法有 "1206–1450" / "1215" / "1800s" / "1500s–1600s" / "c.1200" 五种,统一解析成 [起, 止]
-    function yearSpan(yr) {
-      const parts = String(yr).split(/[–—]|(?<=\d)-(?=\d)/);
-      const edge = (str, isEnd) => {
-        const m = String(str).match(/\d+/);
-        if (!m) return null;
-        const n = +m[0];
-        return /\d+s/.test(str) ? (isEnd ? n + 99 : n) : n;   // "1800s" => 1800..1899
-      };
-      const a = edge(parts[0], false);
-      const b = parts.length > 1 ? edge(parts[1], true) : edge(parts[0], true);
-      if (a === null) return null;
-      return [a, b === null ? a : b];
-    }
-    // 有 62% 的事件是时间跨度(蒙古 1206–1450 那种),所以按"区间重叠"归属,而不是只看起始年——
-    // 否则横跨两个时期的事件会在其中一个时期里凭空消失。
-    // 边界年不算重叠:蒙古 1206–1450 只进 Period 1,不进以 1450 开头的 Period 2(它正好在 P2 开始时终结);
-    // 明治 1868–1900 同理只进 Period 3。全站有 26 条正好停在边界年上,这条规则专门管它们。
-    // 单点年份(如 1450)不适用该规则,否则会一个时期都进不去。
     function inPeriod(it, p) {
       const event = timelineEventByKey.get(it.timelineKey);
       return !!event && event.unit === p.id;
@@ -3665,7 +3662,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       const g = pinGroups().find(x => pinNum(x) === num);
       if (g) g.classList.add('revealed');        // 结果条对应的标点保持可见
       showingResults = false;                    // 交棒给标点自己的事件卡
-      if (!(eventKey && selectTimelineEvent(eventKey, { reveal: true, moveMap: false })) && !selectTimelineByPin(num, true)) {
+      if (!(eventKey && selectTimelineEvent(eventKey, {
+        reveal: true, moveMap: false, preferredAnchor: { num, region }
+      })) && !selectTimelineByPin(num, true)) {
         renderEventPanel(num, g && g.querySelector('circle') ? g.querySelector('circle').getAttribute('fill') : '#8b1a1a');
       }
       spotlightPin(num);
@@ -3764,6 +3763,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const getTimelineState = () => Object.freeze({
       mappingMode: 'explicit',
       selectedEventKey: selectedTimelineKey,
+      selectedAnchor: selectedTimelineAnchor ? Object.freeze({ ...selectedTimelineAnchor }) : null,
       visibleEventKeys: Object.freeze(visibleTimelineEvents.map(event => event.key)),
       visibleEvents: Object.freeze(visibleTimelineEvents.map(event => Object.freeze({
         key: event.key, unit: event.unit, sortYear: event.sortYear,
@@ -3777,7 +3777,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       unit: activePeriod,
     });
     window.getTimelineState = getTimelineState;
-    window.selectTimelineEvent = key => selectTimelineEvent(key, { reveal: true, moveMap: true });
+    window.selectTimelineEvent = (key, preferredAnchor) => selectTimelineEvent(key, {
+      reveal: true, moveMap: true, preferredAnchor
+    });
     window.__mapFilter = {
       // 首页直接拿这两组选项去铺自己的下拉,选项文案和计数只有一处真源(这里)
       getPeriodOptions: () => periodOptions.slice(),
@@ -3785,7 +3787,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       getActiveCats: () => new Set(activeCats),
       getState: () => ({ query, cats: new Set(activeCats), period: activePeriod }),
       setQuery, toggleCat, setPeriod, reset, openHit, getTimelineState,
-      selectTimelineEvent: key => selectTimelineEvent(key, { reveal: true, moveMap: true }),
+      selectTimelineEvent: (key, preferredAnchor) => selectTimelineEvent(key, {
+        reveal: true, moveMap: true, preferredAnchor
+      }),
       // 切科目回来时用:按当前筛选状态重算一遍,让面板和工具栏对齐
       refresh: () => apply(),
       // 商路模式:首页据此建入口、并把行程面板镜像过去

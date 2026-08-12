@@ -138,6 +138,42 @@ async function verifyTimeline(page, port) {
   assert.ok(selectedRegions.every((region) => region === scopedRegion), 'scoped multi-anchor selection must not reveal pins from other regions');
   await page.evaluate((region) => document.querySelector(`.region-path[data-region="${region}"]`).dispatchEvent(new MouseEvent('click', { bubbles: true })), scopedRegion);
 
+  const middlePassageKey = multiRegionEvent.key;
+  for (const expected of [
+    { pin: '59', region: 'americas', city: 'Bridgetown' },
+    { pin: '99', region: 'africa', city: 'Goree Island' },
+  ]) {
+    await page.evaluate(({ pin, region }) => window.__mapFilter.openHit(pin, region), expected);
+    const anchorSelection = await page.evaluate((key) => {
+      const state = window.getTimelineState();
+      const card = document.querySelector(`.world-timeline-card[data-event-key="${CSS.escape(key)}"]`);
+      return {
+        selectedEventKey: state.selectedEventKey,
+        selectedAnchor: state.selectedAnchor,
+        cardPin: card?.dataset.pin,
+        cardRegion: card?.dataset.region,
+        detail: document.querySelector('#eventPanel')?.innerText,
+      };
+    }, middlePassageKey);
+    assert.equal(anchorSelection.selectedEventKey, middlePassageKey, `pin ${expected.pin} must select the shared Middle Passage card`);
+    assert.deepEqual(anchorSelection.selectedAnchor, { num: expected.pin, region: expected.region }, `pin ${expected.pin} must remain the preferred anchor`);
+    assert.equal(anchorSelection.cardPin, expected.pin, 'current card metadata must expose the triggering pin');
+    assert.equal(anchorSelection.cardRegion, expected.region, 'current card metadata must expose the triggering region');
+    assert.ok(anchorSelection.detail.includes(expected.city), `details must use the ${expected.city} source record`);
+  }
+
+  await page.evaluate((key) => {
+    document.querySelector('.region-path[data-region="americas"]').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    document.querySelector(`.world-timeline-card[data-event-key="${CSS.escape(key)}"]`).click();
+  }, middlePassageKey);
+  const scopedCardSelection = await page.evaluate(() => ({
+    anchor: window.getTimelineState().selectedAnchor,
+    detail: document.querySelector('#eventPanel').innerText,
+  }));
+  assert.deepEqual(scopedCardSelection.anchor, { num: '59', region: 'americas' }, 'card activation under a region filter must prefer that scope anchor');
+  assert.ok(scopedCardSelection.detail.includes('Bridgetown'), 'scoped card details must use the in-scope anchor content');
+  await page.evaluate(() => document.querySelector('.region-path[data-region="americas"]').dispatchEvent(new MouseEvent('click', { bubbles: true })));
+
   const dock = page.locator('#worldTimelineDock');
   assert.equal(await dock.count(), 1, 'AP World must expose exactly one #worldTimelineDock');
   await expectVisible(dock, 'AP World card Timeline must be visible');
@@ -191,7 +227,7 @@ async function verifyTimeline(page, port) {
   };
   await cards.nth(1).click();
   assert.equal(await cards.nth(1).getAttribute('aria-current'), 'step', 'clicked card must become current');
-  assert.equal(await cards.locator('[aria-current="step"]').count(), 1, 'exactly one non-empty Timeline card must be current');
+  assert.equal(await dock.locator('.world-timeline-card[aria-current="step"]').count(), 1, 'exactly one non-empty Timeline card must be current');
   const detailAfter = (await page.locator('#eventPanel').innerText()).trim();
   assert.notEqual(detailAfter, detailBefore,
     `clicking Timeline card ${selectedCard.eventKey} must replace the previous event details`);
