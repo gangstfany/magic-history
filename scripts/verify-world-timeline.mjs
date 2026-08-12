@@ -361,8 +361,8 @@ async function verifyLearningShell(page, port) {
   await expectVisible(page.locator('#mapStudyView'), 'practice drawer must leave the map visible');
   assert.equal(await page.locator('#practiceDrawer').getAttribute('role'), 'dialog',
     'practice drawer must expose dialog semantics');
-  assert.equal(await page.locator('#practiceDrawer').getAttribute('aria-modal'), 'true',
-    'fixed practice overlay must be announced as modal');
+  assert.equal(await page.locator('#practiceDrawer').getAttribute('aria-modal'), null,
+    'practice drawer must remain non-modal while the map stays available');
   assert.deepEqual(await page.locator('.learning-view-tab[aria-pressed="true"]').allTextContents(), ['练习'],
     'only Practice may remain pressed while its drawer is open');
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'practiceDrawerClose',
