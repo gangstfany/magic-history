@@ -174,6 +174,32 @@ async function verifyTimeline(page, port) {
   assert.ok(scopedCardSelection.detail.includes('Bridgetown'), 'scoped card details must use the in-scope anchor content');
   await page.evaluate(() => document.querySelector('.region-path[data-region="americas"]').dispatchEvent(new MouseEvent('click', { bubbles: true })));
 
+  await page.evaluate(() => window.__mapFilter.setQuery('Bridgetown'));
+  const filteredAnchorSelection = await page.evaluate((key) => {
+    const state = window.getTimelineState();
+    const event = state.visibleEvents.find((item) => item.key === key);
+    const card = document.querySelector(`.world-timeline-card[data-event-key="${CSS.escape(key)}"]`);
+    return {
+      selectedAnchor: state.selectedAnchor,
+      visibleAnchors: event?.visibleAnchors,
+      cardPin: card?.dataset.pin,
+      detail: document.querySelector('#eventPanel').innerText,
+      revealedPins: [...document.querySelectorAll('.pin-group.revealed')]
+        .map((group) => group.querySelector('text')?.textContent.trim()),
+    };
+  }, middlePassageKey);
+  assert.deepEqual(filteredAnchorSelection.visibleAnchors, [{ num: '59', region: 'americas' }], 'query must retain only matching anchors for a shared event');
+  assert.deepEqual(filteredAnchorSelection.selectedAnchor, { num: '59', region: 'americas' }, 'query must select the sole visible anchor');
+  assert.equal(filteredAnchorSelection.cardPin, '59', 'filtered card metadata must use the matching anchor');
+  assert.ok(filteredAnchorSelection.detail.includes('Bridgetown'), 'filtered details must use the matching anchor record');
+  assert.ok(filteredAnchorSelection.revealedPins.includes('59'), 'matching anchor must remain revealed');
+  assert.ok(!filteredAnchorSelection.revealedPins.includes('39') && !filteredAnchorSelection.revealedPins.includes('99'), 'selection must not restore filtered-out anchors');
+
+  await page.evaluate(() => window.__mapFilter.reset());
+  const restoredAnchors = await page.evaluate((key) => window.getTimelineState().visibleEvents
+    .find((event) => event.key === key)?.visibleAnchors.map((anchor) => anchor.num).sort(), middlePassageKey);
+  assert.deepEqual(restoredAnchors, ['39', '59', '99'], 'reset must restore every anchor for the shared event');
+
   const dock = page.locator('#worldTimelineDock');
   assert.equal(await dock.count(), 1, 'AP World must expose exactly one #worldTimelineDock');
   await expectVisible(dock, 'AP World card Timeline must be visible');

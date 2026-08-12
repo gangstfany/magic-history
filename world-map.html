@@ -3174,11 +3174,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function preferredTimelineAnchor(event, preferred) {
-    return event.anchors.find(anchor => preferred
+    const anchors = event.visibleAnchors || event.anchors;
+    return anchors.find(anchor => preferred
       && String(anchor.num) === String(preferred.num)
       && (!preferred.region || anchor.region === preferred.region))
-      || event.anchors.find(anchor => timelineRegionScope && anchor.region === timelineRegionScope)
-      || event.anchors[0] || null;
+      || anchors.find(anchor => timelineRegionScope && anchor.region === timelineRegionScope)
+      || anchors[0] || null;
   }
 
   function renderTimelineDetail(event, anchor) {
@@ -3208,8 +3209,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       }
     });
     svg.querySelectorAll('.pin-group').forEach(group => group.classList.remove('timeline-selected'));
-    const groups = event.anchors
-      .filter(anchor => !timelineRegionScope || anchor.region === timelineRegionScope)
+    const groups = (event.visibleAnchors || event.anchors)
       .map(anchor => findPinGroup(anchor.num)).filter(Boolean);
     groups.forEach(group => { group.classList.add('timeline-selected', 'revealed'); });
     renderTimelineDetail(event, anchor);
@@ -3219,16 +3219,17 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function selectTimelineEvent(key, options = {}) {
-    const event = timelineEventByKey.get(String(key));
-    if (!event || !visibleTimelineEvents.some(item => item.key === event.key)) return false;
+    const event = visibleTimelineEvents.find(item => item.key === String(key));
+    if (!event) return false;
     selectedTimelineKey = event.key;
     syncTimelineSelection(event, options);
     return true;
   }
 
   function selectTimelineByPin(num, reveal = true) {
-    const event = visibleTimelineEvents.find(item => item.anchors.some(anchor => String(anchor.num) === String(num)));
-    const anchor = event?.anchors.find(item => String(item.num) === String(num));
+    const event = visibleTimelineEvents.find(item => (item.visibleAnchors || item.anchors)
+      .some(anchor => String(anchor.num) === String(num)));
+    const anchor = (event?.visibleAnchors || event?.anchors || []).find(item => String(item.num) === String(num));
     return event ? selectTimelineEvent(event.key, { reveal, moveMap: false, preferredAnchor: anchor }) : false;
   }
 
@@ -3641,8 +3642,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         displayedHits = hits;
         dismissFirstClickHint();                 // 搜索时那个"点一下试试"的气泡正好挡住命中标点
       }
-      const timelineMatches = timelineEvents.filter(event => event.anchors.some(anchor =>
-        (!activeRegion || anchor.region === activeRegion) && eventPass(anchor.it)));
+      const timelineMatches = timelineEvents.map(event => ({
+        ...event,
+        visibleAnchors: event.anchors.filter(anchor =>
+          (!activeRegion || anchor.region === activeRegion) && eventPass(anchor.it)),
+      })).filter(event => event.visibleAnchors.length);
       timelineRegionScope = activeRegion;
       const activeUnit = PERIODS.find(period => period.id === activePeriod);
       renderTimeline(timelineMatches, activeUnit ? activeUnit.label : '全部 Units');
@@ -3769,6 +3773,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         key: event.key, unit: event.unit, sortYear: event.sortYear,
         titleEn: event.titleEn, titleZh: event.titleZh,
         anchors: Object.freeze(event.anchors.map(anchor => Object.freeze({ num: anchor.num, region: anchor.region }))),
+        visibleAnchors: Object.freeze((event.visibleAnchors || event.anchors)
+          .map(anchor => Object.freeze({ num: anchor.num, region: anchor.region }))),
       }))),
       unmappedEventKeys: Object.freeze(unmappedTimelineSourceIds.slice()),
       excludedPre1200Count,
