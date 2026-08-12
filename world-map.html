@@ -261,13 +261,17 @@ h1 .en { color: var(--accent); }
   .hdr-btn { flex: 1 1 0; min-height: 44px; }
 }
 header.topbar { display: flex; align-items: center; gap: 12px; }
-.route-launch { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
-.route-launch:hover { border-color: var(--ink-soft); }
 .route-picker { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 14px 0 0; }
 .route-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .route-chip:hover { border-color: var(--ink-soft); }
 .route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; }
-.route-picker-title { margin: 22px 0 0; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
+
+.map-panel-tabs { display: flex; gap: 8px; padding: 12px 16px 0; }
+.map-panel-tabs[hidden] { display: none; }
+.map-panel-tabs button { min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper, #f5efe3); color: var(--ink); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.map-panel-tabs button:hover { border-color: var(--terracotta, #a8552f); }
+.map-panel-tabs button[aria-pressed="true"] { border-color: var(--terracotta, #a8552f); background: var(--terracotta, #a8552f); color: #fff; }
+.map-panel-tabs button:focus-visible { outline: 3px solid #28708a; outline-offset: 2px; }
 
 .search-none { padding: 34px 22px; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--ink-soft); line-height: 1.8; }
 .search-none span { font-size: 12px; font-weight: 600; color: var(--ink-faint, #9b9382); }
@@ -840,6 +844,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 </div>
 
 <div class="event-zone" id="eventZone" role="region" aria-label="历史事件" aria-live="polite">
+<div class="map-panel-tabs" id="mapPanelTabs" role="group" aria-label="地图内容" hidden>
+<button type="button" data-map-mode="events" aria-pressed="true">事件详情</button>
+<button type="button" data-map-mode="routes" aria-pressed="false">商路</button>
+</div>
 <div class="event-empty" id="eventEmpty">先在上面地图里点一个地块,再点冒出来的编号标点 —— 这里会显示那个地方的历史事件</div>
 <div class="event-panel" id="eventPanel"></div>
 </div>
@@ -3070,9 +3078,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const eventEmpty = document.getElementById('eventEmpty');
   const eventPanel = document.getElementById('eventPanel');
   const eventZone = document.getElementById('eventZone');
+  const mapPanelTabs = document.getElementById('mapPanelTabs');
+  const mapModeTabs = [...mapPanelTabs.querySelectorAll('[data-map-mode]')];
   const mapStudyView = document.getElementById('mapStudyView');
   const learningTabs = [...document.querySelectorAll('.learning-view-tab')];
   let activeLearningView = 'chain';
+  let activeMapMode = 'events';
 
   function chainForUnit(unitId) {
     if (unitId === 'u1') return 'u1_tapestry';
@@ -3085,6 +3096,34 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     learningTabs.forEach(tab => {
       tab.setAttribute('aria-pressed', String(tab.dataset.learningView === activeLearningView));
     });
+  }
+
+  function syncMapModeTabs() {
+    mapPanelTabs.hidden = activeLearningView !== 'map';
+    mapModeTabs.forEach(tab => {
+      tab.setAttribute('aria-pressed', String(tab.dataset.mapMode === activeMapMode));
+    });
+  }
+
+  function showMapMode(mode) {
+    if (mode !== 'events' && mode !== 'routes') return;
+    if (quizMode || eventPanel.querySelector('.quiz-panel')) exitQuiz();
+    if (routeMode) exitRouteMode();
+    activeLearningView = 'map';
+    activeMapMode = mode;
+    mapStudyView.hidden = false;
+    if (mode === 'routes') {
+      eventZone.setAttribute('aria-label', '地图商路');
+      renderPicker('route');
+    } else {
+      eventZone.setAttribute('aria-label', '地图事件详情');
+      eventPanel.classList.remove('show');
+      eventPanel.innerHTML = '';
+      eventEmpty.style.display = 'block';
+      eventZone.classList.remove('fit-content');
+    }
+    syncLearningTabs();
+    syncMapModeTabs();
   }
 
   function showCurrentUnitChain() {
@@ -3108,6 +3147,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     eventZone.setAttribute('aria-label', '练习');
     renderPicker('quiz');
     syncLearningTabs();
+    syncMapModeTabs();
   }
 
   function showLearningView(view) {
@@ -3119,18 +3159,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       eventZone.setAttribute('aria-label', 'Unit 因果链');
       showCurrentUnitChain();
     }
-    else {
-      eventZone.setAttribute('aria-label', '地图事件详情');
-      if (routeMode?.route?.kind === 'chain') exitRouteMode();
-      eventPanel.classList.remove('show');
-      eventPanel.innerHTML = '';
-      eventEmpty.style.display = 'block';
-      eventZone.classList.remove('fit-content');
-    }
+    else { showMapMode('events'); return; }
     syncLearningTabs();
+    syncMapModeTabs();
   }
 
   learningTabs.forEach(tab => tab.addEventListener('click', () => showLearningView(tab.dataset.learningView)));
+  mapModeTabs.forEach(tab => tab.addEventListener('click', () => showMapMode(tab.dataset.mapMode)));
 
   // ↓ 商路模式里这几句要立即执行,必须排在上面三个 const 之后(它们是 const,提前引用会 TDZ 报错)
   // 行程面板的按钮:事件面板是 innerHTML 重铺的,所以走事件委托
@@ -3165,9 +3200,6 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     else if (a === 'play') toggleAutoPlay();
     else if (a === 'exit') exitRouteMode();
   });
-
-  document.querySelectorAll('[data-open-picker]').forEach(b =>
-    b.addEventListener('click', () => renderPicker(b.dataset.openPicker)));
 
   eventEmpty.addEventListener('click', e => {
     const qs = e.target.closest('[data-quiz-start]');
@@ -3632,7 +3664,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const pinNum = g => { const t = g.querySelector('text'); return t ? t.textContent.trim() : ''; };
     const filterActive = () => tokens.length > 0 || activeCats.size < allCats.size || !!activePeriod;
     // 只更新内部状态,不回写输入框(用户正在里面打字)
-    function takeQuery(raw) { query = norm(raw); tokens = query.split(/\s+/).filter(Boolean); }
+    function takeQuery(raw) {
+      query = String(raw || '').trim();
+      tokens = norm(query).split(/\s+/).filter(Boolean);
+    }
 
     // 命中的事件直接列进下方事件区 —— 光在地图上亮两个小圆点,人是看不见的
     let showingResults = false;
@@ -3878,7 +3913,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         else if (a === 'play') toggleAutoPlay();
         else if (a === 'exit') exitRouteMode();
       },
-      inRoute: () => !!routeMode,
+      inRoute: () => !!routeMode && routeMode.route.kind !== 'chain',
       openPicker: kind => renderPicker(kind),
       // 随堂练习
       startQuiz: mode => startQuiz(mode),
