@@ -111,6 +111,10 @@ async function expectVisible(locator, message) {
   assert.ok(await locator.isVisible(), message);
 }
 
+async function trimmedTexts(locator) {
+  return (await locator.allTextContents()).map(text => text.trim());
+}
+
 async function verifyTimeline(page, port) {
   const response = await page.goto(`http://127.0.0.1:${port}/world-map.html`, { waitUntil: 'networkidle' });
   assert.ok(response?.ok(), `world-map.html is unavailable (HTTP ${response?.status() || 'no response'})`);
@@ -362,22 +366,52 @@ async function verifyLearningShell(page, port) {
   assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '地图事件详情',
     'Map must open in its event-details context');
   const mapModes = page.locator('[data-map-mode]');
-  assert.deepEqual(await mapModes.allTextContents(), ['事件详情', '商路'],
+  assert.deepEqual(await trimmedTexts(mapModes), ['事件详情', '商路'],
     'Map must expose exactly the Event Details and Routes secondary modes');
   assert.equal(await page.locator('[data-map-mode="events"]').getAttribute('aria-pressed'), 'true',
     'Event Details must be the initially pressed Map secondary mode');
-  assert.deepEqual(await page.locator('[data-map-mode][aria-pressed="true"]').allTextContents(), ['事件详情'],
+  assert.deepEqual(await trimmedTexts(page.locator('[data-map-mode][aria-pressed="true"]')), ['事件详情'],
     'only Event Details may be pressed when Map opens');
   assert.doesNotMatch(await page.locator('#eventZone').innerText(), /Practice|随堂练习/,
     'Map event details must not contain legacy Practice launchers');
 
-  const originalUnit = await page.locator('#periodFilter').inputValue();
+  await page.evaluate(() => window.__mapFilter.setPeriod('u4'));
+  const disabledCategory = await page.evaluate(() => window.__mapFilter.getCats()[0].abbr);
+  await page.evaluate((category) => window.__mapFilter.toggleCat(category), disabledCategory);
+  const searchableEvent = await page.evaluate(() => {
+    const event = window.getTimelineState().visibleEvents.find(item => item.titleEn.length > 4);
+    return event && { key: event.key, query: event.titleEn, anchor: event.visibleAnchors[0] };
+  });
+  assert.ok(searchableEvent, 'Unit 4 with a non-default category filter must retain a searchable Timeline event');
+  await page.evaluate((query) => window.__mapFilter.setQuery(query), searchableEvent.query);
+  await page.evaluate(({ key, anchor }) => window.selectTimelineEvent(key, anchor), searchableEvent);
+  const contextBeforeRoute = await page.evaluate(() => ({
+    filter: {
+      period: window.__mapFilter.getState().period,
+      query: window.__mapFilter.getState().query,
+      cats: [...window.__mapFilter.getState().cats].sort(),
+    },
+    timeline: {
+      selectedEventKey: window.getTimelineState().selectedEventKey,
+      selectedAnchor: window.getTimelineState().selectedAnchor,
+      visibleEventKeys: [...window.getTimelineState().visibleEventKeys],
+    },
+    selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+      .map(group => ({ pin: group.querySelector('text')?.textContent.trim(), region: group.dataset.region }))
+      .sort((a, b) => `${a.pin}:${a.region}`.localeCompare(`${b.pin}:${b.region}`)),
+  }));
+  assert.equal(contextBeforeRoute.filter.period, 'u4', 'route restoration fixture must use Unit 4');
+  assert.equal(contextBeforeRoute.filter.query, searchableEvent.query, 'route restoration fixture must use a non-default query');
+  assert.ok(!contextBeforeRoute.filter.cats.includes(disabledCategory), 'route restoration fixture must use a non-default category set');
+  assert.equal(contextBeforeRoute.timeline.selectedEventKey, searchableEvent.key, 'route restoration fixture must select a Timeline event');
+  assert.ok(contextBeforeRoute.selectedMapPins.length > 0, 'route restoration fixture must expose the Timeline selection on the map');
+
   await page.locator('[data-map-mode="routes"]').click();
   assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '地图商路',
     'Routes must identify the Map routes context');
   assert.equal(await page.locator('[data-map-mode="routes"]').getAttribute('aria-pressed'), 'true',
     'Routes must be the pressed Map secondary mode');
-  assert.deepEqual(await page.locator('[data-map-mode][aria-pressed="true"]').allTextContents(), ['商路'],
+  assert.deepEqual(await trimmedTexts(page.locator('[data-map-mode][aria-pressed="true"]')), ['商路'],
     'only Routes may be pressed in the Map routes context');
   const firstRoute = await page.evaluate(() => window.__mapFilter.getRoutes()[0]);
   assert.ok(firstRoute, 'the existing non-chain route catalog must provide a route');
@@ -391,22 +425,65 @@ async function verifyLearningShell(page, port) {
   assert.equal(await page.locator('#periodFilter').inputValue(), '',
     'an active non-chain route must temporarily suspend the Unit filter');
   await page.locator('[data-map-mode="events"]').click();
-  assert.equal(await page.locator('#periodFilter').inputValue(), originalUnit,
-    'returning to Event Details must restore the original Unit');
+  const contextAfterEvents = await page.evaluate(() => ({
+    filter: {
+      period: window.__mapFilter.getState().period,
+      query: window.__mapFilter.getState().query,
+      cats: [...window.__mapFilter.getState().cats].sort(),
+    },
+    timeline: {
+      selectedEventKey: window.getTimelineState().selectedEventKey,
+      selectedAnchor: window.getTimelineState().selectedAnchor,
+      visibleEventKeys: [...window.getTimelineState().visibleEventKeys],
+    },
+    selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+      .map(group => ({ pin: group.querySelector('text')?.textContent.trim(), region: group.dataset.region }))
+      .sort((a, b) => `${a.pin}:${a.region}`.localeCompare(`${b.pin}:${b.region}`)),
+  }));
+  assert.deepEqual(contextAfterEvents, contextBeforeRoute,
+    'Routes → Event Details must exactly restore Unit, query, categories, Timeline selection, and selected map pins');
   assert.equal(await page.evaluate(() => window.__mapFilter.inRoute()), false,
     'returning to Event Details must leave route mode');
   assert.equal(await page.locator('.route-line.on, .route-vehicle.on').count(), 0,
     'returning to Event Details must clear route visualization');
   assert.equal(await page.locator('[data-map-mode="events"]').getAttribute('aria-pressed'), 'true',
     'Event Details must become pressed after leaving Routes');
-  assert.deepEqual(await page.locator('[data-map-mode][aria-pressed="true"]').allTextContents(), ['事件详情'],
+  assert.deepEqual(await trimmedTexts(page.locator('[data-map-mode][aria-pressed="true"]')), ['事件详情'],
     'only Event Details may remain pressed after leaving Routes');
 
+  await page.locator('[data-map-mode="routes"]').click();
+  await page.locator(`#eventZone [data-route-go="${firstRoute.id}"]`).click();
   await page.locator('[data-learning-view="chain"]').click();
+  const contextAfterChain = await page.evaluate(() => ({
+    filter: {
+      period: window.__mapFilter.getState().period,
+      query: window.__mapFilter.getState().query,
+      cats: [...window.__mapFilter.getState().cats].sort(),
+    },
+    timeline: {
+      selectedEventKey: window.getTimelineState().selectedEventKey,
+      selectedAnchor: window.getTimelineState().selectedAnchor,
+      visibleEventKeys: [...window.getTimelineState().visibleEventKeys],
+    },
+    selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+      .map(group => ({ pin: group.querySelector('text')?.textContent.trim(), region: group.dataset.region }))
+      .sort((a, b) => `${a.pin}:${a.region}`.localeCompare(`${b.pin}:${b.region}`)),
+  }));
+  assert.deepEqual(contextAfterChain, contextBeforeRoute,
+    'Routes → Chain must exactly restore Unit, query, categories, Timeline selection, and selected map pins');
+  assert.equal(await page.evaluate(() => window.__mapFilter.inRoute()), false,
+    'Routes → Chain must leave route mode');
+  assert.equal(await page.locator('.route-line.on, .route-vehicle.on').count(), 0,
+    'Routes → Chain must clear route visualization');
+  assert.equal(await page.locator('[data-map-mode]:visible').count(), 0,
+    'Map secondary controls must be absent or hidden in Chain');
+
   await page.locator('#periodFilter').selectOption('u4');
   assert.match(await page.locator('#eventPanel').innerText(), /Unit 4|大西洋|Atlantic/i,
     'Unit 4 selection must render Unit 4 Atlantic causal-chain content');
   await page.locator('[data-learning-view="practice"]').click();
+  assert.equal(await page.locator('[data-map-mode]:visible').count(), 0,
+    'Map secondary controls must be absent or hidden in Practice');
   await page.locator('#eventZone [data-quiz-start="all"]').click();
   assert.equal(await page.evaluate(() => window.__mapFilter.inQuiz()), true,
     'activating the visible Practice choice must start quiz state');
@@ -436,18 +513,37 @@ async function verifyLearningShell(page, port) {
     'switching from an active quiz to Map must preserve Unit 4');
   assert.deepEqual(await page.locator('.learning-view-tab[aria-pressed="true"]').allTextContents(), ['地图'],
     'exactly Map must be pressed after leaving an active quiz');
-  assert.deepEqual(await page.locator('[data-map-mode]').allTextContents(), ['事件详情', '商路'],
+  assert.deepEqual(await trimmedTexts(page.locator('[data-map-mode]')), ['事件详情', '商路'],
     'Map secondary controls must return after leaving an active quiz');
   assert.equal(await page.locator('[data-map-mode="events"]').getAttribute('aria-pressed'), 'true',
     'Map must return to Event Details after leaving an active quiz');
-  assert.deepEqual(await page.locator('[data-map-mode][aria-pressed="true"]').allTextContents(), ['事件详情'],
+  assert.deepEqual(await trimmedTexts(page.locator('[data-map-mode][aria-pressed="true"]')), ['事件详情'],
     'only Event Details may be pressed after returning from Practice');
 
   await page.setViewportSize({ width: 700, height: 900 });
-  const narrowMapBox = await page.locator('#mapStudyView').boundingBox();
-  const narrowPanelBox = await page.locator('#eventZone').boundingBox();
-  assert.ok(narrowMapBox && narrowPanelBox && narrowPanelBox.y >= narrowMapBox.y + narrowMapBox.height - 1,
-    'at 700x900, event panel must stack below the map study view');
+  for (const mode of [
+    { id: 'chain', label: '因果链', ariaLabel: 'Unit 因果链', content: '#eventPanel .rt-stops-chain' },
+    { id: 'map', label: '地图', ariaLabel: '地图事件详情', content: '[data-map-mode="events"]' },
+    { id: 'practice', label: '练习', ariaLabel: '练习', content: '#eventZone .quiz-panel' },
+  ]) {
+    await page.locator(`[data-learning-view="${mode.id}"]`).click();
+    const narrowMapBox = await page.locator('#mapStudyView').boundingBox();
+    const narrowPanelBox = await page.locator('#eventZone').boundingBox();
+    assert.ok(narrowMapBox && narrowPanelBox && narrowPanelBox.y >= narrowMapBox.y + narrowMapBox.height - 1,
+      `at 700x900, ${mode.label} event panel must stack below the map study view`);
+    assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), mode.ariaLabel,
+      `at 700x900, ${mode.label} must expose its contextual label`);
+    assert.deepEqual(await trimmedTexts(page.locator('.learning-view-tab[aria-pressed="true"]')), [mode.label],
+      `at 700x900, exactly ${mode.label} must be pressed`);
+    await expectVisible(page.locator(mode.content), `at 700x900, ${mode.label} must render its mode content`);
+  }
+  await page.locator('[data-learning-view="chain"]').click();
+  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), 'Unit 因果链',
+    'responsive verification must finish in deterministic Chain mode');
+  assert.deepEqual(await trimmedTexts(page.locator('.learning-view-tab[aria-pressed="true"]')), ['因果链'],
+    'responsive verification must finish with only Chain pressed');
+  await expectVisible(page.locator('#eventPanel .rt-stops-chain'),
+    'responsive verification must finish with Chain content visible');
 }
 
 export async function verifyBrowser() {
