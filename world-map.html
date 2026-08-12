@@ -255,18 +255,10 @@ h1 .en { color: var(--accent); }
 .hdr-btn:hover { border-color: var(--ink-soft); }
 .hdr-btn:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
 .learning-view-tab[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
-.practice-drawer { position: fixed; inset: 0 0 0 auto; width: min(430px, 92vw); z-index: 1200; display: flex; flex-direction: column; background: var(--paper); border-left: 1px solid var(--line-strong); box-shadow: -14px 0 34px rgba(33,31,28,.18); }
-.practice-drawer[hidden] { display: none; }
-.practice-drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
-.practice-drawer-head strong { font-size: 16px; }
-.practice-drawer-close { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--ink); font: inherit; font-size: 22px; cursor: pointer; }
-.practice-drawer-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-.practice-drawer .event-zone { border-top: 0; box-shadow: none; }
 @media (max-width: 720px) {
   header.topbar { align-items: flex-start; flex-wrap: wrap; }
   .hdr-menu { width: 100%; margin-left: 0; }
   .hdr-btn { flex: 1 1 0; min-height: 44px; }
-  .practice-drawer { inset: auto 0 0; width: 100%; max-height: 82vh; border-left: 0; border-top: 1px solid var(--line-strong); box-shadow: 0 -14px 34px rgba(33,31,28,.18); }
 }
 header.topbar { display: flex; align-items: center; gap: 12px; }
 .route-launch { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
@@ -853,11 +845,6 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 </div>
 </div>
 </div>
-
-<aside class="practice-drawer" id="practiceDrawer" role="dialog" aria-labelledby="practiceDrawerTitle" hidden>
-  <div class="practice-drawer-head"><strong id="practiceDrawerTitle">练习</strong><button type="button" class="practice-drawer-close" id="practiceDrawerClose" aria-label="关闭练习">×</button></div>
-  <div class="practice-drawer-body" id="practiceDrawerBody"></div>
-</aside>
 
 <div class="data-source"><div class="panels">
 <div class="panel">
@@ -2657,32 +2644,6 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     </div>`;
   }
 
-  // 空态里只留练习入口。因果链和商路的清单交给标题行那两个常驻按钮(renderPicker),
-  // 上下两份清单是重复的 —— 链条越加越多,空态会先被撑成一张长名单。
-  function routePickerHTML() {
-    const st = quizStats();
-    return `<div class="route-picker-title">Practice</div>`
-      + `<div class="route-picker">`
-      + `<button type="button" class="route-chip quiz-chip" data-quiz-start="all">`
-      + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">时期 · 地区</span></button>`
-      + (st.review ? `<button type="button" class="route-chip quiz-chip" data-quiz-start="review">`
-          + `<span class="rc-dot" style="background:#d9a441"></span>只练错题<span style="color:var(--ink-soft);font-weight:600">${st.review} 条</span></button>` : '')
-      + `</div>`
-      + (st.practiced ? `<div class="qz-stats">已练 ${st.practiced} 条 · 待复习 ${st.review} 条`
-          + (st.review ? ` · <button type="button" class="qz-link" data-quiz-book="1">看错题本</button>` : '')
-          + ` · <button type="button" class="qz-link" data-quiz-reset="1">清空记录</button></div>` : '');
-  }
-  function mountRoutePicker() {
-    if (!eventEmpty || eventEmpty.querySelector('.route-picker')) return;
-    eventEmpty.insertAdjacentHTML('beforeend', routePickerHTML());
-  }
-  // 错题数会变,所以每次回到空态都把入口区重铺一次
-  function remountRoutePicker() {
-    if (!eventEmpty) return;
-    eventEmpty.querySelectorAll('.route-picker, .route-picker-title, .qz-stats').forEach(el => el.remove());
-    eventEmpty.insertAdjacentHTML('beforeend', routePickerHTML());
-  }
-
   // ============ 随堂练习(第一批只做"点地图"题型) ============
   // 题库取自当前筛选,所以"只练 Period 3 的经济类"直接沿用工具栏,不用另做界面。
   let quizMode = null;   // { pool, q, answered, asked, right }
@@ -3008,7 +2969,6 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     svg.querySelectorAll('.pin-group').forEach(g => g.classList.remove('revealed'));
     eventPanel.classList.remove('show');
     eventPanel.innerHTML = '';
-    remountRoutePicker();
     eventEmpty.style.display = 'block';
   }
 
@@ -3111,13 +3071,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const eventPanel = document.getElementById('eventPanel');
   const eventZone = document.getElementById('eventZone');
   const mapStudyView = document.getElementById('mapStudyView');
-  const splitView = document.querySelector('.split');
-  const practiceDrawer = document.getElementById('practiceDrawer');
-  const practiceDrawerBody = document.getElementById('practiceDrawerBody');
-  const practiceDrawerClose = document.getElementById('practiceDrawerClose');
   const learningTabs = [...document.querySelectorAll('.learning-view-tab')];
   let activeLearningView = 'chain';
-  let practiceLauncher = null;
 
   function chainForUnit(unitId) {
     if (unitId === 'u1') return 'u1_tapestry';
@@ -3127,12 +3082,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function syncLearningTabs() {
-    const practiceOpen = !practiceDrawer.hidden;
     learningTabs.forEach(tab => {
-      const pressed = practiceOpen
-        ? tab.dataset.learningView === 'practice'
-        : tab.dataset.learningView === activeLearningView;
-      tab.setAttribute('aria-pressed', String(pressed));
+      tab.setAttribute('aria-pressed', String(tab.dataset.learningView === activeLearningView));
     });
   }
 
@@ -3146,39 +3097,22 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     }
   }
 
-  function closePracticeDrawer(restoreFocus = false) {
-    if (practiceDrawer.hidden) return;
-    // 如果学生已经开始答题，先走统一退出流程，恢复被练习暂时挂起的 Unit / 主题筛选。
-    exitQuiz();
-    practiceDrawer.hidden = true;
-    splitView.appendChild(eventZone);
-    if (activeLearningView === 'chain') showCurrentUnitChain();
-    else {
-      eventPanel.classList.remove('show');
-      eventPanel.innerHTML = '';
-      eventEmpty.style.display = 'block';
-    }
-    eventZone.setAttribute('aria-label', activeLearningView === 'chain' ? 'Unit 因果链' : '地图事件详情');
-    syncLearningTabs();
-    if (restoreFocus && practiceLauncher?.isConnected) practiceLauncher.focus();
-    practiceLauncher = null;
+  function leaveActiveLearningContent() {
+    if (quizMode || eventPanel.querySelector('.quiz-panel')) exitQuiz();
+    if (routeMode) exitRouteMode();
   }
 
-  function openPracticeDrawer() {
-    if (!practiceDrawer.hidden) return;
-    practiceLauncher = learningTabs.find(tab => tab.dataset.learningView === 'practice') || document.activeElement;
-    if (routeMode && routeMode.route.kind !== 'chain') exitRouteMode();
-    practiceDrawer.hidden = false;
-    practiceDrawerBody.appendChild(eventZone);
+  function showPracticeView() {
+    leaveActiveLearningContent();
+    activeLearningView = 'practice';
     eventZone.setAttribute('aria-label', '练习');
     renderPicker('quiz');
     syncLearningTabs();
-    practiceDrawerClose.focus();
   }
 
   function showLearningView(view) {
-    if (view === 'practice') { openPracticeDrawer(); return; }
-    closePracticeDrawer();
+    if (view === 'practice') { showPracticeView(); return; }
+    leaveActiveLearningContent();
     activeLearningView = view;
     mapStudyView.hidden = false;
     if (view === 'chain') {
@@ -3197,12 +3131,6 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   learningTabs.forEach(tab => tab.addEventListener('click', () => showLearningView(tab.dataset.learningView)));
-  practiceDrawerClose.addEventListener('click', () => closePracticeDrawer(true));
-  document.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || practiceDrawer.hidden) return;
-    event.preventDefault();
-    closePracticeDrawer(true);
-  });
 
   // ↓ 商路模式里这几句要立即执行,必须排在上面三个 const 之后(它们是 const,提前引用会 TDZ 报错)
   // 行程面板的按钮:事件面板是 innerHTML 重铺的,所以走事件委托
@@ -3241,13 +3169,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   document.querySelectorAll('[data-open-picker]').forEach(b =>
     b.addEventListener('click', () => renderPicker(b.dataset.openPicker)));
 
-  mountRoutePicker();
   eventEmpty.addEventListener('click', e => {
     const qs = e.target.closest('[data-quiz-start]');
     if (qs) { startQuiz(qs.dataset.quizStart); return; }
     if (e.target.closest('[data-quiz-book]')) { renderMistakeBook(); return; }
     if (e.target.closest('[data-quiz-reset]')) {
-      if (confirm('清空练习记录?错题本和已练条数都会归零。')) { clearQuizStore(); remountRoutePicker(); }
+      if (confirm('清空练习记录?错题本和已练条数都会归零。')) clearQuizStore();
       return;
     }
     const chip = e.target.closest('[data-route-go]');
@@ -3834,7 +3761,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       activePeriod = id === '' ? '' : (id || 'u1');
       if (periodSel) periodSel.value = activePeriod;
       apply();
-      if (activeLearningView === 'chain' && practiceDrawer.hidden) showCurrentUnitChain();
+      if (activeLearningView === 'chain') showCurrentUnitChain();
     }
     // 地区变了要重算(它现在是筛选的一个维度);外面的 activateRegion/deactivateRegion 会调它
     onRegionChange = () => apply();
@@ -3845,7 +3772,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       activeCats = new Set(allCats); activePeriod = 'u1';
       syncPills(); if (periodSel) periodSel.value = 'u1';
       apply();
-      if (activeLearningView === 'chain' && practiceDrawer.hidden) showCurrentUnitChain();
+      if (activeLearningView === 'chain') showCurrentUnitChain();
     }
 
     // 商路模式期间把筛选整个挂起:否则选了"只看经济与贸易"再进丝绸之路,
@@ -3957,7 +3884,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       startQuiz: mode => startQuiz(mode),
       quizStats: () => quizStats(),
       quizBook: () => renderMistakeBook(),
-      quizReset: () => { clearQuizStore(); remountRoutePicker(); },
+      quizReset: () => { clearQuizStore(); if (activeLearningView === 'practice') renderPicker('quiz'); },
       quizAction: a => { if (a === 'next') nextQuestion(); else if (a === 'exit') exitQuiz(); },
       quizPeriod: pid => answerPeriod(pid),
       quizTheme: a => answerTheme(a),
