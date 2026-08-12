@@ -2577,7 +2577,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   function enterRouteMode(id) {
     const route = allTrails().find(r => r.id === id);
     if (!route) return;
-    exitRouteMode(true);                       // 先清干净上一条
+    const restoreTradeContext = route.kind === 'chain' && routeMode?.route?.kind !== 'chain';
+    exitRouteMode(!restoreTradeContext);       // 商路之间替换保持挂起;商路转链条先还原学习上下文
     hideAllRoutes();
     if (route.kind !== 'chain' && typeof suspendFilters === 'function') suspendFilters();
     deactivateRegion();
@@ -2615,6 +2616,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     svg.querySelectorAll('.pin-group').forEach(g => g.classList.remove('revealed'));
     if (quiet) return;
     if (route.kind !== 'chain' && typeof restoreFilters === 'function') restoreFilters();
+    if (activeLearningView === 'map' && activeMapMode === 'events' && eventPanel.innerHTML.trim()) return;
     eventPanel.classList.remove('show');
     eventPanel.innerHTML = '';
     eventEmpty.style.display = 'block';
@@ -2885,7 +2887,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   // 三组功能原本只在事件面板的空态里露出,学生一旦点开某一站、或搜了个词,入口就全没了 ——
   // 唯一回去的办法是再点一次同一地块取消选中,没人会知道。所以标题行放常驻入口,任何状态下都能打开。
   function renderPicker(kind) {
-    exitRouteMode(true);
+    const restoreTradeContext = kind === 'chain' && routeMode?.route?.kind !== 'chain';
+    exitRouteMode(!restoreTradeContext);
     quizMode = null;
     const title = { chain: '因果链', route: '商路', quiz: '随堂练习' }[kind];
     let body = '';
@@ -2911,9 +2914,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
             + (st.review ? ` · <button type="button" class="qz-link" data-quiz-book="1">看错题本</button>` : '') + `</div>` : '');
     }
     eventEmpty.style.display = 'none';
+    const returnAction = kind === 'route'
+      ? `<button type="button" class="rt-btn ghost" data-route-picker-action="events">返回</button>`
+      : `<button type="button" class="rt-btn ghost" data-quiz-action="exit">返回</button>`;
     eventPanel.innerHTML = `<div class="quiz-panel"><div class="qz-head"><div class="qz-title">${title}</div></div>`
       + body
-      + `<div class="qz-ctrl"><button type="button" class="rt-btn ghost" data-quiz-action="exit">返回</button></div></div>`;
+      + `<div class="qz-ctrl">${returnAction}</div></div>`;
     eventPanel.classList.remove('show');
     void eventPanel.offsetWidth;
     eventPanel.classList.add('show');
@@ -3108,20 +3114,33 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   function showMapMode(mode) {
     if (mode !== 'events' && mode !== 'routes') return;
     if (quizMode || eventPanel.querySelector('.quiz-panel')) exitQuiz();
-    if (routeMode) exitRouteMode();
     activeLearningView = 'map';
     activeMapMode = mode;
     mapStudyView.hidden = false;
+    const restoredEventContent = mode === 'events' && !!routeMode;
+    if (routeMode) exitRouteMode();
     if (mode === 'routes') {
       eventZone.setAttribute('aria-label', '地图商路');
       renderPicker('route');
     } else {
       eventZone.setAttribute('aria-label', '地图事件详情');
-      eventPanel.classList.remove('show');
-      eventPanel.innerHTML = '';
-      eventEmpty.style.display = 'block';
-      eventZone.classList.remove('fit-content');
+      if (!restoredEventContent || !eventPanel.innerHTML.trim()) {
+        eventPanel.classList.remove('show');
+        eventPanel.innerHTML = '';
+        eventEmpty.style.display = 'block';
+        eventZone.classList.remove('fit-content');
+      }
     }
+    syncLearningTabs();
+    syncMapModeTabs();
+  }
+
+  function returnToRoutePicker() {
+    exitRouteMode();
+    activeLearningView = 'map';
+    activeMapMode = 'routes';
+    eventZone.setAttribute('aria-label', '地图商路');
+    renderPicker('route');
     syncLearningTabs();
     syncMapModeTabs();
   }
@@ -3181,6 +3200,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (qt) { answerTheme(qt.dataset.quizTheme); return; }
     const qm = e.target.closest('[data-quiz-term]');
     if (qm) { answerTerm(qm.dataset.quizTerm); return; }
+    const routePickerAction = e.target.closest('[data-route-picker-action]');
+    if (routePickerAction) { showMapMode(routePickerAction.dataset.routePickerAction); return; }
     const qz = e.target.closest('[data-quiz-action]');
     if (qz) {
       const a = qz.dataset.quizAction;
@@ -3198,7 +3219,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (a === 'prev') { stopAutoPlay(); goToStop(routeMode.i - 1); }
     else if (a === 'next') { stopAutoPlay(); goToStop(routeMode.i + 1); }
     else if (a === 'play') toggleAutoPlay();
-    else if (a === 'exit') exitRouteMode();
+    else if (a === 'exit') {
+      if (activeLearningView === 'map' && activeMapMode === 'routes' && routeMode.route.kind !== 'chain') returnToRoutePicker();
+      else exitRouteMode();
+    }
   });
 
   eventEmpty.addEventListener('click', e => {
@@ -3911,7 +3935,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         if (a === 'prev') { stopAutoPlay(); goToStop(routeMode ? routeMode.i - 1 : 0); }
         else if (a === 'next') { stopAutoPlay(); goToStop(routeMode ? routeMode.i + 1 : 0); }
         else if (a === 'play') toggleAutoPlay();
-        else if (a === 'exit') exitRouteMode();
+        else if (a === 'exit') {
+          if (activeLearningView === 'map' && activeMapMode === 'routes' && routeMode?.route?.kind !== 'chain') returnToRoutePicker();
+          else exitRouteMode();
+        }
       },
       inRoute: () => !!routeMode && routeMode.route.kind !== 'chain',
       openPicker: kind => renderPicker(kind),

@@ -375,6 +375,25 @@ async function verifyLearningShell(page, port) {
   assert.doesNotMatch(await page.locator('#eventZone').innerText(), /Practice|随堂练习/,
     'Map event details must not contain legacy Practice launchers');
 
+  await page.locator('[data-map-mode="routes"]').click();
+  await page.locator('#eventZone [data-route-picker-action="events"]').click();
+  assert.equal(await page.locator('[data-map-mode="events"]').getAttribute('aria-pressed'), 'true',
+    'returning from the Routes picker must select Event Details');
+  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '地图事件详情',
+    'returning from the Routes picker must identify Event Details');
+
+  await page.locator('[data-map-mode="routes"]').click();
+  const exitFixtureRoute = await page.evaluate(() => window.__mapFilter.getRoutes()[0]);
+  await page.locator(`#eventZone [data-route-go="${exitFixtureRoute.id}"]`).click();
+  await page.locator('#eventZone [data-route-action="exit"]').click();
+  assert.equal(await page.locator('[data-map-mode="routes"]').getAttribute('aria-pressed'), 'true',
+    'exiting an active route journey must keep Routes selected');
+  await expectVisible(page.locator(`#eventZone [data-route-go="${exitFixtureRoute.id}"]`),
+    'exiting an active route journey must return to the Routes picker');
+  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '地图商路',
+    'the restored Routes picker must retain its contextual label');
+  await page.locator('[data-map-mode="events"]').click();
+
   await page.evaluate(() => window.__mapFilter.setPeriod('u4'));
   const disabledCategory = await page.evaluate(() => window.__mapFilter.getCats()[0].abbr);
   await page.evaluate((category) => window.__mapFilter.toggleCat(category), disabledCategory);
@@ -405,6 +424,8 @@ async function verifyLearningShell(page, port) {
   assert.ok(!contextBeforeRoute.filter.cats.includes(disabledCategory), 'route restoration fixture must use a non-default category set');
   assert.equal(contextBeforeRoute.timeline.selectedEventKey, searchableEvent.key, 'route restoration fixture must select a Timeline event');
   assert.ok(contextBeforeRoute.selectedMapPins.length > 0, 'route restoration fixture must expose the Timeline selection on the map');
+  const restoredDetailBeforeRoute = await page.locator('#eventPanel').innerText();
+  assert.ok(restoredDetailBeforeRoute.trim(), 'route restoration fixture must expose visible Event Details content');
 
   await page.locator('[data-map-mode="routes"]').click();
   assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '地图商路',
@@ -442,6 +463,13 @@ async function verifyLearningShell(page, port) {
   }));
   assert.deepEqual(contextAfterEvents, contextBeforeRoute,
     'Routes → Event Details must exactly restore Unit, query, categories, Timeline selection, and selected map pins');
+  const restoredDetailAfterRoute = await page.locator('#eventPanel').innerText();
+  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '地图事件详情',
+    'Routes → Event Details must restore the Event Details accessible label');
+  assert.ok(restoredDetailAfterRoute.trim() && restoredDetailAfterRoute.includes(searchableEvent.query),
+    'Routes → Event Details must preserve visible restored search/detail content instead of a generic prompt');
+  await expectVisible(page.locator('#eventPanel .event-card').first(),
+    'Routes → Event Details must leave a restored result/detail card visible');
   assert.equal(await page.evaluate(() => window.__mapFilter.inRoute()), false,
     'returning to Event Details must leave route mode');
   assert.equal(await page.locator('.route-line.on, .route-vehicle.on').count(), 0,
@@ -478,6 +506,33 @@ async function verifyLearningShell(page, port) {
   assert.equal(await page.locator('[data-map-mode]:visible').count(), 0,
     'Map secondary controls must be absent or hidden in Chain');
 
+  await page.locator('[data-learning-view="map"]').click();
+  await page.locator('[data-map-mode="routes"]').click();
+  await page.locator(`#eventZone [data-route-go="${firstRoute.id}"]`).click();
+  await page.evaluate(() => window.__mapFilter.openPicker('chain'));
+  const publicChainChoice = page.locator('#eventZone [data-route-go]').first();
+  await expectVisible(publicChainChoice, 'the public picker API must expose a chain choice after replacing a trade route');
+  await publicChainChoice.click();
+  await page.locator('[data-learning-view="map"]').click();
+  const contextAfterPublicChain = await page.evaluate(() => ({
+    filter: {
+      period: window.__mapFilter.getState().period,
+      query: window.__mapFilter.getState().query,
+      cats: [...window.__mapFilter.getState().cats].sort(),
+    },
+    timeline: {
+      selectedEventKey: window.getTimelineState().selectedEventKey,
+      selectedAnchor: window.getTimelineState().selectedAnchor,
+      visibleEventKeys: [...window.getTimelineState().visibleEventKeys],
+    },
+    selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+      .map(group => ({ pin: group.querySelector('text')?.textContent.trim(), region: group.dataset.region }))
+      .sort((a, b) => `${a.pin}:${a.region}`.localeCompare(`${b.pin}:${b.region}`)),
+  }));
+  assert.deepEqual(contextAfterPublicChain, contextBeforeRoute,
+    'trade route → public chain picker → Map must exactly restore the suspended learning context');
+
+  await page.locator('[data-learning-view="chain"]').click();
   await page.locator('#periodFilter').selectOption('u4');
   assert.match(await page.locator('#eventPanel').innerText(), /Unit 4|大西洋|Atlantic/i,
     'Unit 4 selection must render Unit 4 Atlantic causal-chain content');
