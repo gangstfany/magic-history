@@ -243,6 +243,21 @@ h1 .en { color: var(--accent); }
 .hdr-btn { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .hdr-btn:hover { border-color: var(--ink-soft); }
 .hdr-btn:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.learning-view-tab[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.map-study-view[hidden] { display: none; }
+.practice-drawer { position: fixed; inset: 0 0 0 auto; width: min(430px, 92vw); z-index: 1200; display: flex; flex-direction: column; background: var(--paper); border-left: 1px solid var(--line-strong); box-shadow: -14px 0 34px rgba(33,31,28,.18); }
+.practice-drawer[hidden] { display: none; }
+.practice-drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.practice-drawer-head strong { font-size: 16px; }
+.practice-drawer-close { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--ink); font: inherit; font-size: 22px; cursor: pointer; }
+.practice-drawer-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.practice-drawer .event-zone { border-top: 0; box-shadow: none; }
+@media (max-width: 720px) {
+  header.topbar { align-items: flex-start; flex-wrap: wrap; }
+  .hdr-menu { width: 100%; margin-left: 0; }
+  .hdr-btn { flex: 1 1 0; min-height: 44px; }
+  .practice-drawer { inset: auto 0 0; width: 100%; max-height: 82vh; border-left: 0; border-top: 1px solid var(--line-strong); box-shadow: 0 -14px 34px rgba(33,31,28,.18); }
+}
 header.topbar { display: flex; align-items: center; gap: 12px; }
 .route-launch { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .route-launch:hover { border-color: var(--ink-soft); }
@@ -387,15 +402,15 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 <div class="app-shell">
 <header class="topbar">
 <h1><span class="en">History World Map</span></h1>
-<nav class="hdr-menu" aria-label="专题与练习">
-  <button type="button" class="hdr-btn" data-open-picker="chain">因果链</button>
-  <button type="button" class="hdr-btn" data-open-picker="route">商路</button>
-  <button type="button" class="hdr-btn" data-open-picker="quiz">练习</button>
+<nav class="hdr-menu" aria-label="学习视图">
+  <button type="button" class="hdr-btn learning-view-tab" data-learning-view="chain" aria-pressed="true">因果链</button>
+  <button type="button" class="hdr-btn learning-view-tab" data-learning-view="map" aria-pressed="false">地图</button>
+  <button type="button" class="hdr-btn learning-view-tab" data-learning-view="practice" aria-pressed="false">练习</button>
 </nav>
 </header>
 
 <div class="map-toolbar" id="mapToolbar" role="group" aria-label="筛选历史事件">
-  <label class="mt-field">时期<select id="periodFilter" aria-label="按时期筛选"></select></label>
+  <label class="mt-field">Unit / 单元<select id="periodFilter" aria-label="按 Unit 筛选"></select></label>
   <label class="mt-field mt-field-search">搜索
     <span class="mt-search">
       <input type="search" id="mapSearch" placeholder="地点 / 事件 / 关键词" aria-label="搜索历史地点与事件" autocomplete="off">
@@ -406,6 +421,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   <div class="mt-count" id="mtCount" role="status"></div>
 </div>
 <div class="split">
+<div class="map-study-view" id="mapStudyView" hidden>
 <div class="map-zone">
 <div class="mapstage"><div class="zoom-controls">
   <div class="zoom-btn zoom-in" title="放大">+</div>
@@ -819,6 +835,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   </div>
   <div class="world-timeline-track" id="worldTimelineTrack" role="group" aria-label="按时间顺序浏览事件"></div>
 </section>
+</div>
 
 <div class="event-zone" id="eventZone" role="region" aria-label="历史事件" aria-live="polite">
 <div class="event-empty" id="eventEmpty">先在上面地图里点一个地块,再点冒出来的编号标点 —— 这里会显示那个地方的历史事件</div>
@@ -826,6 +843,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 </div>
 </div>
 </div>
+
+<aside class="practice-drawer" id="practiceDrawer" aria-labelledby="practiceDrawerTitle" hidden>
+  <div class="practice-drawer-head"><strong id="practiceDrawerTitle">练习</strong><button type="button" class="practice-drawer-close" id="practiceDrawerClose" aria-label="关闭练习">×</button></div>
+  <div class="practice-drawer-body" id="practiceDrawerBody"></div>
+</aside>
 
 <div class="data-source"><div class="panels">
 <div class="panel">
@@ -2226,6 +2248,19 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   // 讲义里是 6 个 Link,地图上有的 Link 拆成两站 —— 因为同一个链节的两端落在不同的地块上
   // (Link 2 的欧洲/伊斯兰双崩溃、Link 4 的奥斯曼/莫卧儿双实例),分开走地图才点得亮。
   const CHAINS = [
+    { id: 'u1_tapestry', kind: 'chain',
+      name: 'Unit 1 主干链 · 国家如何建立并连接区域秩序',
+      blurb: 'Unit 1 的共同逻辑不是各地区孤立发展，而是农业与商业提供剩余，统治者把剩余转化为税收、官僚和军事能力，再用宗教与文化建立合法性；更稳定的国家又扩大区域交流。',
+      exam: '写比较或因果题时，不要只列举宋朝、德里苏丹国、马里和美洲帝国。要指出共同机制：经济基础创造治理能力，治理能力维持秩序，秩序进一步促进贸易与文化传播。',
+      stops: [1, 3, 73, 48],
+      labels: ['农业与商业创造剩余', '官僚与军事强化治理', '宗教与学术建立合法性', '国家秩序推动区域交流'],
+      evidence: ['宋代稻作与城市商业 · 科举官僚 · 纸币与技术发展',
+                 'Delhi Sultanate · 少数统治多数 · 军事征服与地方治理并存',
+                 'Mali · 黄金贸易 · Mansa Musa · Timbuktu 学术网络',
+                 'Aztec tribute system · chinampas · 区域贡赋与市场联系'],
+      links: ['稳定的粮食与商业剩余让统治者能够征税、供养官僚和军队，把地方社会组织成更大的国家',
+              '单靠武力无法长期统治多元人口，国家需要宗教、教育和文化赞助来解释并巩固权力',
+              '治理与合法性降低交流成本，城市、市场和学术中心因而连接更大的区域网络'] },
     { id: 'u23_empires', kind: 'chain',
       name: 'Unit 2→3 主干链 · 帝国如何从废墟中崛起',
       blurb: 'Unit 2 和 Unit 3 不是两章,是一条链:贸易网络的连通性同时送出财富、技术和病菌 —— 财富制造竞争,病菌瓦解旧秩序,技术武装了新崛起的军事集团。c.1450 之后那几个超大帝国不是偶然同时出现的。',
@@ -2539,7 +2574,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (!route) return;
     exitRouteMode(true);                       // 先清干净上一条
     hideAllRoutes();
-    if (typeof suspendFilters === 'function') suspendFilters();   // 筛选临时挂起,否则中间某站可能被筛没、路就断了
+    if (route.kind !== 'chain' && typeof suspendFilters === 'function') suspendFilters();
     deactivateRegion();
     routeMode = { route, i: -1, playing: false, timer: null };
 
@@ -2574,7 +2609,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     clearGlowTimers();
     svg.querySelectorAll('.pin-group').forEach(g => g.classList.remove('revealed'));
     if (quiet) return;
-    if (typeof restoreFilters === 'function') restoreFilters();   // 把之前的时期/主题/搜索还回去
+    if (route.kind !== 'chain' && typeof restoreFilters === 'function') restoreFilters();
     eventPanel.classList.remove('show');
     eventPanel.innerHTML = '';
     eventEmpty.style.display = 'block';
@@ -3065,6 +3100,74 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const eventEmpty = document.getElementById('eventEmpty');
   const eventPanel = document.getElementById('eventPanel');
   const eventZone = document.getElementById('eventZone');
+  const mapStudyView = document.getElementById('mapStudyView');
+  const splitView = document.querySelector('.split');
+  const practiceDrawer = document.getElementById('practiceDrawer');
+  const practiceDrawerBody = document.getElementById('practiceDrawerBody');
+  const practiceDrawerClose = document.getElementById('practiceDrawerClose');
+  const learningTabs = [...document.querySelectorAll('.learning-view-tab')];
+  let activeLearningView = 'chain';
+
+  function chainForUnit(unitId) {
+    if (unitId === 'u1') return 'u1_tapestry';
+    if (unitId === 'u2' || unitId === 'u3') return 'u23_empires';
+    if (unitId === 'u4') return 'u4_atlantic';
+    return null;
+  }
+
+  function syncLearningTabs() {
+    learningTabs.forEach(tab => {
+      const pressed = tab.dataset.learningView === 'practice'
+        ? !practiceDrawer.hidden
+        : tab.dataset.learningView === activeLearningView;
+      tab.setAttribute('aria-pressed', String(pressed));
+    });
+  }
+
+  function showCurrentUnitChain() {
+    const unitId = document.getElementById('periodFilter')?.value || 'u1';
+    const chainId = chainForUnit(unitId);
+    if (chainId) enterRouteMode(chainId);
+    else {
+      if (routeMode?.route?.kind === 'chain') exitRouteMode();
+      renderPicker('chain');
+    }
+  }
+
+  function closePracticeDrawer() {
+    if (practiceDrawer.hidden) return;
+    // 如果学生已经开始答题，先走统一退出流程，恢复被练习暂时挂起的 Unit / 主题筛选。
+    exitQuiz();
+    practiceDrawer.hidden = true;
+    splitView.appendChild(eventZone);
+    if (activeLearningView === 'chain') showCurrentUnitChain();
+    else {
+      eventPanel.classList.remove('show');
+      eventPanel.innerHTML = '';
+      eventEmpty.style.display = 'block';
+    }
+    syncLearningTabs();
+  }
+
+  function openPracticeDrawer() {
+    practiceDrawer.hidden = false;
+    practiceDrawerBody.appendChild(eventZone);
+    renderPicker('quiz');
+    syncLearningTabs();
+  }
+
+  function showLearningView(view) {
+    if (view === 'practice') { openPracticeDrawer(); return; }
+    closePracticeDrawer();
+    activeLearningView = view;
+    mapStudyView.hidden = view !== 'map';
+    if (view === 'chain') showCurrentUnitChain();
+    else if (routeMode?.route?.kind === 'chain') exitRouteMode();
+    syncLearningTabs();
+  }
+
+  learningTabs.forEach(tab => tab.addEventListener('click', () => showLearningView(tab.dataset.learningView)));
+  practiceDrawerClose.addEventListener('click', closePracticeDrawer);
 
   // ↓ 商路模式里这几句要立即执行,必须排在上面三个 const 之后(它们是 const,提前引用会 TDZ 报错)
   // 行程面板的按钮:事件面板是 innerHTML 重铺的,所以走事件委托
@@ -3547,7 +3650,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     });
     const allCats = new Set(cats.map(c => c.abbr));
     let activeCats = new Set(allCats);   // 主题是多选药丸:默认全选,取消勾选就减掉
-    let activePeriod = '';    // '' = 全部时期
+    let activePeriod = 'u1';
     let query = '';
     let tokens = [];          // query 按空格切出来的词,全部命中才算命中
     let onCountChange = null; // 首页父页面订阅计数变化
@@ -3695,16 +3798,22 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       catsBox.querySelectorAll('.mt-cat').forEach(b =>
         b.setAttribute('aria-pressed', activeCats.has(b.dataset.cat) ? 'true' : 'false'));
     }
-    function setPeriod(id) { activePeriod = id || ''; if (periodSel) periodSel.value = activePeriod; apply(); }
+    function setPeriod(id) {
+      activePeriod = id === '' ? '' : (id || 'u1');
+      if (periodSel) periodSel.value = activePeriod;
+      apply();
+      if (activeLearningView === 'chain' && practiceDrawer.hidden) showCurrentUnitChain();
+    }
     // 地区变了要重算(它现在是筛选的一个维度);外面的 activateRegion/deactivateRegion 会调它
     onRegionChange = () => apply();
     filterIsActive = () => filterActive();
 
     function reset() {
       takeQuery(''); if (searchInput) searchInput.value = '';
-      activeCats = new Set(allCats); activePeriod = '';
-      syncPills(); if (periodSel) periodSel.value = '';
+      activeCats = new Set(allCats); activePeriod = 'u1';
+      syncPills(); if (periodSel) periodSel.value = 'u1';
       apply();
+      if (activeLearningView === 'chain' && practiceDrawer.hidden) showCurrentUnitChain();
     }
 
     // 商路模式期间把筛选整个挂起:否则选了"只看经济与贸易"再进丝绸之路,
@@ -3745,8 +3854,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         sel.appendChild(el);
       });
     }
-    const periodOptions = [{ value: '', label: `全部时期 (${totalEvents})` }]
-      .concat(PERIODS.map(p => ({ value: p.id, label: `${p.label} (${periodCount(p)})` })));
+    const periodOptions = PERIODS.map(p => ({ value: p.id, label: `${p.label} (${periodCount(p)})` }))
+      .concat([{ value: '', label: `全部 Units (${totalEvents})` }]);
 
     fillSelect(periodSel, periodOptions);
     if (periodSel) periodSel.addEventListener('change', () => setPeriod(periodSel.value));
@@ -3827,9 +3936,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       onCountChange: fn => { onCountChange = fn; },
     };
     apply();
+    showLearningView('chain');
   })();
 
-  let firstHintTimer = setTimeout(() => firstClickHint.classList.add('show'), 1300);
+  var firstHintTimer = setTimeout(() => firstClickHint.classList.add('show'), 1300);
   function dismissFirstClickHint() {
     clearTimeout(firstHintTimer);
     firstClickHint.classList.remove('show');

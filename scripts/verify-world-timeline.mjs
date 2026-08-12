@@ -115,6 +115,8 @@ async function verifyTimeline(page, port) {
   const response = await page.goto(`http://127.0.0.1:${port}/world-map.html`, { waitUntil: 'networkidle' });
   assert.ok(response?.ok(), `world-map.html is unavailable (HTTP ${response?.status() || 'no response'})`);
   await page.waitForFunction(() => Boolean(window.__mapFilter), undefined, { timeout: 8_000 });
+  await page.locator('[data-learning-view="map"]').click();
+  await page.evaluate(() => window.__mapFilter.setPeriod(''));
 
   const initialState = await page.evaluate(() => window.getTimelineState());
   assert.equal(initialState.mappingMode, 'explicit', 'Timeline Units must come from a literal reviewed mapping');
@@ -196,6 +198,8 @@ async function verifyTimeline(page, port) {
   assert.ok(!filteredAnchorSelection.revealedPins.includes('39') && !filteredAnchorSelection.revealedPins.includes('99'), 'selection must not restore filtered-out anchors');
 
   await page.evaluate(() => window.__mapFilter.reset());
+  assert.equal(await page.locator('#periodFilter').inputValue(), 'u1', 'reset returns the student experience to Unit 1');
+  await page.evaluate(() => window.__mapFilter.setPeriod(''));
   const restoredAnchors = await page.evaluate((key) => window.getTimelineState().visibleEvents
     .find((event) => event.key === key)?.visibleAnchors.map((anchor) => anchor.num).sort(), middlePassageKey);
   assert.deepEqual(restoredAnchors, ['39', '59', '99'], 'reset must restore every anchor for the shared event');
@@ -317,6 +321,29 @@ async function verifyTimeline(page, port) {
   assert.ok(after.revealed, 'openHit must reveal the selected off-screen Timeline card');
 }
 
+async function verifyLearningShell(page, port) {
+  await page.goto(`http://127.0.0.1:${port}/world-map.html`);
+  await page.waitForFunction(() => window.__mapFilter);
+  assert.equal(await page.locator('.learning-view-tab').count(), 3, 'header must expose exactly three learning entries');
+  assert.deepEqual(await page.locator('.learning-view-tab').allTextContents(), ['因果链', '地图', '练习']);
+  assert.equal((await page.locator('#mapToolbar .mt-field').first().innerText()).split('\n')[0].trim(), 'Unit / 单元');
+  assert.equal(await page.locator('#periodFilter').inputValue(), 'u1', 'APWH must open in Unit 1');
+  assert.equal(await page.locator('[data-learning-view="chain"]').getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.locator('#mapStudyView').isVisible(), false, 'map is secondary on first load');
+  await expectVisible(page.locator('#eventPanel .rt-stops-chain'), 'Unit 1 causal chain must be visible immediately');
+
+  await page.locator('[data-learning-view="map"]').click();
+  await expectVisible(page.locator('#mapStudyView'), 'map entry must show the map study view');
+  await expectVisible(page.locator('#worldTimelineDock'), 'Timeline remains embedded with the map');
+
+  await page.locator('[data-learning-view="practice"]').click();
+  await expectVisible(page.locator('#practiceDrawer'), 'practice opens as a drawer');
+  await expectVisible(page.locator('#practiceDrawer .quiz-panel'), 'practice drawer must contain quiz controls');
+  await expectVisible(page.locator('#mapStudyView'), 'practice drawer must not replace the selected main view');
+  await page.locator('#practiceDrawerClose').click();
+  assert.equal(await page.locator('#practiceDrawer').isVisible(), false, 'practice drawer closes independently');
+}
+
 export async function verifyBrowser() {
   await stat(PAGE_FILE);
   const playwright = await discoverPlaywright();
@@ -329,6 +356,7 @@ export async function verifyBrowser() {
     const page = await browser.newPage({ viewport: { width: 900, height: 700 } });
     try {
       await verifyTimeline(page, port);
+      await verifyLearningShell(page, port);
     } finally {
       await page.close();
     }
