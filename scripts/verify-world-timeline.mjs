@@ -119,7 +119,9 @@ async function verifyTimeline(page, port) {
   const dock = page.locator('#worldTimelineDock');
   assert.equal(await dock.count(), 1, 'AP World must expose exactly one #worldTimelineDock');
   await expectVisible(dock, 'AP World card Timeline must be visible');
-  assert.equal(await dock.locator('.world-timeline-track').count(), 1, 'Timeline Dock must expose exactly one track');
+  const track = dock.locator('.world-timeline-track');
+  assert.equal(await track.count(), 1, 'Timeline Dock must expose exactly one track');
+  await expectVisible(track, 'AP World Timeline track must be visible');
 
   const periods = (await page.evaluate(() => window.__mapFilter.getPeriodOptions())).filter(({ value }) => value);
   assert.equal(periods.length, 9, 'AP World Timeline must cover the nine non-empty Unit options');
@@ -129,26 +131,46 @@ async function verifyTimeline(page, port) {
     const cards = dock.locator('button.world-timeline-card[data-event-key]');
     const count = await cards.count();
     assert.ok(count > 0, `${period.value} must render Timeline cards`);
-    assert.equal(await cards.locator('.world-timeline-date').count(), count, `${period.value} cards must expose dates`);
-    assert.equal(await cards.locator('.world-timeline-title-en').count(), count, `${period.value} cards must expose English titles`);
-    assert.equal(await cards.locator('.world-timeline-title-zh').count(), count, `${period.value} cards must expose Chinese titles`);
+    for (let index = 0; index < count; index += 1) {
+      const card = cards.nth(index);
+      for (const [selector, label] of [
+        ['.world-timeline-date', 'date'],
+        ['.world-timeline-title-en', 'English title'],
+        ['.world-timeline-title-zh', 'Chinese title'],
+      ]) {
+        const field = card.locator(selector);
+        assert.equal(await field.count(), 1, `${period.value} card ${index} must expose exactly one ${label}`);
+        assert.ok((await field.innerText()).trim(), `${period.value} card ${index} must expose a non-empty ${label}`);
+      }
+      assert.ok((await card.getAttribute('aria-label'))?.trim(), `${period.value} card ${index} must have an accessible name`);
+      const box = await card.boundingBox();
+      assert.ok(box && box.height >= 44,
+        `${period.value} card ${index} must be at least 44px high (got ${box?.height})`);
+    }
     if (!richestPeriod || count > richestPeriod.count) richestPeriod = { id: period.value, count };
   }
 
   assert.ok(richestPeriod?.count >= 2, 'at least one Unit must expose two Timeline cards for interaction checks');
   await page.evaluate((id) => window.__mapFilter.setPeriod(id), richestPeriod.id);
   const cards = dock.locator('button.world-timeline-card[data-event-key]');
+  await cards.nth(0).click();
+  const detailBefore = (await page.locator('#eventPanel').innerText()).trim();
+  const selectedCard = {
+    eventKey: await cards.nth(1).getAttribute('data-event-key'),
+    date: (await cards.nth(1).locator('.world-timeline-date').innerText()).trim(),
+    titleEn: (await cards.nth(1).locator('.world-timeline-title-en').innerText()).trim(),
+    titleZh: (await cards.nth(1).locator('.world-timeline-title-zh').innerText()).trim(),
+  };
   await cards.nth(1).click();
   assert.equal(await cards.nth(1).getAttribute('aria-current'), 'step', 'clicked card must become current');
   assert.equal(await cards.locator('[aria-current="step"]').count(), 1, 'exactly one non-empty Timeline card must be current');
-  assert.ok((await page.locator('#eventPanel').innerText()).trim().length > 0, 'card selection must render event details');
-
-  for (let index = 0; index < await cards.count(); index += 1) {
-    const card = cards.nth(index);
-    assert.ok((await card.getAttribute('aria-label'))?.trim(), `Timeline card ${index} must have an accessible name`);
-    const box = await card.boundingBox();
-    assert.ok(box && box.height >= 44, `Timeline card ${index} must be at least 44px high (got ${box?.height})`);
-  }
+  const detailAfter = (await page.locator('#eventPanel').innerText()).trim();
+  assert.notEqual(detailAfter, detailBefore,
+    `clicking Timeline card ${selectedCard.eventKey} must replace the previous event details`);
+  assert.ok(detailAfter.includes(selectedCard.date),
+    `details for ${selectedCard.eventKey} must include its visible date "${selectedCard.date}"`);
+  assert.ok(detailAfter.includes(selectedCard.titleEn) || detailAfter.includes(selectedCard.titleZh),
+    `details for ${selectedCard.eventKey} must include its visible English or Chinese title`);
 
   await cards.nth(0).focus();
   await cards.nth(0).press('ArrowRight');
