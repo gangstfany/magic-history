@@ -330,6 +330,8 @@ async function verifyLearningShell(page, port) {
   assert.equal(await page.locator('#periodFilter').inputValue(), 'u1', 'APWH must open in Unit 1');
   assert.equal(await page.locator('[data-learning-view="chain"]').getAttribute('aria-pressed'), 'true',
     'APWH must open with the causal-chain view selected');
+  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), 'Unit 因果链',
+    'initial event region must identify the causal-chain context');
   await expectVisible(page.locator('#mapStudyView'), 'map must be visible alongside the initial causal chain');
   await expectVisible(page.locator('#worldTimelineDock'), 'Timeline Dock must be visible alongside the initial causal chain');
   await expectVisible(page.locator('#eventPanel .rt-stops-chain'), 'Unit 1 causal chain must be visible immediately');
@@ -345,6 +347,8 @@ async function verifyLearningShell(page, port) {
     'map entry must remove the causal-chain renderer from the event panel');
   assert.equal(await page.locator('[data-learning-view="map"]').getAttribute('aria-pressed'), 'true',
     'map entry must be marked pressed');
+  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '地图事件详情',
+    'map event region must identify ordinary map details');
 
   await page.locator('[data-learning-view="chain"]').click();
   await page.locator('#periodFilter').selectOption('u4');
@@ -355,13 +359,27 @@ async function verifyLearningShell(page, port) {
   await expectVisible(page.locator('#practiceDrawer'), 'practice opens as a drawer');
   await expectVisible(page.locator('#practiceDrawer .quiz-panel'), 'practice drawer must contain quiz controls');
   await expectVisible(page.locator('#mapStudyView'), 'practice drawer must leave the map visible');
+  assert.equal(await page.locator('#practiceDrawer').getAttribute('role'), 'dialog',
+    'practice drawer must expose dialog semantics');
+  assert.equal(await page.locator('#practiceDrawer').getAttribute('aria-modal'), 'true',
+    'fixed practice overlay must be announced as modal');
+  assert.deepEqual(await page.locator('.learning-view-tab[aria-pressed="true"]').allTextContents(), ['练习'],
+    'only Practice may remain pressed while its drawer is open');
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'practiceDrawerClose',
+    'opening Practice must move focus into the drawer');
+  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '练习',
+    'practice event region must identify the practice context');
   await page.locator('#practiceDrawerClose').click();
   assert.equal(await page.locator('#practiceDrawer').isVisible(), false, 'practice drawer closes independently');
+  assert.equal(await page.evaluate(() => document.activeElement?.dataset.learningView), 'practice',
+    'explicitly closing Practice must restore focus to its launcher');
   assert.equal(await page.locator('#periodFilter').inputValue(), 'u4', 'closing practice must preserve Unit 4');
   assert.equal(await page.locator('[data-learning-view="chain"]').getAttribute('aria-pressed'), 'true',
     'closing practice must preserve the causal-chain selection');
   await expectVisible(page.locator('#eventPanel .rt-stops-chain'),
     'closing practice must restore the Unit 4 causal chain');
+  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), 'Unit 因果链',
+    'closing Practice must restore the causal-chain event-region context');
 
   await page.setViewportSize({ width: 700, height: 900 });
   const narrowMapBox = await page.locator('#mapStudyView').boundingBox();

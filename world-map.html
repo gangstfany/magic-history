@@ -52,7 +52,7 @@ h1 .en { color: var(--accent); }
 .map-study-view { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 /* 地图区:固定高度的框,长宽高不随点击/缩放改变;缩放平移都发生在这个固定框内部(mapstage overflow:hidden) */
 .map-zone { flex: 0 0 auto; height: 500px; position: relative; background: var(--ocean); }
-/* 事件区:按内容完整展开(不再挤在 1/3 里、不再内部滚动),整页往下滚就能看全所有事件卡 */
+/* 右侧事件区随当前学习模式显示因果链、地图详情或练习内容;窄屏时叠到地图下方 */
 .event-zone { min-width: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: var(--shadow-sm); }
 .event-zone.fit-content { max-height: none; }
 @media (max-width: 850px) {
@@ -854,7 +854,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 </div>
 </div>
 
-<aside class="practice-drawer" id="practiceDrawer" aria-labelledby="practiceDrawerTitle" hidden>
+<aside class="practice-drawer" id="practiceDrawer" role="dialog" aria-modal="true" aria-labelledby="practiceDrawerTitle" hidden>
   <div class="practice-drawer-head"><strong id="practiceDrawerTitle">练习</strong><button type="button" class="practice-drawer-close" id="practiceDrawerClose" aria-label="关闭练习">×</button></div>
   <div class="practice-drawer-body" id="practiceDrawerBody"></div>
 </aside>
@@ -3117,6 +3117,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const practiceDrawerClose = document.getElementById('practiceDrawerClose');
   const learningTabs = [...document.querySelectorAll('.learning-view-tab')];
   let activeLearningView = 'chain';
+  let practiceLauncher = null;
 
   function chainForUnit(unitId) {
     if (unitId === 'u1') return 'u1_tapestry';
@@ -3126,9 +3127,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function syncLearningTabs() {
+    const practiceOpen = !practiceDrawer.hidden;
     learningTabs.forEach(tab => {
-      const pressed = tab.dataset.learningView === 'practice'
-        ? !practiceDrawer.hidden
+      const pressed = practiceOpen
+        ? tab.dataset.learningView === 'practice'
         : tab.dataset.learningView === activeLearningView;
       tab.setAttribute('aria-pressed', String(pressed));
     });
@@ -3144,7 +3146,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     }
   }
 
-  function closePracticeDrawer() {
+  function closePracticeDrawer(restoreFocus = false) {
     if (practiceDrawer.hidden) return;
     // 如果学生已经开始答题，先走统一退出流程，恢复被练习暂时挂起的 Unit / 主题筛选。
     exitQuiz();
@@ -3156,14 +3158,21 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       eventPanel.innerHTML = '';
       eventEmpty.style.display = 'block';
     }
+    eventZone.setAttribute('aria-label', activeLearningView === 'chain' ? 'Unit 因果链' : '地图事件详情');
     syncLearningTabs();
+    if (restoreFocus && practiceLauncher?.isConnected) practiceLauncher.focus();
+    practiceLauncher = null;
   }
 
   function openPracticeDrawer() {
+    if (!practiceDrawer.hidden) return;
+    practiceLauncher = learningTabs.find(tab => tab.dataset.learningView === 'practice') || document.activeElement;
     practiceDrawer.hidden = false;
     practiceDrawerBody.appendChild(eventZone);
+    eventZone.setAttribute('aria-label', '练习');
     renderPicker('quiz');
     syncLearningTabs();
+    practiceDrawerClose.focus();
   }
 
   function showLearningView(view) {
@@ -3171,8 +3180,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     closePracticeDrawer();
     activeLearningView = view;
     mapStudyView.hidden = false;
-    if (view === 'chain') showCurrentUnitChain();
+    if (view === 'chain') {
+      eventZone.setAttribute('aria-label', 'Unit 因果链');
+      showCurrentUnitChain();
+    }
     else {
+      eventZone.setAttribute('aria-label', '地图事件详情');
       if (routeMode?.route?.kind === 'chain') exitRouteMode();
       eventPanel.classList.remove('show');
       eventPanel.innerHTML = '';
@@ -3183,7 +3196,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   learningTabs.forEach(tab => tab.addEventListener('click', () => showLearningView(tab.dataset.learningView)));
-  practiceDrawerClose.addEventListener('click', closePracticeDrawer);
+  practiceDrawerClose.addEventListener('click', () => closePracticeDrawer(true));
 
   // ↓ 商路模式里这几句要立即执行,必须排在上面三个 const 之后(它们是 const,提前引用会 TDZ 报错)
   // 行程面板的按钮:事件面板是 innerHTML 重铺的,所以走事件委托
@@ -3238,7 +3251,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
   const CAT_ICON = {};   // 分类不再用 emoji 标记,保留这个映射只为渲染代码不必改
 
-  // 只负责把某个标点的历史事件渲染进下方事件区,不涉及路线/聚光灯 —— 骆驼每到一站也会调它
+  // 只负责把某个标点的历史事件渲染进当前上下文事件面板,不涉及路线/聚光灯 —— 骆驼每到一站也会调它
   function renderEventContent(num, badgeColor) {
     const items = index[num] || [];
     if (!items.length) return;
@@ -3259,8 +3272,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     // 强制重排后再加 show,触发"慢慢出现"的过渡动画
     void eventPanel.offsetWidth;
     eventPanel.classList.add('show');
-    // 1-2 条事件:事件区按内容实际高度显示,不用凑够 1/3 高度也不用滚轮,地图区顺势多占空间;
-    // 3 条及以上:维持固定 2:1 分栏 + 内部滚动
+    // 少量事件让上下文面板按内容自然展开;较长列表仍沿用标准面板布局。
     eventZone.classList.toggle('fit-content', items.length <= 2);
     eventZone.scrollTo({ top: 0, behavior: 'smooth' });
   }
