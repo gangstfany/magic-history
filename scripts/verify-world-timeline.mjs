@@ -601,6 +601,26 @@ async function verifyLearningShell(page, port) {
     'responsive verification must finish with Chain content visible');
 }
 
+async function verifyHomeRoutePickerProxy(page, port) {
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'domcontentloaded' });
+  const frame = page.frameLocator('#worldMapFrame');
+  await frame.locator('body').waitFor();
+  await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter);
+  await page.locator('.map-card-head [data-open-picker="route"]').click();
+  const mirroredReturn = page.locator('#home-events [data-route-picker-action="events"]');
+  await expectVisible(mirroredReturn, 'the homepage must mirror the APWH Routes picker Return action');
+  await mirroredReturn.click();
+  assert.equal(await frame.locator('#eventZone').getAttribute('aria-label'), '地图事件详情',
+    'the mirrored Routes Return action must switch the source panel to Event Details');
+  assert.equal(await frame.locator('[data-map-mode="events"]').getAttribute('aria-pressed'), 'true',
+    'the mirrored Routes Return action must press Event Details in the source panel');
+  assert.equal(await frame.locator('[data-map-mode="routes"]').getAttribute('aria-pressed'), 'false',
+    'the mirrored Routes Return action must release Routes in the source panel');
+  await page.waitForFunction(() => !document.querySelector('#home-events [data-route-picker-action]'));
+  assert.equal(await page.locator('#home-events [data-route-picker-action]').count(), 0,
+    'the homepage mirror must refresh after returning to Event Details');
+}
+
 export async function verifyBrowser() {
   await stat(PAGE_FILE);
   const playwright = await discoverPlaywright();
@@ -614,6 +634,7 @@ export async function verifyBrowser() {
     try {
       await verifyTimeline(page, port);
       await verifyLearningShell(page, port);
+      await verifyHomeRoutePickerProxy(page, port);
     } finally {
       await page.close();
     }

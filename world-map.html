@@ -3942,6 +3942,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       },
       inRoute: () => !!routeMode && routeMode.route.kind !== 'chain',
       openPicker: kind => renderPicker(kind),
+      setMapMode: mode => showMapMode(mode),
       // 随堂练习
       startQuiz: mode => startQuiz(mode),
       quizStats: () => quizStats(),

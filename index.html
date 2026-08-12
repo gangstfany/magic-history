@@ -843,6 +843,12 @@ nav.topnav {
       if (qm) { win.__mapFilter.quizTerm(qm.dataset.quizTerm); setTimeout(syncHomeEvents, 140); return; }
       const qz = e.target.closest('[data-quiz-action]');
       if (qz) { win.__mapFilter.quizAction(qz.dataset.quizAction); setTimeout(syncHomeEvents, 140); return; }
+      const routePickerAction = e.target.closest('[data-route-picker-action]');
+      if (routePickerAction && win.__mapFilter.setMapMode) {
+        win.__mapFilter.setMapMode(routePickerAction.dataset.routePickerAction);
+        setTimeout(syncHomeEvents, 140);
+        return;
+      }
       const go = e.target.closest('[data-route-go]');
       if (go) { win.__mapFilter.enterRoute(go.dataset.routeGo); setTimeout(syncHomeEvents, 120); return; }
       const step = e.target.closest('[data-route-step]');
