@@ -328,20 +328,46 @@ async function verifyLearningShell(page, port) {
   assert.deepEqual(await page.locator('.learning-view-tab').allTextContents(), ['因果链', '地图', '练习']);
   assert.equal((await page.locator('#mapToolbar .mt-field').first().innerText()).split('\n')[0].trim(), 'Unit / 单元');
   assert.equal(await page.locator('#periodFilter').inputValue(), 'u1', 'APWH must open in Unit 1');
-  assert.equal(await page.locator('[data-learning-view="chain"]').getAttribute('aria-pressed'), 'true');
-  assert.equal(await page.locator('#mapStudyView').isVisible(), false, 'map is secondary on first load');
+  assert.equal(await page.locator('[data-learning-view="chain"]').getAttribute('aria-pressed'), 'true',
+    'APWH must open with the causal-chain view selected');
+  await expectVisible(page.locator('#mapStudyView'), 'map must be visible alongside the initial causal chain');
+  await expectVisible(page.locator('#worldTimelineDock'), 'Timeline Dock must be visible alongside the initial causal chain');
   await expectVisible(page.locator('#eventPanel .rt-stops-chain'), 'Unit 1 causal chain must be visible immediately');
+  const desktopMapBox = await page.locator('#mapStudyView').boundingBox();
+  const desktopPanelBox = await page.locator('#eventZone').boundingBox();
+  assert.ok(desktopMapBox && desktopPanelBox && desktopMapBox.x + desktopMapBox.width <= desktopPanelBox.x + 1,
+    'at 900x700, map study view must sit to the left of the event panel');
 
   await page.locator('[data-learning-view="map"]').click();
   await expectVisible(page.locator('#mapStudyView'), 'map entry must show the map study view');
   await expectVisible(page.locator('#worldTimelineDock'), 'Timeline remains embedded with the map');
+  assert.equal(await page.locator('#eventPanel .rt-stops-chain').count(), 0,
+    'map entry must remove the causal-chain renderer from the event panel');
+  assert.equal(await page.locator('[data-learning-view="map"]').getAttribute('aria-pressed'), 'true',
+    'map entry must be marked pressed');
+
+  await page.locator('[data-learning-view="chain"]').click();
+  await page.locator('#periodFilter').selectOption('u4');
+  assert.match(await page.locator('#eventPanel').innerText(), /Unit 4|大西洋|Atlantic/i,
+    'Unit 4 selection must render Unit 4 Atlantic causal-chain content');
 
   await page.locator('[data-learning-view="practice"]').click();
   await expectVisible(page.locator('#practiceDrawer'), 'practice opens as a drawer');
   await expectVisible(page.locator('#practiceDrawer .quiz-panel'), 'practice drawer must contain quiz controls');
-  await expectVisible(page.locator('#mapStudyView'), 'practice drawer must not replace the selected main view');
+  await expectVisible(page.locator('#mapStudyView'), 'practice drawer must leave the map visible');
   await page.locator('#practiceDrawerClose').click();
   assert.equal(await page.locator('#practiceDrawer').isVisible(), false, 'practice drawer closes independently');
+  assert.equal(await page.locator('#periodFilter').inputValue(), 'u4', 'closing practice must preserve Unit 4');
+  assert.equal(await page.locator('[data-learning-view="chain"]').getAttribute('aria-pressed'), 'true',
+    'closing practice must preserve the causal-chain selection');
+  await expectVisible(page.locator('#eventPanel .rt-stops-chain'),
+    'closing practice must restore the Unit 4 causal chain');
+
+  await page.setViewportSize({ width: 700, height: 900 });
+  const narrowMapBox = await page.locator('#mapStudyView').boundingBox();
+  const narrowPanelBox = await page.locator('#eventZone').boundingBox();
+  assert.ok(narrowMapBox && narrowPanelBox && narrowPanelBox.y >= narrowMapBox.y + narrowMapBox.height - 1,
+    'at 700x900, event panel must stack below the map study view');
 }
 
 export async function verifyBrowser() {
