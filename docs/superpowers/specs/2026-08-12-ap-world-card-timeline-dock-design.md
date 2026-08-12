@@ -67,6 +67,8 @@ The page keeps one canonical selected-event ID. Every surface reads from and wri
 - Events with multiple geographic anchors still use one Timeline card. All of their map markers share the selected state.
 - Events without a geographic anchor select normally in the Dock and detail view without forcing a map movement.
 
+The current legacy AP World source table contains no anchorless records: every entry is nested under a numbered map location. The Dock therefore supports only the anchored records actually present today and exposes this limitation through its test state. No fictional anchorless event is added merely to exercise the interaction; acceptance coverage for anchorless selection should be enabled when the source model gains a genuine such record.
+
 Automatic card reveal must not scroll the document or steal keyboard focus. Direct keyboard activation retains focus on the control the student used.
 
 ## Responsive and Accessibility Behavior
@@ -81,6 +83,8 @@ Automatic card reveal must not scroll the document or steal keyboard focus. Dire
 ## Data Flow
 
 The Dock adapts the existing AP World event objects rather than introducing a second content source. A small rendering layer derives the date and bilingual labels already used by the world map.
+
+Unit membership is a reviewed literal mapping keyed by each source record's stable ID. Only records dated c.1200 or later are eligible; earlier source records remain available elsewhere in the map but are intentionally absent from the AP World History: Modern Timeline. An eligible record missing from the mapping is reported by the Timeline test API and omitted rather than guessed into a Unit. The mapping uses the College Board Unit 1–9 names and permits historically justified boundary-spanning events.
 
 The existing filter result determines the visible event IDs. The Timeline renderer consumes those IDs, looks up their event records, orders them chronologically, and creates the cards. All selection changes go through one selection function so map, Dock, and detail state cannot diverge.
 

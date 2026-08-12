@@ -2017,6 +2017,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       if (!numEl || !yrEl || !cityEl) return;
       const num = numEl.textContent.trim();
       const rec = {
+        sourceId: `${num}:${(index[num] || []).length}`,
         yr: yrEl.textContent.trim(),
         city: cityEl.textContent.trim(),
         catAbbr, catFull, catColor,
@@ -2031,33 +2032,52 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
   // Timeline 直接适配上面的 index,不维护第二份事件内容。相同年份/内容的多地点记录
   // 共用一个事件键,所以只生成一张卡,但保留全部地图锚点。
+  const WORLD_TIMELINE_UNIT_MEMBERS = Object.freeze({
+    u1: ["75:0","6:0","23:0","73:0","18:0","49:0","10:0","50:0","85:2","73:2","73:3","73:4","32:0","49:4","50:3","3:4","32:3","23:4","18:3","49:6","75:1","93:1","49:8","10:4","42:1","43:1","50:4","50:5"],
+    u2: ["8:0","86:0","84:0","9:0","2:1","10:3","5:6","2:4"],
+    u3: ["74:0","77:0","19:0","49:1","6:1","50:1","49:2","14:0","78:0","24:0","5:0","26:0","25:0","23:1","2:3","11:2","77:1","32:1","33:0","49:5","13:0","34:0","32:2","35:0","24:3","24:4","23:2","57:1","49:7","77:2","14:2","100:0","41:0","57:2","74:2"],
+    u4: ["45:0","2:2","85:1","12:0","44:0","43:0","42:0","60:0","74:1","87:0","57:0","58:0","59:0","44:1","55:1","60:1","66:0","91:1","39:0","68:0","68:1","59:1","99:0","104:0"],
+    u5: ["51:0","24:1","24:2","51:1","24:6","66:1","23:5","54:1"],
+    u6: ["6:2","50:2","27:0","52:0","53:0","54:0","20:0","79:0","18:1","15:0","10:1","5:1","28:0","14:1","29:0","29:1","5:2","80:0","55:0","5:3","37:0","36:0","62:0","63:0","1:1","89:0","88:0","53:1","61:0","90:0","29:4","91:0","94:0","23:3","95:0","67:0","36:1","36:2","69:0","6:7","40:0","53:3","70:0","91:2","101:0","36:3","36:4","23:7","23:8","91:3","71:0","88:1","29:6","63:1","97:1"],
+    u7: ["21:0","18:2","49:3","10:2","30:0","11:0","22:0","5:4","29:2","84:1","29:5","53:2","23:6","18:4","46:0"],
+    u8: ["29:3","11:1","22:1","82:0","5:5","16:0","16:1","79:1","81:0","21:1","20:1","56:0","38:0","6:3","64:0","5:7","92:0","62:1","5:8","96:0","82:1","102:0","17:0","103:0"],
+    u9: ["31:0","83:0","65:0","5:9","97:0","95:1"],
+  });
+  const WORLD_TIMELINE_UNIT_MAP = Object.freeze(Object.fromEntries(
+    Object.entries(WORLD_TIMELINE_UNIT_MEMBERS).flatMap(([unit, ids]) => ids.map(id => [id, unit]))
+  ));
+  // 同一历史进程在不同地点的数据卡共用显式事件 ID；当前资料中 Middle Passage
+  // 分别从欧洲出发港、美洲种植园和西非奴隶堡叙述。
+  const WORLD_TIMELINE_EVENT_ALIASES = Object.freeze({
+    '39:0': 'middle-passage', '59:1': 'middle-passage', '99:0': 'middle-passage',
+  });
   const timelineEvents = [];
   const timelineByKey = new Map();
   const timelineSignature = it => `${it.yr}|${it.catAbbr}|${(it.trigHTML || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()}`;
-  const eventUnit = it => {
-    const y = yearStart(it.yr);
-    const words = `${it.catAbbr} ${(it.trigHTML || '').replace(/<[^>]*>/g, '')}`.toLowerCase();
-    if (y < 1450) return /econ|trade|silk|commerce|exchange|merchant/.test(words) ? 'u2' : 'u1';
-    if (y < 1750) return /econ|trade|exchange|columb|silver|plantation/.test(words) ? 'u4' : 'u3';
-    if (y < 1900) return /revolution|industrial|enlighten|national|liberal|constitution|abolition/.test(words) ? 'u5' : 'u6';
-    if (y < 1945) return 'u7';
-    if (y < 1991) return 'u8';
-    return 'u9';
+  const timelineTitles = (it, holder) => {
+    const plain = holder.textContent.replace(/\s+/g, ' ').trim() || it.city;
+    const lead = plain.split(/\s+[—–]\s+/)[0].trim();
+    const highlighted = holder.querySelector('.hl')?.textContent.trim();
+    const titleEn = [highlighted, lead, it.city].find(value => /[A-Za-z]/.test(value || '')) || `World History: ${it.city}`;
+    const titleZh = /[\u3400-\u9fff]/.test(plain) ? plain : `历史事件：${plain}`;
+    return { titleEn, titleZh };
   };
+  const unmappedTimelineSourceIds = [];
+  let excludedPre1200Count = 0;
   Object.entries(index).forEach(([num, items]) => items.forEach((it, ordinal) => {
-    const signature = timelineSignature(it);
+    if (yearStart(it.yr) < 1200) { excludedPre1200Count += 1; return; }
+    const unit = WORLD_TIMELINE_UNIT_MAP[it.sourceId];
+    if (!unit) { unmappedTimelineSourceIds.push(it.sourceId); return; }
+    const signature = WORLD_TIMELINE_EVENT_ALIASES[it.sourceId] || timelineSignature(it);
     let event = timelineByKey.get(signature);
     if (!event) {
       const holder = document.createElement('div');
       holder.innerHTML = it.trigHTML || '';
-      const plainTitle = holder.textContent.replace(/\s+/g, ' ').trim() || it.city;
-      const highlighted = holder.querySelector('.hl')?.textContent.trim();
-      const english = highlighted || (plainTitle.match(/[A-Za-z][A-Za-z0-9 '&.-]{2,}/)?.[0]) || it.city;
-      const chinese = (plainTitle.match(/[\u3400-\u9fff][^—;,，。]*/)?.[0] || plainTitle || it.city).trim();
+      const { titleEn, titleZh } = timelineTitles(it, holder);
       event = {
-        key: `world-event-${timelineEvents.length + 1}`,
-        yr: it.yr, titleEn: english, titleZh: chinese,
-        unit: eventUnit(it), sortYear: yearStart(it.yr), it, anchors: []
+        key: `world-event-${WORLD_TIMELINE_EVENT_ALIASES[it.sourceId] || it.sourceId.replace(':', '-')}`,
+        yr: it.yr, titleEn, titleZh,
+        unit, sortYear: yearStart(it.yr), it, anchors: []
       };
       timelineByKey.set(signature, event);
       timelineEvents.push(event);
@@ -3136,6 +3156,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const timelineScope = document.getElementById('worldTimelineScope');
   let selectedTimelineKey = null;
   let visibleTimelineEvents = [];
+  let timelineRegionScope = null;
   const escapeTimelineText = value => String(value || '').replace(/[&<>"']/g, ch => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[ch]);
@@ -3178,7 +3199,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       }
     });
     svg.querySelectorAll('.pin-group').forEach(group => group.classList.remove('timeline-selected'));
-    const groups = event.anchors.map(anchor => findPinGroup(anchor.num)).filter(Boolean);
+    const groups = event.anchors
+      .filter(anchor => !timelineRegionScope || anchor.region === timelineRegionScope)
+      .map(anchor => findPinGroup(anchor.num)).filter(Boolean);
     groups.forEach(group => { group.classList.add('timeline-selected', 'revealed'); });
     renderTimelineDetail(event);
     if (moveMap && groups.length) fitToPins(groups, 450);
@@ -3480,9 +3503,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
     // Unit 是地图、搜索结果与 Timeline 的共同筛选维度。归类使用 index 记录上方
     // 已算好的 timelineKey,避免另建一份内容表。
-    const PERIODS = Array.from({ length: 9 }, (_, i) => ({
-      id: `u${i + 1}`, label: `Unit ${i + 1}`
-    }));
+    const PERIODS = [
+      'The Global Tapestry', 'Networks of Exchange', 'Land-Based Empires',
+      'Transoceanic Interconnections', 'Revolutions', 'Consequences of Industrialization',
+      'Global Conflict', 'Cold War and Decolonization', 'Globalization',
+    ].map((name, i) => ({ id: `u${i + 1}`, label: `Unit ${i + 1} · ${name}` }));
     // 年份写法有 "1206–1450" / "1215" / "1800s" / "1500s–1600s" / "c.1200" 五种,统一解析成 [起, 止]
     function yearSpan(yr) {
       const parts = String(yr).split(/[–—]|(?<=\d)-(?=\d)/);
@@ -3558,7 +3583,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         + `<div class="city-name">搜索结果</div>`
         + `<div class="city-count">${hits.length} 条 · ${pins.size} 个地点</div></div>`
         + `<div class="event-list">`
-        + hits.map(h => `<div class="event-card is-result" data-pin="${h.num}" data-region="${h.region}" role="button" tabindex="0" style="border-left-color:${h.it.catColor}">`
+        + hits.map(h => `<div class="event-card is-result" data-pin="${h.num}" data-region="${h.region}" data-event-key="${h.it.timelineKey || ''}" role="button" tabindex="0" style="border-left-color:${h.it.catColor}">`
           + `<div class="ec-top"><span class="ec-yr">${h.it.yr}</span>`
           + `<span class="ec-cat">${CAT_ICON[h.it.catAbbr] || ''} ${h.it.catFull}</span></div>`
           + `<div class="ec-trig">${h.it.trigHTML}</div>`
@@ -3594,6 +3619,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     function apply() {
       if (clearBtn) clearBtn.hidden = !query;
       let countText = '';
+      let displayedHits = null;
       if (!filterActive()) {                     // 恢复常态:先全隐,再按当前地区显示
         pinGroups().forEach(g => g.classList.remove('revealed'));
         if (activeRegion) paintRegion(activeRegion, true);
@@ -3615,18 +3641,23 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         countText = hits.length ? `${scope}${pinCount} 个地点 · ${hits.length} 条`
                                 : `${scope}没有匹配`;
         hits.length ? renderResults(hits) : renderNoResults();
+        displayedHits = hits;
         dismissFirstClickHint();                 // 搜索时那个"点一下试试"的气泡正好挡住命中标点
       }
       const timelineMatches = timelineEvents.filter(event => event.anchors.some(anchor =>
         (!activeRegion || anchor.region === activeRegion) && eventPass(anchor.it)));
+      timelineRegionScope = activeRegion;
       const activeUnit = PERIODS.find(period => period.id === activePeriod);
       renderTimeline(timelineMatches, activeUnit ? activeUnit.label : '全部 Units');
+      // 搜索结果本身就是事件详情区里的可操作控件；Timeline 重建会同步 canonical
+      // selection,随后把结果列表还原，确保用户能点到携带精确 event key 的那一条。
+      if (tokens.length) displayedHits?.length ? renderResults(displayedHits) : renderNoResults();
       if (countBox) countBox.textContent = countText;
       if (onCountChange) onCountChange(countText);
     }
 
     // 点结果条 => 跟手动"点地块→点标点"完全一样:高亮国家、弹事件卡、跑路线动画
-    function openHit(num, region) {
+    function openHit(num, region, eventKey) {
       const regionPath = document.querySelector(`.region-path[data-region="${region}"]`);
       // openHit 是“打开事件”而不是“更改地区筛选”。保留当前结果集合,只把目标地区
       // 做视觉聚光,否则 Dock 会在滚到目标卡之前被地区筛选重建。
@@ -3634,19 +3665,19 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       const g = pinGroups().find(x => pinNum(x) === num);
       if (g) g.classList.add('revealed');        // 结果条对应的标点保持可见
       showingResults = false;                    // 交棒给标点自己的事件卡
-      if (!selectTimelineByPin(num, true)) {
+      if (!(eventKey && selectTimelineEvent(eventKey, { reveal: true, moveMap: false })) && !selectTimelineByPin(num, true)) {
         renderEventPanel(num, g && g.querySelector('circle') ? g.querySelector('circle').getAttribute('fill') : '#8b1a1a');
       }
       spotlightPin(num);
     }
     eventPanel.addEventListener('click', e => {
       const card = e.target.closest('.event-card.is-result');
-      if (card) openHit(card.dataset.pin, card.dataset.region);
+      if (card) openHit(card.dataset.pin, card.dataset.region, card.dataset.eventKey);
     });
     eventPanel.addEventListener('keydown', e => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const card = e.target.closest('.event-card.is-result');
-      if (card) { e.preventDefault(); openHit(card.dataset.pin, card.dataset.region); }
+      if (card) { e.preventDefault(); openHit(card.dataset.pin, card.dataset.region, card.dataset.eventKey); }
     });
 
     function setQuery(q) { takeQuery(q); if (searchInput) searchInput.value = q; apply(); }
@@ -3731,8 +3762,18 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
     // 对外 API:首页(父页面)满宽工具栏调它来驱动搜索/筛选
     const getTimelineState = () => Object.freeze({
+      mappingMode: 'explicit',
       selectedEventKey: selectedTimelineKey,
       visibleEventKeys: Object.freeze(visibleTimelineEvents.map(event => event.key)),
+      visibleEvents: Object.freeze(visibleTimelineEvents.map(event => Object.freeze({
+        key: event.key, unit: event.unit, sortYear: event.sortYear,
+        titleEn: event.titleEn, titleZh: event.titleZh,
+        anchors: Object.freeze(event.anchors.map(anchor => Object.freeze({ num: anchor.num, region: anchor.region }))),
+      }))),
+      unmappedEventKeys: Object.freeze(unmappedTimelineSourceIds.slice()),
+      excludedPre1200Count,
+      anchorlessRecordCount: 0,
+      anchorlessSupported: false,
       unit: activePeriod,
     });
     window.getTimelineState = getTimelineState;

@@ -116,6 +116,28 @@ async function verifyTimeline(page, port) {
   assert.ok(response?.ok(), `world-map.html is unavailable (HTTP ${response?.status() || 'no response'})`);
   await page.waitForFunction(() => Boolean(window.__mapFilter), undefined, { timeout: 8_000 });
 
+  const initialState = await page.evaluate(() => window.getTimelineState());
+  assert.equal(initialState.mappingMode, 'explicit', 'Timeline Units must come from a literal reviewed mapping');
+  assert.equal(initialState.unmappedEventKeys.length, 0, 'every in-scope event must have an explicit Unit mapping');
+  assert.ok(initialState.excludedPre1200Count > 0, 'pre-1200 source records must be explicitly excluded from Timeline');
+  assert.equal(initialState.anchorlessRecordCount, 0, 'current AP World source data has no anchorless records');
+  assert.equal(initialState.anchorlessSupported, false, 'API must document the current anchorless-data limitation');
+  assert.ok(initialState.visibleEvents.every((event) => event.sortYear >= 1200), 'Timeline must exclude every pre-1200 event');
+  assert.ok(initialState.visibleEvents.every((event) => /[A-Za-z]/.test(event.titleEn)), 'every explicit English title must contain Latin text');
+  assert.ok(initialState.visibleEvents.every((event) => /[\u3400-\u9fff]/.test(event.titleZh)), 'every explicit Chinese title must contain Chinese text');
+  const multiRegionEvent = initialState.visibleEvents.find((event) => new Set(event.anchors.map((anchor) => anchor.region)).size > 1);
+  assert.ok(multiRegionEvent, 'explicit mapping must consolidate a real multi-region event into one card');
+  const scopedRegion = multiRegionEvent.anchors[0].region;
+  await page.evaluate(({ key, region }) => {
+    window.__mapFilter.setPeriod('');
+    document.querySelector(`.region-path[data-region="${region}"]`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    window.selectTimelineEvent(key);
+  }, { key: multiRegionEvent.key, region: scopedRegion });
+  const selectedRegions = await page.evaluate(() => [...document.querySelectorAll('.pin-group.timeline-selected')].map((group) => group.dataset.region));
+  assert.ok(selectedRegions.length > 0, 'scoped multi-anchor selection must reveal an in-scope pin');
+  assert.ok(selectedRegions.every((region) => region === scopedRegion), 'scoped multi-anchor selection must not reveal pins from other regions');
+  await page.evaluate((region) => document.querySelector(`.region-path[data-region="${region}"]`).dispatchEvent(new MouseEvent('click', { bubbles: true })), scopedRegion);
+
   const dock = page.locator('#worldTimelineDock');
   assert.equal(await dock.count(), 1, 'AP World must expose exactly one #worldTimelineDock');
   await expectVisible(dock, 'AP World card Timeline must be visible');
@@ -125,6 +147,12 @@ async function verifyTimeline(page, port) {
 
   const periods = (await page.evaluate(() => window.__mapFilter.getPeriodOptions())).filter(({ value }) => value);
   assert.equal(periods.length, 9, 'AP World Timeline must cover the nine non-empty Unit options');
+  assert.deepEqual(periods.map(({ label }) => label.replace(/\s*\(\d+\)$/, '')), [
+    'Unit 1 · The Global Tapestry', 'Unit 2 · Networks of Exchange',
+    'Unit 3 · Land-Based Empires', 'Unit 4 · Transoceanic Interconnections',
+    'Unit 5 · Revolutions', 'Unit 6 · Consequences of Industrialization',
+    'Unit 7 · Global Conflict', 'Unit 8 · Cold War and Decolonization', 'Unit 9 · Globalization',
+  ], 'Unit options must expose the reviewed College Board Unit names');
   let richestPeriod = null;
   for (const period of periods) {
     await page.evaluate((id) => window.__mapFilter.setPeriod(id), period.value);
@@ -171,6 +199,21 @@ async function verifyTimeline(page, port) {
     `details for ${selectedCard.eventKey} must include its visible date "${selectedCard.date}"`);
   assert.ok(detailAfter.includes(selectedCard.titleEn) || detailAfter.includes(selectedCard.titleZh),
     `details for ${selectedCard.eventKey} must include its visible English or Chinese title`);
+
+  const searchable = await page.evaluate(() => {
+    const all = [...document.querySelectorAll('.world-timeline-card')];
+    const counts = new Map(all.map((card) => [card.dataset.pin, all.filter((item) => item.dataset.pin === card.dataset.pin).length]));
+    const card = all.find((item) => counts.get(item.dataset.pin) > 1 && item.querySelector('.world-timeline-title-en')?.textContent.trim().length > 3);
+    return card && { key: card.dataset.eventKey, query: card.querySelector('.world-timeline-title-en').textContent.trim() };
+  });
+  assert.ok(searchable, 'interaction Unit must provide a multi-event pin for exact search-result selection');
+  await page.evaluate((query) => window.__mapFilter.setQuery(query), searchable.query);
+  const exactResult = page.locator(`.event-card.is-result[data-event-key="${searchable.key}"]`);
+  assert.equal(await exactResult.count(), 1, 'search result must carry the exact Timeline event key');
+  await exactResult.click();
+  assert.equal((await page.evaluate(() => window.getTimelineState())).selectedEventKey, searchable.key,
+    'clicking a search result must select that exact event, not the first event at its pin');
+  await page.evaluate(() => window.__mapFilter.setQuery(''));
 
   await cards.nth(0).focus();
   await cards.nth(0).press('ArrowRight');
