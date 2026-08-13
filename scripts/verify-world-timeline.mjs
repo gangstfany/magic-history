@@ -787,6 +787,49 @@ async function verifyHomeLearningShell(page, port) {
   await frame.locator('body').waitFor();
   await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter);
   await page.waitForFunction(() => document.querySelector('#hostPeriod')?.options.length > 1);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const desktopWorkspace = await page.locator('.map-card[data-subject="world"]').evaluate(card => {
+    const shell = card.closest('.card').getBoundingClientRect();
+    const module = card.getBoundingClientRect();
+    const canvas = card.querySelector('.home-map-wrap').getBoundingClientRect();
+    const panel = card.querySelector('#home-events').getBoundingClientRect();
+    const panelStyle = getComputedStyle(card.querySelector('#home-events'));
+    return {
+      moduleShare: module.width / shell.width,
+      canvasShare: canvas.width / (canvas.width + panel.width),
+      equalHeight: Math.abs(canvas.height - panel.height) <= 1,
+      panelOverflowY: panelStyle.overflowY,
+    };
+  });
+  assert.ok(desktopWorkspace.moduleShare >= 0.94,
+    `desktop APWH module must use the available Main width: ${JSON.stringify(desktopWorkspace)}`);
+  assert.ok(desktopWorkspace.canvasShare >= 0.64 && desktopWorkspace.canvasShare <= 0.74,
+    `desktop APWH workspace must reserve about 70/30 for map and context: ${JSON.stringify(desktopWorkspace)}`);
+  assert.equal(desktopWorkspace.equalHeight, true, 'desktop APWH map and contextual panel must share a bounded height');
+  assert.equal(desktopWorkspace.panelOverflowY, 'auto', 'desktop APWH contextual panel must scroll independently');
+
+  const themeToggle = page.locator('#hostThemeToggle');
+  const themePanel = page.locator('#hostThemePanel');
+  assert.equal(await themeToggle.getAttribute('aria-expanded'), 'false', 'Main theme filters must start collapsed');
+  assert.ok((await themeToggle.boundingBox())?.height >= 44, 'theme disclosure must provide a 44px touch target');
+  assert.equal(await themePanel.isVisible(), false, 'collapsed Main theme filters must not consume workspace height');
+  const canvasHeightBeforeTheme = (await page.locator('.home-map-wrap').boundingBox()).height;
+  await themeToggle.click();
+  assert.equal(await themeToggle.getAttribute('aria-expanded'), 'true', 'theme disclosure must report its expanded state');
+  await expectVisible(themePanel, 'expanded Main theme filters must be visible');
+  const sourceThemeCountBefore = await frame.locator('body').evaluate(() => window.__mapFilter.getState().cats.size);
+  await page.locator('#hostCats [data-cat]').first().click();
+  const sourceThemeCountAfter = await frame.locator('body').evaluate(() => window.__mapFilter.getState().cats.size);
+  assert.equal(sourceThemeCountAfter, sourceThemeCountBefore - 1,
+    'collapsed Main theme presentation must continue driving the source filter state');
+  await page.locator('#hostCats [data-cat]').first().click();
+  await themeToggle.click();
+  assert.equal(await themePanel.isVisible(), false, 'theme disclosure must collapse without leaving the chip row visible');
+  const canvasHeightAfterTheme = (await page.locator('.home-map-wrap').boundingBox()).height;
+  assert.ok(Math.abs(canvasHeightAfterTheme - canvasHeightBeforeTheme) <= 2,
+    'opening and closing theme filters must not permanently reduce the map canvas');
+
   for (const viewport of [{ width: 1100, height: 850 }, { width: 700, height: 900 }]) {
     await page.setViewportSize(viewport);
     const sourceLayout = await frame.locator('body').evaluate(() => {
@@ -808,6 +851,10 @@ async function verifyHomeLearningShell(page, port) {
   for (const viewport of [{ width: 1100, height: 850 }, { width: 700, height: 900 }]) {
     await page.setViewportSize(viewport);
     await page.locator('[data-subj="art"]').click();
+    assert.equal(await themeToggle.getAttribute('aria-expanded'), 'false',
+      `${viewport.width}px host: leaving World must collapse World-only theme controls`);
+    assert.equal(await themePanel.isVisible(), false,
+      `${viewport.width}px host: other subjects must not display World-only theme controls`);
     const artSizing = await page.locator('.map-card').evaluate(card => ({
       subject: card.dataset.subject,
       splitInline: card.querySelector('.map-events-split').style.height,
@@ -826,6 +873,8 @@ async function verifyHomeLearningShell(page, port) {
     assert.deepEqual(compactSizing, { subject: 'us', splitInline: '', wrapInline: '', panelInline: '' },
       `${viewport.width}px host: compact subjects must not inherit World-only inline sizing`);
     await page.locator('[data-subj="world"]').click();
+    assert.equal(await themeToggle.getAttribute('aria-expanded'), 'false',
+      `${viewport.width}px host: returning to World must start with compact theme controls`);
     const worldDock = await frame.locator('#worldTimelineDock').evaluate(node => ({
       bottom: node.getBoundingClientRect().bottom,
       viewportHeight: document.documentElement.clientHeight,
@@ -833,6 +882,13 @@ async function verifyHomeLearningShell(page, port) {
     assert.ok(worldDock.bottom <= worldDock.viewportHeight + 1,
       `${viewport.width}px host: returning to World must recalculate a visible Timeline Dock`);
   }
+  await page.setViewportSize({ width: 700, height: 900 });
+  const narrowHostGeometry = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  assert.ok(narrowHostGeometry.scrollWidth <= narrowHostGeometry.clientWidth + 1,
+    `narrow Main APWH layout must not scroll horizontally: ${JSON.stringify(narrowHostGeometry)}`);
   await page.setViewportSize({ width: 900, height: 700 });
   const hostPrimary = page.locator('.map-card-head [data-learning-view]');
   assert.deepEqual(await trimmedTexts(hostPrimary), ['因果链', '地图', '练习'],
