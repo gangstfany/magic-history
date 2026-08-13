@@ -189,12 +189,21 @@ h1 .en { color: var(--accent); }
 /* 控制条 sticky 吸底,会盖住最后一环。链条越长越明显(U1 主干链 8 环时正好压住交棒 Unit 2 那一环) */
 .rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 52px; }
 .rt-stops-chain .rt-stop { justify-content: flex-start; text-align: left; }
-/* 链内切换器:这个版面没有因果链清单页,补充链只能从链条面板里进 */
-.rt-switch { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+/* 链内切换器:主干链是骨架、补充链是支线,用形状分层,不靠颜色暗示 */
+.rt-switch { margin: 10px 0 0; }
+.rt-spine { display: flex; width: 100%; align-items: center; gap: 7px; min-height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 800; color: var(--ink); cursor: pointer; text-align: left; }
+.rt-spine:hover { border-color: var(--ink-soft); }
+.rt-spine.on { border-color: var(--ink); background: rgba(90,45,122,0.05); }
+.rt-spine .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
+.rs-tag { flex: 0 0 auto; padding: 2px 5px; border-radius: 4px; font-size: 10.5px; font-weight: 800; color: #5a2d7a; background: rgba(90,45,122,0.10); }
+.rs-name { flex: 1 1 auto; min-width: 0; }
+.rt-switch-title { margin: 10px 0 0; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+.rt-branches { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
 .rt-switch-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); cursor: pointer; text-align: left; }
 .rt-switch-chip:hover { border-color: var(--ink-soft); }
-.rt-switch-chip.on { color: var(--ink); border-color: var(--ink); }
+.rt-switch-chip.on { color: var(--ink); border-color: var(--ink); background: rgba(154,127,181,0.10); }
 .rt-switch-chip .rc-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; }
+.rt-switch-chip .rc-count, .rt-spine .rc-count { font-size: 10.5px; }
 
 .rt-stop .rt-sub { margin-left: 7px; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
 .rt-link { display: flex; gap: 8px; padding: 7px 0 7px 13px; margin: 2px 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
@@ -3243,21 +3252,29 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   // 药丸在单元语境里,不必每颗都重复"Unit 1 ·"
   const chainShortName = (c) => chainChipName(c).replace(/^Unit[^·]*·\s*/, '');
   // 这个版面没有因果链清单页:点「因果链」直接进本单元的主干链。补充链于是无处可去 ——
-  // 把切换器做进链条面板本身,主干链和补充链在同一行,学生在链内就能换。
+  // 把切换器做进链条面板本身。主干链和补充链不是并列关系(一个是骨架、一个是挂在骨架上的支线),
+  // 所以用形状分层而不是只靠颜色:主干链整条独占一行,补充链缩一号排在下面。
   function chainSwitcherHTML(current) {
     const unitId = document.getElementById('periodFilter')?.value || 'u1';
     const list = chainsForUnit(unitId);
     if (list.length < 2) return '';
-    return `<div class="rt-switch" role="group" aria-label="本单元的因果链">`
-      + list.map(c => {
-          const isSub = (c.tier || 'main') === 'sub';
-          const on = c.id === current.id;
-          return `<button type="button" class="rt-switch-chip${isSub ? ' sub' : ''}${on ? ' on' : ''}"`
-            + `${on ? ' aria-current="true"' : ''} data-route-go="${c.id}" title="${c.name}">`
-            + `<span class="rc-dot" style="background:${isSub ? '#9a7fb5' : '#5a2d7a'}"></span>`
-            + `${chainShortName(c)}</button>`;
-        }).join('')
-      + `</div>`;
+    const spine = list.find(c => (c.tier || 'main') === 'main');
+    const branches = list.filter(c => (c.tier || 'main') === 'sub');
+    const spineHTML = spine ? `<button type="button" class="rt-spine${spine.id === current.id ? ' on' : ''}"`
+      + `${spine.id === current.id ? ' aria-current="true"' : ''} data-route-go="${spine.id}" title="${spine.name}">`
+      + `<span class="rc-dot" style="background:#5a2d7a"></span>`
+      + `<span class="rs-tag">主干链</span>`
+      + `<span class="rs-name">${chainShortName(spine)}</span>`
+      + `<span class="rc-count">${spine.stops.length} 环</span></button>` : '';
+    const branchHTML = branches.length
+      ? `<p class="rt-switch-title">补充链 · 主干装不下的支线</p><div class="rt-branches">`
+        + branches.map(c => `<button type="button" class="rt-switch-chip sub${c.id === current.id ? ' on' : ''}"`
+            + `${c.id === current.id ? ' aria-current="true"' : ''} data-route-go="${c.id}" title="${c.name}">`
+            + `<span class="rc-dot" style="background:#9a7fb5"></span>${chainShortName(c)}`
+            + `<span class="rc-count">${c.stops.length} 环</span></button>`).join('')
+        + `</div>`
+      : '';
+    return `<div class="rt-switch" role="group" aria-label="本单元的因果链">${spineHTML}${branchHTML}</div>`;
   }
 
   function syncLearningTabs() {
