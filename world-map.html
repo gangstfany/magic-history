@@ -3658,7 +3658,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   let firstHintTimer = null;
   let firstClickHintConsumed = false;
   function dismissFirstClickHint(consume = false) {
-    if (consume) firstClickHintConsumed = true;
+    if (consume && activeLearningView === 'map' && activeMapMode === 'events') firstClickHintConsumed = true;
     clearTimeout(firstHintTimer);
     firstHintTimer = null;
     firstClickHint.classList.remove('show');

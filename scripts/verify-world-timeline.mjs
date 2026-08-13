@@ -339,9 +339,15 @@ async function verifyLearningShell(page, port) {
   await expectVisible(page.locator('#mapStudyView'), 'map must be visible alongside the initial causal chain');
   await expectVisible(page.locator('#worldTimelineDock'), 'Timeline Dock must be visible alongside the initial causal chain');
   await expectVisible(page.locator('#eventPanel .rt-stops-chain'), 'Unit 1 causal chain must be visible immediately');
+  const initialChainPin = await page.locator('#eventPanel [data-route-step].now .rt-num').innerText();
+  await page.evaluate((pin) => {
+    const group = [...document.querySelectorAll('.pin-group')]
+      .find(candidate => candidate.querySelector('text')?.textContent.trim() === pin.trim());
+    group?.querySelector('.pin-dot')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  }, initialChainPin);
   await page.waitForTimeout(1_450);
   assert.equal(await page.locator('#firstClickHint').evaluate(element => element.classList.contains('show')), false,
-    'initial Chain mode must never show the first-click map hint');
+    'a linked pin activation in initial Chain mode must not show the first-click map hint');
   const desktopMapBox = await page.locator('#mapStudyView').boundingBox();
   const desktopPanelBox = await page.locator('#eventZone').boundingBox();
   assert.ok(desktopMapBox && desktopPanelBox && desktopMapBox.x + desktopMapBox.width <= desktopPanelBox.x + 1,
@@ -350,7 +356,7 @@ async function verifyLearningShell(page, port) {
   await page.locator('[data-learning-view="map"]').click();
   await page.waitForTimeout(1_450);
   assert.equal(await page.locator('#firstClickHint').evaluate(element => element.classList.contains('show')), true,
-    'Map Event Details must schedule and show the first-click map hint');
+    'a Chain pin activation must not consume the first future Map Event Details hint');
   await page.locator('[data-learning-view="chain"]').click();
   assert.equal(await page.locator('#firstClickHint').evaluate(element => element.classList.contains('show')), false,
     'switching from Map Event Details to Chain must dismiss the first-click hint immediately');
