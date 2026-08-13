@@ -536,6 +536,21 @@ async function verifyLearningShell(page, port) {
   await page.locator('#periodFilter').selectOption('u4');
   assert.match(await page.locator('#eventPanel').innerText(), /Unit 4|大西洋|Atlantic/i,
     'Unit 4 selection must render Unit 4 Atlantic causal-chain content');
+  for (const unit of ['u5', 'u6', 'u7', 'u8', 'u9']) {
+    await page.locator('#periodFilter').selectOption(unit);
+    const pendingChainText = await page.locator('#eventPanel').innerText();
+    assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), 'Unit 因果链',
+      `${unit}: missing approved chain must retain the Unit causal-chain label`);
+    assert.match(pendingChainText, new RegExp(`Unit\\s*${unit.slice(1)}`, 'i'),
+      `${unit}: pending chain state must identify the selected Unit`);
+    assert.match(pendingChainText, /因果链正在整理|因果链待完善/,
+      `${unit}: pending chain state must explain that its causal chain is being completed`);
+    assert.equal(await page.locator('#eventPanel .rt-stops-chain').count(), 0,
+      `${unit}: missing approved chain must not fabricate a chain`);
+    assert.equal(await page.locator('#eventPanel [data-route-go]').count(), 0,
+      `${unit}: missing approved chain must not show unrelated chain choices`);
+  }
+  await page.locator('#periodFilter').selectOption('u4');
   await page.locator('[data-learning-view="practice"]').click();
   assert.equal(await page.locator('[data-map-mode]:visible').count(), 0,
     'Map secondary controls must be absent or hidden in Practice');
@@ -601,14 +616,36 @@ async function verifyLearningShell(page, port) {
     'responsive verification must finish with Chain content visible');
 }
 
-async function verifyHomeRoutePickerProxy(page, port) {
+async function verifyHomeLearningShell(page, port) {
   await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'domcontentloaded' });
   const frame = page.frameLocator('#worldMapFrame');
   await frame.locator('body').waitFor();
   await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter);
-  await page.locator('.map-card-head [data-open-picker="route"]').click();
+  const hostPrimary = page.locator('.map-card-head [data-learning-view]');
+  assert.deepEqual(await trimmedTexts(hostPrimary), ['因果链', '地图', '练习'],
+    'the homepage must expose the unified three APWH learning modes');
+  assert.deepEqual(await trimmedTexts(page.locator('.map-card-head [data-learning-view][aria-pressed="true"]')), ['因果链'],
+    'the homepage must initially mirror Chain as the sole pressed mode');
+
+  await page.locator('.map-card-head [data-learning-view="map"]').click();
+  await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getLearningState().view === 'map');
+  assert.deepEqual(await trimmedTexts(page.locator('.map-card-head [data-learning-view][aria-pressed="true"]')), ['地图'],
+    'the homepage must mirror Map as the sole pressed primary mode');
+  assert.equal(await page.locator('#home-events').getAttribute('aria-label'), '地图事件详情',
+    'the homepage event mirror must copy the source Event Details label');
+  assert.deepEqual(await trimmedTexts(page.locator('#home-events [data-map-mode]')), ['事件详情', '商路'],
+    'the homepage Map mirror must expose Event Details and Routes secondary modes');
+  assert.deepEqual(await trimmedTexts(page.locator('#home-events [data-map-mode][aria-pressed="true"]')), ['事件详情'],
+    'the homepage Map mirror must initially press only Event Details');
+  assert.doesNotMatch(await page.locator('#home-events').innerText(), /Practice|随堂练习/,
+    'the homepage Map event empty state must not inject Practice launchers');
+
+  await page.locator('#home-events [data-map-mode="routes"]').click();
+  await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getLearningState().mapMode === 'routes');
   const mirroredReturn = page.locator('#home-events [data-route-picker-action="events"]');
   await expectVisible(mirroredReturn, 'the homepage must mirror the APWH Routes picker Return action');
+  assert.equal(await page.locator('#home-events').getAttribute('aria-label'), '地图商路',
+    'the homepage Routes mirror must copy the source Routes label');
   await mirroredReturn.click();
   assert.equal(await frame.locator('#eventZone').getAttribute('aria-label'), '地图事件详情',
     'the mirrored Routes Return action must switch the source panel to Event Details');
@@ -619,6 +656,17 @@ async function verifyHomeRoutePickerProxy(page, port) {
   await page.waitForFunction(() => !document.querySelector('#home-events [data-route-picker-action]'));
   assert.equal(await page.locator('#home-events [data-route-picker-action]').count(), 0,
     'the homepage mirror must refresh after returning to Event Details');
+
+  await page.locator('.map-card-head [data-learning-view="practice"]').click();
+  await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getLearningState().view === 'practice');
+  assert.deepEqual(await trimmedTexts(page.locator('.map-card-head [data-learning-view][aria-pressed="true"]')), ['练习'],
+    'the homepage must mirror Practice as the sole pressed primary mode');
+  assert.equal(await page.locator('#home-events').getAttribute('aria-label'), '练习',
+    'the homepage Practice mirror must copy the source label');
+  await expectVisible(page.locator('#home-events .quiz-panel'),
+    'Practice must render inside the shared homepage event mirror');
+  assert.equal(await page.locator('#practiceDrawer').count(), 0,
+    'the homepage unified model must not introduce a Practice drawer');
 }
 
 export async function verifyBrowser() {
@@ -634,7 +682,7 @@ export async function verifyBrowser() {
     try {
       await verifyTimeline(page, port);
       await verifyLearningShell(page, port);
-      await verifyHomeRoutePickerProxy(page, port);
+      await verifyHomeLearningShell(page, port);
     } finally {
       await page.close();
     }

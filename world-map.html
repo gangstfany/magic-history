@@ -3151,7 +3151,16 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (chainId) enterRouteMode(chainId);
     else {
       if (routeMode?.route?.kind === 'chain') exitRouteMode();
-      renderPicker('chain');
+      const unit = (PERIODS_REF || []).find(period => period.id === unitId);
+      const unitLabel = unit?.label || `Unit ${unitId.slice(1)}`;
+      eventEmpty.style.display = 'none';
+      eventPanel.innerHTML = `<div class="quiz-panel chain-pending"><div class="qz-head">`
+        + `<div class="qz-title">${unitLabel}</div></div>`
+        + `<p class="qz-stem">本单元的因果链正在整理，待完善后会在这里呈现。</p></div>`;
+      eventPanel.classList.remove('show');
+      void eventPanel.offsetWidth;
+      eventPanel.classList.add('show');
+      eventZone.classList.remove('fit-content');
     }
   }
 
@@ -3943,6 +3952,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       inRoute: () => !!routeMode && routeMode.route.kind !== 'chain',
       openPicker: kind => renderPicker(kind),
       setMapMode: mode => showMapMode(mode),
+      setLearningView: view => showLearningView(view),
+      getLearningState: () => Object.freeze({
+        view: activeLearningView,
+        mapMode: activeMapMode,
+        label: eventZone.getAttribute('aria-label') || '',
+      }),
       // 随堂练习
       startQuiz: mode => startQuiz(mode),
       quizStats: () => quizStats(),

@@ -175,6 +175,7 @@ nav.topnav {
 .map-card-head .hdr-btn { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .map-card-head .hdr-btn:hover { border-color: var(--ink-soft); }
 .map-card-head .hdr-btn:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.map-card-head .hdr-btn[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
 /* ---- 满宽地图工具栏(时期 + 主题 + 搜索),横跨地图与事件面板之上。
        版式与艺术史地图那条筛选栏一致:标签在上、控件在下,44px 触摸高度 ---- */
 .map-toolbar-host { position: relative; display: flex; flex-wrap: wrap; align-items: end; gap: 12px 18px; padding: 14px 18px; background: #fffdf8; border-bottom: 1px solid var(--line); }
@@ -355,11 +356,14 @@ nav.topnav {
 .home-events .rt-btn[disabled] { opacity: .38; cursor: default; }
 .home-events .rt-stop:focus-visible, .home-events .rt-btn:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
 /* 空态里的商路入口 */
-.home-events .route-picker-title { margin: 22px 0 0; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
 .home-events .route-picker { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 12px 0 0; }
 .home-events .route-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .home-events .route-chip:hover { border-color: var(--ink-soft); }
 .home-events .route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; }
+.home-events .map-panel-tabs { display: flex; gap: 8px; padding: 0 0 12px; }
+.home-events .map-panel-tabs button { min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.home-events .map-panel-tabs button[aria-pressed="true"] { border-color: var(--terracotta); background: var(--terracotta); color: #fff; }
+.home-events .map-panel-tabs button:focus-visible { outline: 3px solid #28708a; outline-offset: 2px; }
 
 .home-events .search-none { padding: 46px 22px; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--ink-soft); line-height: 1.8; }
 .home-events .search-none span { font-size: 12px; font-weight: 600; color: var(--ink-faint, #9b9382); }
@@ -500,9 +504,9 @@ nav.topnav {
       <div class="map-card" data-subject="world">
         <h2 class="map-card-head"><span id="mapCardTitle">History World Map</span>
           <span class="hdr-menu" id="mapHdrMenu">
-            <button type="button" class="hdr-btn" data-open-picker="chain">因果链</button>
-            <button type="button" class="hdr-btn" data-open-picker="route">商路</button>
-            <button type="button" class="hdr-btn" data-open-picker="quiz">练习</button>
+            <button type="button" class="hdr-btn" data-learning-view="chain" aria-pressed="true">因果链</button>
+            <button type="button" class="hdr-btn" data-learning-view="map" aria-pressed="false">地图</button>
+            <button type="button" class="hdr-btn" data-learning-view="practice" aria-pressed="false">练习</button>
           </span>
         </h2>
         <!-- 满宽工具栏:搜索 + 主题筛选,驱动 iframe 内地图(由 JS 从地图的 __mapFilter 建起) -->
@@ -535,11 +539,7 @@ nav.topnav {
           </div>
           <!-- 右侧事件面板:点左边地图的数字标点,该站事件在这里完整显示 -->
           <div id="home-events" class="home-events" role="region" aria-label="历史事件" aria-live="polite">
-            <div class="he-empty">点地图上的数字标点，<br>这里会显示那一站的历史事件
-              <!-- 因果链/商路的清单只留标题行那两个按钮一处入口,空态里不再重复铺一遍 -->
-              <div class="route-picker-title">Practice</div>
-              <div id="homePracticeBlock"></div>
-            </div>
+            <div class="he-empty">点地图上的数字标点，<br>这里会显示那一站的历史事件</div>
           </div>
         </div>
       </div>
@@ -737,29 +737,10 @@ nav.topnav {
   const reduceMotionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
   const prefersReducedMotion = () => reduceMotionMQ.matches;
   const homeEvents = document.getElementById('home-events');
-  const HOME_EVENTS_EMPTY = homeEvents ? homeEvents.innerHTML : '';  // 空状态提示,复位时用
-  // 这份快照是在练习 chip 填进去之前拍的,所以每次用它复位后都得把 chip 补回来,
-  // 否则退出商路会看到一个只剩标题、下面空荡荡的空态。
-  // 因果链和商路的清单不在空态里,由标题行的 因果链 / 商路 两个按钮打开(见 data-open-picker)。
-  // 练习区要显示错题数,每次回到空态都得重新问一次地图
-  function fillHomePractice() {
-    const box = document.getElementById('homePracticeBlock');
-    if (!box || !hostApi || !hostApi.quizStats) return;
-    const st = hostApi.quizStats();
-    box.innerHTML = `<div class="route-picker">`
-      + `<button type="button" class="route-chip quiz-chip" data-quiz-start="all">`
-      + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">时期 · 地区</span></button>`
-      + (st.review ? `<button type="button" class="route-chip quiz-chip" data-quiz-start="review">`
-          + `<span class="rc-dot" style="background:#d9a441"></span>只练错题<span style="color:var(--ink-soft);font-weight:600">${st.review} 条</span></button>` : '')
-      + `</div>`
-      + (st.practiced ? `<div class="qz-stats">已练 ${st.practiced} 条 · 待复习 ${st.review} 条`
-          + (st.review ? ` · <button type="button" class="qz-link" data-quiz-book="1">看错题本</button>` : '')
-          + ` · <button type="button" class="qz-link" data-quiz-reset="1">清空记录</button></div>` : '');
-  }
   function resetHomeEvents() {
     if (!homeEvents) return;
-    homeEvents.innerHTML = HOME_EVENTS_EMPTY;
-    fillHomePractice();
+    homeEvents.setAttribute('aria-label', '历史事件');
+    homeEvents.innerHTML = `<div class="he-empty">点地图上的数字标点，<br>这里会显示那一站的历史事件</div>`;
   }
 
   // 把内嵌地图收拾成"只剩地图、填满整格":隐藏 world-map 自带的表头和事件区,让地图区撑满 iframe
@@ -783,10 +764,25 @@ nav.topnav {
     let doc;
     try { doc = worldMapFrame.contentDocument; } catch (err) { return; }
     if (!doc) return;
+    const api = worldMapFrame.contentWindow.__mapFilter;
+    const state = api?.getLearningState?.();
+    const zone = doc.querySelector('#eventZone');
     const panel = doc.querySelector('.event-panel');
-    const hasEvent = panel && panel.classList.contains('show') && panel.innerHTML.trim();
-    if (hasEvent) {
-      homeEvents.innerHTML = panel.innerHTML;
+    const empty = doc.querySelector('.event-empty');
+    if (!state || !zone) { resetHomeEvents(); return; }
+    document.querySelectorAll('.map-card-head [data-learning-view]').forEach(button =>
+      button.setAttribute('aria-pressed', String(button.dataset.learningView === state.view)));
+    homeEvents.setAttribute('aria-label', state.label);
+    let tabsHTML = '';
+    if (state.view === 'map') {
+      const tabs = doc.querySelector('#mapPanelTabs')?.cloneNode(true);
+      if (tabs) { tabs.removeAttribute('id'); tabs.hidden = false; tabsHTML = tabs.outerHTML; }
+    }
+    const panelHTML = panel?.classList.contains('show') && panel.innerHTML.trim() ? panel.innerHTML : '';
+    const emptyHTML = !panelHTML && empty && getComputedStyle(empty).display !== 'none'
+      ? `<div class="he-empty">${empty.innerHTML}</div>` : '';
+    homeEvents.innerHTML = tabsHTML + panelHTML + emptyHTML;
+    if (homeEvents.innerHTML.trim()) {
       homeEvents.scrollTop = 0;
       // 因果链的骨架比右栏高得多(Unit 2→3 有 10 环),每步都复位到顶会把"当前这一环"留在屏幕外。
       // 与 world-map.html 的 goToStop 同一处理:滚到当前环,直接写 scrollTop(不用 smooth)。
@@ -799,19 +795,17 @@ nav.topnav {
       if (window.matchMedia('(max-width: 720px)').matches) {
         homeEvents.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
       }
-    } else {
-      resetHomeEvents();
-    }
+    } else resetHomeEvents();
   }
 
   // 右侧面板是 innerHTML 拷过来的,iframe 里绑的监听不会跟过来,所以这边自己代理一层:
   // 点搜索结果条 => 让地图执行"点地块→点标点",再把结果换成那一站的事件卡
-  document.querySelectorAll('.map-card-head [data-open-picker]').forEach(b =>
+  document.querySelectorAll('.map-card-head [data-learning-view]').forEach(b =>
     b.addEventListener('click', () => {
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
-      if (win && win.__mapFilter && win.__mapFilter.openPicker) {
-        win.__mapFilter.openPicker(b.dataset.openPicker);
-        setTimeout(syncHomeEvents, 140);
+      if (win && win.__mapFilter && win.__mapFilter.setLearningView) {
+        win.__mapFilter.setLearningView(b.dataset.learningView);
+        syncHomeEvents();
       }
     }));
 
@@ -832,7 +826,7 @@ nav.topnav {
       if (qs) { win.__mapFilter.startQuiz(qs.dataset.quizStart); setTimeout(syncHomeEvents, 140); return; }
       if (e.target.closest('[data-quiz-book]')) { win.__mapFilter.quizBook(); setTimeout(syncHomeEvents, 140); return; }
       if (e.target.closest('[data-quiz-reset]')) {
-        if (confirm('清空练习记录?错题本和已练条数都会归零。')) { win.__mapFilter.quizReset(); fillHomePractice(); }
+        if (confirm('清空练习记录?错题本和已练条数都会归零。')) { win.__mapFilter.quizReset(); syncHomeEvents(); }
         return;
       }
       const qp = e.target.closest('[data-quiz-period]');
@@ -843,6 +837,12 @@ nav.topnav {
       if (qm) { win.__mapFilter.quizTerm(qm.dataset.quizTerm); setTimeout(syncHomeEvents, 140); return; }
       const qz = e.target.closest('[data-quiz-action]');
       if (qz) { win.__mapFilter.quizAction(qz.dataset.quizAction); setTimeout(syncHomeEvents, 140); return; }
+      const mapMode = e.target.closest('[data-map-mode]');
+      if (mapMode && win.__mapFilter.setMapMode) {
+        win.__mapFilter.setMapMode(mapMode.dataset.mapMode);
+        syncHomeEvents();
+        return;
+      }
       const routePickerAction = e.target.closest('[data-route-picker-action]');
       if (routePickerAction && win.__mapFilter.setMapMode) {
         win.__mapFilter.setMapMode(routePickerAction.dataset.routePickerAction);
@@ -906,7 +906,7 @@ nav.topnav {
     fill(periodSel, api.getPeriodOptions());
     if (api.onRouteStep) api.onRouteStep(() => syncHomeEvents());
     if (api.onQuizStep) api.onQuizStep(() => syncHomeEvents());
-    fillHomePractice();
+    syncHomeEvents();
     // 主题药丸:多选。重建而非追加,免得 iframe 重载后越堆越多
     catsBox.innerHTML = '';
     api.getCats().forEach(c => {
