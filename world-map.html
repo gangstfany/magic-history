@@ -3221,8 +3221,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   let activeLearningView = 'chain';
   let activeMapMode = 'events';
 
+  // 单元默认落地的是那条【主干链】,补充链不参与 —— 学生打开单元先看见的应该是因果脊。
+  // 改链 id 时这里必须跟着改:对不上的话默认视图会静默落到空态(u1_tapestry → u1_main 就踩过一次)。
   function chainForUnit(unitId) {
-    if (unitId === 'u1') return 'u1_tapestry';
+    if (unitId === 'u1') return 'u1_main';
     if (unitId === 'u2' || unitId === 'u3') return 'u23_empires';
     if (unitId === 'u4') return 'u4_atlantic';
     return null;
