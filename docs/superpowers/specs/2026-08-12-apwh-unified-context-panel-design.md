@@ -21,6 +21,8 @@ Make the APWH learning workspace visually and conceptually consistent. The map a
 - The right panel displays the approved causal chain for the selected Unit.
 - Unit changes update map events, Timeline cards, and the causal chain together.
 - Chain steps, map pins, and Timeline cards retain their synchronization behavior.
+- Selecting a causal-chain step may highlight its linked map location and Timeline card, but the right panel remains chain-only. It must not append the linked location header or ordinary event cards beneath the chain.
+- Selecting a map pin or Timeline card while Causal Chain is active may update geographic highlighting, but must not replace or extend the causal-chain panel with Map Event Details content.
 
 ### Map
 
@@ -28,6 +30,7 @@ Make the APWH learning workspace visually and conceptually consistent. The map a
 - The map workspace contains two secondary modes: `事件详情` and `商路`.
 - `事件详情` is the default secondary mode.
 - Before a map pin is selected, the panel shows only concise instructions to select a region or pin.
+- The animated first-click hint bubble belongs exclusively to `地图 → 事件详情`. It is scheduled only after that mode becomes active and is immediately cancelled and hidden when the student leaves it.
 - The legacy `Practice / 随堂练习` entry is removed from the map empty state.
 - `商路` displays the existing route choices in the right panel. Selecting a route renders its path and stations on the left map.
 - Leaving `商路` restores the selected Unit, search query, theme filters, map state, and Timeline state.
@@ -70,3 +73,5 @@ Browser verification must cover:
 7. Exactly one primary header control is selected in every mode.
 8. Narrow layouts preserve map, Timeline Dock, then contextual-panel order.
 9. Existing AP World Timeline behavior and APUSH tests remain green.
+10. The first-click hint never appears in Causal Chain, Routes, or Practice and appears only in Map Event Details.
+11. Moving among causal-chain steps highlights the map without appending ordinary location/event cards beneath the chain.
