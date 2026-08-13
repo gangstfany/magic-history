@@ -339,7 +339,8 @@ nav.topnav {
 .home-events .rt-stop.now { border-color: #8b1a1a; box-shadow: 0 0 0 2px rgba(139,26,26,0.14); }
 .home-events .rt-stop.now .rt-dot { background: #8b1a1a; }
 /* 因果链:竖排 + 箭头机制 */
-.home-events .rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; }
+/* 同 world-map.html:sticky 控制条会盖住最后一环,给链条留出它的高度 */
+.home-events .rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 52px; }
 .home-events .rt-stops-chain .rt-stop { justify-content: flex-start; text-align: left; }
 .home-events .rt-stop .rt-sub { margin-left: 7px; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
 .home-events .rt-link { display: flex; gap: 8px; padding: 7px 0 7px 13px; margin: 2px 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
@@ -357,9 +358,11 @@ nav.topnav {
 /* 空态里的商路入口 */
 .home-events .route-picker-title { margin: 22px 0 0; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
 .home-events .route-picker { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 12px 0 0; }
-.home-events .route-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.home-events .route-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; text-align: left; }
 .home-events .route-chip:hover { border-color: var(--ink-soft); }
-.home-events .route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; }
+/* 同 world-map.html:flex 基准写死,否则窄面板下圆点被压扁成椭圆 */
+.home-events .route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
+.home-events .rc-count { white-space: nowrap; color: var(--ink-soft); font-weight: 600; }
 
 .home-events .search-none { padding: 46px 22px; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--ink-soft); line-height: 1.8; }
 .home-events .search-none span { font-size: 12px; font-weight: 600; color: var(--ink-faint, #9b9382); }
@@ -748,9 +751,9 @@ nav.topnav {
     const st = hostApi.quizStats();
     box.innerHTML = `<div class="route-picker">`
       + `<button type="button" class="route-chip quiz-chip" data-quiz-start="all">`
-      + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">时期 · 地区</span></button>`
+      + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span class="rc-count">时期 · 地区</span></button>`
       + (st.review ? `<button type="button" class="route-chip quiz-chip" data-quiz-start="review">`
-          + `<span class="rc-dot" style="background:#d9a441"></span>只练错题<span style="color:var(--ink-soft);font-weight:600">${st.review} 条</span></button>` : '')
+          + `<span class="rc-dot" style="background:#d9a441"></span>只练错题<span class="rc-count">${st.review} 条</span></button>` : '')
       + `</div>`
       + (st.practiced ? `<div class="qz-stats">已练 ${st.practiced} 条 · 待复习 ${st.review} 条`
           + (st.review ? ` · <button type="button" class="qz-link" data-quiz-book="1">看错题本</button>` : '')
