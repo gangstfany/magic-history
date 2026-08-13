@@ -2454,7 +2454,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     clearGlowTimers();
   }
   // 筛选器的挂起/恢复由下面的 initSearchFilter 赋值(它在闭包里,外面拿不到内部状态)
-  let suspendFilters = null, restoreFilters = null;
+  let suspendFilters = null, restoreFilters = null, applyFiltersToContext = null;
   let currentEventPass = null;   // 同上:出题时用它拿"当前筛选下的题库"
   let onRegionChange = null, filterIsActive = null;   // 地区现在是筛选的一个维度,两边要互相知道
   let PERIODS_REF = null, inPeriodRef = null, CATS_REF = null;   // 时期/主题定义都在那个闭包里,出题要用
@@ -2540,7 +2540,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const num = route.stops[routeMode.i];
     placeVehicleAt(route, num);
     if (route.kind === 'chain') {
-      eventPanel.innerHTML = itineraryHTML();
+      renderChainItinerary();
       selectTimelineByPin(num, true);
     } else {
       renderEventContent(num, pinBadgeColor(num));
@@ -2558,6 +2558,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       eventZone.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
     }
     if (routeStepCb) routeStepCb();
+  }
+
+  function renderChainItinerary() {
+    eventPanel.innerHTML = itineraryHTML();
+    eventEmpty.style.display = 'none';
+    eventPanel.classList.add('show');
+    eventZone.classList.remove('fit-content');
   }
 
   function stopAutoPlay() {
@@ -3122,7 +3129,6 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     activeLearningView = 'map';
     activeMapMode = mode;
     mapStudyView.hidden = false;
-    const restoredEventContent = mode === 'events' && !!routeMode;
     if (routeMode) exitRouteMode();
     if (mode === 'routes') {
       dismissFirstClickHint();
@@ -3131,7 +3137,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     } else {
       scheduleFirstClickHint();
       eventZone.setAttribute('aria-label', '地图事件详情');
-      if (!restoredEventContent || !eventPanel.innerHTML.trim()) {
+      if (typeof applyFiltersToContext === 'function') applyFiltersToContext();
+      else {
         eventPanel.classList.remove('show');
         eventPanel.innerHTML = '';
         eventEmpty.style.display = 'block';
@@ -3436,6 +3443,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       // 商路模式下点站点 = 跳到那一站,否则 renderEventPanel 会把行程面板整个冲掉,
       // 用户就失去了上一站/下一站/退出的入口
       if (quizMode) return;                        // 练习模式下标点不作答:区域题点色块,时期题点按钮
+      dismissFirstClickHint(true);
       if (routeMode) {
         const at = routeMode.route.stops.indexOf(+num);
         if (at >= 0) { stopAutoPlay(); goToStop(at); }
@@ -3612,7 +3620,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       e.preventDefault();
       if (quizMode) { answerRegion(region); return; }   // 练习中:点地块 = 回答区域题
       if (routeMode) return;                 // 商路模式下地块不响应,退出请用行程面板的按钮
-      dismissFirstClickHint();
+      dismissFirstClickHint(true);
       if (region === activeRegion) deactivateRegion();
       else activateRegion(region);
     });
@@ -3639,7 +3647,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       if (dragMoved) { dragMoved = false; return; }
       if (quizMode) { answerRegion(region); return; }   // 同上
       if (routeMode) return;
-      dismissFirstClickHint();
+      dismissFirstClickHint(true);
       if (region === activeRegion) deactivateRegion();
       else activateRegion(region);
     });
@@ -3648,17 +3656,19 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   // 只有地图的事件详情模式会延时显示首次点击提示；离开该模式立即取消。
   const firstClickHint = document.getElementById('firstClickHint');
   let firstHintTimer = null;
-  function dismissFirstClickHint() {
+  let firstClickHintConsumed = false;
+  function dismissFirstClickHint(consume = false) {
+    if (consume) firstClickHintConsumed = true;
     clearTimeout(firstHintTimer);
     firstHintTimer = null;
     firstClickHint.classList.remove('show');
   }
   function scheduleFirstClickHint() {
     dismissFirstClickHint();
-    if (activeLearningView !== 'map' || activeMapMode !== 'events') return;
+    if (firstClickHintConsumed || activeLearningView !== 'map' || activeMapMode !== 'events') return;
     firstHintTimer = setTimeout(() => {
       firstHintTimer = null;
-      if (activeLearningView === 'map' && activeMapMode === 'events') firstClickHint.classList.add('show');
+      if (!firstClickHintConsumed && activeLearningView === 'map' && activeMapMode === 'events') firstClickHint.classList.add('show');
     }, 1300);
   }
   // ---- 搜索 + 分类筛选:跨地区把"命中"的标点亮出来,未命中的隐藏;清空后恢复"点地块才显示"常态 ----
@@ -3770,12 +3780,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
     function apply() {
       if (clearBtn) clearBtn.hidden = !query;
+      const ownsEventDetails = activeLearningView === 'map' && activeMapMode === 'events';
       let countText = '';
       let displayedHits = null;
       if (!filterActive()) {                     // 恢复常态:先全隐,再按当前地区显示
         pinGroups().forEach(g => g.classList.remove('revealed'));
         if (activeRegion) paintRegion(activeRegion, true);
-        clearResults();
+        if (ownsEventDetails) clearResults();
       } else {
         // 筛选生效时,点开的地区是"再收窄一层",不是把筛选清掉 ——
         // 否则界面写着 Period 2、地图却亮着不属于 Period 2 的标点,两边对不上。
@@ -3792,9 +3803,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
           ? REGION_INFO[activeRegion].name.split(' ')[0] + ' · ' : '';
         countText = hits.length ? `${scope}${pinCount} 个地点 · ${hits.length} 条`
                                 : `${scope}没有匹配`;
-        hits.length ? renderResults(hits) : renderNoResults();
+        if (ownsEventDetails) hits.length ? renderResults(hits) : renderNoResults();
         displayedHits = hits;
-        dismissFirstClickHint();                 // 搜索时那个"点一下试试"的气泡正好挡住命中标点
+        if (ownsEventDetails && tokens.length) dismissFirstClickHint();
       }
       const timelineMatches = timelineEvents.map(event => ({
         ...event,
@@ -3806,10 +3817,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       renderTimeline(timelineMatches, activeUnit ? activeUnit.label : '全部 Units');
       // 搜索结果本身就是事件详情区里的可操作控件；Timeline 重建会同步 canonical
       // selection,随后把结果列表还原，确保用户能点到携带精确 event key 的那一条。
-      if (tokens.length) displayedHits?.length ? renderResults(displayedHits) : renderNoResults();
+      if (ownsEventDetails && tokens.length) displayedHits?.length ? renderResults(displayedHits) : renderNoResults();
       if (countBox) countBox.textContent = countText;
       if (onCountChange) onCountChange(countText);
     }
+    applyFiltersToContext = apply;
 
     // 点结果条 => 跟手动"点地块→点标点"完全一样:高亮国家、弹事件卡、跑路线动画
     function openHit(num, region, eventKey) {

@@ -354,6 +354,16 @@ async function verifyLearningShell(page, port) {
   await page.locator('[data-learning-view="chain"]').click();
   assert.equal(await page.locator('#firstClickHint').evaluate(element => element.classList.contains('show')), false,
     'switching from Map Event Details to Chain must dismiss the first-click hint immediately');
+  await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('#eventPanel')).opacity) > 0);
+  const mapToChainPresentation = await page.evaluate(() => ({
+    panelShow: document.querySelector('#eventPanel').classList.contains('show'),
+    panelOpacity: Number(getComputedStyle(document.querySelector('#eventPanel')).opacity),
+    emptyDisplay: getComputedStyle(document.querySelector('#eventEmpty')).display,
+  }));
+  assert.equal(mapToChainPresentation.panelShow, true, 'Map → Chain must mark the chain panel as shown');
+  assert.ok(mapToChainPresentation.panelOpacity > 0, 'Map → Chain must leave the chain panel visibly opaque');
+  assert.equal(mapToChainPresentation.emptyDisplay, 'none', 'Map → Chain must hide the event empty state');
+  await expectVisible(page.locator('#eventPanel .rt-stops-chain'), 'Map → Chain must visibly restore the causal chain');
 
   await page.locator('[data-learning-view="map"]').click();
   await page.waitForTimeout(1_450);
@@ -377,9 +387,32 @@ async function verifyLearningShell(page, port) {
   assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '练习',
     'practice event region must identify the practice context');
 
+  await page.locator('[data-learning-view="map"]').click();
+  await page.waitForTimeout(1_450);
+  assert.equal(await page.locator('#firstClickHint').evaluate(element => element.classList.contains('show')), true,
+    'an unconsumed Map Event Details session must continue to offer the first-click hint');
+  await page.locator('.region-path[data-region="asia"]').first().click();
+  assert.equal(await page.locator('#firstClickHint').evaluate(element => element.classList.contains('show')), false,
+    'a real map-region interaction must dismiss the first-click hint');
   await page.locator('[data-learning-view="chain"]').click();
+  await page.locator('[data-learning-view="map"]').click();
+  await page.waitForTimeout(1_450);
+  assert.equal(await page.locator('#firstClickHint').evaluate(element => element.classList.contains('show')), false,
+    'a consumed first-click hint must not reappear after leaving and returning to Map Event Details');
+
+  await page.locator('[data-learning-view="chain"]').click();
+  await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('#eventPanel')).opacity) > 0);
+  const practiceToChainPresentation = await page.evaluate(() => ({
+    panelShow: document.querySelector('#eventPanel').classList.contains('show'),
+    panelOpacity: Number(getComputedStyle(document.querySelector('#eventPanel')).opacity),
+    emptyDisplay: getComputedStyle(document.querySelector('#eventEmpty')).display,
+  }));
+  assert.equal(practiceToChainPresentation.panelShow, true, 'Practice → Chain must mark the chain panel as shown');
+  assert.ok(practiceToChainPresentation.panelOpacity > 0, 'Practice → Chain must leave the chain panel visibly opaque');
+  assert.equal(practiceToChainPresentation.emptyDisplay, 'none', 'Practice → Chain must hide the event empty state');
+  await expectVisible(page.locator('#eventPanel .rt-stops-chain'), 'Practice → Chain must visibly restore the causal chain');
   const chainSteps = page.locator('#eventPanel [data-route-step]');
-  assert.ok(await chainSteps.count() >= 2, 'Unit 1 causal chain must expose at least two interactive steps');
+  assert.ok(await chainSteps.count() >= 3, 'Unit 1 causal chain must expose at least three interactive steps');
   // Unit 1's opening Song record starts before 1200 and is intentionally excluded from
   // Timeline; use two later, explicitly mapped chain steps for linked-selection checks.
   for (const stepIndex of [1, 2]) {
@@ -426,6 +459,22 @@ async function verifyLearningShell(page, port) {
   assert.equal(await page.locator('#eventPanel .event-head, #eventPanel .event-list').count(), 0,
     'map-pin activation in Chain must not render ordinary event content');
 
+  const chainDisabledCategory = await page.locator('#mtCats [data-cat]').first().getAttribute('data-cat');
+  await page.locator(`#mtCats [data-cat="${chainDisabledCategory}"]`).click();
+  const chainSearchFixture = await page.evaluate(() => {
+    const event = window.getTimelineState().visibleEvents.find(item => item.titleEn.length > 4);
+    return event && { key: event.key, query: event.titleEn };
+  });
+  assert.ok(chainSearchFixture, 'Chain filtering fixture must retain a searchable event after disabling one category');
+  await page.locator('#mapSearch').fill(chainSearchFixture.query);
+  await page.waitForFunction((query) => window.__mapFilter.getState().query === query, chainSearchFixture.query);
+  assert.equal(await page.evaluate(() => window.__mapFilter.getLearningState().view), 'chain',
+    'query and category changes in Chain must not change the primary learning view');
+  await expectVisible(page.locator('#eventPanel .rt-stops-chain'),
+    'query and category changes in Chain must preserve the causal-chain panel');
+  assert.equal(await page.locator('#eventPanel .event-head, #eventPanel .event-list').count(), 0,
+    'query and category changes in Chain must not render ordinary event content');
+
   await page.locator('[data-learning-view="map"]').click();
   await expectVisible(page.locator('#mapStudyView'), 'Map must show the map study view');
   await expectVisible(page.locator('#worldTimelineDock'), 'Timeline remains embedded with Map');
@@ -444,6 +493,9 @@ async function verifyLearningShell(page, port) {
     'only Event Details may be pressed when Map opens');
   assert.doesNotMatch(await page.locator('#eventZone').innerText(), /Practice|随堂练习/,
     'Map event details must not contain legacy Practice launchers');
+  await expectVisible(page.locator(`#eventPanel .event-card.is-result[data-event-key="${chainSearchFixture.key}"]`),
+    'entering Map Event Details must render results for filters changed while Chain was active');
+  await page.evaluate(() => window.__mapFilter.reset());
   await page.locator('.world-timeline-card[data-event-key]').first().click();
   await expectVisible(page.locator('#eventPanel .event-head'),
     'Timeline activation in Map Event Details must render an ordinary event heading');
@@ -781,6 +833,67 @@ async function verifyHomeLearningShell(page, port) {
     'the homepage must expose the unified three APWH learning modes');
   assert.deepEqual(await trimmedTexts(page.locator('.map-card-head [data-learning-view][aria-pressed="true"]')), ['因果链'],
     'the homepage must initially mirror Chain as the sole pressed mode');
+  await expectVisible(page.locator('#home-events .rt-stops-chain'), 'the homepage must initially mirror the visible causal chain');
+
+  await page.locator('.map-card-head [data-learning-view="map"]').click();
+  await page.locator('.map-card-head [data-learning-view="chain"]').click();
+  await page.waitForFunction(() => {
+    const panel = document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('#eventPanel');
+    return panel && Number(getComputedStyle(panel).opacity) > 0;
+  });
+  const hostMapToChainPresentation = await frame.locator('body').evaluate(() => ({
+    panelShow: document.querySelector('#eventPanel').classList.contains('show'),
+    panelOpacity: Number(getComputedStyle(document.querySelector('#eventPanel')).opacity),
+    emptyDisplay: getComputedStyle(document.querySelector('#eventEmpty')).display,
+  }));
+  assert.equal(hostMapToChainPresentation.panelShow, true, 'homepage Map → Chain must mark the source chain panel as shown');
+  assert.ok(hostMapToChainPresentation.panelOpacity > 0, 'homepage Map → Chain must leave the source chain panel visibly opaque');
+  assert.equal(hostMapToChainPresentation.emptyDisplay, 'none', 'homepage Map → Chain must hide the source event empty state');
+  await expectVisible(page.locator('#home-events .rt-stops-chain'), 'homepage Map → Chain must mirror the causal chain');
+
+  await page.locator('.map-card-head [data-learning-view="practice"]').click();
+  await page.locator('.map-card-head [data-learning-view="chain"]').click();
+  await page.waitForFunction(() => {
+    const panel = document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('#eventPanel');
+    return panel && Number(getComputedStyle(panel).opacity) > 0;
+  });
+  const hostPracticeToChainPresentation = await frame.locator('body').evaluate(() => ({
+    panelShow: document.querySelector('#eventPanel').classList.contains('show'),
+    panelOpacity: Number(getComputedStyle(document.querySelector('#eventPanel')).opacity),
+    emptyDisplay: getComputedStyle(document.querySelector('#eventEmpty')).display,
+  }));
+  assert.equal(hostPracticeToChainPresentation.panelShow, true, 'homepage Practice → Chain must mark the source chain panel as shown');
+  assert.ok(hostPracticeToChainPresentation.panelOpacity > 0, 'homepage Practice → Chain must leave the source chain panel visibly opaque');
+  assert.equal(hostPracticeToChainPresentation.emptyDisplay, 'none', 'homepage Practice → Chain must hide the source event empty state');
+  await expectVisible(page.locator('#home-events .rt-stops-chain'), 'homepage Practice → Chain must mirror the causal chain');
+
+  const hostCategory = page.locator('#hostCats [data-cat]').first();
+  await hostCategory.click();
+  const hostChainSearchFixture = await frame.locator('body').evaluate(() => {
+    const event = window.getTimelineState().visibleEvents.find(item => item.titleEn.length > 4);
+    return event && { key: event.key, query: event.titleEn };
+  });
+  assert.ok(hostChainSearchFixture, 'homepage Chain filtering fixture must retain a searchable event');
+  await page.locator('#hostSearch').fill(hostChainSearchFixture.query);
+  await page.waitForFunction((query) => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getState().query === query,
+    hostChainSearchFixture.query);
+  assert.equal(await frame.locator('body').evaluate(() => window.__mapFilter.getLearningState().view), 'chain',
+    'homepage query and category changes in Chain must preserve the source primary mode');
+  assert.equal(await frame.locator('#eventPanel .rt-stops-chain').count(), 1,
+    'homepage query and category changes in Chain must preserve the source causal-chain DOM');
+  assert.equal(await frame.locator('#eventPanel .event-head, #eventPanel .event-list').count(), 0,
+    'homepage query and category changes in Chain must not overwrite the source panel with event content');
+  await expectVisible(page.locator('#home-events .rt-stops-chain'),
+    'homepage query and category changes in Chain must preserve the mirrored causal-chain panel');
+  assert.equal(await page.locator('#home-events .event-head, #home-events .event-list').count(), 0,
+    'homepage query and category changes in Chain must not overwrite the mirror with event content');
+
+  await page.locator('.map-card-head [data-learning-view="map"]').click();
+  await expectVisible(page.locator(`#home-events .event-card.is-result[data-event-key="${hostChainSearchFixture.key}"]`),
+    'homepage Map Event Details must mirror filters changed while Chain was active');
+  await page.locator('#hostSearch').fill('');
+  await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getState().query === '');
+  await hostCategory.click();
 
   await page.locator('.map-card-head [data-learning-view="map"]').click();
   await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getLearningState().view === 'map');
