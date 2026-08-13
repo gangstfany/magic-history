@@ -169,6 +169,7 @@ nav.topnav {
   border: 1px solid var(--line); background: var(--card);
   box-shadow: var(--shadow-md, 0 6px 20px rgba(28,33,40,0.10));
 }
+.map-card[data-subject="world"] { width: calc(100% - 32px); max-width: none; }
 .map-card-head { display: flex; align-items: center; gap: 12px; margin: 0; padding: 11px 20px; font-size: 15px; font-weight: 800; color: #8b3a2f; border-bottom: 1px solid var(--line); background: #fffdf8; }
 /* 标题行的常驻入口:三组功能原本只在事件面板空态里露出,学生点开某一站后就再也找不到 */
 .map-card-head .hdr-menu { display: flex; gap: 6px; margin-left: auto; }
@@ -179,8 +180,13 @@ nav.topnav {
 /* ---- 满宽地图工具栏(时期 + 主题 + 搜索),横跨地图与事件面板之上。
        版式与艺术史地图那条筛选栏一致:标签在上、控件在下,44px 触摸高度 ---- */
 .map-toolbar-host { position: relative; display: flex; flex-wrap: wrap; align-items: end; gap: 12px 18px; padding: 14px 18px; background: #fffdf8; border-bottom: 1px solid var(--line); }
+.map-card[data-subject="world"] .map-toolbar-host {
+  display: grid; grid-template-columns: minmax(168px, 220px) minmax(240px, 1fr) auto;
+  align-items: end; gap: 12px 16px;
+}
 .map-toolbar-host[hidden] { display: none; }
 .mth-field { display: grid; gap: 5px; color: var(--ink-soft); font-size: 12px; font-weight: 600; }
+.mth-field-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 /* 时期/搜索是定宽控件;主题吃掉整行剩余空间,药丸在自己这一格里换行 */
 .mth-field-search { flex: 0 1 auto; }
 .mth-field-cats { flex: 1 1 320px; min-width: 0; }
@@ -197,6 +203,25 @@ nav.topnav {
 .mth-cat:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
 .mth-cat .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .mth-cat[aria-pressed="false"] { opacity: 0.4; }
+.mth-theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 15px; border: 1px solid var(--line); border-radius: 9px;
+  background: var(--card); color: var(--ink); font: inherit; font-size: 13px; font-weight: 800;
+  cursor: pointer; white-space: nowrap;
+}
+.mth-theme-toggle:hover { border-color: var(--ink-soft); }
+.mth-theme-toggle:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.mth-theme-toggle[aria-expanded="true"] { border-color: var(--terracotta); background: #fff; }
+.mth-theme-active { min-width: 24px; padding: 2px 7px; border-radius: 999px; background: rgba(33,31,28,.08); font-size: 11px; }
+.mth-theme-chevron { transition: transform .15s ease; }
+.mth-theme-toggle[aria-expanded="true"] .mth-theme-chevron { transform: rotate(180deg); }
+.mth-theme-panel {
+  position: absolute; top: calc(100% - 6px); right: 18px; z-index: 20;
+  width: min(560px, calc(100% - 36px)); padding: 12px;
+  border: 1px solid var(--line); border-radius: 12px; background: #fffdf8;
+  box-shadow: 0 12px 28px rgba(33,31,28,.16);
+}
+.mth-theme-panel[hidden] { display: none; }
 .mth-search { position: relative; display: flex; align-items: center; }
 .mth-search input { width: 200px; max-width: 46vw; padding-right: 34px; }
 .mth-search input::placeholder { color: #9b9382; font-weight: 500; }
@@ -205,19 +230,22 @@ nav.topnav {
 .mth-clear { position: absolute; right: 6px; width: 28px; height: 28px; border: none; border-radius: 50%; background: rgba(33,31,28,0.09); color: #555; font-size: 15px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .mth-clear::before { content: ""; position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }
 .mth-clear[hidden] { display: none; }   /* display:flex 会盖掉 [hidden] 的 UA 样式,得显式关掉 */
-.mth-count { flex: 0 0 auto; margin-left: auto; align-self: end; padding-bottom: 13px; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
-/* 计数是状态显示,不该参与挤占布局:一律钉在右上角,与标签行齐平。
-   窄屏时第一行标签左侧只有"时期"两字,右上角是空的,不会打架。 */
-.mth-count { position: absolute; top: 15px; right: 16px; margin: 0; padding: 0; }
+.mth-count { font-size: 11.5px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
 @media (max-width: 720px) {
   .map-toolbar-host { padding: 12px 14px; gap: 10px 14px; }
-  .mth-count { top: 13px; right: 14px; font-size: 11.5px; }
+  .map-card[data-subject="world"] .map-toolbar-host { grid-template-columns: minmax(0, 1fr); }
   .mth-field { gap: 4px; }
   .mth-cats { gap: 6px; }
+  .mth-search input, .map-toolbar-host select, .mth-theme-toggle { width: 100%; max-width: none; }
+  .mth-theme-panel { right: 14px; width: calc(100% - 28px); }
 }
 .mth-count:empty { display: none; }
 .map-events-split { display: flex; align-items: stretch; height: min(540px, 62vh); }
+.map-card[data-subject="world"] .map-events-split {
+  display: grid; grid-template-columns: minmax(0, 2.15fr) minmax(330px, .85fr);
+}
 .home-map-wrap { position: relative; flex: 0 0 66.67%; height: 100%; overflow: hidden; border-right: 1px solid var(--line); background: #efe7d6; }
+.map-card[data-subject="world"] .home-map-wrap { min-width: 0; }
 .subject-map-frame { display: none; width: 100%; height: 100%; border: 0; }
 .subject-map-frame.active { display: block; }
 .map-card[data-subject="art"] .map-events-split { height: min(760px, 78vh); }
@@ -380,6 +408,7 @@ nav.topnav {
 /* 窗口 < 900px:2:1 分栏会把事件栏压得太窄,自动改成上下叠——地图在上、事件在下,两块都固定高度,模块整体大小不随点击变 */
 @media (max-width: 900px) {
   .map-events-split { flex-direction: column; height: auto; }
+  .map-card[data-subject="world"] .map-events-split { display: flex; grid-template-columns: none; }
   .home-map-wrap { flex: none; height: 300px; border-right: none; border-bottom: 1px solid var(--line); }
   .home-events { flex: none; height: 46vh; overflow-y: auto; }
   .map-card[data-subject="art"] .map-events-split { height: auto; }
@@ -518,17 +547,21 @@ nav.topnav {
             <button type="button" class="hdr-btn" data-learning-view="practice" aria-pressed="false">练习</button>
           </span>
         </h2>
-        <!-- 满宽工具栏:搜索 + 主题筛选,驱动 iframe 内地图(由 JS 从地图的 __mapFilter 建起) -->
+        <!-- Main 紧凑工具栏:Unit + 搜索常驻,主题按需展开;筛选状态仍由 iframe 的 __mapFilter 管理 -->
         <div class="map-toolbar-host" id="mapToolbarHost" role="group" aria-label="筛选历史事件" hidden>
-          <label class="mth-field">时期<select id="hostPeriod" aria-label="按时期筛选"></select></label>
-          <label class="mth-field mth-field-search">搜索
+          <label class="mth-field">Unit<select id="hostPeriod" aria-label="按 Unit 筛选"></select></label>
+          <label class="mth-field mth-field-search"><span class="mth-field-label">搜索 <span class="mth-count" id="hostCount" role="status"></span></span>
             <span class="mth-search">
               <input type="search" id="hostSearch" placeholder="地点 / 事件 / 关键词" aria-label="搜索历史地点与事件" autocomplete="off">
               <button type="button" class="mth-clear" id="hostClear" aria-label="清除搜索" hidden>&times;</button>
             </span>
           </label>
-          <div class="mth-field mth-field-cats">主题<div class="mth-cats" id="hostCats" role="group" aria-label="按主题筛选(可多选)"></div></div>
-          <div class="mth-count" id="hostCount" role="status"></div>
+          <button type="button" class="mth-theme-toggle" id="hostThemeToggle" aria-expanded="false" aria-controls="hostThemePanel">
+            主题筛选 <span class="mth-theme-active" id="hostThemeActive">0/0</span><span class="mth-theme-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="mth-theme-panel" id="hostThemePanel" hidden>
+            <div class="mth-cats" id="hostCats" role="group" aria-label="按主题筛选(可多选)"></div>
+          </div>
         </div>
         <div class="map-events-split">
           <div class="home-map-wrap" id="home-map-embed">
@@ -915,6 +948,27 @@ nav.topnav {
   // 但输入框/清除键是首页的静态元素,监听只能绑一次,不然重载几次就叠几层。
   let hostApi = null;             // 当前这一份地图 API,重载后会被换掉
   let hostStaticBound = false;    // 静态元素的监听是否已绑
+  const hostThemeToggle = document.getElementById('hostThemeToggle');
+  const hostThemePanel = document.getElementById('hostThemePanel');
+  const hostThemeActive = document.getElementById('hostThemeActive');
+
+  function setHostThemesExpanded(expanded) {
+    const next = Boolean(expanded && selectedSubject === 'world');
+    if (hostThemeToggle) hostThemeToggle.setAttribute('aria-expanded', String(next));
+    if (hostThemePanel) hostThemePanel.hidden = !next;
+  }
+
+  function updateHostThemeCount() {
+    const buttons = [...document.querySelectorAll('#hostCats .mth-cat')];
+    const active = buttons.filter(button => button.getAttribute('aria-pressed') === 'true').length;
+    if (hostThemeActive) hostThemeActive.textContent = `${active}/${buttons.length}`;
+  }
+
+  if (hostThemeToggle) {
+    hostThemeToggle.addEventListener('click', () =>
+      setHostThemesExpanded(hostThemeToggle.getAttribute('aria-expanded') !== 'true'));
+  }
+
   function buildHostToolbar() {
     const host = document.getElementById('mapToolbarHost');
     let api;
@@ -951,9 +1005,11 @@ nav.topnav {
         const active = hostApi.toggleCat(c.abbr);
         catsBox.querySelectorAll('.mth-cat').forEach(b =>
           b.setAttribute('aria-pressed', active.has(b.dataset.cat) ? 'true' : 'false'));
+        updateHostThemeCount();
       });
       catsBox.appendChild(btn);
     });
+    updateHostThemeCount();
 
     if (!hostStaticBound) {
       hostStaticBound = true;
@@ -981,6 +1037,7 @@ nav.topnav {
       if (periodSel.value !== st.period) periodSel.value = st.period;
       catsBox.querySelectorAll('.mth-cat').forEach(b =>
         b.setAttribute('aria-pressed', st.cats.has(b.dataset.cat) ? 'true' : 'false'));
+      updateHostThemeCount();
       syncHomeEvents();
     });
     updateHostToolbarVisibility();
@@ -991,6 +1048,7 @@ nav.topnav {
   function updateHostToolbarVisibility() {
     const host = document.getElementById('mapToolbarHost');
     if (host) host.hidden = !(hostApi && selectedSubject === 'world');
+    if (selectedSubject !== 'world') setHostThemesExpanded(false);
   }
 
   // 点卡片:滚到地图 + 在地图里模拟"点那个地区→点那个标点",跟手动点一样弹出事件卡片和路线动画
