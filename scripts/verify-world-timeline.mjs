@@ -929,6 +929,7 @@ async function verifyHomeLearningShell(page, port) {
   assert.equal(hostPracticeToChainPresentation.emptyDisplay, 'none', 'homepage Practice → Chain must hide the source event empty state');
   await expectVisible(page.locator('#home-events .rt-stops-chain'), 'homepage Practice → Chain must mirror the causal chain');
 
+  await themeToggle.click();
   const hostCategory = page.locator('#hostCats [data-cat]').first();
   await hostCategory.click();
   const hostChainSearchFixture = await frame.locator('body').evaluate(() => {
@@ -956,6 +957,7 @@ async function verifyHomeLearningShell(page, port) {
   await page.locator('#hostSearch').fill('');
   await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getState().query === '');
   await hostCategory.click();
+  await themeToggle.click();
 
   await page.locator('.map-card-head [data-learning-view="map"]').click();
   await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getLearningState().view === 'map');
