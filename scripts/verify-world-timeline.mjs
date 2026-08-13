@@ -339,12 +339,33 @@ async function verifyLearningShell(page, port) {
   await expectVisible(page.locator('#mapStudyView'), 'map must be visible alongside the initial causal chain');
   await expectVisible(page.locator('#worldTimelineDock'), 'Timeline Dock must be visible alongside the initial causal chain');
   await expectVisible(page.locator('#eventPanel .rt-stops-chain'), 'Unit 1 causal chain must be visible immediately');
+  await page.waitForTimeout(1_450);
+  assert.equal(await page.locator('#firstClickHint').evaluate(element => element.classList.contains('show')), false,
+    'initial Chain mode must never show the first-click map hint');
   const desktopMapBox = await page.locator('#mapStudyView').boundingBox();
   const desktopPanelBox = await page.locator('#eventZone').boundingBox();
   assert.ok(desktopMapBox && desktopPanelBox && desktopMapBox.x + desktopMapBox.width <= desktopPanelBox.x + 1,
     'at 900x700, map study view must sit to the left of the event panel');
 
+  await page.locator('[data-learning-view="map"]').click();
+  await page.waitForTimeout(1_450);
+  assert.equal(await page.locator('#firstClickHint').evaluate(element => element.classList.contains('show')), true,
+    'Map Event Details must schedule and show the first-click map hint');
+  await page.locator('[data-learning-view="chain"]').click();
+  assert.equal(await page.locator('#firstClickHint').evaluate(element => element.classList.contains('show')), false,
+    'switching from Map Event Details to Chain must dismiss the first-click hint immediately');
+
+  await page.locator('[data-learning-view="map"]').click();
+  await page.waitForTimeout(1_450);
+  await page.locator('[data-map-mode="routes"]').click();
+  assert.equal(await page.locator('#firstClickHint').evaluate(element => element.classList.contains('show')), false,
+    'switching from Map Event Details to Routes must dismiss the first-click hint immediately');
+
+  await page.locator('[data-map-mode="events"]').click();
+  await page.waitForTimeout(1_450);
   await page.locator('[data-learning-view="practice"]').click();
+  assert.equal(await page.locator('#firstClickHint').evaluate(element => element.classList.contains('show')), false,
+    'switching from Map Event Details to Practice must dismiss the first-click hint immediately');
   assert.equal(await page.locator('.split > #eventZone').count(), 1,
     'Practice must keep the shared event panel inside the combined layout');
   await expectVisible(page.locator('#eventZone .quiz-panel'), 'Practice must render quiz controls in the shared event panel');
@@ -355,6 +376,53 @@ async function verifyLearningShell(page, port) {
     'only Practice may be pressed while the shared panel shows quiz controls');
   assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '练习',
     'practice event region must identify the practice context');
+
+  await page.locator('[data-learning-view="chain"]').click();
+  const chainSteps = page.locator('#eventPanel [data-route-step]');
+  assert.ok(await chainSteps.count() >= 2, 'Unit 1 causal chain must expose at least two interactive steps');
+  for (const stepIndex of [0, 1]) {
+    await chainSteps.nth(stepIndex).click();
+    const chainState = await page.evaluate(() => {
+      const currentStep = document.querySelector('#eventPanel [data-route-step].now');
+      const pin = currentStep?.querySelector('.rt-num')?.textContent.trim() || '';
+      return {
+        pin,
+        selectedAnchor: window.getTimelineState().selectedAnchor,
+        currentTimelinePin: document.querySelector('.world-timeline-card[aria-current="step"]')?.dataset.pin || '',
+        selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+          .map(group => group.querySelector('text')?.textContent.trim()),
+      };
+    });
+    await expectVisible(page.locator('#eventPanel .rt-stops-chain'),
+      `Unit 1 chain step ${stepIndex + 1} must keep the causal chain visible`);
+    assert.equal(await page.locator('#eventPanel .event-head').count(), 0,
+      `Unit 1 chain step ${stepIndex + 1} must not render an ordinary event heading`);
+    assert.equal(await page.locator('#eventPanel .event-list').count(), 0,
+      `Unit 1 chain step ${stepIndex + 1} must not render an ordinary event list`);
+    assert.equal(chainState.selectedAnchor?.num, chainState.pin,
+      `Unit 1 chain step ${stepIndex + 1} must synchronize its Timeline anchor`);
+    assert.equal(chainState.currentTimelinePin, chainState.pin,
+      `Unit 1 chain step ${stepIndex + 1} must synchronize the current Timeline card`);
+    assert.ok(chainState.selectedMapPins.includes(chainState.pin),
+      `Unit 1 chain step ${stepIndex + 1} must highlight its linked map pin`);
+  }
+
+  const chainTimelineTarget = page.locator('.world-timeline-card[data-event-key]').last();
+  await chainTimelineTarget.click();
+  await expectVisible(page.locator('#eventPanel .rt-stops-chain'),
+    'Timeline activation in Chain must preserve the causal-chain panel');
+  assert.equal(await page.locator('#eventPanel .event-head, #eventPanel .event-list').count(), 0,
+    'Timeline activation in Chain must not render ordinary event content');
+  const activeChainPin = await page.locator('#eventPanel [data-route-step].now .rt-num').innerText();
+  await page.evaluate((pin) => {
+    const group = [...document.querySelectorAll('.pin-group')]
+      .find(candidate => candidate.querySelector('text')?.textContent.trim() === pin.trim());
+    group?.querySelector('.pin-dot')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  }, activeChainPin);
+  await expectVisible(page.locator('#eventPanel .rt-stops-chain'),
+    'map-pin activation in Chain must preserve the causal-chain panel');
+  assert.equal(await page.locator('#eventPanel .event-head, #eventPanel .event-list').count(), 0,
+    'map-pin activation in Chain must not render ordinary event content');
 
   await page.locator('[data-learning-view="map"]').click();
   await expectVisible(page.locator('#mapStudyView'), 'Map must show the map study view');
@@ -374,6 +442,11 @@ async function verifyLearningShell(page, port) {
     'only Event Details may be pressed when Map opens');
   assert.doesNotMatch(await page.locator('#eventZone').innerText(), /Practice|随堂练习/,
     'Map event details must not contain legacy Practice launchers');
+  await page.locator('.world-timeline-card[data-event-key]').first().click();
+  await expectVisible(page.locator('#eventPanel .event-head'),
+    'Timeline activation in Map Event Details must render an ordinary event heading');
+  await expectVisible(page.locator('#eventPanel .event-list'),
+    'Timeline activation in Map Event Details must render an ordinary event list');
 
   await page.locator('[data-map-mode="routes"]').click();
   await page.locator('#eventZone [data-route-picker-action="events"]').click();
@@ -445,6 +518,10 @@ async function verifyLearningShell(page, port) {
   await expectVisible(page.locator(`#route-vehicle-${firstRoute.id}.on`), 'the selected route vehicle must be visible on the map');
   assert.equal(await page.locator('#periodFilter').inputValue(), '',
     'an active non-chain route must temporarily suspend the Unit filter');
+  await expectVisible(page.locator('#eventPanel .event-head'),
+    'a Commercial Routes stop must retain its ordinary event heading');
+  await expectVisible(page.locator('#eventPanel .event-list'),
+    'a Commercial Routes stop must retain its ordinary event list');
   await page.locator('[data-map-mode="events"]').click();
   const contextAfterEvents = await page.evaluate(() => ({
     filter: {
