@@ -2539,8 +2539,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     spotlightTrail(route, visited);
     const num = route.stops[routeMode.i];
     placeVehicleAt(route, num);
-    renderEventContent(num, pinBadgeColor(num));
-    eventPanel.insertAdjacentHTML('afterbegin', itineraryHTML());
+    if (route.kind === 'chain') {
+      eventPanel.innerHTML = itineraryHTML();
+      selectTimelineByPin(num, true);
+    } else {
+      renderEventContent(num, pinBadgeColor(num));
+      eventPanel.insertAdjacentHTML('afterbegin', itineraryHTML());
+    }
     eventZone.classList.remove('fit-content');   // 行程面板占位,别再按 1-2 条事件收窄
     // 商路的站点是横排的,复位到顶就行;链条是竖排骨架(Unit 2→3 有 10 环,整条 1500px 高),
     // 复位到顶会把"当前这一环"留在视野外面 —— 所以链条改成把当前环滚进视野。
@@ -3120,9 +3125,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const restoredEventContent = mode === 'events' && !!routeMode;
     if (routeMode) exitRouteMode();
     if (mode === 'routes') {
+      dismissFirstClickHint();
       eventZone.setAttribute('aria-label', '地图商路');
       renderPicker('route');
     } else {
+      scheduleFirstClickHint();
       eventZone.setAttribute('aria-label', '地图事件详情');
       if (!restoredEventContent || !eventPanel.innerHTML.trim()) {
         eventPanel.classList.remove('show');
@@ -3139,6 +3146,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     exitRouteMode();
     activeLearningView = 'map';
     activeMapMode = 'routes';
+    dismissFirstClickHint();
     eventZone.setAttribute('aria-label', '地图商路');
     renderPicker('route');
     syncLearningTabs();
@@ -3172,6 +3180,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   function showPracticeView() {
     leaveActiveLearningContent();
     activeLearningView = 'practice';
+    dismissFirstClickHint();
     eventZone.setAttribute('aria-label', '练习');
     renderPicker('quiz');
     syncLearningTabs();
@@ -3184,6 +3193,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     activeLearningView = view;
     mapStudyView.hidden = false;
     if (view === 'chain') {
+      dismissFirstClickHint();
       eventZone.setAttribute('aria-label', 'Unit 因果链');
       showCurrentUnitChain();
     }
@@ -3339,7 +3349,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const groups = (event.visibleAnchors || event.anchors)
       .map(anchor => findPinGroup(anchor.num)).filter(Boolean);
     groups.forEach(group => { group.classList.add('timeline-selected', 'revealed'); });
-    renderTimelineDetail(event, anchor);
+    if (activeLearningView === 'map' && activeMapMode === 'events') renderTimelineDetail(event, anchor);
     const preferredGroup = anchor && findPinGroup(anchor.num);
     if (moveMap && preferredGroup) fitToPins([preferredGroup], 450);
     if (reveal) revealTimelineCard(event.key);
@@ -3635,8 +3645,22 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     });
   });
 
-  // 第一次进来,过一小会儿冒一个"这里能点"的提示气泡,点过一次地块就永久不再出现
+  // 只有地图的事件详情模式会延时显示首次点击提示；离开该模式立即取消。
   const firstClickHint = document.getElementById('firstClickHint');
+  let firstHintTimer = null;
+  function dismissFirstClickHint() {
+    clearTimeout(firstHintTimer);
+    firstHintTimer = null;
+    firstClickHint.classList.remove('show');
+  }
+  function scheduleFirstClickHint() {
+    dismissFirstClickHint();
+    if (activeLearningView !== 'map' || activeMapMode !== 'events') return;
+    firstHintTimer = setTimeout(() => {
+      firstHintTimer = null;
+      if (activeLearningView === 'map' && activeMapMode === 'events') firstClickHint.classList.add('show');
+    }, 1300);
+  }
   // ---- 搜索 + 分类筛选:跨地区把"命中"的标点亮出来,未命中的隐藏;清空后恢复"点地块才显示"常态 ----
   (function initSearchFilter() {
     const searchInput = document.getElementById('mapSearch');
@@ -3981,11 +4005,6 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     showLearningView('chain');
   })();
 
-  var firstHintTimer = setTimeout(() => firstClickHint.classList.add('show'), 1300);
-  function dismissFirstClickHint() {
-    clearTimeout(firstHintTimer);
-    firstClickHint.classList.remove('show');
-  }
 })();
 </script>
 </body>

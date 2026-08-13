@@ -380,7 +380,9 @@ async function verifyLearningShell(page, port) {
   await page.locator('[data-learning-view="chain"]').click();
   const chainSteps = page.locator('#eventPanel [data-route-step]');
   assert.ok(await chainSteps.count() >= 2, 'Unit 1 causal chain must expose at least two interactive steps');
-  for (const stepIndex of [0, 1]) {
+  // Unit 1's opening Song record starts before 1200 and is intentionally excluded from
+  // Timeline; use two later, explicitly mapped chain steps for linked-selection checks.
+  for (const stepIndex of [1, 2]) {
     await chainSteps.nth(stepIndex).click();
     const chainState = await page.evaluate(() => {
       const currentStep = document.querySelector('#eventPanel [data-route-step].now');
