@@ -668,6 +668,34 @@ async function verifyHomeLearningShell(page, port) {
       : panelBox.y >= iframeBox.y + iframeBox.height - 1),
     `${viewport.width}px host: contextual panel must follow the Map and Timeline region`);
   }
+  for (const viewport of [{ width: 1100, height: 850 }, { width: 700, height: 900 }]) {
+    await page.setViewportSize(viewport);
+    await page.locator('[data-subj="art"]').click();
+    const artSizing = await page.locator('.map-card').evaluate(card => ({
+      subject: card.dataset.subject,
+      splitInline: card.querySelector('.map-events-split').style.height,
+      wrapInline: card.querySelector('.home-map-wrap').style.height,
+      panelInline: card.querySelector('.home-events').style.height,
+    }));
+    assert.deepEqual(artSizing, { subject: 'art', splitInline: '', wrapInline: '', panelInline: '' },
+      `${viewport.width}px host: Art must not inherit World-only inline sizing`);
+    await page.locator('[data-subj="us"]').click();
+    const compactSizing = await page.locator('.map-card').evaluate(card => ({
+      subject: card.dataset.subject,
+      splitInline: card.querySelector('.map-events-split').style.height,
+      wrapInline: card.querySelector('.home-map-wrap').style.height,
+      panelInline: card.querySelector('.home-events').style.height,
+    }));
+    assert.deepEqual(compactSizing, { subject: 'us', splitInline: '', wrapInline: '', panelInline: '' },
+      `${viewport.width}px host: compact subjects must not inherit World-only inline sizing`);
+    await page.locator('[data-subj="world"]').click();
+    const worldDock = await frame.locator('#worldTimelineDock').evaluate(node => ({
+      bottom: node.getBoundingClientRect().bottom,
+      viewportHeight: document.documentElement.clientHeight,
+    }));
+    assert.ok(worldDock.bottom <= worldDock.viewportHeight + 1,
+      `${viewport.width}px host: returning to World must recalculate a visible Timeline Dock`);
+  }
   await page.setViewportSize({ width: 900, height: 700 });
   const hostPrimary = page.locator('.map-card-head [data-learning-view]');
   assert.deepEqual(await trimmedTexts(hostPrimary), ['因果链', '地图', '练习'],
