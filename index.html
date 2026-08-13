@@ -340,8 +340,15 @@ nav.topnav {
 .home-events .rt-stop.now { border-color: #8b1a1a; box-shadow: 0 0 0 2px rgba(139,26,26,0.14); }
 .home-events .rt-stop.now .rt-dot { background: #8b1a1a; }
 /* 因果链:竖排 + 箭头机制 */
-.home-events .rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; }
+/* sticky 控制条会盖住最后一环,给链条留出它的高度(8 环时正好压住交棒下一单元那环) */
+.home-events .rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 52px; }
 .home-events .rt-stops-chain .rt-stop { justify-content: flex-start; text-align: left; }
+/* 链内切换器:这个版面没有因果链清单页,补充链只能从链条面板里进 */
+.home-events .rt-switch { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.home-events .rt-switch-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); cursor: pointer; text-align: left; }
+.home-events .rt-switch-chip:hover { border-color: var(--ink-soft); }
+.home-events .rt-switch-chip.on { color: var(--ink); border-color: var(--ink); }
+.home-events .rt-switch-chip .rc-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; }
 .home-events .rt-stop .rt-sub { margin-left: 7px; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
 .home-events .rt-link { display: flex; gap: 8px; padding: 7px 0 7px 13px; margin: 2px 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
 .home-events .rt-arrow { flex: 0 0 auto; color: #5a2d7a; font-weight: 800; }
@@ -359,7 +366,9 @@ nav.topnav {
 .home-events .route-picker { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 12px 0 0; }
 .home-events .route-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .home-events .route-chip:hover { border-color: var(--ink-soft); }
-.home-events .route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; }
+/* flex 基准写死,否则窄面板下圆点被压成椭圆,看着像没对齐 */
+.home-events .route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
+.home-events .rc-count { white-space: nowrap; color: var(--ink-soft); font-weight: 600; }
 .home-events .map-panel-tabs { display: flex; gap: 8px; padding: 0 0 12px; }
 .home-events .map-panel-tabs button { min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
 .home-events .map-panel-tabs button[aria-pressed="true"] { border-color: var(--terracotta); background: var(--terracotta); color: #fff; }

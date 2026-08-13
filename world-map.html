@@ -189,6 +189,13 @@ h1 .en { color: var(--accent); }
 /* 控制条 sticky 吸底,会盖住最后一环。链条越长越明显(U1 主干链 8 环时正好压住交棒 Unit 2 那一环) */
 .rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 52px; }
 .rt-stops-chain .rt-stop { justify-content: flex-start; text-align: left; }
+/* 链内切换器:这个版面没有因果链清单页,补充链只能从链条面板里进 */
+.rt-switch { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.rt-switch-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); cursor: pointer; text-align: left; }
+.rt-switch-chip:hover { border-color: var(--ink-soft); }
+.rt-switch-chip.on { color: var(--ink); border-color: var(--ink); }
+.rt-switch-chip .rc-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; }
+
 .rt-stop .rt-sub { margin-left: 7px; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
 .rt-link { display: flex; gap: 8px; padding: 7px 0 7px 13px; margin: 2px 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
 .rt-arrow { flex: 0 0 auto; color: #5a2d7a; font-weight: 800; }
@@ -2278,7 +2285,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   // 讲义里是 6 个 Link,地图上有的 Link 拆成两站 —— 因为同一个链节的两端落在不同的地块上
   // (Link 2 的欧洲/伊斯兰双崩溃、Link 4 的奥斯曼/莫卧儿双实例),分开走地图才点得亮。
   const CHAINS = [
-    { id: 'u1_main', kind: 'chain', tier: 'main', chip: 'Unit 1 · Surplus → Exchange',
+    { id: 'u1_main', kind: 'chain', units: ['u1'], tier: 'main', chip: 'Unit 1 · Surplus → Exchange',
       name: 'Unit 1 主干链 · 余粮如何一路变成跨区域交换的前提',
       blurb: 'Unit 1 表面是六个地区并排介绍,实则六地在同一段时间跑完同一条路:集约农业挤出可被拿走的余粮,才养得起脱产官僚;官僚一多就要用信仰保证忠诚;合法性稳住后汲取才敢定额化;定额化的税与雇工把货币推进乡村,生产越过自给线,城市随之膨胀成稳定的需求端。要回答的问题是:为什么跨区域贸易网络的大扩张发生在 1200 年之后。',
       exam: 'Topic 1.7 比较型 LEQ 的因果骨架,也可整条压缩成任何 Unit 1 LEQ 的 contextualization;2027 起 DBQ 文件跨 1450–2001,Unit 1 主要落在 contextualization 一两句里,用最后一环即可。最常见失分写法:"China had Champa rice, and then the population grew, and then cities grew, and then trade expanded." 四个 and then 只证明先后顺序;改成 "Champa rice ripened fast enough for two harvests a year, which left a taxable surplus, which is what paid the salaries of the expanded bureaucracy." 判断标准:把 which/because 换成 then 后句子还成立,这句就没解释任何东西。',
@@ -2300,7 +2307,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '城市集中的需求里有相当一部分本地根本产不出 —— 中美洲要不到瓷器,西非要不到丝绸,欧洲要不到胡椒 —— 这个缺口只能靠跨区域采买来填。',
               '长距离交易最怕的不是路远,是陌生人赖账。共享的 sharia、阿拉伯语和穆斯林商人网络让契约在异乡也能执行,风险从「赌人品」降成「讲规矩」,跨区域采买才敢成规模地做。',
               '交棒 Unit 2:蒙古之所以能把中亚到中欧压成一个治安区就带来交换的暴涨,是因为可运的货、接单的城市和追债的规矩在 1200 年前后已由本单元这条链造好。缺了任何一样,草原上的统一只会换来空荡的道路 —— Unit 2 的跨区域网络扩张,扩张的正是这里造出的节点与规则。'] },
-    { id: 'u23_empires', kind: 'chain', tier: 'main', chip: 'Unit 2→3 · Empires from Ruins',
+    { id: 'u23_empires', kind: 'chain', units: ['u2','u3'], tier: 'main', chip: 'Unit 2→3 · Empires from Ruins',
       name: 'Unit 2→3 主干链 · 帝国如何从废墟中崛起',
       blurb: 'Unit 2 和 Unit 3 不是两章,是一条链:贸易网络的连通性同时送出财富、技术和病菌 —— 财富制造竞争,病菌瓦解旧秩序,技术武装了新崛起的军事集团。c.1450 之后那几个超大帝国不是偶然同时出现的。',
       exam: '这条链是 DBQ Contextualization 的通用素材(任何 c.1450 之后的帝国或航海题,都能用"c.1200–1450 跨区域贸易网络的扩张创造了……的物质与技术条件"开场)。最常见的失分写法是 "In Unit 2 trade expanded, then in Unit 3 empires emerged" —— then 不是 because,序列不等于因果。要说出三个条件:技术(火药)、真空(旧帝国崩溃)、利益(控制商路的财政动力),缺一个都不算完整 Causation。',
@@ -2326,7 +2333,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '征服不等于统治 —— 占下多语言多宗教的广土之后,四个帝国面对的是同一个问题:如何用有限的行政资源真正管住它',
               '意识形态是三套工具里最锋利的一件,也最容易反噬:Ottoman 以 Sunni 哈里发立身、Safavid 以 Shia 立国,合法性之争就此凝固成地缘断层',
               '帝国秩序稳定 → 奥斯曼坐收丝路西端的过路费 → 欧洲商人被迫改走海路 → Unit 4 的大航海从这里出发;白银则先一步把两条链接上了'] },
-    { id: 'u4_atlantic', kind: 'chain', tier: 'main', chip: 'Unit 4 · Atlantic System',
+    { id: 'u4_atlantic', kind: 'chain', units: ['u4'], tier: 'main', chip: 'Unit 4 · Atlantic System',
       name: 'Unit 4 主干链 · 从大航海到大西洋体系',
       blurb: 'Unit 4 回答一个问题:欧洲如何在 200 年内,从陆基帝国体系的边缘变成全球贸易网络的中心?答案是一条由技术、国家权力、生态交换和劳动力系统串起来的连续因果链。',
       exam: '这条链是 AP 最爱考的因果序列。写 LEQ 时,"人口崩溃→劳动力真空→转向非洲"这一环不能跳 —— 跳了就成了"欧洲人because贪婪所以买奴隶",拿不到因果分。',
@@ -2346,7 +2353,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '被奴役者与非洲统治者从不是被动接受 —— 从 Ndongo 到巴西内陆,抵抗贯穿整个体系',
               '殖民扩张重构了全球的种族、阶级与性别等级,创造了 Unit 5 革命所要反抗的那个不平等秩序'] },
     // ---- 补充链:主干装不下、但 AP 常考的支线。每条最后一环没有下一站,links 末位留空串 ----
-    { id: 'u1_sub_syncretism', kind: 'chain', tier: 'sub', chip: 'Unit 1 · Religious Syncretism',
+    { id: 'u1_sub_syncretism', kind: 'chain', units: ['u1'], tier: 'sub', chip: 'Unit 1 · Religious Syncretism',
       name: 'Unit 1 补充链 · 普世宗教要被本地改写才站得住',
       blurb: '1200–1450 年伊斯兰教、佛教、基督教都在扩张,但扩张的方式不是替换而是嫁接。这条链解释一件在 AP 里经常被写反的事:「皈依人数上升」和「本地文化被取代」是两件事。',
       exam: '用于 Topic 1.2/1.3/1.5 的 SAQ(AMSCO 直接考过 syncretism 在 Dar al-Islam 如何出现)与比较宗教传播的 LEQ。最常见失分写法:"Islam spread to Southeast Asia, and the people there became Muslim." 只写结果没写机制,应写「因为 Sufi 容忍本地神灵,改宗不必放弃原有仪式,成本低,传播才是自愿、自下而上的」。第二个常见错误是把 syncretism 写成「两种宗教并存」—— 并存不是融合,必须举出具体混合物:Chan Buddhism、Urdu、埃塞俄比亚的凿岩教堂。',
@@ -2360,7 +2367,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '翻译时只能借用本地已有的哲学词汇,外来概念在进门那一刻就被改写了。信众读到的是「本来就属于自己的东西」,抵触因此消失,统治者也才敢把它请进宫廷。',
               '统治者需要一套超越部族的话语来压住地方势力,又不能废掉旧仪式而失去旧势力的支持,于是把两套并置在同一个宫廷、同一座建筑里 —— 宗教既是征服工具,也是妥协的产物。',
               ''] },
-    { id: 'u1_sub_labor', kind: 'chain', tier: 'sub', chip: 'Unit 1 · Labor Systems',
+    { id: 'u1_sub_labor', kind: 'chain', units: ['u1'], tier: 'sub', chip: 'Unit 1 · Labor Systems',
       name: 'Unit 1 补充链 · 劳动被抽走的四种方式',
       blurb: '1200–1450 年每个国家都要把劳动力从家庭手里拿出来,但拿的形式差别极大。这条链解释「拿什么」取决于这个社会已经有什么 —— 有没有货币、有没有长途市场、有没有常设行政;它不是四种制度的并列介绍,而是上一种方式的局限逼出下一种的推演。',
       exam: '支撑 1.4/1.5/1.6 的比较 LEQ 与 SAQ 的 B、C 小问。最常见失分写法:"The Inca used the mit’a system and the Aztecs used tribute." 罗列名词拿不到分,要写「因为安第斯没有货币也没有大市场,国家收不到钱,只能把成年男子的工作时间当成预算单位」。另一个高频硬伤是把 serf 写成 slave —— AMSCO 明确 serfs 不是奴隶,他们被绑在土地上,但不是可买卖的财产。',
@@ -2374,7 +2381,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '工时只能花在国家自己的工程上,既换不来奢侈品,也买不到地方精英的忠诚。需要地方精英出力配合的帝国,只好改抽「成品」。',
               '抽成品省下了直接行政的成本,代价是被征服者必须自愿组织生产。贡额一加重,怨恨就堆在地方首领这一层 —— AMSCO 明写这份怨恨让许多部族随时准备反叛。而在已有货币和长途市场的地方,国家干脆跳过这套,把劳动力本身当资产搬运。',
               ''] },
-    { id: 'u1_sub_gender', kind: 'chain', tier: 'sub', chip: 'Unit 1 · Gender Divergence',
+    { id: 'u1_sub_gender', kind: 'chain', units: ['u1'], tier: 'sub', chip: 'Unit 1 · Gender Divergence',
       name: 'Unit 1 补充链 · 女性地位为什么在同一时期分头走',
       blurb: '同一个两百五十年里,中国女性的活动空间在收紧,伊斯兰法下的女性握有可执行的财产权,密西西比与非洲的女性在亲属制度里占着结构性位置。分化的关键变量不是「哪种宗教更宽容」,而是女性能不能持有可转让的资源,以及她的身体是否被拿来当家族地位的信号。',
       exam: '用于 gender roles 的比较 LEQ 与 1.1/1.2 的 SAQ —— AMSCO 本单元直接出过「伊斯兰女性地位与中国女性地位有何不同」。最常见失分写法:"Women in Islam had more rights than women in China." 这是结论不是论证,后面必须接机制:伊斯兰法允许女性继承并在婚后保留所有权,而 Song 的缠足把行动能力换成婚配价值。也不要拿 Empress Xu 或 ’A’ishah al-Ba’uniyyah 这类个案当普遍状况的证据 —— AMSCO 提醒 1450 年前的记录几乎全出自男性之手。',
@@ -2388,7 +2395,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '法律保住的是财产权,没有一并保住公共活动权。等到城镇兴起、财富集中到市场与街面上,隔离规范就从另一头收了回来 —— AMSCO 明写伊斯兰治下城市的兴起给女性带来了新的限制。',
               '城市里的地位竞争发生在精英家族之间,比的是谁家更不必让女性抛头露面。于是「能不能劳动」被反过来当成身份证明,家族开始拿女儿的身体做信号。',
               ''] },
-    { id: 'u1_sub_decentralization', kind: 'chain', tier: 'sub', chip: 'Unit 1 · Decentralization',
+    { id: 'u1_sub_decentralization', kind: 'chain', units: ['u1'], tier: 'sub', chip: 'Unit 1 · Decentralization',
       name: 'Unit 1 补充链 · 不集权,为什么有时管用、有时致命',
       blurb: 'Unit 1 里最容易被写成「落后」的是政治分权。但 Hausa 城邦、日本大名、英格兰贵族都靠分权活了几百年,Rajput 却因分权亡国。这条链解释分权的收益在什么条件下成立、在什么条件下反噬。',
       exam: '直接对应 Topic 1.6 的学习目标「political decentralization 的原因与后果」,也是 1.7 比较题的常备材料。最常见失分写法:"Europe was decentralized while China was centralized." 只做对照没交代后果。要说明同一个分权在英格兰产出了议会这样的谈判制度,在 Rajput 那里却导致被逐个征服 —— 差别来自外部军事压力的大小,不是来自哪种文化更先进。',
@@ -2402,7 +2409,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '分散主权无法把兵力与粮草在同一时间集中到同一个方向,进攻方只需逐个击破 —— AMSCO 明写「缺乏中央权力使这些王国易受穆斯林进攻」。反过来说,若分权的一方本身握有武力,中央连收权都做不到。',
               '当分权的一方掌握了武力而中央只剩仪式,契约就得靠刀来兑现,谁也无法单方面收权。可若贵族的武力不足以压过君主,同一场博弈就只能改在谈判桌上进行。',
               ''] },
-    { id: 'u1_sub_maintenance', kind: 'chain', tier: 'sub', chip: 'Unit 1 · Why States Decline',
+    { id: 'u1_sub_maintenance', kind: 'chain', units: ['u1'], tier: 'sub', chip: 'Unit 1 · Why States Decline',
       name: 'Unit 1 补充链 · 国家多半不是被打垮的,是养不起自己',
       blurb: 'Unit 1 的衰落案例 —— Baghdad、Great Zimbabwe、Cahokia、Song 晚期 —— 都不是败给强敌,而是收入跟不上维护成本。这条链把「衰落」从道德叙事改写成财政与环境的算术:先问它的固定成本是什么,再问收入为什么断了。',
       exam: '用于任何 causes of decline 型 LEQ 与 SAQ 的 B、C 小问;AMSCO 本单元的 Think as a Historian 就拿 Baghdad 那一段当因果关系的范例。最常见失分写法:"The Mongols destroyed Baghdad in 1258, so the Abbasid Empire fell." 蒙古是终点不是原因 —— AMSCO 给的机制顺序是贸易路线北移在先、运河失修在中、粮食不足在后,1258 年只是给一具早已掏空的躯壳收尾。',
@@ -2762,6 +2769,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         <div class="rt-name">${route.name}</div>
         <div class="rt-progress">第 ${i + 1} 站 / 共 ${route.stops.length} 站</div>
       </div>
+      ${isChain ? chainSwitcherHTML(route) : ''}
       <p class="rt-blurb">${route.blurb}</p>
       <p class="rt-exam"><span>考点</span>${route.exam}</p>
       <div class="rt-stops${isChain ? ' rt-stops-chain' : ''}">${steps}</div>
@@ -3221,13 +3229,35 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   let activeLearningView = 'chain';
   let activeMapMode = 'events';
 
-  // 单元默认落地的是那条【主干链】,补充链不参与 —— 学生打开单元先看见的应该是因果脊。
-  // 改链 id 时这里必须跟着改:对不上的话默认视图会静默落到空态(u1_tapestry → u1_main 就踩过一次)。
+  // 本单元的全部链,主干链在前、补充链在后。归属写在每条链的 units 上,不再硬编码 id ——
+  // 之前 chainForUnit 里写死 'u1_tapestry',换链时对不上就静默落到空态,踩过一次。
+  function chainsForUnit(unitId) {
+    const of = tier => CHAINS.filter(c => (c.units || []).includes(unitId) && (c.tier || 'main') === tier);
+    return of('main').concat(of('sub'));
+  }
+  // 单元默认落地的是主干链 —— 学生打开单元先看见的应该是因果脊,补充链靠切换器进。
   function chainForUnit(unitId) {
-    if (unitId === 'u1') return 'u1_main';
-    if (unitId === 'u2' || unitId === 'u3') return 'u23_empires';
-    if (unitId === 'u4') return 'u4_atlantic';
-    return null;
+    const list = chainsForUnit(unitId);
+    return list.length ? list[0].id : null;
+  }
+  // 药丸在单元语境里,不必每颗都重复"Unit 1 ·"
+  const chainShortName = (c) => chainChipName(c).replace(/^Unit[^·]*·\s*/, '');
+  // 这个版面没有因果链清单页:点「因果链」直接进本单元的主干链。补充链于是无处可去 ——
+  // 把切换器做进链条面板本身,主干链和补充链在同一行,学生在链内就能换。
+  function chainSwitcherHTML(current) {
+    const unitId = document.getElementById('periodFilter')?.value || 'u1';
+    const list = chainsForUnit(unitId);
+    if (list.length < 2) return '';
+    return `<div class="rt-switch" role="group" aria-label="本单元的因果链">`
+      + list.map(c => {
+          const isSub = (c.tier || 'main') === 'sub';
+          const on = c.id === current.id;
+          return `<button type="button" class="rt-switch-chip${isSub ? ' sub' : ''}${on ? ' on' : ''}"`
+            + `${on ? ' aria-current="true"' : ''} data-route-go="${c.id}" title="${c.name}">`
+            + `<span class="rc-dot" style="background:${isSub ? '#9a7fb5' : '#5a2d7a'}"></span>`
+            + `${chainShortName(c)}</button>`;
+        }).join('')
+      + `</div>`;
   }
 
   function syncLearningTabs() {
