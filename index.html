@@ -753,9 +753,19 @@ nav.topnav {
     const ez = doc.querySelector('.event-zone'); if (ez) ez.style.display = 'none';
     // 首页用父页面满宽工具栏(见 #mapToolbarHost),隐藏 iframe 内部那个,避免挤在窄地图列里
     const tb = doc.querySelector('.map-toolbar'); if (tb) tb.style.display = 'none';
-    // 表头/工具栏/事件区都隐藏了,地图区高度 = iframe 可视高度 => 地图铺满整格
+    // 首页 iframe 必须同时容纳地图和 Timeline Dock，不能让地图吞掉整个视口把 Dock 挤到裁切区外。
     const mz = doc.querySelector('.map-zone');
-    if (mz) { mz.style.flex = '0 0 auto'; mz.style.height = doc.documentElement.clientHeight + 'px'; }
+    if (mz) { mz.style.flex = '0 0 auto'; mz.style.height = (window.innerWidth <= 900 ? 300 : 500) + 'px'; }
+    const study = doc.querySelector('#mapStudyView');
+    const wrap = worldMapFrame.closest('.home-map-wrap');
+    const split = worldMapFrame.closest('.map-events-split');
+    if (study && wrap && split) {
+      const height = Math.ceil(study.getBoundingClientRect().height);
+      worldMapFrame.style.height = height + 'px';
+      wrap.style.height = height + 'px';
+      split.style.height = window.innerWidth <= 900 ? 'auto' : height + 'px';
+      if (homeEvents) homeEvents.style.height = height + 'px';
+    }
   }
 
   // 读 iframe 里刚渲染好的事件,渲染到右侧面板;没选中事件时显示空状态提示
@@ -813,7 +823,8 @@ nav.topnav {
     const openHitFromHome = card => {
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
       if (!win || !win.__mapFilter) return;
-      win.__mapFilter.openHit(card.dataset.pin, card.dataset.region);
+      const open = win.__mapFilter.openEventInMap || win.__mapFilter.openHit;
+      open(card.dataset.pin, card.dataset.region, card.dataset.eventKey);
       setTimeout(syncHomeEvents, 80);
     };
     homeEvents.addEventListener('click', e => {

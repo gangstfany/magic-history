@@ -2870,7 +2870,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         </div>
       </div>`
       + (wrong.length ? `<div class="event-list">`
-        + wrong.map(r => `<div class="event-card is-result" data-pin="${r.num}" data-region="${pinRegion(r.num) || ''}" role="button" tabindex="0" style="border-left-color:${r.it.catColor}">`
+        + wrong.map(r => `<div class="event-card is-result" data-pin="${r.num}" data-region="${pinRegion(r.num) || ''}" data-event-key="${r.it.timelineKey || ''}" role="button" tabindex="0" style="border-left-color:${r.it.catColor}">`
           + `<div class="ec-top"><span class="ec-yr">${r.it.yr}</span><span class="ec-cat">${r.it.catFull}</span></div>`
           + `<div class="ec-trig">${r.it.trigHTML}</div>`
           + `<div class="ec-where"><span class="ew-pin">${r.num}</span>${r.it.city}<span class="ew-go">在地图上打开 →</span></div></div>`).join('')
@@ -2948,7 +2948,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         </div>
       </div>`
       + `<div class="event-list">`
-      + rows.map(r => `<div class="event-card is-result" data-pin="${r.num}" data-region="${pinRegion(r.num) || ''}" role="button" tabindex="0" style="border-left-color:${r.it.catColor}">`
+      + rows.map(r => `<div class="event-card is-result" data-pin="${r.num}" data-region="${pinRegion(r.num) || ''}" data-event-key="${r.it.timelineKey || ''}" role="button" tabindex="0" style="border-left-color:${r.it.catColor}">`
         + `<div class="ec-top"><span class="ec-yr">${r.it.yr}</span><span class="ec-cat">${r.it.catFull}</span></div>`
         + `<div class="ec-trig">${r.it.trigHTML}</div>`
         + `<div class="ec-where"><span class="ew-pin">${r.num}</span>${r.it.city}`
@@ -3803,14 +3803,18 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       }
       spotlightPin(num);
     }
+    function openEventInMap(num, region, eventKey) {
+      showLearningView('map');
+      openHit(num, region, eventKey);
+    }
     eventPanel.addEventListener('click', e => {
       const card = e.target.closest('.event-card.is-result');
-      if (card) openHit(card.dataset.pin, card.dataset.region, card.dataset.eventKey);
+      if (card) openEventInMap(card.dataset.pin, card.dataset.region, card.dataset.eventKey);
     });
     eventPanel.addEventListener('keydown', e => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const card = e.target.closest('.event-card.is-result');
-      if (card) { e.preventDefault(); openHit(card.dataset.pin, card.dataset.region, card.dataset.eventKey); }
+      if (card) { e.preventDefault(); openEventInMap(card.dataset.pin, card.dataset.region, card.dataset.eventKey); }
     });
 
     function setQuery(q) { takeQuery(q); if (searchInput) searchInput.value = q; apply(); }
@@ -3929,6 +3933,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       getActiveCats: () => new Set(activeCats),
       getState: () => ({ query, cats: new Set(activeCats), period: activePeriod }),
       setQuery, toggleCat, setPeriod, reset, openHit, getTimelineState,
+      openEventInMap,
       selectTimelineEvent: (key, preferredAnchor) => selectTimelineEvent(key, {
         reveal: true, moveMap: true, preferredAnchor
       }),

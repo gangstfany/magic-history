@@ -590,6 +590,34 @@ async function verifyLearningShell(page, port) {
   assert.deepEqual(await trimmedTexts(page.locator('[data-map-mode][aria-pressed="true"]')), ['事件详情'],
     'only Event Details may be pressed after returning from Practice');
 
+  const practiceResultFixture = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll('.world-timeline-card[data-event-key]')];
+    const counts = new Map(cards.map(card => [card.dataset.pin, cards.filter(item => item.dataset.pin === card.dataset.pin).length]));
+    const card = cards.find(item => counts.get(item.dataset.pin) === 1);
+    const entry = card && [...document.querySelectorAll('.entry')].find(item => item.querySelector('.citynum')?.textContent.trim() === card.dataset.pin);
+    if (!card || !entry) return null;
+    const year = entry.querySelector('.yr')?.textContent.trim() || '';
+    const trigger = entry.querySelector('.trig')?.textContent.trim().slice(0, 24) || '';
+    const key = `${card.dataset.pin}|${year}|${trigger}`;
+    localStorage.setItem('mh.quiz.v1', JSON.stringify({ [key]: { hit: 0, miss: 1, streak: 0, last: Date.now(), num: card.dataset.pin } }));
+    return { eventKey: card.dataset.eventKey, pin: card.dataset.pin };
+  });
+  assert.ok(practiceResultFixture, 'direct Practice-result fixture must seed a unique-pin mistake');
+  await page.evaluate(() => { window.__mapFilter.setLearningView('practice'); window.__mapFilter.quizBook(); });
+  const directPracticeResult = page.locator('#eventPanel .event-card.is-result').first();
+  await expectVisible(directPracticeResult, 'direct mistake book must expose a result card');
+  await directPracticeResult.click();
+  assert.deepEqual(await trimmedTexts(page.locator('.learning-view-tab[aria-pressed="true"]')), ['地图'],
+    'opening a direct Practice result must switch the primary view to Map');
+  assert.equal(await page.locator('[data-map-mode="events"]').getAttribute('aria-pressed'), 'true',
+    'opening a direct Practice result must switch to Event Details');
+  assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), '地图事件详情',
+    'opening a direct Practice result must expose the Event Details label');
+  assert.equal(await page.evaluate(() => window.__mapFilter.inQuiz()), false,
+    'opening a direct Practice result must exit quiz state');
+  assert.equal((await page.evaluate(() => window.getTimelineState())).selectedEventKey, practiceResultFixture.eventKey,
+    'opening a direct Practice result must select its exact event');
+
   await page.setViewportSize({ width: 700, height: 900 });
   for (const mode of [
     { id: 'chain', label: '因果链', ariaLabel: 'Unit 因果链', content: '#eventPanel .rt-stops-chain' },
@@ -621,6 +649,26 @@ async function verifyHomeLearningShell(page, port) {
   const frame = page.frameLocator('#worldMapFrame');
   await frame.locator('body').waitFor();
   await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter);
+  await page.waitForFunction(() => document.querySelector('#hostPeriod')?.options.length > 1);
+  for (const viewport of [{ width: 1100, height: 850 }, { width: 700, height: 900 }]) {
+    await page.setViewportSize(viewport);
+    const sourceLayout = await frame.locator('body').evaluate(() => {
+      const map = document.querySelector('.map-zone').getBoundingClientRect();
+      const dock = document.querySelector('#worldTimelineDock').getBoundingClientRect();
+      return { mapBottom: map.bottom, dockTop: dock.top, dockBottom: dock.bottom, viewportHeight: document.documentElement.clientHeight };
+    });
+    assert.ok(sourceLayout.dockTop >= sourceLayout.mapBottom - 1,
+      `${viewport.width}px host: source visual order must place Timeline Dock after Map`);
+    assert.ok(sourceLayout.dockBottom <= sourceLayout.viewportHeight + 1,
+      `${viewport.width}px host: Timeline Dock must fit within the visible iframe viewport: ${JSON.stringify(sourceLayout)}`);
+    const iframeBox = await page.locator('#worldMapFrame').boundingBox();
+    const panelBox = await page.locator('#home-events').boundingBox();
+    assert.ok(iframeBox && panelBox && (viewport.width > 900
+      ? panelBox.x >= iframeBox.x + iframeBox.width - 1
+      : panelBox.y >= iframeBox.y + iframeBox.height - 1),
+    `${viewport.width}px host: contextual panel must follow the Map and Timeline region`);
+  }
+  await page.setViewportSize({ width: 900, height: 700 });
   const hostPrimary = page.locator('.map-card-head [data-learning-view]');
   assert.deepEqual(await trimmedTexts(hostPrimary), ['因果链', '地图', '练习'],
     'the homepage must expose the unified three APWH learning modes');
@@ -639,6 +687,27 @@ async function verifyHomeLearningShell(page, port) {
     'the homepage Map mirror must initially press only Event Details');
   assert.doesNotMatch(await page.locator('#home-events').innerText(), /Practice|随堂练习/,
     'the homepage Map event empty state must not inject Practice launchers');
+
+  await page.locator('#hostPeriod').selectOption('');
+  const hostExactEvent = await frame.locator('body').evaluate(() => {
+    const cards = [...document.querySelectorAll('.world-timeline-card[data-event-key]')];
+    const counts = new Map(cards.map(card => [card.dataset.pin, cards.filter(item => item.dataset.pin === card.dataset.pin).length]));
+    const first = cards.find(item => counts.get(item.dataset.pin) > 1);
+    const card = first && cards.find(item => item.dataset.pin === first.dataset.pin && item.dataset.eventKey !== first.dataset.eventKey
+      && item.querySelector('.world-timeline-title-en')?.textContent.trim().length > 3);
+    return card && { key: card.dataset.eventKey, query: card.querySelector('.world-timeline-title-en').textContent.trim() };
+  });
+  assert.ok(hostExactEvent, 'homepage exact-selection fixture must provide two events sharing a pin');
+  await page.locator('#hostSearch').fill(hostExactEvent.query);
+  const mirroredExactResult = page.locator(`#home-events .event-card.is-result[data-event-key="${hostExactEvent.key}"]`);
+  await mirroredExactResult.waitFor();
+  await expectVisible(mirroredExactResult, 'homepage must mirror the exact keyed search result');
+  const staleMirroredCardHTML = await mirroredExactResult.evaluate(element => element.outerHTML);
+  await frame.locator('body').evaluate(() => window.__mapFilter.setQuery(''));
+  await page.locator('#home-events').evaluate((element, cardHTML) => element.insertAdjacentHTML('beforeend', cardHTML), staleMirroredCardHTML);
+  await mirroredExactResult.click();
+  assert.equal((await frame.locator('body').evaluate(() => window.getTimelineState())).selectedEventKey, hostExactEvent.key,
+    'clicking a mirrored result must select its exact event key instead of the first event at that pin');
 
   await page.locator('#home-events [data-map-mode="routes"]').click();
   await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getLearningState().mapMode === 'routes');
@@ -667,6 +736,20 @@ async function verifyHomeLearningShell(page, port) {
     'Practice must render inside the shared homepage event mirror');
   assert.equal(await page.locator('#practiceDrawer').count(), 0,
     'the homepage unified model must not introduce a Practice drawer');
+  await frame.locator('body').evaluate(() => window.__mapFilter.quizBook());
+  const mirroredPracticeResult = page.locator('#home-events .event-card.is-result').first();
+  await mirroredPracticeResult.waitFor();
+  const mirroredPracticeKey = await mirroredPracticeResult.getAttribute('data-event-key');
+  assert.ok(mirroredPracticeKey, 'mirrored Practice result must carry its exact event key');
+  await mirroredPracticeResult.click();
+  await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getLearningState().view === 'map');
+  await page.waitForFunction(() => document.querySelector('.map-card-head [data-learning-view="map"]')?.getAttribute('aria-pressed') === 'true');
+  assert.deepEqual(await trimmedTexts(page.locator('.map-card-head [data-learning-view][aria-pressed="true"]')), ['地图'],
+    'opening a mirrored Practice result must switch the host primary mode to Map');
+  assert.equal(await page.locator('#home-events').getAttribute('aria-label'), '地图事件详情',
+    'opening a mirrored Practice result must refresh the Event Details label');
+  assert.equal((await frame.locator('body').evaluate(() => window.getTimelineState())).selectedEventKey, mirroredPracticeKey,
+    'opening a mirrored Practice result must select its exact event');
 }
 
 export async function verifyBrowser() {
