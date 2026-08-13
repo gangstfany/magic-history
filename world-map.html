@@ -186,7 +186,8 @@ h1 .en { color: var(--accent); }
 .rt-stop.now .rt-dot { background: #8b1a1a; }
 .rt-stop:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
 /* 因果链:竖排,每一环下面挂"箭头机制" */
-.rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; }
+/* 控制条 sticky 吸底,会盖住最后一环。链条越长越明显(U1 主干链 8 环时正好压住交棒 Unit 2 那一环) */
+.rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 52px; }
 .rt-stops-chain .rt-stop { justify-content: flex-start; text-align: left; }
 .rt-stop .rt-sub { margin-left: 7px; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
 .rt-link { display: flex; gap: 8px; padding: 7px 0 7px 13px; margin: 2px 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
@@ -262,9 +263,16 @@ h1 .en { color: var(--accent); }
 }
 header.topbar { display: flex; align-items: center; gap: 12px; }
 .route-picker { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 14px 0 0; }
-.route-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.route-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; text-align: left; }
 .route-chip:hover { border-color: var(--ink-soft); }
-.route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; }
+/* flex 基准要写死:窄面板下圆点会被压扁成椭圆,看着就像没对齐 */
+.route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
+/* 环数/站数不能被挤到第二行 —— 数字和单位分家比拥挤更难看 */
+.rc-count { white-space: nowrap; color: var(--ink-soft); font-weight: 600; }
+/* 因果链选单分「主干链 / 补充链」两组;补充链的点淡一档,一眼分得出哪条是主线 */
+.route-picker-title { margin: 22px 0 0; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
+.route-picker-title.pt-first { margin-top: 8px; }
+.chain-chip-sub .rc-dot { box-shadow: 0 0 0 3px rgba(154,127,181,0.12); }
 
 .map-panel-tabs { display: flex; gap: 8px; padding: 12px 16px 0; }
 .map-panel-tabs[hidden] { display: none; }
@@ -2055,12 +2063,27 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     });
   });
   function yearStart(yr) { const m = yr.match(/-?\d+/); return m ? parseInt(m[0], 10) : 0; }
+  // Unit 归属按"与课程时段有没有实质重叠"判断,不按"起始年份 ≥ 1200"。College Board 把 Unit 1
+  // 定为 c.1200–c.1450,但一个始于 1185 的幕府、始于 960 的宋朝,主体都延续在这个窗口里 ——
+  // 因为起点早就整条丢掉,学生就看不到延续进课程范围的政权与制度。
+  // 取范围末段:"1200–1450"→1450;"1400s"→1499(世纪);"1830s"→1839(十年);"c.1535"→1535。
+  function yearEnd(yr) {
+    const toks = String(yr).match(/\d+s?/g);
+    if (!toks) return yearStart(yr);
+    const tail = toks[toks.length - 1];
+    const end = parseInt(tail, 10);
+    if (!tail.endsWith('s')) return end;
+    return end + (tail.endsWith('00s') ? 99 : 9);
+  }
   Object.values(index).forEach(arr => arr.sort((a, b) => yearStart(a.yr) - yearStart(b.yr)));
 
   // Timeline 直接适配上面的 index,不维护第二份事件内容。相同年份/内容的多地点记录
   // 共用一个事件键,所以只生成一张卡,但保留全部地图锚点。
   const WORLD_TIMELINE_UNIT_MEMBERS = Object.freeze({
-    u1: ["75:0","6:0","23:0","73:0","18:0","49:0","10:0","50:0","85:2","73:2","73:3","73:4","32:0","49:4","50:3","3:4","32:3","23:4","18:3","49:6","75:1","93:1","49:8","10:4","42:1","43:1","50:4","50:5"],
+    u1: ["75:0","6:0","23:0","73:0","18:0","49:0","10:0","50:0","85:2","73:2","73:3","73:4","32:0","49:4","50:3","3:4","32:3","23:4","18:3","49:6","75:1","93:1","49:8","10:4","42:1","43:1","50:4","50:5","1:0","7:0","4:0","76:0","47:0"],
+    // 上面末尾五条(1:0 Song 960–1279 东亚、7:0 Khmer 1150–1431 东南亚、4:0 Kamakura 1185–1333 东亚、
+    // 76:0 Hausa 1000–1400 非洲、47:0 Mississippian 1050–1450 美洲)起始年份早于 1200,
+    // 但都延续进 1200–1450,且各自对应 Unit 1 的区域国家发展,按"实质重叠"纳入。
     u2: ["8:0","86:0","84:0","9:0","2:1","10:3","5:6","2:4"],
     u3: ["74:0","77:0","19:0","49:1","6:1","50:1","49:2","14:0","78:0","24:0","5:0","26:0","25:0","23:1","2:3","11:2","77:1","32:1","33:0","49:5","13:0","34:0","32:2","35:0","24:3","24:4","23:2","57:1","49:7","77:2","14:2","100:0","41:0","57:2","74:2"],
     u4: ["45:0","2:2","85:1","12:0","44:0","43:0","42:0","60:0","74:1","87:0","57:0","58:0","59:0","44:1","55:1","60:1","66:0","91:1","39:0","68:0","68:1","59:1","99:0","104:0"],
@@ -2092,8 +2115,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const unmappedTimelineSourceIds = [];
   let excludedPre1200Count = 0;
   Object.entries(index).forEach(([num, items]) => items.forEach((it, ordinal) => {
-    if (yearStart(it.yr) < 1200) { excludedPre1200Count += 1; return; }
+    // 人工校订的 Unit 映射是权威:先看事件是否完全结束于 1200 之前,再查映射。
+    // 原来的顺序是先按 yearStart 砍掉,导致补进映射名单也不生效。
     const unit = WORLD_TIMELINE_UNIT_MAP[it.sourceId];
+    if (yearEnd(it.yr) < 1200) { excludedPre1200Count += 1; return; }
     if (!unit) { unmappedTimelineSourceIds.push(it.sourceId); return; }
     const signature = WORLD_TIMELINE_EVENT_ALIASES[it.sourceId] || timelineSignature(it);
     let event = timelineByKey.get(signature);
@@ -2253,20 +2278,29 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   // 讲义里是 6 个 Link,地图上有的 Link 拆成两站 —— 因为同一个链节的两端落在不同的地块上
   // (Link 2 的欧洲/伊斯兰双崩溃、Link 4 的奥斯曼/莫卧儿双实例),分开走地图才点得亮。
   const CHAINS = [
-    { id: 'u1_tapestry', kind: 'chain',
-      name: 'Unit 1 主干链 · 国家如何建立并连接区域秩序',
-      blurb: 'Unit 1 的共同逻辑不是各地区孤立发展，而是农业与商业提供剩余，统治者把剩余转化为税收、官僚和军事能力，再用宗教与文化建立合法性；更稳定的国家又扩大区域交流。',
-      exam: '写比较或因果题时，不要只列举宋朝、德里苏丹国、马里和美洲帝国。要指出共同机制：经济基础创造治理能力，治理能力维持秩序，秩序进一步促进贸易与文化传播。',
-      stops: [1, 3, 73, 48],
-      labels: ['农业与商业创造剩余', '官僚与军事强化治理', '宗教与学术建立合法性', '国家秩序推动区域交流'],
-      evidence: ['宋代稻作与城市商业 · 科举官僚 · 纸币与技术发展',
-                 'Delhi Sultanate · 少数统治多数 · 军事征服与地方治理并存',
-                 'Mali · 黄金贸易 · Mansa Musa · Timbuktu 学术网络',
-                 'Aztec tribute system · chinampas · 区域贡赋与市场联系'],
-      links: ['稳定的粮食与商业剩余让统治者能够征税、供养官僚和军队，把地方社会组织成更大的国家',
-              '单靠武力无法长期统治多元人口，国家需要宗教、教育和文化赞助来解释并巩固权力',
-              '治理与合法性降低交流成本，城市、市场和学术中心因而连接更大的区域网络'] },
-    { id: 'u23_empires', kind: 'chain',
+    { id: 'u1_main', kind: 'chain', tier: 'main', chip: 'Unit 1 · Surplus → Exchange',
+      name: 'Unit 1 主干链 · 余粮如何一路变成跨区域交换的前提',
+      blurb: 'Unit 1 表面是六个地区并排介绍,实则六地在同一段时间跑完同一条路:集约农业挤出可被拿走的余粮,才养得起脱产官僚;官僚一多就要用信仰保证忠诚;合法性稳住后汲取才敢定额化;定额化的税与雇工把货币推进乡村,生产越过自给线,城市随之膨胀成稳定的需求端。要回答的问题是:为什么跨区域贸易网络的大扩张发生在 1200 年之后。',
+      exam: 'Topic 1.7 比较型 LEQ 的因果骨架,也可整条压缩成任何 Unit 1 LEQ 的 contextualization;2027 起 DBQ 文件跨 1450–2001,Unit 1 主要落在 contextualization 一两句里,用最后一环即可。最常见失分写法:"China had Champa rice, and then the population grew, and then cities grew, and then trade expanded." 四个 and then 只证明先后顺序;改成 "Champa rice ripened fast enough for two harvests a year, which left a taxable surplus, which is what paid the salaries of the expanded bureaucracy." 判断标准:把 which/because 换成 then 后句子还成立,这句就没解释任何东西。',
+      stops: [7, 1, 3, 50, 76, 49, 85, 8],
+      labels: ['集约农业挤出可征余粮', '余粮供养脱产的国家机器', '信仰被装进选官与法律', '汲取方式定型为制度', '生产越过自给线', '城市把散碎需求攒成订单', '区域连接被需求点亮', '节点与制度同时就位'],
+      evidence: ['Champa rice(快熟耐旱,来自今越南的 Champa Kingdom) · 一年两熟、低地与丘陵也能种稻 · Khmer Empire(802–1431)的灌溉与排水系统使稻米一年数收 · chinampas(Lake Texcoco 上的浮田) · waru waru 蓄水垄沟与安第斯梯田 · three-field system 三圃制与重犁、风车',
+                 'Song Dynasty(960–1279) · imperial bureaucracy(自 Qin 以来的连续性,Song 时扩编) · meritocracy 与 civil service exam · Song Taizu 向下层男子开放教育机会 · scholar gentry 人数超过世袭 aristocracy · Philip II(在位 1180–1223)建起欧洲第一套真正的官僚班子',
+                 'sharia 让分裂后的伊斯兰各国仍共享同一套法律 · Seljuk 领袖自称 sultan,把 caliph 降为逊尼派最高宗教权威 · Neo-Confucianism(成形于 770–840)与 filial piety 支撑 Song 的统治 · Inca 以 Inti 之子自居、Aztec 的 Great Speaker 是 theocracy 的顶端 · lay investiture controversy 与 Concordat of Worms(1122)',
+                 'mit’a system:15–50 岁男子的强制公共劳役,被征服者不缴 tribute · Qhapaq Ñan(AMSCO 作 Carpa Nan)约 25,000 英里道路 · 帝国划四大行省,各有总督与官僚 · Song 改强征徭役为花钱雇工修路修渠 · Aztec 保留地方首领充任收贡人 · Zimbabwe 对过境黄金征税、Ghana 与 Mali 抽盐金贸易税',
+                 'Hausa Kingdoms 七城邦各有专精,平原地带专产棉花 · proto-industrialization:乡村家庭做出超过自己能消费的量 · artisans 在官府监督下分散冶铁炼钢 · porcelain、silk、tea 成为出口大宗 · 用「黑土」(煤)大量冶铸铁、再脱碳制钢 · 指南针与印制海图使远洋运货成为常态',
+                 'Tenochtitlan 1325 年建于湖心岛,人口近 200,000 · 修引水渠供水、挖沟排湖造田 · Song 治下多座城市逾十万人,Hangzhou、Guangzhou 是国际化都会 · Great Zimbabwe 石墙内住着近 20,000 人 · 欧洲长途商业催生 bourgeoisie / burghers 这一中间阶层 · House of Wisdom 与 Cordoba 当时最大的图书馆',
+                 'Indian Ocean trade 串起东非、中东、南亚、东亚 · dhows 长而窄的船身宜载货不宜作战 · Swahili 由班图语与阿拉伯语混成 · Kilwa、Mombasa、Mogadishu 港口把内陆 Zimbabwe 的黄金送出去 · trans-Saharan trade 与 Mansa Musa 1324 年的朝觐 · Srivijaya(670–1025)与 Majapahit(1293–1520)靠控制海道收取过路费',
+                 'Mongols 1258 年灭亡阿拔斯残余、终结 Seljuk 统治 · 火药经蒙古西传,Hundred Years’ War 已见火器 · Marco Polo 抵达 Kublai Khan 位于 Dadu(今北京)的宫廷,带动 cartography · Delhi Sultanate 挡住蒙古南下 · Song 的瓷器丝绸产能、Mali 的黄金、Kilwa 的港口在同一时期到位'],
+      links: ['一年两熟和边际土地开垦,让同一块地能养活更多人,粮食第一次多到被拿走一部分也不会饿死人。正是这份「拿走也不塌」的余量,才养得起一批完全不种地、只负责抄写、收税、断案的人。',
+              '官员一多,君主就不可能逐个盯着,忠诚只能在录用环节解决。于是考试内容被设定成儒家经典 —— 选人的同一道程序,同时也在筛选价值观,官僚的服从不靠监督而靠自我认同。',
+              '一旦统治者不必靠随时动兵来维持服从,就敢把汲取从「临时征发」改成可预期的定额:能算得出明年收多少,才谈得上花钱和借钱。',
+              '国家用现钱雇人修路,等于把货币塞进农户手里,而税又要求他们把货币交回来。农户被迫拿产品去市场换钱,家庭生产第一次不得不面向陌生人。',
+              '当乡村作坊算得出「多做的这批一定卖得掉」,生产才敢超出自家所需;而买下这批货的,正是那些完全不种地、必须买粮买布的城市人口。',
+              '城市集中的需求里有相当一部分本地根本产不出 —— 中美洲要不到瓷器,西非要不到丝绸,欧洲要不到胡椒 —— 这个缺口只能靠跨区域采买来填。',
+              '长距离交易最怕的不是路远,是陌生人赖账。共享的 sharia、阿拉伯语和穆斯林商人网络让契约在异乡也能执行,风险从「赌人品」降成「讲规矩」,跨区域采买才敢成规模地做。',
+              '交棒 Unit 2:蒙古之所以能把中亚到中欧压成一个治安区就带来交换的暴涨,是因为可运的货、接单的城市和追债的规矩在 1200 年前后已由本单元这条链造好。缺了任何一样,草原上的统一只会换来空荡的道路 —— Unit 2 的跨区域网络扩张,扩张的正是这里造出的节点与规则。'] },
+    { id: 'u23_empires', kind: 'chain', tier: 'main', chip: 'Unit 2→3 · Empires from Ruins',
       name: 'Unit 2→3 主干链 · 帝国如何从废墟中崛起',
       blurb: 'Unit 2 和 Unit 3 不是两章,是一条链:贸易网络的连通性同时送出财富、技术和病菌 —— 财富制造竞争,病菌瓦解旧秩序,技术武装了新崛起的军事集团。c.1450 之后那几个超大帝国不是偶然同时出现的。',
       exam: '这条链是 DBQ Contextualization 的通用素材(任何 c.1450 之后的帝国或航海题,都能用"c.1200–1450 跨区域贸易网络的扩张创造了……的物质与技术条件"开场)。最常见的失分写法是 "In Unit 2 trade expanded, then in Unit 3 empires emerged" —— then 不是 because,序列不等于因果。要说出三个条件:技术(火药)、真空(旧帝国崩溃)、利益(控制商路的财政动力),缺一个都不算完整 Causation。',
@@ -2292,30 +2326,105 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '征服不等于统治 —— 占下多语言多宗教的广土之后,四个帝国面对的是同一个问题:如何用有限的行政资源真正管住它',
               '意识形态是三套工具里最锋利的一件,也最容易反噬:Ottoman 以 Sunni 哈里发立身、Safavid 以 Shia 立国,合法性之争就此凝固成地缘断层',
               '帝国秩序稳定 → 奥斯曼坐收丝路西端的过路费 → 欧洲商人被迫改走海路 → Unit 4 的大航海从这里出发;白银则先一步把两条链接上了'] },
-    { id: 'u4_atlantic', kind: 'chain',
+    { id: 'u4_atlantic', kind: 'chain', tier: 'main', chip: 'Unit 4 · Atlantic System',
       name: 'Unit 4 主干链 · 从大航海到大西洋体系',
       blurb: 'Unit 4 回答一个问题:欧洲如何在 200 年内,从陆基帝国体系的边缘变成全球贸易网络的中心?答案是一条由技术、国家权力、生态交换和劳动力系统串起来的连续因果链。',
       exam: '这条链是 AP 最爱考的因果序列。写 LEQ 时,"人口崩溃→劳动力真空→转向非洲"这一环不能跳 —— 跳了就成了"欧洲人because贪婪所以买奴隶",拿不到因果分。',
       stops: [42, 104, 45, 68, 87, 78, 49],
-      labels: ['技术储备积累', '国家支持的海洋探索', '哥伦布大交换', '天花与人口崩溃', '大西洋贸易体系', '对殖民权力的抵抗', '全球社会等级重构'],
+      labels: ['技术储备积累', '国家支持的探索进入印度洋', '哥伦布大交换', '天花与人口崩溃', '大西洋贸易体系', '对殖民权力的抵抗', '全球社会等级重构'],
       evidence: ['Compass · Astrolabe · Lateen sail · Caravel · Prince Henry',
-                 'Dias 1488 · da Gama 1498 · Columbus 1492 · Tordesillas 1494',
+                 'Prince Henry 的航海赞助 · Dias 1488 绕过好望角 · da Gama 1498 抵达 Mombasa 与 Calicut · Portuguese Crown 的国家投入 · fortified trading posts 武装商站',
                  'Smallpox · Potato · Maize · Sugar plantation demand',
                  '90% indigenous decline · 劳动力真空 · encomienda',
                  '12M 被掳 · Middle Passage · Potosí · mercantilism',
                  'Ana Nzinga · Quilombo · Maroon societies · Candomblé',
                  'Peninsulares · Criollos · Mestizos · limpieza de sangre'],
-      links: ['技术储备 + Ottoman 贸易封锁 + 国家竞争压力 = 欧洲各国开始系统性支持海洋探索',
-              '欧洲航海者横渡大西洋建立接触 → 东西半球从隔离数千年后首次持续连接 → 生物交换不可逆地开始',
+      links: ['技术储备 + Ottoman 贸易封锁 + 国家竞争压力 = 欧洲各国开始系统性支持海洋探索,葡萄牙先沿非洲海岸南下找通往香料产地的水路',
+              '绕非洲这条路成功了,却是挤进一个已经运转千年的印度洋网络当第 N 个买家;想拿到定价权就得另找一条自己独占的航路 —— 卡斯蒂利亚押的西行方案由此拿到王室背书',
               '旧大陆病菌随人与牲畜一起登陆,美洲原住民从未接触过、毫无免疫',
               '美洲原住民大规模死亡 → 种植园劳动力严重短缺 → 欧洲殖民者转向非洲获取被奴役劳动力',
               '被奴役者与非洲统治者从不是被动接受 —— 从 Ndongo 到巴西内陆,抵抗贯穿整个体系',
               '殖民扩张重构了全球的种族、阶级与性别等级,创造了 Unit 5 革命所要反抗的那个不平等秩序'] },
+    // ---- 补充链:主干装不下、但 AP 常考的支线。每条最后一环没有下一站,links 末位留空串 ----
+    { id: 'u1_sub_syncretism', kind: 'chain', tier: 'sub', chip: 'Unit 1 · Religious Syncretism',
+      name: 'Unit 1 补充链 · 普世宗教要被本地改写才站得住',
+      blurb: '1200–1450 年伊斯兰教、佛教、基督教都在扩张,但扩张的方式不是替换而是嫁接。这条链解释一件在 AP 里经常被写反的事:「皈依人数上升」和「本地文化被取代」是两件事。',
+      exam: '用于 Topic 1.2/1.3/1.5 的 SAQ(AMSCO 直接考过 syncretism 在 Dar al-Islam 如何出现)与比较宗教传播的 LEQ。最常见失分写法:"Islam spread to Southeast Asia, and the people there became Muslim." 只写结果没写机制,应写「因为 Sufi 容忍本地神灵,改宗不必放弃原有仪式,成本低,传播才是自愿、自下而上的」。第二个常见错误是把 syncretism 写成「两种宗教并存」—— 并存不是融合,必须举出具体混合物:Chan Buddhism、Urdu、埃塞俄比亚的凿岩教堂。',
+      stops: [2, 4, 93, 6],
+      labels: ['先到的是商人不是军队', '教义被本地词汇重写', '混血信仰进入国家仪式', '版图扩了社会没换'],
+      evidence: ['东南亚最早的穆斯林是本地商人,700 年代为改善贸易关系而改宗 · Sufi 传教士容忍地方信仰,改宗后仍可敬本地神 · 伊斯兰最先在城市流行,传至 Sumatra、Java 与马来半岛 · 印度洋穆斯林商人迁入印度港市并娶本地女子,妻子随之改宗 · Muhammad 本人是商人,伊斯兰社会给商人的地位高于同期欧亚各地 · 今日 Indonesia 的穆斯林人口居世界之首',
+                 '僧人用道家概念解释佛教,dharma 被译作 dao · Chan(Zen)Buddhism 是佛道融合的 syncretic 信仰,重直观体验而非研读经文 · Prince Shotoku Taishi(574–622)同时推崇佛教、儒学与本土神道 · Neo-Confucianism 把理性思辨与道、佛的抽象观念合成一套,并传入日本、朝鲜、越南 · Xuanzang 于 629 年西行、在 Nalanda 苦读、17 年后携经返国',
+                 '12 世纪埃塞俄比亚的基督教王国,下令凿出 11 座整石教堂 · 与罗马公教、东正教都隔断,独立发展出自己的形态 · 民众把祖先崇拜与精灵信仰揉进基督教 · Ibn Battuta 记 Mali 宫廷保留着伊斯兰传入之前的诗人献礼旧俗 · Sundiata 是穆斯林,靠教友关系与北非、阿拉伯商人建立贸易 · Mansa Musa 1324 年朝觐后,Mali 与伊斯兰的联系被固定下来',
+                 'caste system 是南亚最强的历史连续性,能吸纳新来者 · 穆斯林商人与移民按职业被编进 subcaste,运作得像行会 · 低种姓改宗以求上升,多半没有真的改善地位 · Delhi Sultanate 对非穆斯林课 jizya · Qutub Minar 所在的清真寺直接建在印度教神庙之上 · Urdu:印地语的语法配阿拉伯语词汇与部分波斯语成分 · Bhakti Movement 与 Sufi 一样重内省,互相吸引对方的信众'],
+      links: ['传教者带来的是贸易伙伴关系而不是军队,改宗的代价低到不必换掉原来的神与习惯;门槛一低,皈依就发生在个人层面 —— AMSCO 明写强迫 Hindu 与 Buddhist 改宗并不成功,多数人是自愿的。',
+              '翻译时只能借用本地已有的哲学词汇,外来概念在进门那一刻就被改写了。信众读到的是「本来就属于自己的东西」,抵触因此消失,统治者也才敢把它请进宫廷。',
+              '统治者需要一套超越部族的话语来压住地方势力,又不能废掉旧仪式而失去旧势力的支持,于是把两套并置在同一个宫廷、同一座建筑里 —— 宗教既是征服工具,也是妥协的产物。',
+              ''] },
+    { id: 'u1_sub_labor', kind: 'chain', tier: 'sub', chip: 'Unit 1 · Labor Systems',
+      name: 'Unit 1 补充链 · 劳动被抽走的四种方式',
+      blurb: '1200–1450 年每个国家都要把劳动力从家庭手里拿出来,但拿的形式差别极大。这条链解释「拿什么」取决于这个社会已经有什么 —— 有没有货币、有没有长途市场、有没有常设行政;它不是四种制度的并列介绍,而是上一种方式的局限逼出下一种的推演。',
+      exam: '支撑 1.4/1.5/1.6 的比较 LEQ 与 SAQ 的 B、C 小问。最常见失分写法:"The Inca used the mit’a system and the Aztecs used tribute." 罗列名词拿不到分,要写「因为安第斯没有货币也没有大市场,国家收不到钱,只能把成年男子的工作时间当成预算单位」。另一个高频硬伤是把 serf 写成 slave —— AMSCO 明确 serfs 不是奴隶,他们被绑在土地上,但不是可买卖的财产。',
+      stops: [24, 50, 49, 84],
+      labels: ['人被绑在土地上', '国家按人头征工时', '让被征服者交成品', '劳动力本身成为货物'],
+      evidence: ['feudalism 是以土地换忠诚的相互义务体系 · 国王把 fief 授予领主,领主成为 vassal · manorial system 自给自足,庄园内自产一切 · serfs 未经领主许可不得迁徙、不得婚配,子女生下来也是 serf · 以作物、劳役、极少数以钱币交租 · 财富以土地而非现金计量',
+                 'mit’a system:15–50 岁男子必须服公共劳役,包括修路 · 被征服者不缴 tribute,与 Aztec 正相反 · Qhapaq Ñan(AMSCO 作 Carpa Nan)约 25,000 英里,主要供政府与军队使用 · 帝国分四大行省,各有总督与官僚 · 表现忠诚的被征服首领获得奖赏 · quipu 结绳记录数目与讯息',
+                 'tribute system:粮食、布匹、柴薪等实用品,外加羽毛、珠饰、首饰等奢侈品 · 保留地方首领充当收贡人,实现政治支配而不必直接行政 · 各省首府驻武士家庭与一名收贡官 · 女性织布是贡赋主力,布贡加重推动丈夫多娶妻 · pochteca 专营奢侈品的商人阶层',
+                 'Mamluks 是买来的中亚突厥奴兵,1250 年在埃及夺权建立 Mamluk Sultanate(1250–1517) · Indian Ocean slave trade 连接东非与中东,早于大西洋奴隶贸易数百年 · 被贩往美索不达米亚糖田的东非人在阿拉伯语中称 zanj · Zanj Rebellion(869–883)约 15,000 人攻占 Basra 并据守十年 · 许多非洲亲属制社会不能私有土地却可以拥有人,蓄奴多少即社会地位 · chattel、domestic、debt bondage 三种形态在权利与世袭上各不相同'],
+      links: ['庄园几乎不用货币,领主唯一能可靠支配的资源就是人身本身,所以规则约束的是「人能不能走」而不是「人要交多少」。这种办法只能榨出就地消耗的实物,一旦要修跨区域工程就失灵 —— 有中央权力却没有货币的社会,只好改按人头征工时。',
+              '工时只能花在国家自己的工程上,既换不来奢侈品,也买不到地方精英的忠诚。需要地方精英出力配合的帝国,只好改抽「成品」。',
+              '抽成品省下了直接行政的成本,代价是被征服者必须自愿组织生产。贡额一加重,怨恨就堆在地方首领这一层 —— AMSCO 明写这份怨恨让许多部族随时准备反叛。而在已有货币和长途市场的地方,国家干脆跳过这套,把劳动力本身当资产搬运。',
+              ''] },
+    { id: 'u1_sub_gender', kind: 'chain', tier: 'sub', chip: 'Unit 1 · Gender Divergence',
+      name: 'Unit 1 补充链 · 女性地位为什么在同一时期分头走',
+      blurb: '同一个两百五十年里,中国女性的活动空间在收紧,伊斯兰法下的女性握有可执行的财产权,密西西比与非洲的女性在亲属制度里占着结构性位置。分化的关键变量不是「哪种宗教更宽容」,而是女性能不能持有可转让的资源,以及她的身体是否被拿来当家族地位的信号。',
+      exam: '用于 gender roles 的比较 LEQ 与 1.1/1.2 的 SAQ —— AMSCO 本单元直接出过「伊斯兰女性地位与中国女性地位有何不同」。最常见失分写法:"Women in Islam had more rights than women in China." 这是结论不是论证,后面必须接机制:伊斯兰法允许女性继承并在婚后保留所有权,而 Song 的缠足把行动能力换成婚配价值。也不要拿 Empress Xu 或 ’A’ishah al-Ba’uniyyah 这类个案当普遍状况的证据 —— AMSCO 提醒 1450 年前的记录几乎全出自男性之手。',
+      stops: [47, 84, 32, 1],
+      labels: ['亲属制度直接给出位置', '成文法把资源权钉死', '城市化把女性移出公共空间', '把不能走路当成体面'],
+      evidence: ['Mississippian 是 matrilineal society,社会身份由母亲一方决定 · Great Sun 死后位子传给姐妹之子而不是亲子 · 撒哈拉以南以 kin-based networks、age grades 与性别分工组织社会 · 女性主司农耕与采集,男性主司需专门技艺的行当 · griottes 在父权社会中给女性提供依靠与发声 · Maya 在无男嗣或男嗣年幼时由女性执政',
+                 'Muhammad 要求 dowry 付给未来的妻子本人而不是她父亲 · 女性可继承财产,婚后保留所有权 · 寡妇可再嫁,离婚可获现金安置,特定条件下可主动提出离婚 · 可采取节育 · Muhammad 明令禁止杀女婴 · 法庭上女性证词只值男性的一半',
+                 '城市兴起后,面纱与 harem 成为女性新处境的象征 · 欧洲从农业社会转向城市社会时,一波父权论述同步压缩女性权利 · 女性可入行会做工匠,却未必享有产权 · 修道院与宗教团体是女性行使管理与领导的少数场所 · 女性常替庄园管账,受教育者却比男性更少',
+                 'foot binding 在 Song 的贵族家庭中流行开来 · 女孩自幼裹足,骨骼无法正常生长 · 缠足是社会地位的标志,为求婚者所看重 · 它同时限制女性行动,把她们挡在公共领域之外 · 直到 1912 年才被禁止 · 儒家既讲对女性的敬重又要求她们顺从男性,这套父权模式在 Tang–Song 间加强'],
+      links: ['当财富主要按「谁在耕作、谁属于哪个氏族」来计量,女性的劳动与血缘位置会自动兑换成地位。一旦财富改由可继承的土地与资本来计量,这种自动兑换就断了,地位只能靠明文规则来保。',
+              '法律保住的是财产权,没有一并保住公共活动权。等到城镇兴起、财富集中到市场与街面上,隔离规范就从另一头收了回来 —— AMSCO 明写伊斯兰治下城市的兴起给女性带来了新的限制。',
+              '城市里的地位竞争发生在精英家族之间,比的是谁家更不必让女性抛头露面。于是「能不能劳动」被反过来当成身份证明,家族开始拿女儿的身体做信号。',
+              ''] },
+    { id: 'u1_sub_decentralization', kind: 'chain', tier: 'sub', chip: 'Unit 1 · Decentralization',
+      name: 'Unit 1 补充链 · 不集权,为什么有时管用、有时致命',
+      blurb: 'Unit 1 里最容易被写成「落后」的是政治分权。但 Hausa 城邦、日本大名、英格兰贵族都靠分权活了几百年,Rajput 却因分权亡国。这条链解释分权的收益在什么条件下成立、在什么条件下反噬。',
+      exam: '直接对应 Topic 1.6 的学习目标「political decentralization 的原因与后果」,也是 1.7 比较题的常备材料。最常见失分写法:"Europe was decentralized while China was centralized." 只做对照没交代后果。要说明同一个分权在英格兰产出了议会这样的谈判制度,在 Rajput 那里却导致被逐个征服 —— 差别来自外部军事压力的大小,不是来自哪种文化更先进。',
+      stops: [76, 6, 4, 23],
+      labels: ['分权先带来专精与自治', '外部军事压力一来就崩', '分权被固化成武装契约', '讨价还价被写成制度'],
+      evidence: ['Hausa Kingdoms:1000 年前在今尼日利亚形成的七个国家 · 彼此靠亲属纽带松散相连,没有中央权威 · 各城邦发展出各自的专长,如平原产棉 · 西缘一国专司军事,替其余各国御敌 · 内陆无海路却靠 trans-Saharan trade 富起来 · 14 世纪传教士把伊斯兰带入该地区',
+                 'Rajput kingdoms 由众多氏族首领统治,彼此常年交战,始终没有形成中央政府 · 喜马拉雅挡住北面与东面,西北山口却让穆斯林军队长驱直入 · 11 世纪伊斯兰军队劫掠印度教神庙与佛教圣地,并在圣址上建清真寺 · 13 世纪初攻下 Delhi,Delhi Sultanate 统治三百年 · Delhi Sultanate 自己也从未建成中国式高效官僚,政令难以贯彻 · 1526 年败于 Mughals',
+                 '1192 年 Minamoto 立 shogun,天皇尚在但已无实权 · daimyo 统治广袤土地,实力超过将军与天皇,远强于欧洲贵族 · samurai 与 bushido:节俭、忠诚、武艺、至死守节 · serfs、samurai、daimyo 三层身份世袭,社会流动极低 · 此后四百年日本陷于地方豪族互斗,直到 17 世纪才有强力中央政府',
+                 'William the Conqueror 1066 年征服英格兰,以王室郡守充任行政官 · 1215 年贵族逼 King John 签 Magna Carta,确认贵族入狱前须受陪审 · 贵族赢得 scutage 须经协商的权利 · 1265 年第一届 English Parliament,House of Lords 代表贵族与教会,House of Commons 由富裕市民选出 · 法国 Estates-General 因不向教士与贵族征税而始终无实权 · Hundred Years’ War(1337–1453)让士兵开始自认「英格兰人」「法兰西人」'],
+      links: ['没有中央政府就没有全境统一的税与军费,各城邦把省下来的治理成本投进自己最擅长的那一件事。只要外部压力低,这种安排比集权更便宜。',
+              '分散主权无法把兵力与粮草在同一时间集中到同一个方向,进攻方只需逐个击破 —— AMSCO 明写「缺乏中央权力使这些王国易受穆斯林进攻」。反过来说,若分权的一方本身握有武力,中央连收权都做不到。',
+              '当分权的一方掌握了武力而中央只剩仪式,契约就得靠刀来兑现,谁也无法单方面收权。可若贵族的武力不足以压过君主,同一场博弈就只能改在谈判桌上进行。',
+              ''] },
+    { id: 'u1_sub_maintenance', kind: 'chain', tier: 'sub', chip: 'Unit 1 · Why States Decline',
+      name: 'Unit 1 补充链 · 国家多半不是被打垮的,是养不起自己',
+      blurb: 'Unit 1 的衰落案例 —— Baghdad、Great Zimbabwe、Cahokia、Song 晚期 —— 都不是败给强敌,而是收入跟不上维护成本。这条链把「衰落」从道德叙事改写成财政与环境的算术:先问它的固定成本是什么,再问收入为什么断了。',
+      exam: '用于任何 causes of decline 型 LEQ 与 SAQ 的 B、C 小问;AMSCO 本单元的 Think as a Historian 就拿 Baghdad 那一段当因果关系的范例。最常见失分写法:"The Mongols destroyed Baghdad in 1258, so the Abbasid Empire fell." 蒙古是终点不是原因 —— AMSCO 给的机制顺序是贸易路线北移在先、运河失修在中、粮食不足在后,1258 年只是给一具早已掏空的躯壳收尾。',
+      stops: [1, 3, 75, 47],
+      labels: ['基础设施把远地变成财源', '收入一断维护就停', '环境承载是硬上限', '固定成本压垮收入端'],
+      evidence: ['Grand Canal 是廉价高效的内陆水道,贯通南北 · 扩建运河使 Song 治下成为世界人口最多的贸易区 · Hangzhou 位于运河南端,Marco Polo 记其市集一次可聚四五万人 · 指南针与印制的纸质海图让船只敢驶离海岸线 · 船型改造以载更多货,中国得以控制南海贸易',
+                 '自 8 世纪起阿拔斯是连接亚、欧、北非的要冲,货物与思想多经 Baghdad · 贸易路线缓慢北移,Baghdad 失去中心位置 · 财富与人口随之流失 · 城市再也无力维修运河 · 农民的产量供不上城市人口 · 支撑巴格达的基础设施逐渐朽坏,1258 年蒙古灭亡阿拔斯残余',
+                 '12–15 世纪东非最强的王国之一 · 无砂浆干砌的石墙高 30 英尺、厚 15 英尺,是非洲第一道这样的大墙 · 15 世纪末墙内住着近 20,000 人 · 财富来自农业、放牧、贸易,尤其是黄金过境税 · 过度放牧严重损害周边环境,居民在 1400 年代末弃城 · 与玛雅同样毁于环境损害',
+                 '人们约在 1450 年放弃 Cahokia,其余大城在 1600 年前后陆续废弃 · 一说是洪水与极端天气造成歉收、支撑大城的农业经济崩溃 · Song 末期官僚过于庞大、俸禄过高,把国库盈余抽干 · 1300 年后的 Little Ice Age 持续五个世纪,压低农产、加剧疾病与失业 · Black Death 夺走欧洲约三分之一人口,劳动力短缺反过来提高了 serfs 的议价能力'],
+      links: ['运河与道路把原本运不出来的粮食和瓷器变成可以征税的流量,国家的收入基础从「脚下这一圈」扩展到整条水道。但这套流量必须靠年年花钱的维护才能维持。',
+              '灌溉系统是必须年年支出的固定成本,收入一旦下滑,第一个被砍的就是维护;渠道失修直接压低粮产,城市随即养不活自己。',
+              '城市规模由周边土地的承载力决定,人与牲畜一旦长期超过这个上限,土地退化就把粮食供给压到城市规模之下 —— 此时迁走比治理便宜,于是首都被整座放弃。而当收入端本身也在缩水时,连维持内部这套班子都成了压垮性的开支。',
+              ''] },
   ];
 
   // 入口药丸上不重复"主干链"三个字(选单标题已经写着"因果链"),但单元号要留 —— 链条多起来之后
   // 学生是按单元找链的。首页那份清单是把这里的选单 innerHTML 拷过去的,所以只有这一处真源。
-  const chainChipName = (name) => name.replace(' 主干链 ·', ' ·');
+  // 药丸用 chip: 那几个英文词,不用完整链名 —— 中文链名在窄面板里要折两三行,
+  // 挤成一团还会把圆点和环数挤歪。英文短标签正好一行,且都是 AP 术语。
+  // 完整中文链名仍是步进面板标题(route.name),blurb 和考点不变。
+  const chainChipName = (c) => c.chip
+    || c.name.replace(' 主干链 ·', ' ·').replace(' 补充链 ·', ' ·');
 
   const routesLayer = document.getElementById('routes-layer');
   const pinToRoutes = {};
@@ -2905,22 +3014,31 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const title = { chain: '因果链', route: '商路', quiz: '随堂练习' }[kind];
     let body = '';
     if (kind === 'chain') {
-      body = `<div class="route-picker">` + CHAINS.map(c =>
-        `<button type="button" class="route-chip chain-chip" data-route-go="${c.id}">`
-        + `<span class="rc-dot" style="background:#5a2d7a"></span>${chainChipName(c.name)}`
-        + `<span style="color:var(--ink-soft);font-weight:600">${c.stops.length} 环</span></button>`).join('') + `</div>`;
+      // 主干链和补充链分两组:链条一多,平铺一排学生就分不出哪条是单元的主线
+      const group = (tier, label, dot, cls, first) => {
+        const list = CHAINS.filter(c => (c.tier || 'main') === tier);
+        if (!list.length) return '';
+        return `<p class="route-picker-title${first ? ' pt-first' : ''}">${label}</p>`
+          + `<div class="route-picker">` + list.map(c =>
+            `<button type="button" class="route-chip chain-chip${cls}" data-route-go="${c.id}">`
+            + `<span class="rc-dot" style="background:${dot}"></span>${chainChipName(c)}`
+            + `<span class="rc-count">${c.stops.length} 环</span></button>`).join('')
+          + `</div>`;
+      };
+      body = group('main', '主干链 · 单元的因果脊', '#5a2d7a', '', true)
+           + group('sub', '补充链 · 主干装不下的支线', '#9a7fb5', ' chain-chip-sub', false);
     } else if (kind === 'route') {
       body = `<div class="route-picker">` + ROUTES.map(r =>
         `<button type="button" class="route-chip" data-route-go="${r.id}">`
         + `<span class="rc-dot" style="background:${r.color}"></span>${r.name.split(' · ')[0]}`
-        + `<span style="color:var(--ink-soft);font-weight:600">${r.stops.length} 站</span></button>`).join('') + `</div>`;
+        + `<span class="rc-count">${r.stops.length} 站</span></button>`).join('') + `</div>`;
     } else {
       const st = quizStats();
       body = `<div class="route-picker">`
         + `<button type="button" class="route-chip quiz-chip" data-quiz-start="all">`
-        + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">一组 10 题</span></button>`
+        + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span class="rc-count">一组 10 题</span></button>`
         + (st.review ? `<button type="button" class="route-chip quiz-chip" data-quiz-start="review">`
-            + `<span class="rc-dot" style="background:#d9a441"></span>只练错题<span style="color:var(--ink-soft);font-weight:600">${st.review} 条</span></button>` : '')
+            + `<span class="rc-dot" style="background:#d9a441"></span>只练错题<span class="rc-count">${st.review} 条</span></button>` : '')
         + `</div>`
         + (st.practiced ? `<div class="qz-stats">已练 ${st.practiced} 条 · 待复习 ${st.review} 条`
             + (st.review ? ` · <button type="button" class="qz-link" data-quiz-book="1">看错题本</button>` : '') + `</div>` : '');
