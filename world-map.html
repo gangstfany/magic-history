@@ -3449,7 +3449,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const sequence = segments.map(segment => {
       if (segment.pending) {
         const unitNumber = segment.entryUnit.slice(1);
-        return `<div class="mainline-segment mainline-segment-pending" data-mainline-pending>`
+        return `<div class="mainline-segment mainline-segment-pending" data-mainline-pending aria-disabled="true">`
           + `<span class="mainline-node" aria-hidden="true"></span>`
           + `<span class="mainline-copy"><span class="mainline-name">Unit ${unitNumber}</span>`
           + `<span class="mainline-units">待建</span></span></div>`;
@@ -3460,7 +3460,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         : `Unit ${segment.units[0].slice(1)}`;
       return `<button type="button" class="mainline-segment${isActive ? ' active' : ''}" data-mainline-chain="${segment.id}"${isActive ? ' aria-current="true"' : ''}>`
         + `<span class="mainline-node" aria-hidden="true"></span>`
-        + `<span class="mainline-copy"><span class="mainline-name">${segment.name}</span>`
+        + `<span class="mainline-copy"><span class="mainline-name">${segment.chip}</span>`
         + `<span class="mainline-units">${unitLabel}</span></span>`
         + `<span class="mainline-rings">${segment.rings} 环</span></button>`
         + `<div class="mainline-bridge" data-mainline-bridge>${segment.to.summary}</div>`;

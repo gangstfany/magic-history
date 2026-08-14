@@ -392,8 +392,8 @@ async function verifyLearningShell(page, port) {
     'course mainline must render implemented chains in canonical order');
   const implementedMainlineText = await implementedMainline.allTextContents();
   courseMainline.filter(segment => !segment.pending).forEach((segment, index) => {
-    assert.ok(implementedMainlineText[index].includes(segment.name),
-      `${segment.id} mainline card must show its canonical name`);
+    assert.ok(implementedMainlineText[index].includes(segment.chip),
+      `${segment.id} mainline card must show its canonical short label`);
     assert.match(implementedMainlineText[index], new RegExp(`${segment.rings}\\s*环`),
       `${segment.id} mainline card must show its canonical ring count`);
   });
@@ -402,6 +402,8 @@ async function verifyLearningShell(page, port) {
     'course mainline must expose the pending Unit 5 tail');
   assert.match(await pendingMainline.innerText(), /待建/,
     'course mainline pending tail must use the approved pending label');
+  assert.equal(await pendingMainline.getAttribute('aria-disabled'), 'true',
+    'course mainline pending tail must be programmatically unavailable');
   assert.equal(await pendingMainline.locator('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])').count(), 0,
     'course mainline pending tail must contain no focusable descendants');
   assert.deepEqual(await trimmedTexts(page.locator('#eventPanel [data-mainline-bridge]')),
