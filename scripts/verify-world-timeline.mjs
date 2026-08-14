@@ -137,12 +137,28 @@ async function verifyTimeline(page, port) {
       window.__mapFilter.setPeriod(unit);
       return [...window.getTimelineState().visibleEventKeys];
     };
-    return { u1: visibleKeysFor('u1'), u2: visibleKeysFor('u2') };
+    return {
+      u1: visibleKeysFor('u1'),
+      u2: visibleKeysFor('u2'),
+      u3: visibleKeysFor('u3'),
+      u4: visibleKeysFor('u4'),
+      u5: visibleKeysFor('u5'),
+    };
   });
   assert.ok(reviewedUnitAssignments.u1.includes('world-event-1-0'), 'Song source 1:0 must remain assigned to Unit 1');
   assert.ok(reviewedUnitAssignments.u1.includes('world-event-3-0'), 'Baghdad source 3:0 must remain assigned to Unit 1');
   assert.ok(!reviewedUnitAssignments.u1.includes('world-event-23-4'), 'Black Death source 23:4 must leave Unit 1');
   assert.ok(reviewedUnitAssignments.u2.includes('world-event-23-4'), 'Black Death source 23:4 must be assigned to Unit 2');
+  assert.ok(reviewedUnitAssignments.u3.includes('world-event-18-3'),
+    'Ottoman devshirme source 18:3 must be assigned to Unit 3');
+  for (const key of ['world-event-49-7', 'world-event-100-0', 'world-event-57-1', 'world-event-57-2']) {
+    assert.ok(!reviewedUnitAssignments.u3.includes(key), `${key} must leave Unit 3`);
+    assert.ok(reviewedUnitAssignments.u4.includes(key), `${key} must be assigned to Unit 4`);
+  }
+  for (const key of ['world-event-24-4', 'world-event-23-2']) {
+    assert.ok(!reviewedUnitAssignments.u3.includes(key), `${key} must leave Unit 3`);
+    assert.ok(reviewedUnitAssignments.u5.includes(key), `${key} must be assigned to Unit 5`);
+  }
   await page.evaluate(() => window.__mapFilter.setPeriod(''));
   // Unit 归属按与 1200-1450 的实质重叠判断,不按起始年份:一个始于 1185 的幕府、始于 960 的宋朝,
   // 主体都延续在课程窗口里。所以这里查的是事件的结束年,而不是 sortYear。
@@ -546,12 +562,12 @@ async function verifyLearningShell(page, port) {
     'outgoing seam must open the Unit 3 empires chain');
   assert.equal(outgoingBoundaryState.learning.chainStep, 0,
     'outgoing seam must select the successor first ring');
-  assert.ok(outgoingBoundaryState.selectedPins.includes('8'),
-    'outgoing seam must synchronize the selected map anchor to pin 8');
-  assert.equal(await page.locator('#eventPanel [data-route-step]').count(), 10,
+  assert.ok(outgoingBoundaryState.selectedPins.includes('19'),
+    'outgoing seam must synchronize the selected map anchor to pin 19');
+  assert.equal(await page.locator('#eventPanel [data-route-step]').count(), 8,
     'outgoing navigation must preserve the Unit 3 chain ring count');
-  assert.match(await page.locator('#eventPanel [data-route-step].now').innerText(), /8.*Karakorum/is,
-    'outgoing navigation must select Unit 3 first boundary pin 8 at Karakorum');
+  assert.match(await page.locator('#eventPanel [data-route-step].now').innerText(), /19.*Isfahan/is,
+    'outgoing navigation must select Unit 3 first boundary pin 19 at Isfahan');
 
   await page.locator('#eventPanel [data-chain-seam="to"] [data-chain-boundary]').click();
   const unit3OutgoingBoundaryState = await page.evaluate(() => ({
@@ -1321,9 +1337,9 @@ async function verifyHomeLearningShell(page, port) {
     'homepage Unit 2 seam must open the Unit 3 empires chain');
   assert.equal(mirroredOutgoingSeamState.state.chainStep, 0,
     'homepage Unit 2 seam must select the Unit 3 first ring');
-  assert.ok(mirroredOutgoingSeamState.selectedPins.includes('8'),
+  assert.ok(mirroredOutgoingSeamState.selectedPins.includes('19'),
     'homepage Unit 2 seam must synchronize the Unit 3 boundary anchor');
-  assert.match(await page.locator('#home-events [data-route-step].now').innerText(), /8.*Karakorum/is,
+  assert.match(await page.locator('#home-events [data-route-step].now').innerText(), /19.*Isfahan/is,
     'homepage must refresh its mirrored panel after cross-Unit seam navigation');
 
   await page.locator('.map-card-head [data-learning-view="map"]').click();
