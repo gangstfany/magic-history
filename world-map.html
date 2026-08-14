@@ -170,20 +170,26 @@ h1 .en { color: var(--accent); }
 .event-head .badge-search { background: #3f4a56 !important; font-size: 15px; }
 /* ---- 商路模式:行程面板 ---- */
 .route-panel { padding: 16px 20px 14px; border-bottom: 1px solid var(--line); background: #fffdf8; }
+/* 标题与切换器是导航,必须常驻:面板会自动滚到当前环,不吸顶的话学生一落地就看不到
+   自己在哪条链、能往哪切(实测落地 scrollTop 632,标题和切换器都在视口外)。 */
+.rt-top { position: sticky; top: 0; z-index: 3; background: var(--paper); padding: 2px 0 9px;
+  box-shadow: 0 7px 9px -9px rgba(43,33,24,.45); }
 .rt-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .rt-name { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
 .rt-progress { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
 .rt-blurb { margin: 9px 0 0; font-size: 13px; line-height: 1.7; color: var(--ink); }
 .rt-exam { margin: 7px 0 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-soft); }
-.rt-exam span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(201,113,79,0.14); color: #a8552f; font-size: 11px; font-weight: 800; }
+.rt-exam span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(43,33,24,0.09); color: var(--ink); font-size: 11px; font-weight: 800; }
 .rt-stops { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; }
 .rt-stop { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .rt-stop .rt-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-faint, #b7ae9c); }
 .rt-stop .rt-num { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
 .rt-stop.done { opacity: .62; }
-.rt-stop.done .rt-dot { background: #8fa878; }
-.rt-stop.now { border-color: #8b1a1a; box-shadow: 0 0 0 2px rgba(139,26,26,0.14); }
-.rt-stop.now .rt-dot { background: #8b1a1a; }
+.rt-stop.done .rt-dot { background: var(--ink-soft); }
+/* 因果链一律不用主题色:GOV/ECN/CDI/SIO/TEC 已占掉红绿紫橙深蓝,链条再用就分不清
+   紫圆点到底是「文化与宗教」还是「因果链」。状态改用填充与环线表达。 */
+.rt-stop.now { border-color: var(--ink); box-shadow: 0 0 0 2px rgba(43,33,24,0.13); }
+.rt-stop.now .rt-dot { background: var(--ink); }
 .rt-stop:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
 /* 因果链:竖排,每一环下面挂"箭头机制" */
 /* 控制条 sticky 吸底,会盖住最后一环。链条越长越明显(U1 主干链 8 环时正好压住交棒 Unit 2 那一环) */
@@ -193,24 +199,25 @@ h1 .en { color: var(--accent); }
 .rt-switch { margin: 10px 0 0; }
 .rt-spine { display: flex; width: 100%; align-items: center; gap: 7px; min-height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 800; color: var(--ink); cursor: pointer; text-align: left; }
 .rt-spine:hover { border-color: var(--ink-soft); }
-.rt-spine.on { border-color: var(--ink); background: rgba(90,45,122,0.05); }
-.rt-spine .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
-.rs-tag { flex: 0 0 auto; padding: 2px 5px; border-radius: 4px; font-size: 10.5px; font-weight: 800; color: #5a2d7a; background: rgba(90,45,122,0.10); }
+.rt-spine.on { border-color: var(--ink); background: rgba(43,33,24,0.05); }
+.rt-spine .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; background: var(--ink) !important; }
+.rs-tag { flex: 0 0 auto; padding: 2px 5px; border-radius: 4px; font-size: 10.5px; font-weight: 800; color: var(--ink); background: rgba(43,33,24,0.09); }
 .rs-name { flex: 1 1 auto; min-width: 0; }
 .rt-switch-title { margin: 10px 0 0; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
 .rt-branches { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
 .rt-switch-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); cursor: pointer; text-align: left; }
 .rt-switch-chip:hover { border-color: var(--ink-soft); }
-.rt-switch-chip.on { color: var(--ink); border-color: var(--ink); background: rgba(154,127,181,0.10); }
-.rt-switch-chip .rc-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; }
+.rt-switch-chip.on { color: var(--ink); border-color: var(--ink); background: rgba(43,33,24,0.05); }
+/* 支线空心环、骨架条实心点:同为中性色,靠填充区分层级 */
+.rt-switch-chip .rc-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; background: transparent !important; box-shadow: inset 0 0 0 1.5px var(--ink-soft); }
 .rt-switch-chip .rc-count, .rt-spine .rc-count { font-size: 10.5px; }
 
 .rt-stop .rt-sub { margin-left: 7px; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
 .rt-link { display: flex; gap: 8px; padding: 7px 0 7px 13px; margin: 2px 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
-.rt-arrow { flex: 0 0 auto; color: #5a2d7a; font-weight: 800; }
+.rt-arrow { flex: 0 0 auto; color: var(--ink); font-weight: 800; }
 .rt-evidence { margin: 11px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
-.rt-evidence span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(90,45,122,0.13); color: #5a2d7a; font-size: 11px; font-weight: 800; }
-.chain-chip .rc-dot { box-shadow: 0 0 0 3px rgba(90,45,122,0.12); }
+.rt-evidence span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(43,33,24,0.09); color: var(--ink); font-size: 11px; font-weight: 800; }
+.chain-chip .rc-dot { box-shadow: 0 0 0 3px rgba(43,33,24,0.10); }
 /* 链条一长(Unit 2→3 有 10 环),整条骨架加上箭头机制有 1500px 高,"下一站"会被推到滚动区外面 ——
    所以控制条吸底,不管链条多长都够得着 */
 .rt-ctrl { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; position: sticky; bottom: 0; padding: 11px 0 6px; background: var(--paper); }
@@ -288,7 +295,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 /* 因果链选单分「主干链 / 补充链」两组;补充链的点淡一档,一眼分得出哪条是主线 */
 .route-picker-title { margin: 22px 0 0; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
 .route-picker-title.pt-first { margin-top: 8px; }
-.chain-chip-sub .rc-dot { box-shadow: 0 0 0 3px rgba(154,127,181,0.12); }
+.chain-chip-sub .rc-dot { box-shadow: 0 0 0 3px rgba(43,33,24,0.06); }
 
 .map-panel-tabs { display: flex; gap: 8px; padding: 12px 16px 0; }
 .map-panel-tabs[hidden] { display: none; }
@@ -2776,11 +2783,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         + `<span class="rt-city">${label}</span></button>` + conn;
     }).join('');
     return `<div class="route-panel">
-      <div class="rt-head">
-        <div class="rt-name">${route.name}</div>
-        <div class="rt-progress">第 ${i + 1} 站 / 共 ${route.stops.length} 站</div>
+      <div class="rt-top">
+        <div class="rt-head">
+          <div class="rt-name">${route.name}</div>
+          <div class="rt-progress">第 ${i + 1} 站 / 共 ${route.stops.length} 站</div>
+        </div>
+        ${isChain ? chainSwitcherHTML(route) : ''}
       </div>
-      ${isChain ? chainSwitcherHTML(route) : ''}
       <p class="rt-blurb">${route.blurb}</p>
       <p class="rt-exam"><span>考点</span>${route.exam}</p>
       <div class="rt-stops${isChain ? ' rt-stops-chain' : ''}">${steps}</div>
@@ -3044,8 +3053,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
             + `<span class="rc-count">${c.stops.length} 环</span></button>`).join('')
           + `</div>`;
       };
-      body = group('main', '主干链 · 单元的因果脊', '#5a2d7a', '', true)
-           + group('sub', '补充链 · 主干装不下的支线', '#9a7fb5', ' chain-chip-sub', false);
+      // 颜色走 CSS 变量,不写死主题色(#5a2d7a 是「文化与宗教」,复用会让学生分不清)
+      body = group('main', '主干链 · 单元的因果脊', 'var(--ink)', '', true)
+           + group('sub', '补充链 · 主干装不下的支线', 'var(--ink-soft)', ' chain-chip-sub', false);
     } else if (kind === 'route') {
       body = `<div class="route-picker">` + ROUTES.map(r =>
         `<button type="button" class="route-chip" data-route-go="${r.id}">`
@@ -3264,7 +3274,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const branches = list.filter(c => (c.tier || 'main') === 'sub');
     const spineHTML = spine ? `<button type="button" class="rt-spine${spine.id === current.id ? ' on' : ''}"`
       + `${spine.id === current.id ? ' aria-current="true"' : ''} data-route-go="${spine.id}" title="${spine.name}">`
-      + `<span class="rc-dot" style="background:#5a2d7a"></span>`
+      + `<span class="rc-dot"></span>`
       + `<span class="rs-tag">主干链</span>`
       + `<span class="rs-name">${chainShortName(spine)}</span>`
       + `<span class="rc-count">${spine.stops.length} 环</span></button>` : '';
@@ -3272,7 +3282,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       ? `<p class="rt-switch-title">补充链 · 主干装不下的支线</p><div class="rt-branches">`
         + branches.map(c => `<button type="button" class="rt-switch-chip sub${c.id === current.id ? ' on' : ''}"`
             + `${c.id === current.id ? ' aria-current="true"' : ''} data-route-go="${c.id}" title="${c.name}">`
-            + `<span class="rc-dot" style="background:#9a7fb5"></span>${chainShortName(c)}`
+            + `<span class="rc-dot"></span>${chainShortName(c)}`
             + `<span class="rc-count">${c.stops.length} 环</span></button>`).join('')
         + `</div>`
       : '';

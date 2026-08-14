@@ -353,20 +353,26 @@ nav.topnav {
 
 /* ---- 商路行程面板(从地图镜像过来) ---- */
 .home-events .route-panel { padding: 16px 20px 14px; border-bottom: 1px solid var(--line); background: #fffdf8; }
+/* 标题与切换器是导航,必须常驻:面板会自动滚到当前环,不吸顶的话学生一落地就看不到
+   自己在哪条链、能往哪切(实测落地 scrollTop 632,标题和切换器都在视口外)。 */
+.home-events .rt-top { position: sticky; top: 0; z-index: 3; background: var(--card); padding: 2px 0 9px;
+  box-shadow: 0 7px 9px -9px rgba(43,33,24,.45); }
 .home-events .rt-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .home-events .rt-name { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
 .home-events .rt-progress { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
 .home-events .rt-blurb { margin: 9px 0 0; font-size: 13px; line-height: 1.7; color: var(--ink); }
 .home-events .rt-exam { margin: 7px 0 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-soft); }
-.home-events .rt-exam span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(201,113,79,0.14); color: #a8552f; font-size: 11px; font-weight: 800; }
+.home-events .rt-exam span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(43,33,24,0.09); color: var(--ink); font-size: 11px; font-weight: 800; }
 .home-events .rt-stops { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; }
 .home-events .rt-stop { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .home-events .rt-stop .rt-dot { width: 7px; height: 7px; border-radius: 50%; background: #b7ae9c; }
 .home-events .rt-stop .rt-num { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
 .home-events .rt-stop.done { opacity: .62; }
-.home-events .rt-stop.done .rt-dot { background: #8fa878; }
-.home-events .rt-stop.now { border-color: #8b1a1a; box-shadow: 0 0 0 2px rgba(139,26,26,0.14); }
-.home-events .rt-stop.now .rt-dot { background: #8b1a1a; }
+.home-events .rt-stop.done .rt-dot { background: var(--ink-soft); }
+/* 因果链一律不用主题色:GOV/ECN/CDI/SIO/TEC 已占掉红绿紫橙深蓝,链条再用就分不清
+   紫圆点到底是「文化与宗教」还是「因果链」。状态改用填充与环线表达。 */
+.home-events .rt-stop.now { border-color: var(--ink); box-shadow: 0 0 0 2px rgba(43,33,24,0.13); }
+.home-events .rt-stop.now .rt-dot { background: var(--ink); }
 /* 因果链:竖排 + 箭头机制 */
 /* sticky 控制条会盖住最后一环,给链条留出它的高度(8 环时正好压住交棒下一单元那环) */
 .home-events .rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 52px; }
@@ -375,22 +381,23 @@ nav.topnav {
 .home-events .rt-switch { margin: 10px 0 0; }
 .home-events .rt-spine { display: flex; width: 100%; align-items: center; gap: 7px; min-height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 800; color: var(--ink); cursor: pointer; text-align: left; }
 .home-events .rt-spine:hover { border-color: var(--ink-soft); }
-.home-events .rt-spine.on { border-color: var(--ink); background: rgba(90,45,122,0.05); }
-.home-events .rt-spine .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
-.home-events .rs-tag { flex: 0 0 auto; padding: 2px 5px; border-radius: 4px; font-size: 10.5px; font-weight: 800; color: #5a2d7a; background: rgba(90,45,122,0.10); }
+.home-events .rt-spine.on { border-color: var(--ink); background: rgba(43,33,24,0.05); }
+.home-events .rt-spine .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; background: var(--ink) !important; }
+.home-events .rs-tag { flex: 0 0 auto; padding: 2px 5px; border-radius: 4px; font-size: 10.5px; font-weight: 800; color: var(--ink); background: rgba(43,33,24,0.09); }
 .home-events .rs-name { flex: 1 1 auto; min-width: 0; }
 .home-events .rt-switch-title { margin: 10px 0 0; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
 .home-events .rt-branches { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
 .home-events .rt-switch-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); cursor: pointer; text-align: left; }
 .home-events .rt-switch-chip:hover { border-color: var(--ink-soft); }
-.home-events .rt-switch-chip.on { color: var(--ink); border-color: var(--ink); background: rgba(154,127,181,0.10); }
-.home-events .rt-switch-chip .rc-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; }
+.home-events .rt-switch-chip.on { color: var(--ink); border-color: var(--ink); background: rgba(43,33,24,0.05); }
+/* 支线空心环、骨架条实心点:同为中性色,靠填充区分层级 */
+.home-events .rt-switch-chip .rc-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; background: transparent !important; box-shadow: inset 0 0 0 1.5px var(--ink-soft); }
 .home-events .rt-switch-chip .rc-count, .home-events .rt-spine .rc-count { font-size: 10.5px; }
 .home-events .rt-stop .rt-sub { margin-left: 7px; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
 .home-events .rt-link { display: flex; gap: 8px; padding: 7px 0 7px 13px; margin: 2px 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
-.home-events .rt-arrow { flex: 0 0 auto; color: #5a2d7a; font-weight: 800; }
+.home-events .rt-arrow { flex: 0 0 auto; color: var(--ink); font-weight: 800; }
 .home-events .rt-evidence { margin: 11px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
-.home-events .rt-evidence span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(90,45,122,0.13); color: #5a2d7a; font-size: 11px; font-weight: 800; }
+.home-events .rt-evidence span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(43,33,24,0.09); color: var(--ink); font-size: 11px; font-weight: 800; }
 .home-events .chain-chip .rc-dot { box-shadow: 0 0 0 3px rgba(90,45,122,0.12); }
 /* 同 world-map.html:链条长到超过右栏高度时,控制条吸底,"下一站"始终在手边 */
 .home-events .rt-ctrl { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; position: sticky; bottom: 0; padding: 11px 0 6px; background: var(--card); }
