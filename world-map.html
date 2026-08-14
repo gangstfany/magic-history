@@ -170,10 +170,12 @@ h1 .en { color: var(--accent); }
 .event-head .badge-search { background: #3f4a56 !important; font-size: 15px; }
 /* ---- 商路模式:行程面板 ---- */
 .route-panel { padding: 16px 20px 14px; border-bottom: 1px solid var(--line); background: #fffdf8; }
-/* 标题与切换器是导航,必须常驻:面板会自动滚到当前环,不吸顶的话学生一落地就看不到
-   自己在哪条链、能往哪切(实测落地 scrollTop 632,标题和切换器都在视口外)。 */
-.rt-top { position: sticky; top: 0; z-index: 3; background: var(--paper); padding: 2px 0 9px;
-  box-shadow: 0 7px 9px -9px rgba(43,33,24,.45); }
+/* 只做分组容器,这一页【不吸顶】:独立打开时 .event-zone 不是滚动容器(overflow visible、
+   max-height none),整个文档才是。此时 sticky 会吸在浏览器视口上,滚链条会把整页连同
+   地图一起带走。真正需要吸顶的是 Main 里那个有界面板,规则写在 index.html 的
+   .home-events .rt-top。若将来这一页也给 .event-zone 设了高度和 overflow:auto,
+   再把 position: sticky 加回来。 */
+.rt-top { padding: 2px 0 9px; }
 .rt-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .rt-name { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
 .rt-progress { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
@@ -203,8 +205,11 @@ h1 .en { color: var(--accent); }
 .rt-spine .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; background: var(--ink) !important; }
 .rs-tag { flex: 0 0 auto; padding: 2px 5px; border-radius: 4px; font-size: 10.5px; font-weight: 800; color: var(--ink); background: rgba(43,33,24,0.09); }
 .rs-name { flex: 1 1 auto; min-width: 0; }
-.rt-switch-title { margin: 10px 0 0; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
-.rt-branches { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
+.rt-branch-row { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; }
+.rt-branch-label { flex: 0 0 auto; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); }
+.rt-branch-select { flex: 1 1 auto; min-width: 0; font: inherit; min-height: 34px; border: 1px solid var(--line);
+  border-radius: 8px; padding: 4px 8px; color: var(--ink); background: var(--card); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.rt-branch-select:hover { border-color: var(--ink-soft); }
 .rt-switch-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); cursor: pointer; text-align: left; }
 .rt-switch-chip:hover { border-color: var(--ink-soft); }
 .rt-switch-chip.on { color: var(--ink); border-color: var(--ink); background: rgba(43,33,24,0.05); }
@@ -3278,13 +3283,18 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       + `<span class="rs-tag">主干链</span>`
       + `<span class="rs-name">${chainShortName(spine)}</span>`
       + `<span class="rc-count">${spine.stops.length} 环</span></button>` : '';
+    // 补充链收成一行下拉:五颗药丸在窄栏里各占一行,约 180px,把链条挤到屏幕下半。
+    // 用 select 而不是自制菜单,是为了跟工具栏那个 Unit 下拉同一种控件 —— 学生不用再学一次,
+    // 键盘和读屏也是白得的。骨架条仍是整条,不并进下拉:一进去两者就又变回并列关系了。
+    const activeBranch = branches.find(c => c.id === current.id);
     const branchHTML = branches.length
-      ? `<p class="rt-switch-title">补充链 · 主干装不下的支线</p><div class="rt-branches">`
-        + branches.map(c => `<button type="button" class="rt-switch-chip sub${c.id === current.id ? ' on' : ''}"`
-            + `${c.id === current.id ? ' aria-current="true"' : ''} data-route-go="${c.id}" title="${c.name}">`
-            + `<span class="rc-dot"></span>${chainShortName(c)}`
-            + `<span class="rc-count">${c.stops.length} 环</span></button>`).join('')
-        + `</div>`
+      ? `<div class="rt-branch-row">`
+        + `<label class="rt-branch-label" for="chainBranchPick">补充链</label>`
+        + `<select id="chainBranchPick" class="rt-branch-select" data-chain-pick>`
+        + `<option value="">${activeBranch ? '换一条补充链…' : `主干装不下的支线 · ${branches.length} 条`}</option>`
+        + branches.map(c => `<option value="${c.id}"${c.id === current.id ? ' selected' : ''}>`
+            + `${chainShortName(c)} · ${c.stops.length} 环</option>`).join('')
+        + `</select></div>`
       : '';
     return `<div class="rt-switch" role="group" aria-label="本单元的因果链">${spineHTML}${branchHTML}</div>`;
   }
@@ -3428,6 +3438,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       if (activeLearningView === 'map' && activeMapMode === 'routes' && routeMode.route.kind !== 'chain') returnToRoutePicker();
       else exitRouteMode();
     }
+  });
+
+  // 补充链下拉是 change 不是 click,单独接一条
+  eventPanel.addEventListener('change', e => {
+    const pick = e.target.closest('[data-chain-pick]');
+    if (pick && pick.value) enterRouteMode(pick.value);
   });
 
   eventEmpty.addEventListener('click', e => {
