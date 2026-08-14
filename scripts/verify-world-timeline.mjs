@@ -125,6 +125,10 @@ async function verifyTimeline(page, port) {
   const initialState = await page.evaluate(() => window.getTimelineState());
   assert.equal(initialState.mappingMode, 'explicit', 'Timeline Units must come from a literal reviewed mapping');
   assert.equal(initialState.unmappedEventKeys.length, 0, 'every in-scope event must have an explicit Unit mapping');
+  assert.deepEqual(initialState.duplicateEventKeys, ['6:6'],
+    'a record duplicating another must be logged as a duplicate rather than silently dropped');
+  const casteCards = initialState.visibleEvents.filter((event) => /caste/i.test(event.titleEn) || /caste/i.test(event.titleZh));
+  assert.equal(casteCards.length, 1, 'the duplicated caste-continuity record must yield exactly one Timeline card');
   assert.ok(initialState.excludedPre1200Count > 0, 'pre-1200 source records must be explicitly excluded from Timeline');
   assert.equal(initialState.anchorlessRecordCount, 0, 'current AP World source data has no anchorless records');
   assert.equal(initialState.anchorlessSupported, false, 'API must document the current anchorless-data limitation');
@@ -421,9 +425,10 @@ async function verifyLearningShell(page, port) {
   await expectVisible(page.locator('#eventPanel .rt-stops-chain'), 'Practice → Chain must visibly restore the causal chain');
   const chainSteps = page.locator('#eventPanel [data-route-step]');
   assert.ok(await chainSteps.count() >= 3, 'Unit 1 causal chain must expose at least three interactive steps');
-  // Unit 1's opening Song record starts before 1200 and is intentionally excluded from
-  // Timeline; use two later, explicitly mapped chain steps for linked-selection checks.
-  for (const stepIndex of [1, 2]) {
+  // Unit membership follows overlap with 1200-1450, not the opening year, so the Song
+  // record that begins in 960 is now on the Timeline alongside Angkor and Kamakura.
+  // Check the first three links - Angkor, Hangzhou, Baghdad - all of which are mapped.
+  for (const stepIndex of [0, 1, 2]) {
     await chainSteps.nth(stepIndex).click();
     const chainState = await page.evaluate(() => {
       const currentStep = document.querySelector('#eventPanel [data-route-step].now');
