@@ -376,6 +376,42 @@ async function verifyLearningShell(page, port) {
     'Unit 2→3 outgoing seam must identify Unit 4');
   assert.equal(await page.locator('#eventPanel [data-route-step]').count(), 10,
     'cross-unit seams must not change the Unit 2→3 ring count');
+  const seamAccessibility = await page.evaluate(() => {
+    const rgba = (value) => {
+      const parts = value.match(/[\d.]+/g)?.map(Number) || [];
+      return { rgb: parts.slice(0, 3), alpha: parts.length > 3 ? parts[3] : 1 };
+    };
+    const blend = (top, bottom, alpha) => top.map((channel, i) => channel * alpha + bottom[i] * (1 - alpha));
+    const backgroundAt = (element) => {
+      const ancestors = [];
+      for (let node = element; node; node = node.parentElement) ancestors.unshift(node);
+      return ancestors.reduce((background, node) => {
+        const color = rgba(getComputedStyle(node).backgroundColor);
+        return color.rgb.length === 3 && color.alpha > 0 ? blend(color.rgb, background, color.alpha) : background;
+      }, [255, 255, 255]);
+    };
+    const luminance = (rgb) => rgb.map(channel => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    }).reduce((sum, value, i) => sum + value * [0.2126, 0.7152, 0.0722][i], 0);
+    const contrast = (element) => {
+      const foreground = rgba(getComputedStyle(element).color).rgb;
+      const values = [luminance(foreground), luminance(backgroundAt(element))].sort((a, b) => b - a);
+      return (values[0] + 0.05) / (values[1] + 0.05);
+    };
+    const seams = [...document.querySelectorAll('#eventPanel [data-chain-seam]')];
+    return {
+      tags: seams.map(seam => seam.tagName),
+      labelRatio: contrast(seams[0].querySelector('.rt-seam-label')),
+      actionRatio: contrast(seams[1].querySelector('.rt-seam-action')),
+    };
+  });
+  assert.deepEqual(seamAccessibility.tags, ['DIV', 'DIV'],
+    'cross-unit seam containers must not create unlabeled complementary landmarks');
+  assert.ok(seamAccessibility.labelRatio >= 4.5,
+    `cross-unit seam label contrast must be at least 4.5:1; found ${seamAccessibility.labelRatio.toFixed(2)}:1`);
+  assert.ok(seamAccessibility.actionRatio >= 4.5,
+    `cross-unit seam action contrast must be at least 4.5:1; found ${seamAccessibility.actionRatio.toFixed(2)}:1`);
 
   await page.evaluate(() => window.__mapFilter.enterRoute('u1_sub_syncretism'));
   assert.equal(await page.locator('#eventPanel [data-chain-seam]').count(), 0,
@@ -431,6 +467,8 @@ async function verifyLearningShell(page, port) {
     'Unit 4 outgoing seam must visibly identify pending Unit 5');
   assert.equal(await pendingSeam.locator('[data-chain-boundary]').count(), 0,
     'pending Unit 5 seam must not expose an enabled boundary action');
+  assert.equal(await pendingSeam.locator('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])').count(), 0,
+    'pending Unit 5 seam must contain no focusable descendants');
 
   await page.evaluate(() => window.__mapFilter.setPeriod('u1'));
   const initialChainPin = await page.locator('#eventPanel [data-route-step].now .rt-num').innerText();
