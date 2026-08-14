@@ -3150,12 +3150,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     // 错题本视图没有 quizMode,但同样要能用"返回"收掉
     if (!quizMode && !eventPanel.querySelector('.quiz-panel')) return;
     quizMode = null;
-    if (restoreFilters) restoreFilters();
     ['asia', 'mideast', 'europe', 'americas', 'africa'].forEach(resetRegionToBaseline);
     svg.querySelectorAll('.pin-group').forEach(g => g.classList.remove('revealed'));
     eventPanel.classList.remove('show');
     eventPanel.innerHTML = '';
     eventEmpty.style.display = 'block';
+    // 先清理练习态留下的标点，再恢复筛选；反过来会把 apply() 刚恢复的 Unit 标点抹掉。
+    if (restoreFilters) restoreFilters();
   }
 
   function renderQuiz() {

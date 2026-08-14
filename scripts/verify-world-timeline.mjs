@@ -733,6 +733,37 @@ async function verifyLearningShell(page, port) {
     'Map must return to Event Details after leaving an active quiz');
   assert.deepEqual(await trimmedTexts(page.locator('[data-map-mode][aria-pressed="true"]')), ['事件详情'],
     'only Event Details may be pressed after returning from Practice');
+  const restoredQuizFilterPins = await page.evaluate(() => ({
+    expected: [...new Set(window.getTimelineState().visibleEvents
+      .flatMap((event) => event.visibleAnchors.map((anchor) => anchor.num)))].sort(),
+    revealed: [...document.querySelectorAll('.pin-group.revealed')]
+      .map((group) => group.querySelector('text')?.textContent.trim())
+      .filter(Boolean)
+      .sort(),
+  }));
+  assert.ok(restoredQuizFilterPins.expected.length > 0,
+    'the restored Unit 4 filter must contain map anchors');
+  assert.deepEqual(restoredQuizFilterPins.revealed, restoredQuizFilterPins.expected,
+    'leaving Practice for Map must restore every pin selected by the preserved Unit filter');
+
+  await page.locator('[data-learning-view="practice"]').click();
+  await page.locator('#eventZone [data-quiz-start="all"]').click();
+  await page.locator('#eventZone [data-quiz-action="exit"]').click();
+  const directlyRestoredQuizFilterPins = await page.evaluate(() => ({
+    period: window.__mapFilter.getState().period,
+    expected: [...new Set(window.getTimelineState().visibleEvents
+      .flatMap((event) => event.visibleAnchors.map((anchor) => anchor.num)))].sort(),
+    revealed: [...document.querySelectorAll('.pin-group.revealed')]
+      .map((group) => group.querySelector('text')?.textContent.trim())
+      .filter(Boolean)
+      .sort(),
+  }));
+  assert.equal(directlyRestoredQuizFilterPins.period, 'u4',
+    'the direct Exit Practice action must restore the preserved Unit filter');
+  assert.ok(directlyRestoredQuizFilterPins.expected.length > 0,
+    'the directly restored Unit 4 filter must contain map anchors');
+  assert.deepEqual(directlyRestoredQuizFilterPins.revealed, directlyRestoredQuizFilterPins.expected,
+    'the direct Exit Practice action must not erase pins restored by the preserved Unit filter');
 
   const practiceResultFixture = await page.evaluate(() => {
     const cards = [...document.querySelectorAll('.world-timeline-card[data-event-key]')];
