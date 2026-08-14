@@ -2153,14 +2153,14 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   // Timeline 直接适配上面的 index,不维护第二份事件内容。相同年份/内容的多地点记录
   // 共用一个事件键,所以只生成一张卡,但保留全部地图锚点。
   const WORLD_TIMELINE_UNIT_MEMBERS = Object.freeze({
-    u1: ["75:0","6:0","23:0","73:0","18:0","49:0","10:0","50:0","85:2","73:2","73:3","73:4","32:0","49:4","50:3","3:4","32:3","18:3","49:6","75:1","93:1","49:8","10:4","42:1","43:1","50:4","50:5","1:0","7:0","4:0","76:0","47:0","72:0","3:0","3:1","3:2","3:3","6:4","6:5","93:0","24:5","1:2","5:11","76:1"],
+    u1: ["75:0","6:0","23:0","73:0","18:0","49:0","10:0","50:0","85:2","73:2","73:3","73:4","32:0","49:4","50:3","3:4","32:3","49:6","75:1","93:1","49:8","10:4","42:1","43:1","50:4","50:5","1:0","7:0","4:0","76:0","47:0","72:0","3:0","3:1","3:2","3:3","6:4","6:5","93:0","24:5","1:2","5:11","76:1"],
     // ↑ 末尾 13 条为按"时间重叠 + CED 主题匹配"补入:跨越 1200 进入课程窗口:1.2 Dar al-Islam(3:x)、1.3 南亚(6:x)、1.5 非洲(72:0/93:0/76:1)、1.6 欧洲(24:5)、1.1 东亚(1:2/5:11)
     // 上面末尾五条(1:0 Song 960–1279 东亚、7:0 Khmer 1150–1431 东南亚、4:0 Kamakura 1185–1333 东亚、
     // 76:0 Hausa 1000–1400 非洲、47:0 Mississippian 1050–1450 美洲)起始年份早于 1200,
     // 但都延续进 1200–1450,且各自对应 Unit 1 的区域国家发展,按"实质重叠"纳入。
     u2: ["8:0","86:0","84:0","9:0","2:1","10:3","5:6","2:4","73:1","73:5","85:0","85:3","98:0","23:4"],
     // ↑ 末尾 5 条为按"时间重叠 + CED 主题匹配"补入:交换网络本身而非某国内政:2.3 印度洋(85:0/85:3/98:0)、2.4 跨撒哈拉(73:1/73:5)
-    u3: ["74:0","77:0","19:0","49:1","6:1","50:1","49:2","14:0","78:0","24:0","5:0","26:0","25:0","23:1","2:3","11:2","77:1","32:1","33:0","49:5","13:0","34:0","32:2","35:0","24:3","24:4","23:2","57:1","49:7","77:2","14:2","100:0","41:0","57:2","74:2"],
+    u3: ["74:0","77:0","19:0","49:1","6:1","50:1","49:2","14:0","78:0","24:0","5:0","26:0","25:0","23:1","2:3","11:2","77:1","32:1","33:0","49:5","13:0","34:0","32:2","35:0","24:3","24:4","23:2","57:1","49:7","77:2","14:2","100:0","41:0","57:2","74:2","18:3"],
     u4: ["45:0","2:2","85:1","12:0","44:0","43:0","42:0","60:0","74:1","87:0","57:0","58:0","59:0","44:1","55:1","60:1","66:0","91:1","39:0","68:0","68:1","59:1","99:0","104:0"],
     u5: ["51:0","24:1","24:2","51:1","24:6","66:1","23:5","54:1"],
     u6: ["6:2","50:2","27:0","52:0","53:0","54:0","20:0","79:0","18:1","15:0","10:1","5:1","28:0","14:1","29:0","29:1","5:2","80:0","55:0","5:3","37:0","36:0","62:0","63:0","1:1","89:0","88:0","53:1","61:0","90:0","29:4","91:0","94:0","23:3","95:0","67:0","36:1","36:2","69:0","6:7","40:0","53:3","70:0","91:2","101:0","36:3","36:4","23:7","23:8","91:3","71:0","88:1","29:6","63:1","97:1"],
@@ -2385,7 +2385,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '交棒 Unit 2:蒙古之所以能把中亚到中欧压成一个治安区就带来交换的暴涨,是因为可运的货、接单的城市和追债的规矩在 1200 年前后已由本单元这条链造好。缺了任何一样,草原上的统一只会换来空荡的道路 —— Unit 2 的跨区域网络扩张,扩张的正是这里造出的节点与规则。'] },
     { id: 'u2_main', kind: 'chain', units: ['u2'], tier: 'main', chip: 'Networks of Exchange',
       entryUnit: 'u2', from: 'u1_main',
-      to: { unit: 'u3', chain: 'u23_empires', summary: '陆基火药帝国之所以在 1450 年后成片出现，是因为本单元把三样东西同时交到了它们手里——从蒙古学来的、可以照抄的集权办法，沿商路西传并在 1453 年打穿 Constantinople 城墙的火器，以及一个只认金银、却把自家舰队收回港里的中国市场；前两样让陆基帝国建得起来，第三样让欧洲人非绕海去找白银不可。' },
+      to: { unit: 'u3', chain: 'u3_main', summary: '陆基火药帝国之所以在 1450 年后成片出现，是因为本单元把三样东西同时交到了它们手里——从蒙古学来的、可以照抄的集权办法，沿商路西传并在 1453 年打穿 Constantinople 城墙的火器，以及一个只认金银、却把自家舰队收回港里的中国市场；前两样让陆基帝国建得起来，第三样让欧洲人非绕海去找白银不可。' },
       name: '一趟买卖怎么从算不过账变成算得过账',
       blurb: 'Unit 2 常被读成「三条商路各讲一遍」，但三条路是被同一件事同时推动的：一趟长途买卖的成本由运费、结算、保护三块构成，1200 年之后这三块在不到一个世纪里依次被压了下去。成本一低，能上路的就不再只是丝绸和瓷器；而当网络效率高到连笨重货物都跑得动时，它同时也把技术、信仰和病原用同一套设施运走。要回答的问题是：为什么交换的暴涨、文化的融合与瘟疫的扩散会挤在同一段时间发生，以及为什么陆路先被打穿、海路后来居上。',
       exam: 'Unit 2 Review 里 LEQ 1（蒙古在延续与变迁中的意义）与 LEQ 2（各网络的异同）共用的骨架，也是 Topic 2.1 与 2.3 那两道 causes and effects of the growth of networks of exchange 的标准答法。2027 起 DBQ 文件跨 1450–2001，Unit 2 主要用在 contextualization 上，取末环两句即可。最常见失分写法：「The Mongols united Eurasia, and then trade increased, and then the Black Death spread, and then Europe changed.」四个 and then 只排了顺序；改成「Because the Mongols policed the roads themselves, merchants no longer had to price in the risk of being robbed, which lowered the margin a caravan needed to break even — and that is what let bulk goods, not just silk, cover long distances.」判断标准与 U1 相同：把 which/because 换成 then 后句子还成立，这句就没解释任何东西。',
@@ -2505,36 +2505,111 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         ''
       ] },
 
-    { id: 'u23_empires', kind: 'chain', units: ['u3'], tier: 'main', chip: 'Unit 2→3 · Empires from Ruins',
+    { id: 'u3_main', kind: 'chain', units: ['u3'], tier: 'main', chip: 'Land-Based Empires',
       entryUnit: 'u3', from: 'u2_main',
-      to: { unit: 'u4', chain: 'u4_atlantic', summary: '帝国秩序稳定 → Ottoman 坐收陆路过路费 → 欧洲商人被迫改走海路' },
-      name: 'Unit 2→3 主干链 · 帝国如何从废墟中崛起',
-      blurb: 'Unit 2 和 Unit 3 不是两章,是一条链:贸易网络的连通性同时送出财富、技术和病菌 —— 财富制造竞争,病菌瓦解旧秩序,技术武装了新崛起的军事集团。c.1450 之后那几个超大帝国不是偶然同时出现的。',
-      exam: '这条链是 DBQ Contextualization 的通用素材(任何 c.1450 之后的帝国或航海题,都能用"c.1200–1450 跨区域贸易网络的扩张创造了……的物质与技术条件"开场)。最常见的失分写法是 "In Unit 2 trade expanded, then in Unit 3 empires emerged" —— then 不是 because,序列不等于因果。要说出三个条件:技术(火药)、真空(旧帝国崩溃)、利益(控制商路的财政动力),缺一个都不算完整 Causation。',
-      stops: [8, 9, 23, 3, 43, 18, 13, 5, 19, 12],
-      labels: ['三大贸易体系全速运转', '连通性反噬:瘟疫西传', 'Black Death 与封建松动', '旧权威真空', '火药军事化改写攻防', '火药帝国崛起:1453', '同一机制的第二个实例', '三套工具巩固帝国', '宗教断层线固化', '白银闭环与大航海铺垫'],
-      evidence: ['Pax Mongolica · yam 驿站 · 季风与 dhow · trans-Saharan 黄金 · 奢侈品→政治竞争',
-                 'Silk Road decline · 蒙古开路→瘟疫沿路走 · Yersinia pestis · 商路下海',
-                 'Black Death 1347–1351 · 欧洲 1/3 人口 · 劳动力荒→工资上涨 · 农奴制松动',
-                 'Abbasid 1258 亡于蒙古 · 伊斯兰世界无单一中心 · Turkic 军事政权竞争 · 1335 Ilkhanate 解体 · 1368 Yuan 亡',
-                 '中国唐宋起源 · 沿 Silk Roads 西传 · 铸炮技术成熟 · 大炮轰破城堡 → 中央集权常备军',
-                 'Urban 铸巨炮 · 1453 Constantinople 陷落 · 控制 Silk Roads 西端 · 拜占庭已先衰弱',
-                 'Babur(Timurid-Mongol 后裔) · 1526 First Battle of Panipat 炮兵 · 灭 Delhi Sultanate · Mughal 即 Mongol 的波斯语变体',
-                 '官僚:devshirme/Janissaries · mansabdari · 科举 || 财政:包税制 · zamindar · 一条鞭法征银 || 意识形态:Sunni 哈里发 · Akbar Din-i-Ilahi · 天命',
-                 'Safavid 1501 Shia 立国 · Ottoman Sunni 哈里发 · Sunni–Shia 之争地缘政治化 · Protestant Reformation 1517',
-                 'Ming 税收征银 → Potosí 银矿 · Manila galleons · Ottoman 垄断陆路 → da Gama 1498 · Columbus 1492'],
-      links: ['同一批路线同时运货、运技术、运病菌 —— 连通性本身就是传播机制,不只是"贸易让帝国变富"',
-              '鼠疫沿商路进入地中海与西欧,击中的是一个既没有免疫、也没有备用治理方案的旧体系',
-              '欧洲丢的是劳动力,伊斯兰世界丢的是政治中心 —— 同一场系统性崩溃在两端各留下一个真空',
-              '旧帝国不是被某个外敌打败的,而是因为深度依赖贸易连通性(商业税收、Pax Mongolica 的稳定),才最容易被这种连通性传来的冲击击溃',
-              '真空只是机会,填空要工具:火药在此前一个世纪已沿同一批商路西传,铸炮技术恰好此时成熟 —— 火药的"存在"和它的"军事化应用"是两件事',
-              '技术 + 真空 + 商路税收支撑的军事投入,三者同时到位 —— 缺任何一个,1453 都攻不下守了千年的君堡',
-              '不是 Ottoman 特别能打,而是同一套机制在别处复制:Babur 用炮兵在 1526 Panipat 一战改写印度政治版图,四大帝国都长在蒙古碎片化后的领土上',
-              '征服不等于统治 —— 占下多语言多宗教的广土之后,四个帝国面对的是同一个问题:如何用有限的行政资源真正管住它',
-              '意识形态是三套工具里最锋利的一件,也最容易反噬:Ottoman 以 Sunni 哈里发立身、Safavid 以 Shia 立国,合法性之争就此凝固成地缘断层',
-              '帝国秩序稳定 → Ottoman 坐收 Silk Roads 西端的过路费 → 欧洲商人被迫改走海路 → Unit 4 的大航海从这里出发;白银则先一步把两条链接上了'] },
+      to: { unit: 'u4', chain: 'u4_atlantic', summary: '陆基帝国把全部力气押在同一件事上——把连片的土地变成年年可征的岁入，于是它们的军队、官僚与合法性全都朝内、朝陆地生长，海面对它们只是边界不是收入；Safavid 没有海军，Mughal 只有一支很小的，Ming 与 Qing 把欧洲人限在 Guangzhou 一港。海上因此留出一块没人要的空白，只能由收入本来就依赖海路的一方去填，Unit 4 的主战场也就随之移到大洋与大西洋体系。' },
+      name: '广土怎么被造出来，又怎么把自己绑死',
+      blurb: 'Unit 3 常被读成「五个帝国各介绍一遍」，但五个帝国是在同一道题上被反复考的：火器让征服的速度远远快过治理的速度，于是每一个帝国都在同一段时间里被迫补同一批工具——领薪官僚、被驯化的军事贵族、用石头和经文铸出来的合法性。这些工具让帝国立住了，也把它绑死了：合法性一旦挂在宗教上，统治者就退不出宗教争端；收入一旦挂在土地和陆路上，它就没有理由去看海。要回答的问题是：为什么这些帝国在 1450 年后同时成型，又在 1750 年前后同时把主动权让给了海上。',
+      exam: 'Unit 3 Review 里 LEQ 2（changes in government 如何造成权力集中）与 LEQ 3/4（南亚与西南亚、俄国与中国的陆基帝国是否以相似方式发展）共用的骨架，也是 Topic 3.4 essential question 的标准答法。2027 起 DBQ 文件跨 1450–2001，Unit 3 常落在 contextualization 与第一段，取第一环与末环两句即可。最常见失分写法：「The Ottomans used gunpowder, and then they conquered Constantinople, and then they built a bureaucracy, and then they declined.」四个 and then 只排了顺序；改成「Because cannon reduced a siege from a season of starvation to a matter of days, conquest outran administration — which is why every one of these empires had to invent a salaried officialdom after, not before, it had already swallowed a multiethnic territory.」判断标准与 U1、U2 相同：把 which/because 换成 then 后句子还成立，这句就没解释任何东西。',
+      stops: [19, 18, 6, 14, 13, 26, 5, 23],
+      labels: ['火器与空位一起到手', '版图跑在治理前面', '占领军换成领薪的人', '刀先被收进宫里', '合法性被盖成石头与经文', '同一套合法性劈出争端', '收入仍压在地里', '陆上的赢家输给海上'],
+      evidence: [
+        'AMSCO 给 Gunpowder Empires 的定义：位于西南亚、Central Asia 与南亚、靠 firearms 征服并控制领土的大型多族群国家，除俄国外含 Ottoman、Safavid、Mughal 三个伊斯兰强势的帝国 · 三家统治者的共同点被并列成四条：出自曾居 Central Asia 的 Turkic nomads、说突厥语、乘 Mongol khanates 崩解留下的权力真空、依赖 artillery 与 cannon · ghazi ideal 把游牧文化的协作价值与为伊斯兰作战的意愿合成一套战士模板 · Tamerlane 自 Samarkand 出发，用重炮建起一个依赖军队的政府，也用火器保护 Silk Roads 陆路，却没留下有效的政治结构，战费最终拖垮经济 · Ismail 只有十四五岁就征服全 Persia，1501 年被拥为 shah · Shah Abbas I（1588–1629）自欧洲进口武器，并靠欧洲人训练部队 · AMSCO 明写它们的初期成功既来自自身军力，也来自被取代政权的虚弱与腐败，而欧洲各国忙于内斗、没有联手压制东面的新强权',
+        'Ivan IV（1547–1584）1547 年加冕 tsar，随即东扩，先取 Golden Horde 后裔所据的 Kazan、Astrakhan 与 Siberia 三个 khanate，这一扩张越来越依赖 gunpowder · 为控制毛皮贸易，他准许大地主 Stroganovs 雇 Cossacks 打地方部族与 Siberian khan，夺得 Volga River；有了通往 Caspian Sea 的出海口，Moscow 得以绕开 Crimean Tartars 直接与 Persia 和 Ottoman 通商 · 1639 年俄国人推进到 Pacific Ocean，此后到 Alaska（1741）与 California（1814）；传教士随毛皮商人之后使许多人改信 Eastern Orthodox，本地 shamans 仍有影响 · Mehmed II（1451–1481）1453 年围 Constantinople，三重防御下城墙在炮火中崩塌，用的是一门 26 英尺的铜炮与数门 15 至 22 英尺的炮；城改名 Istanbul，扼守连接 Aegean Sea 与 Black Sea 的 Bosporus Strait · Suleiman I（1520–1566）1526 年席卷 Hungary，1529 年兵临 Vienna · Kangxi（1661–1722）出兵 Taiwan、Mongolia 与 Central Asia 并对 Tibet 设保护，Qianlong（1736–1796）西征并吞 Xinjiang',
+        'Akbar（1556–1605）建起高效政府与大体公平的法制，任何人都可以就任何诉讼向他本人上诉；Central Asia 各地的能人前来效力，帮他建成中央政府与一套有效的 civil service · zamindars 是领薪的政府官员，分管税收、营造与供水；后来改为授田而非发薪，并获准截留地方农民所缴税的一部分，农民须上交三分之一产出 · Ottoman 的 devshirme 自 14 世纪末起、15 至 16 世纪扩大，每年从被征服的 Christian 地区、尤其是 Balkan 强征 8 至 20 岁的男孩；伊斯兰法禁止奴役属于「people of the book」的 Muslim 与 Jew，故只取 Christian 男孩 · 这些男孩在政治、艺术与军事上受极高水准的教育，最著名的一批成为 Janissaries，另一些成为新征服地的行政官、书吏、税吏乃至外交官，被灌输对 sultan 的绝对忠诚 · Safavid 的 shah 从帝国内的 Persian 人口中征募一个文官阶层，AMSCO 记作「men of the pen」 · Ming 恢复传统 civil service exam、建全国学校、重建在 Mongol 治下荒废的官僚体系，Ming 与 Manchu 两朝都用 civil service examination 甄选想入仕的 scholar-gentry · Tokugawa 把日本分成 250 个 han，samurai 领薪，先给米后给金，因而握有可观的经济力量',
+        'Oda Nobunaga 用向 Portuguese 商人买来的 muskets 武装队伍，1568 年拿下 Kyoto，迫使周边 daimyo 归服，1582 年遇刺时已统一约三分之一的今日日本 · Toyotomi Hideyoshi 1588 年下令各省农民一律不得持刀、短刀、弓、矛与火器，理由写在诏书里：若留着不必要的兵器，年贡就难收，也会无端生乱 · 1598 年后权力移到 Edo，Tokugawa Ieyasu（1600–1616）1603 年受封 shogun，此后是 Period of Great Peace；幕府要求 daimyo 在领地与首都两处置宅，daimyo 回领地时家人须留在首都为质，daimyo 因此被降为管理 han 的地主 · Janissaries 与 Safavid 的 Ghulams 都是用来抵消那些更忠于部族或地方总督的部队，Ghulams 取自帝国内的 Georgian、Armenian 与 Circassian 人口 · Ivan IV 没收反对扩张的 Novgorod boyars 的土地，强迫他们举家迁往 Moscow，另建只忠于自己的 oprichnina，成员取自下级官吏与商人以确保他们不忠于 boyars · Peter the Great（1682–1725）先击败半姐 Sophia 与她背后由 boyar 领头的 Streltsy，Streltsy 后来叛乱，他先解散、再把他们编进俄国正规军 · Louis XIV 把贵族留在 Versailles 招待，使他们难以独立行动或在自己的省份煽动叛乱；Tudors 治下封建领主的力量转弱，新君主削掉了贵族的私兵',
+        'Shah Jahan（1628–1658）为亡妻建 Taj Mahal；Mughal 统治者也美化 Delhi、修建堡垒，工匠把伊斯兰的书法、写本泥金与陶艺同本地技艺结合，造出通透而多几何纹样的建筑，AMSCO 明写这些成就用来昭示统治者的力量 · Mehmed II 起建 Topkapi Palace 并设作坊生产细密画与泥金写本；Suleiman I 在辖下诸城下令兴建清真寺与堡垒，包括 Istanbul 的 Suleymaniye Mosque，Constantinople 的 Saint Sophia 被改成大清真寺 · Safavid 建起 Isfahan 的清真寺 · Louis XIV 在 Versailles 宴请贵族并使他们无法在别处谋事，宫中有约 1,000 名雇员，AMSCO 明写 Versailles 帮他确立了合法性 · Peter the Great 自 Sweden 手中夺得波罗的海沿岸的不冻港 St. Petersburg 并把首都迁来，以便就近盯住在他政府里服役的 boyars；街道排成方格而非 Moscow 的杂乱格局，Winter Palace 用欧洲式而非拜占庭式 · Askia the Great 1493 年上台，指前任 Sunni Ali 不是虔诚的穆斯林，随后在全国推行伊斯兰、盛大朝觐 Mecca，把伊斯兰定为 Songhai 国教以图统一帝国，同时扶植高效官僚 · AMSCO 的合法性来源表并列四项：伊斯兰帝国的统治者用 caliph 即先知继承者的称号，欧洲君主主张 divine right，Songhai 统治者与贵族改信伊斯兰为帝国提供宗教与法律架构，Aztec 在宗教仪式中用人牲',
+        '1555 年 Peace of Augsburg 让每个德意志邦国由其统治者选择 Catholic 或 Lutheran，教堂与居民须随之改宗，不肯的人可以迁往信仰相合的邦国 · 法国的 Catholic 与 Huguenots 打了近半个世纪，1593 年 Henry IV 改信天主教以求统一，据说说了 Paris is well worth a Mass，1598 年颁 Edict of Nantes 给 Huguenots 信教之权，此后 87 年法国有宗教宽容；1685 年 Louis XIV 撤销该敕令，大批熟练工匠带着技术与样式离开法国 · Thirty Years’ War（1618–1648）起于 Holy Roman Empire 内部的宗教冲突，后演成欧洲列强的普遍战争；军队被允许以劫掠充作报酬，造成大范围饥荒与疾病，全欧陷入经济灾难 · Peace of Westphalia 让 Holy Roman Empire 的各地在 Roman Catholicism、Lutheranism、Calvinism 三者中择一，各邦与公国由此获得远多于从前的自治，Prussia 与 Austria 开始自树一帜，Prussia 因战中损毁惨重而发展强军 · Ismail 以 Shi’a Islam 为凝聚力建起权力基础并否认任何 Sunni 的合法性，导致与 Sunni 重镇 Ottoman 长期敌对，Tabriz 一线成为 Sunni 与 Shi’a 社会之间边界的一部分 · 两家的冲突不全是宗教的：它们也为边界领土与陆路商道开战，Ottoman 一再对 Safavid 的丝绸商人施加 trade embargo · Aurangzeb（1658–1707）要把全印度置于穆斯林统治之下并清除帝国的 Hindu 影响，不容 Sikh 与 Hindu，招来频繁的冲突与叛乱',
+        'Ming 与 Ottoman 一样把征税交给私人：在中国是各地富户负责本乡田赋；田赋是税收主体，税率偏低，先收粮、后收白银，部分粮存于地方仓廪，另一些经 Grand Canal 运往军事驻地，另征盐、酒等货物税 · Ming 曾发纸币以便利贸易与征税，结果伪造泛滥、恶性通胀，遂下令一切赋税改以稻米、后以银币这类 hard currency 缴纳 · 1580 年后战争、皇室奢靡与镇压叛乱使 Ming 陷入破产 · Ottoman 对农民征税并用 tax farming 征收，这些远离中央的地方官与私人包税人靠截留税款而富且腐，Mughal 的部分 zamindars 亦然；农村还要长期负担官兵的供养，这份税与军的重负最终推动帝国经济衰落 · Qianlong 对 Burma 与 Vietnam 的用兵失败且昂贵，把国库掏空；他晚年一向高效的中国官僚变得腐败，向民众课重税，1796–1804 年的 White Lotus Rebellion 由此而起，Qing 以酷烈手段镇压，杀约 100,000 农民 · Peter 建国营船厂与 Ural 铁矿并请西欧海军工程师造船，但工业化没能带来他军事开销所需的收入，他便加税并强制工人去船厂做工，1718 年俄国把土地税改成人头税 · Qing 因需要钱而向欧洲列强出售有限的贸易特权，却把他们限在 Guangzhou 一港；1793 年英国人要求更多贸易权，Qianlong 复信 King George III 说中国不需要英国的制成品',
+        'Tudors（1485–1603）用 landed gentry 推举的 justices of the peace 在各郡维持治安、断部分案件、执行王法；他们的人数与职权逐年增长，成为王国中最重要而有力的一批人，许多人同时坐在 Parliament 的 House of Commons · 1689 年 William 与 Mary 签署 English Bill of Rights，规定逮捕拘押须经法定程序，并要求征税与募兵须经 Parliament 同意 · 1571 年 Battle of Lepanto 中，主要由西班牙人与威尼斯人组成的欧洲舰队击败 Ottoman；此后 Ottoman 屡遇弱势 sultan 与强邻，被称作 Sick Man of Europe，1683 年 Vienna 围城失败是它在东欧支配的转折点 · AMSCO 明写 Gunpowder Empires 的衰落是因为竞争不过欧洲的贸易公司尤其是英国的那些，也因为继承之争、领导层弱或腐败、以及跟不上军事与海军技术的发展 · McNeill 指出 1600 年前后 Ottoman 军队在技术与各方面都还走在最前列，但 Suleiman 之后统治者不再亲自领兵，军纪松弛、效率与技术开始落后西欧 · 三帝国比较表里 Ottoman 有强海军、Mughal 只有小海军、Safavid 根本没有 · 俄国仿英、法、荷改建并重组军队，因此得以作为独立民族国家存续，而其他 Gunpowder Empires 覆灭；Aurangzeb 死后帝国日益不稳，让英法在印度取得越来越多的经济权力，19 世纪英国夺走 Mughal 的政治权力'
+      ],
+      links: [
+        '火器把「攻下一座城」压成可以按同一套流程重复的动作：城墙不再由围困的季节来消耗，而由能不能连续供养炮兵来决定。能供养的一方于是在一两代人之内推进上千英里——而这个速度，快过任何一套治理办法能铺开的速度。',
+        '这些版图里装的不是同一批人——AMSCO 用 multiethnic states 概括所有这些帝国。占领军能让人当场不反抗，却收不上明年的税、断不了本地的案、也认不出谁在瞒报田亩。武力只能一次次重复使用、不能被存起来，所以要把领土折成岁入，就必须换上一批天天在场的人。',
+        '领薪的人可以被调、被查、被换掉，封地上的人不行——这正是把汲取从一次性的战利品改成年复一年的岁入所需要的那一点差别。可这批人只回答了「谁来办事」，没回答「谁手里有兵」：旧的军事贵族仍能一票否决任何一道政令。所以每个帝国接下来都要做同一件事。',
+        '刀与笔都收进宫里之后，剩下的是最难用武力解决的一问：凭什么是你。被统治的人来自不同语言、不同信仰、不同部族，没有一条现成的理由能同时说服他们，而每多用一次武力都在提醒他们答案是「因为我打赢了」。统治者于是改用所有人都看得见、也都认得出的东西来回答。',
+        '用神来解释权力，好处是不必逐族说服，一座清真寺或一座宫殿对不识字的人也成立；代价是统治者从此不能对教义的争执置身事外。当「谁的解释算数」被摆上台面，任何一次表态都会同时得罪另一半人——合法性的来源，于是变成帝国退不出的那场争端。',
+        '这些仗每打一场，都要额外的兵、额外的粮、额外的现钱，而且都不是一次性的开销：Thirty Years’ War 打了三十年，Ottoman 与 Safavid 断断续续打了一个多世纪。可这些帝国的收入来源在建立之初就已经定死——地里的产出，和穿过自家关卡的商队。要多花，就只能从同一块地上再刮一层。',
+        '这套收入结构决定了它们的眼睛只能盯着两样东西：脚下的地，和穿过自家关卡的商队。可 1500 年之后世界上新增的现钱不在这两处——Unit 2 末环留下的那个只认金银的中国市场，此刻正把白银从海上吸进来。谁的收入不靠海，谁就没有理由去建海军、也没有理由去养一家替国家跑远海的公司；把海面让出去，在当时并不像一个决定，只像一件不必做的事。',
+        '交棒 Unit 4：陆基帝国把全部力气押在同一件事上——把连片的土地变成年年可征的岁入，于是军队、官僚与合法性全都朝内、朝陆地生长，海面对它们只是边界而不是收入。Safavid 没有海军，Mughal 只有一支很小的，Qing 把欧洲人限在一港。海上因此留出一块没人要的空白，而能来填这块空白的，恰恰是收入本来就依赖海路、又刚刚用 Parliament 把征税与募兵之权从国王手里拿走的那一方——把国家的钱押在贸易公司上，对它是唯一算得过账的做法。所以 Unit 4 的主战场移到大洋与大西洋体系，不是因为欧洲人更爱冒险，而是因为陆基帝国的收入结构让它们没有理由出海。'
+      ] },
+
+    { id: 'u3_sub_print', kind: 'chain', units: ['u3'], tier: 'sub', chip: 'Print & Knowledge',
+      name: '印出来的东西收不回去',
+      blurb: 'Reformation 常被讲成一个人的勇气，但 AMSCO 把它放在一条技术线上：1450 年的印刷术、随之上升的识字率，然后才是 1517 年的 95 Theses。这条链解释为什么这一次的异议没有像 Wycliffe 与 Hus 那样被压回去，以及同一批习惯——收集证据、彼此通信、公开辩驳——后来怎么被从教义搬到了自然界。',
+      exam: '对应 Topic 3.3 与 Unit 3 Review 的 SAQ「Describe ONE way in which the Protestant Reformation and the Scientific Revolution were similar」以及 Renaissance ideals 如何影响 Reformation。最常见失分写法：「The printing press spread Luther’s ideas, so the Reformation happened.」spread 不是机制，要写成「印刷让同一份文本以同样的字句同时出现在几十座城，教会再也无法靠没收单份抄本或处死单个作者来终止争论——Hus 被烧死之后争论就停了，Luther 被开除教籍之后争论反而扩大」。第二个高频错误是把 Council of Trent 说成教会认错——它重申圣礼、改善神父教育，并出版 Index of Prohibited Books，是反击而不是让步。',
+      stops: [41, 33, 35, 32],
+      labels: ['复制成本先被砍掉', '异议第一次收不回去', '教会用同一套办法反击', '同一种较真移到自然界'],
+      evidence: [
+        'AMSCO 把 1450 年前后并列成一组：一波瘟疫结束、Hundred Years’ War 收场、Gutenberg printing press 问世，随之识字率上升，几个欧洲国家开始变成强大富裕的国家 · Topic 3.1 的 KEY TERMS 把 Gutenberg printing press 单独列在 TECHNOLOGY: Literacy 项下 · Wycliffe 与英格兰的 Lollards 在 14 世纪末主张神父对得救并非必要；Wycliffe 因把《圣经》部分译成英语白话、让不识拉丁文的信众也能读而遭围攻 · Bohemia 的 Jan Hus 与 Hussites 因与 Wycliffe 相近的主张被判为异端，Hus 本人被烧死在火刑柱上 · Zwingli 主张宗教应严格依经文行事、弃掉后来才生出的习惯，例如反对神职独身，理由是这条规矩是在经文写成很久之后才加上的',
+        'Wittenberg 的修士 Martin Luther 认定教会的若干做法违背圣经教导，反对 indulgences（花钱免除罪罚）与 simony（买卖圣职），把 95 Theses 钉上教堂门，并主张 sola fide，得救只凭信心 · 教会与地方统治者都需要这些做法带来的钱，因此反应严厉，1521 年 1 月 Pope Leo X 把 Luther 开除教籍 · 若干德意志政治领袖看到摆脱教皇权力的机会而站到 Luther 一边，一场原本只是学院内的争论就变成 Roman Catholic Church 与 Holy Roman Empire 的大分裂 · AMSCO 特别点明 Luther 不是政治或社会革命者，德意志农民起事时他并不支持 · John Calvin 约 1530 年与教会决裂，1536 年著《The Institutes of the Christian Religion》并在 Geneva 推动改革，社群由 elect（预定得救者）治理，主张简朴生活、朴素教堂与长老治会 · 他的追随者在法国称 Huguenots，苏格兰有 John Knox 的 Reformed Church，英格兰与后来的波士顿有 Puritans · Henry VIII（1509–1547）因教皇顾忌 Charles V 而不肯准他离婚，遂经英格兰 Parliament 同意自立为 Church of England 之首',
+        'Counter-Reformation 是三管齐下：扩大 Inquisition 的使用，该机构 12 世纪末设立，用以查出并惩治不信者，有时准许用刑 · 1540 年 Ignatius of Loyola 创立 Jesuits（Society of Jesus）反制新教扩张，并在西班牙帝国全境以及日本与印度传教 · Council of Trent（1545–1563）纠正教会最严重的一些弊端，重申婚姻等圣礼、改善神父教育，并出版 Index of Prohibited Books，禁书包括新教版《圣经》与 Copernicus 的著作 · AMSCO 明写 Counter-Reformation 是成功的：地中海一侧的西欧仍以天主教为主，天主教至今是世界最大的基督教派，而欧洲列强的殖民地多随母国的信仰 · Charles V 因无法阻止 Lutheranism 扩散而于 1555 年退位，把西班牙留给 Philip II、把 Holy Roman Empire 留给弟弟 Ferdinand；Philip II 1588 年的 Spanish Armada 败于英格兰海军 · Council of Trent 的《Catechism for Parish Priests》（1566）教神父向不识字者解释圣像的用途：它们用来讲述新旧约的历史、提醒记忆，而不是当作神明来受拜',
+        '1600 年代初，随着 Renaissance 的好奇、探究与发现之风扩散，科学思维在北欧流行起来；AMSCO 明写在一个宗教分裂的年代，科学思考代表一种很不一样的思路——以理性而非信仰为据 · 1620 年英格兰科学家兼哲学家 Francis Bacon 提出称为 empiricism 的早期科学方法，坚持必须收集数据来支撑假说，并主张用能以证据验证的说法取代沿用数百年的旧观念 · 科学思考靠学者之间的通信推进，即便在宗教战争期间也没有中断，法国与英格兰又相继设立 Royal Academy of Science · Isaac Newton 把 Galileo 的地面运动定律与 Kepler 的行星运动定律合起来，1687 年发表论万有引力的《Principia》 · 许多知识人由此认为世界是有序而合乎理性的，自然法则同样适用于政府与社会的理性有序运作——AMSCO 明写这正是通往 Enlightenment 的关键'
+      ],
+      links: [
+        '在抄本时代，一份异议能传多远，取决于有多少人肯逐字誊写；教会只要控制住抄写的人、烧掉那几份稿，争论就会停在原地——Hus 之后正是这样。印刷把复制成本压到近乎为零之后，同一份文本以同样的字句同时出现在几十座城，销毁哪一份都不再改变什么。',
+        '分裂一旦发生，教会面对的就不再是「要不要认错」，而是「怎样在同一批信众里把人留住」。它于是被迫做和对手一样的事：统一口径、办学校、管住印刷品、把人派到海外去——用对手的手段打对手，这才是 Counter-Reformation 的形状。',
+        '禁书目录把 Copernicus 与新教《圣经》列在同一张单子上，等于宣告：判定一句话真不真的权力属于教会。可这时候欧洲已经有一批人习惯了另一种判定办法——不看谁说的，看证据站不站得住。这套办法本来是用来争教义的，一旦成型，就没有理由只用在教义上。',
+        ''
+      ] },
+
+    { id: 'u3_sub_tolerance', kind: 'chain', units: ['u3'], tier: 'sub', chip: 'Toleration & Schism',
+      name: '帝国怎么对付不是我教的人',
+      blurb: '这些帝国全都是少数统治多数，被统治者的信仰跟统治者不一样。AMSCO 把宽容与不宽容并排放进同一张比较表，说明它们不是性格差异，而是同一道题的两种解法。这条链解释解法一旦选定，账单会在几十年后以什么形式回来——以及为什么在东亚，这道题被换了一种问法。',
+      exam: 'Topic 3.3 的 SAQ 是 AMSCO 原题：Describe ONE example of Akbar’s display of religious tolerance 与 Explain ONE way in which Akbar’s practice of tolerance was different from the religious tolerance of the Safavids，也是 Unit 3 Review LEQ 1 与 Amy Chua 那条 Historical Perspectives 的核心材料。最常见失分写法：「Akbar was tolerant because he was a good ruler.」这是性格描写不是历史解释，要写成「他自己说六分之五的臣民是 Hindu 或异教徒，若照不宽容的路走就只能把他们全杀掉，所以免掉 Hindu 的人头税、让 Hindu 出任 zamindar 才是唯一算得过账的办法」。第二个高频错误是把 Din-i Ilahi 说成成功的融合——AMSCO 明写他到 1605 年去世也没能让 Hindu 与穆斯林臣民改信这套信仰。',
+      stops: [6, 11, 19, 5],
+      labels: ['宽容是算出来的', '缝隙里长出新的信仰', '收紧的账几十年后才来', '能收编的收编，收不了的镇压'],
+      evidence: [
+        'Akbar 宽容一切宗教，向 Hindu 与 Muslim 都拨钱或授地，还出钱给印度西南岸 Goa 的一座天主教堂 · 他让 Hindu 进政府，高位与低位的 zamindars 都可以是 Hindu，他本人也娶 Hindu 妻 · 他免掉帝国内非穆斯林所缴的人头税 · 因为爱谈宗教，他把 Catholic 神父请来向他讲解基督教 · Jahangir 的《Memoirs》记下 Akbar 的原话：他自称是上帝在人间的影子，上帝的恩泽不分对象地降给一切受造之物；六分之五的人不是 Hindu 就是外道，若照你说的那样办，除了把他们全部处死我还有什么别的路，所以他认定最明智的办法是让这些人自己去过 · AMSCO 的比较表把 Mughal 的税收记作：非穆斯林的税被 Akbar 废除，后来又被恢复',
+        'Akbar 给相对年轻的 Sikhism 授予土地 · Sikhism 由 Hinduism 发展而来，可能受过称为 Sufism 的伊斯兰神秘主义影响 · 它是一神信仰，并承认其他信仰存在的权利，到 21 世纪成为世界第五大宗教 · Akbar 自己推动一套称作 Din-i Ilahi（divine faith）的信仰以调和 Hinduism 与 Islam，1605 年去世时并未让 Hindu 与伊斯兰臣民改信 · AMSCO 的比较表把 Mughal 的宗教一栏写成：Akbar 治下宽容，但他把伊斯兰与印度教揉在一起的做法并不受欢迎；后来的统治者更不宽容 · 他还试图禁止童婚与 sati，同样失败',
+        'Ismail 以 Shi’a Islam 为凝聚力建起权力基础并否认任何 Sunni 的合法性；AMSCO 的比较表记 Safavid 不宽容，Ismail I 令 Sunni 人口必须改宗，税收政策也被用来鼓励人们遵行 Shi’a Islam · 这份严格坚持导致与 Sunni 重镇 Ottoman 长期敌对，Tabriz 一线成为 Sunni 与 Shi’a 社会之间边界的一部分，两者的敌意一直活到今天的 Iraq 与 Iran · 1722 年 Safavid 军无力平定今 Afghanistan 一带备受压迫的 Sunni Pashtun 叛乱，Afghan 军队进而洗劫 Isfahan，其首领 Mahmud 自称 Shah of Persia；Safavid 名义上仍在位，但由此而来的混乱成了中央化与征税的障碍 · Aurangzeb（1658–1707）要把全印度置于穆斯林统治之下并清除帝国的 Hindu 影响，坚持严苛虔诚的伊斯兰生活方式、不容 Sikh 与 Hindu，引发农民起事与 Hindu、伊斯兰诸侯的连番反叛，他南征扩土又把国库耗尽 · Amy Chua 认为不宽容最终成为保住强权的障碍，帝国在宗教与族群上最宽容的时候最能守住权力，这也解释了相对宽容的 Ottoman 为什么比更不宽容的 Safavid 与 Mughal 活得更久',
+        'Ming 为抹去 Mongol 统治的影响，恢复传统 civil service exam、建全国学校、重建在 Mongol 治下荒废的官僚体系；1644 年入主的 Manchu 换了王朝却没有换掉这道门，Ming 与 Manchu 两朝都用 civil service examination 甄选想入仕的 scholar-gentry · Qianlong（1736–1796）西征并吞 Xinjiang，AMSCO 明写这次并吞伴随对当地人口的大规模杀戮；直到今天 Xinjiang 部分地区仍不安宁，当地称作 Uighurs 的穆斯林人口从未完全融入中国文化的其余部分 · 他还派军入 Tibet 扶立 Dalai Lama，并迫使 Nepal 人臣服，但对 Burma 与 Vietnam 的用兵失败且昂贵 · Kangxi（1661–1722）鼓励引入西方教育、开港通商、把 Tibet 纳入控制，被 AMSCO 与 Louis XIV 并列成对照表 · 1796–1804 年的 White Lotus Rebellion 起于重税与恢复 Ming 的愿望，Qing 以酷烈手段镇压，杀约 100,000 农民'
+      ],
+      links: [
+        '宽容在这里不是让步，是一道算术：免掉的人头税，换回来的是不必为收税而在每个 Hindu 村子驻兵。可这道算术只在皇帝本人身上成立——它没有被写进法典，也没有被交给任何一个机构。所以它留下的不是一套规矩，而是一段缝隙；缝隙里长出来的东西，会比宽容本身活得久。',
+        '皇帝造的信仰没人跟，长在缝隙里的信仰却留了下来——差别在于前者要人放弃原有身份，后者承认别人有权继续做原来的自己。而这也意味着，下一任皇帝若想把缝隙收回去，他要对付的不再是一盘散沙，而是一个已经成形、有教义有土地的教团。',
+        '强制改宗省下的是解释成本，付出的是把每一个不肯改宗的社群变成一个现成的反抗单位：他们本来就有自己的领袖、聚会与地盘，叛乱不必再从头组织。可如果统治者压根不打算解释、也不打算改造信仰，只按能不能被现有制度吸纳来分人呢——那是另一种解法，账单落在别处。',
+        ''
+      ] },
+
+    { id: 'u3_sub_extraction', kind: 'chain', units: ['u3'], tier: 'sub', chip: 'Tribute & Taxation',
+      name: '从被统治者手里拿东西的四种办法',
+      blurb: 'Topic 3.4 把 Aztec、Inca、Songhai、Ming、Ottoman 与 Mughal 的汲取办法排进同一张表里比较。这条链把这张表读成一条推演：每一种办法都在解决上一种解决不掉的问题，同时留下一个新的漏洞，而漏洞最后都落在同一处——离中央越远，能被截留的越多。',
+      exam: '直接对应 Topic 3.4 的 essential question 与 Unit 3 Review LEQ 2（changes in government 如何造成权力集中），也是 AMSCO 原题 Describe ONE way in which political structures of the Aztecs were similar to those in China in the period 1450–1750 的骨架。最常见失分写法：「The Ottomans used tax farming and the Mughals used zamindars.」并列两个名词不构成比较，要写成「两者都是把征税权外包给远离中央的人，中央省下了自建征收机构的钱，代价是它无法核实实收与上缴之间的差额——AMSCO 明写两边的包税人都因截留而致富且腐败」。第二个高频错误是把 Aztec 说成中央集权帝国——AMSCO 明写它比其他陆基帝国更不中央化、几乎没有对领土的直接管辖，靠武力、恐惧与威慑维持。',
+      stops: [49, 50, 74, 24],
+      labels: ['只要东西不建机构', '先把人和地编起来', '用学问和自治换忠诚', '把征收权卖出去'],
+      evidence: [
+        'Aztec 建的是 tributary empire，对 Mesoamerica 区域内的领土几乎没有直接控制，靠武力、恐惧与威慑而非中央官僚维持统治；AMSCO 明写它比其他陆基帝国更不中央化、更少官僚 · 供养 Aztec 贵族阶层与军队的主要收入是周边地区的年贡；贡单列出各地所产或所重的东西，也可以直接索要人，其中许多人成为宗教仪式上的人牲 · 每座省城驻有一名 Aztec 官员向地方官收贡，不过多数 Aztec 市民、商人与工匠是纳税的 · 帝国也向被征服国索取奴隶或俘虏充作贡赋的一部分；AMSCO 特别指出这种把人当血税征收的做法并不限于 Ottoman 的 devshirme · 美洲的 Aztec 与 Inca 战士以凶悍著称，足以威慑并征服邻近地区',
+        'Inca 没有像 Ming 与 Manchu 那样专设一个学者阶层来治国，却把帝国编成一套 federal system of provinces，由忠于皇帝的贵族统领 · 这些贵族之下是一套组织严密的政治结构，按十进制划分 · AMSCO 在 Topic 3.2 开篇把 building temples, as with the Inca 与日本给军事精英发薪、Ottoman 用 devshirme 强行建起一套被俘的官僚班子并列，作为巩固权威的三种不同办法 · 与之相对，Aztec 保留地方首领充当收贡人，靠间接统治省下直接行政的成本',
+        'Songhai 的 mansa（Mandinka 语，意为 sultan）从 Timbuktu 的 madrasas 培养出的学者阶层里征用官僚 · Sunni Ali（1464–1492 在位）靠快速机动的骑兵与对 Niger River 的水上控制，到 1470 年代已征服Niger River 农业富庶的内陆三角洲，包括 Timbuktu 与 Jenne 这样富有而多学者的城市；AMSCO 所引的评述明写他清楚一个大帝国单靠军事征服守不住，还需要一套有效的行政结构，而 Songhai 的高度中央化与从前苏丹地带以联盟和 tributary states 为主的模式颇不相同 · Askia the Great 1493 年上台，指前任 Sunni Ali 不是虔诚的穆斯林，随后推行伊斯兰、盛大朝觐 Mecca、把伊斯兰定为国教以图统一帝国，同时扶植高效官僚 · 他委派 governors 与官员管理 Niger Valley 的 tributary states，只要地方官遵行 Songhai 的政策，就可以自治其地 · 1591 年 Morocco 入侵 Songhai，Morocco 的军队洗劫首都 Gao 并终结这个帝国，但连它自己也守不住 Songhai 的全部领土',
+        'Louis XIII 与其大臣 Cardinal Richelieu 推进中央化并发展出 intendants 制度：这些王室官员被派往各省执行中央政府的命令，AMSCO 明写他们有时被称作 tax farmers，因为他们监督各种税收的征收以供养王室政府 · Ottoman 不雇政府税吏，而是指派 tax farmers 先向中央缴一笔固定年额买下某地的征收权，再从当地居民手里以钱或可售货物收回本利；许多 Janissaries 的薪饷正是靠比上缴中央的更多收上来的钱支付的 · 这些远离中央的地方官与私人包税人靠从本地税款里揩油而致富且腐败，Mughal 的部分 zamindars 亦然；农村还要长期负担官兵的供养，这份税与军的重负最终推动帝国经济衰落 · Mughal 的 zamindars 起初领薪，后改为授田并获准截留农民所缴税的一部分，Akbar 之后他们越留越多，用这笔钱豢养效忠自己的私人军队 · AMSCO 的比较表明写 Mughal 的 zamindars 使军队独立于中央政府'
+      ],
+      links: [
+        '只收成品的好处是不必派人下去；坏处是中央永远不知道地方到底产出多少，只能照上一次的数字再要一次。数字一旦与实际脱节，加征就成了随机的勒索，怨恨堆在被征服者那一层。要想按实际产出来调整，就得先把人和地数清楚，而数清楚需要一套自己的人。',
+        '编制解决了「数得清」，没解决「谁去数」。行政层级越多，中央每年要发的薪水越多；如果中央拿不出这笔现钱，它就只能用别的东西付账——例如让替它办事的人自己去当地取，或者干脆让替它办事的人先在别处被养出来。',
+        '用学者当官僚、让 tributary states 自治，中央花的钱最少；可这套安排里没有任何一样东西是中央独有的——学者由 madrasas 培养，地方由本地人管，中央真正握在手里的只有首都。首都一失，整个结构就没有第二个支点，AMSCO 记的正是这个结果：Gao 一被洗劫，帝国即告终结。而当开销大到必须年年拿到一个确定数目的现钱时，连这种省钱的办法也不够用了。',
+        ''
+      ] },
+
+    { id: 'u3_sub_gender', kind: 'chain', units: ['u3'], tier: 'sub', chip: 'Gender & Empire',
+      name: '女性拿到的是条文还是机构',
+      blurb: 'AMSCO 在 Unit 3 里谈到女性的地方只有三处，位置很分散：Safavid 女性有继承与离婚的法定权利却仍被隔在公共生活之外，新教女性获得读经的理由却失去了修道院，Mughal 皇帝改得动税制却改不动家内仪式。这条链把三处并成同一个判据：决定女性位置的不是文本上写了什么权利，而是有没有一个她可以站进去的机构。',
+      exam: '用于 gender roles 的比较 LEQ 与 Topic 3.3 的 SAQ。最常见失分写法：「Islamic law gave women property rights, so Safavid women had more freedom.」权利与自由不是一回事，要写成「伊斯兰法保住的是继承权与极端情形下的离婚权，AMSCO 同时写明她们仍须蒙面、行动受限——法条管得住财产归谁，管不住她能不能出门」。第二个常见错误是把 harem politics 当作女性地位高的证据：它恰恰说明宫廷内部是当时唯一向女性开放的权力通道，而这条通道后来被 Minorsky 列为 Safavid 衰落的原因之一。',
+      stops: [19, 33, 6],
+      labels: ['法条保财产不保出门', '读经的理由有机构没了', '改得动税制改不动家里'],
+      evidence: [
+        'AMSCO 明写本地的 Safavid 史书极少提到女性，但 Safavid 女性获准参与她们所在的社会 · 她们仍按当地传统蒙面、行动受限 · 她们能享有伊斯兰法赋予的继承权，以及在极端情形下的离婚权 · Ottoman 在 Suleiman 之后的继位者常受制于 harem politics，即 sultan 的妻妾各自设法把自己的孩子推上王位，有些女性因此在幕后握有权力 · Unit 3 Review 转述 Minorsky 所列 Safavid 衰落的五条原因，其中一条是由后宫代表的影子政府',
+        'Luther 教导女性可以像男性一样直接亲近上帝 · AMSCO 明写他的这一强调推高了女性的识字率 · 他认为女性在家庭中有重要角色，尤其是教子女读《圣经》 · 但新教一般不设修道院，结果新教女性无法像 Roman Catholic 女性那样在一个要害机构里担任领导 · Luther 本人不是政治或社会革命者，德意志农民起事时他并不支持 · 与之对照，Council of Trent 重申婚姻等圣礼并致力改善神父教育，天主教这一侧的建制反而被加固',
+        'Akbar 试图并且失败地禁止童婚与 sati，即寡妇跳上亡夫火葬柴堆自焚的仪式 · 同一个 Akbar 却能免掉帝国内非穆斯林所缴的人头税、能让高位与低位的 zamindars 都由 Hindu 出任、能建起一套人人可向他本人上诉的司法 · castes（jatis）是出生即定的严格社会分群，把 Hindu 分为 Brahmins、Kshatriyas、Vaishyas 与 Shudras 四类，此外还有被排除在外的 achhoots 或 Dalits；AMSCO 明写这套分群是印度社会教育与职业机会的基础 · Mughal 境内的贸易由商人种姓经营，商人种姓获准从事银钱业与手工业生产'
+      ],
+      links: [
+        '法律写明的是财产归谁，没有写明她能不能出现在公共场合。于是当一个女性想影响任何事，唯一开着的门是她所在的那个家户内部；这条通道能出人，出不了制度，所以它在史书里只会以「后宫干政」的名义被记下来，还会被后世史家当成衰落的病因而不是制度的产物。',
+        '识字是能力，修道院是位置。改革给了前者、拿走了后者，女性能做的事变多，能站的地方变少，活动整体被推回家户之内。这说明位置不是靠观念给的，是靠机构给的——而机构留不留，由统治者决定。可即便统治者想改，也有一类东西他改不动：执行者不是他的人的那些。',
+        ''
+      ] },
+
     { id: 'u4_atlantic', kind: 'chain', units: ['u4'], tier: 'main', chip: 'Unit 4 · Atlantic System',
-      entryUnit: 'u4', from: 'u23_empires',
+      entryUnit: 'u4', from: 'u3_main',
       to: { unit: 'u5', summary: '殖民重构的等级秩序 → 革命所要反抗的那个东西' },
       name: 'Unit 4 主干链 · 从大航海到大西洋体系',
       blurb: 'Unit 4 回答一个问题:欧洲如何在 200 年内,从陆基帝国体系的边缘变成全球贸易网络的中心?答案是一条由技术、国家权力、生态交换和劳动力系统串起来的连续因果链。',

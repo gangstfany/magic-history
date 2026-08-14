@@ -361,9 +361,9 @@ async function verifyLearningShell(page, port) {
     pending: segment.pending,
   })), [
     { id: 'u1_main', units: ['u1'], entryUnit: 'u1', from: null, toUnit: 'u2', toChain: 'u2_main', pending: false },
-    { id: 'u2_main', units: ['u2'], entryUnit: 'u2', from: 'u1_main', toUnit: 'u3', toChain: 'u23_empires', pending: false },
-    { id: 'u23_empires', units: ['u3'], entryUnit: 'u3', from: 'u2_main', toUnit: 'u4', toChain: 'u4_atlantic', pending: false },
-    { id: 'u4_atlantic', units: ['u4'], entryUnit: 'u4', from: 'u23_empires', toUnit: 'u5', toChain: null, pending: false },
+    { id: 'u2_main', units: ['u2'], entryUnit: 'u2', from: 'u1_main', toUnit: 'u3', toChain: 'u3_main', pending: false },
+    { id: 'u3_main', units: ['u3'], entryUnit: 'u3', from: 'u2_main', toUnit: 'u4', toChain: 'u4_atlantic', pending: false },
+    { id: 'u4_atlantic', units: ['u4'], entryUnit: 'u4', from: 'u3_main', toUnit: 'u5', toChain: null, pending: false },
     { id: null, units: ['u5'], entryUnit: 'u5', from: 'u4_atlantic', toUnit: null, toChain: null, pending: true },
   ], 'course mainline must expose the approved handoffs and pending Unit 5 tail');
   assert.ok(courseMainline.filter(segment => !segment.pending)
@@ -405,7 +405,7 @@ async function verifyLearningShell(page, port) {
 
   const implementedMainline = page.locator('#eventPanel [data-mainline-chain]');
   assert.deepEqual(await implementedMainline.evaluateAll(nodes => nodes.map(node => node.dataset.mainlineChain)),
-    ['u1_main', 'u2_main', 'u23_empires', 'u4_atlantic'],
+    ['u1_main', 'u2_main', 'u3_main', 'u4_atlantic'],
     'course mainline must render implemented chains in canonical order');
   const implementedMainlineText = await implementedMainline.allTextContents();
   courseMainline.filter(segment => !segment.pending).forEach((segment, index) => {
@@ -450,7 +450,7 @@ async function verifyLearningShell(page, port) {
 
   await clickMainlineSegment('u2_main', 'u2', 73, 8);
   await page.locator('#eventPanel [data-chain-panel-view="mainline"]').click();
-  await clickMainlineSegment('u23_empires', 'u3', 8, 10);
+  await clickMainlineSegment('u3_main', 'u3', 19, 8);
   await page.locator('#eventPanel [data-chain-panel-view="mainline"]').click();
   await clickMainlineSegment('u1_main', 'u1', 7, 8);
   await page.locator('#eventPanel [data-chain-panel-view="mainline"]').click();
@@ -542,7 +542,7 @@ async function verifyLearningShell(page, port) {
   }));
   assert.equal(outgoingBoundaryState.period, 'u3',
     'outgoing seam must select successor Unit 3 through the canonical Unit filter');
-  assert.equal(outgoingBoundaryState.learning.chainId, 'u23_empires',
+  assert.equal(outgoingBoundaryState.learning.chainId, 'u3_main',
     'outgoing seam must open the Unit 3 empires chain');
   assert.equal(outgoingBoundaryState.learning.chainStep, 0,
     'outgoing seam must select the successor first ring');
@@ -1240,7 +1240,7 @@ async function verifyHomeLearningShell(page, port) {
     'clicking the homepage course-mainline control must refresh the mirrored panel');
   const mirroredMainlineSegments = page.locator('#home-events [data-mainline-chain]');
   assert.deepEqual(await mirroredMainlineSegments.evaluateAll(nodes => nodes.map(node => node.dataset.mainlineChain)),
-    ['u1_main', 'u2_main', 'u23_empires', 'u4_atlantic'],
+    ['u1_main', 'u2_main', 'u3_main', 'u4_atlantic'],
     'the homepage must mirror canonical implemented mainline segments');
   const mirroredMainlineText = await mirroredMainlineSegments.allTextContents();
   embeddedCourseMainline.filter(segment => !segment.pending).forEach((segment, index) => {
@@ -1317,7 +1317,7 @@ async function verifyHomeLearningShell(page, port) {
       .map(group => group.querySelector('text')?.textContent.trim()),
   }));
   assert.equal(mirroredOutgoingSeamState.period, 'u3', 'homepage Unit 2 seam must select Unit 3');
-  assert.equal(mirroredOutgoingSeamState.state.chainId, 'u23_empires',
+  assert.equal(mirroredOutgoingSeamState.state.chainId, 'u3_main',
     'homepage Unit 2 seam must open the Unit 3 empires chain');
   assert.equal(mirroredOutgoingSeamState.state.chainStep, 0,
     'homepage Unit 2 seam must select the Unit 3 first ring');
