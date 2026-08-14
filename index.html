@@ -357,7 +357,12 @@ nav.topnav {
 .home-events .route-panel { padding: 16px 20px 14px; border-bottom: 1px solid var(--line); background: #fffdf8; }
 /* 标题与切换器是导航,必须常驻:面板会自动滚到当前环,不吸顶的话学生一落地就看不到
    自己在哪条链、能往哪切(实测落地 scrollTop 632,标题和切换器都在视口外)。 */
-.home-events .rt-top { position: sticky; top: 0; z-index: 3; background: var(--card); padding: 2px 0 9px;
+/* 吸顶块要满宽出血:负外边距抵掉 .route-panel 的 16px/20px 内边距,再用等量内边距把文字放回原位。
+   否则背景两侧各短 20px,内容会从缝里滚过去;上内边距只有 2px 时标题几乎贴着边框。
+   背景用 inherit 跟 .route-panel 取同一个值 —— 写 var(--card) 会差出一档(#f9f4e8 vs #fffdf8),
+   看起来就像面板上贴了一块独立色块。 */
+.home-events .rt-top { position: sticky; top: 0; z-index: 3; background: inherit;
+  margin: -16px -20px 0; padding: 16px 20px 13px;
   box-shadow: 0 7px 9px -9px rgba(43,33,24,.45); }
 .home-events .rt-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .home-events .rt-name { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
