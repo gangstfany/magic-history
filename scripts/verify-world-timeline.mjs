@@ -1161,6 +1161,93 @@ async function verifyHomeLearningShell(page, port) {
     'the homepage must initially mirror Chain as the sole pressed mode');
   await expectVisible(page.locator('#home-events .rt-stops-chain'), 'the homepage must initially mirror the visible causal chain');
 
+  const homeChainPanelControls = page.locator('#home-events [data-chain-panel-view]');
+  assert.equal(await homeChainPanelControls.count(), 2,
+    'the homepage Chain panel must mirror both chain-scope controls');
+  assert.deepEqual(await trimmedTexts(homeChainPanelControls), ['当前单元', '九单元主线'],
+    'the homepage Chain panel must mirror the approved chain-scope labels');
+  await homeChainPanelControls.first().scrollIntoViewIfNeeded();
+  const homeControlUsability = await page.locator('#home-events').evaluate(panel => {
+    const buttons = [...panel.querySelectorAll('[data-chain-panel-view]')];
+    const boxes = buttons.map(button => button.getBoundingClientRect());
+    const topmost = buttons.map((button, index) => {
+      const box = boxes[index];
+      return document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)?.closest('[data-chain-panel-view]') === button;
+    });
+    const rtTop = panel.querySelector('.rt-top')?.getBoundingClientRect();
+    return {
+      visible: buttons.map(button => {
+        const style = getComputedStyle(button);
+        return style.visibility !== 'hidden' && style.display !== 'none' && Number(style.opacity) > 0;
+      }),
+      controlsOverlap: boxes.length === 2
+        && boxes[0].left < boxes[1].right && boxes[0].right > boxes[1].left
+        && boxes[0].top < boxes[1].bottom && boxes[0].bottom > boxes[1].top,
+      coveredByHeader: Boolean(rtTop && boxes.some(box =>
+        box.left < rtTop.right && box.right > rtTop.left && box.top < rtTop.bottom && box.bottom > rtTop.top)),
+      topmost,
+    };
+  });
+  assert.deepEqual(homeControlUsability.visible, [true, true],
+    'homepage chain-scope controls must be visible');
+  assert.equal(homeControlUsability.controlsOverlap, false,
+    'homepage chain-scope controls must not overlap each other');
+  assert.equal(homeControlUsability.coveredByHeader, false,
+    'homepage sticky chain header must not cover the chain-scope controls');
+  assert.deepEqual(homeControlUsability.topmost, [true, true],
+    'homepage chain-scope controls must be the clickable topmost elements at their centers');
+
+  const embeddedCourseMainline = await frame.locator('body').evaluate(() => window.__mapFilter.getCourseMainline());
+  await page.locator('#home-events [data-chain-panel-view="mainline"]').click();
+  await page.waitForFunction(() =>
+    document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getLearningState().chainPanel === 'mainline');
+  await expectVisible(page.locator('#home-events [data-course-mainline]'),
+    'clicking the homepage course-mainline control must refresh the mirrored panel');
+  const mirroredMainlineSegments = page.locator('#home-events [data-mainline-chain]');
+  assert.deepEqual(await mirroredMainlineSegments.evaluateAll(nodes => nodes.map(node => node.dataset.mainlineChain)),
+    ['u1_main', 'u23_empires', 'u4_atlantic'],
+    'the homepage must mirror canonical implemented mainline segments');
+  const mirroredMainlineText = await mirroredMainlineSegments.allTextContents();
+  embeddedCourseMainline.filter(segment => !segment.pending).forEach((segment, index) => {
+    assert.ok(mirroredMainlineText[index].includes(segment.chip),
+      `homepage ${segment.id} card must show its canonical short label`);
+    assert.match(mirroredMainlineText[index], new RegExp(`${segment.rings}\\s*环`),
+      `homepage ${segment.id} card must show its canonical ring count`);
+  });
+  assert.deepEqual(await trimmedTexts(page.locator('#home-events [data-mainline-bridge]')),
+    embeddedCourseMainline.filter(segment => !segment.pending).map(segment => segment.to.summary),
+    'the homepage must mirror canonical mainline bridges');
+  const mirroredPendingMainline = page.locator('#home-events [data-mainline-pending]');
+  assert.match(await mirroredPendingMainline.innerText(), /Unit\s*5.*待建/is,
+    'the homepage must mirror the pending Unit 5 tail');
+  assert.equal(await mirroredPendingMainline.getAttribute('aria-disabled'), 'true',
+    'the homepage pending Unit 5 tail must remain programmatically unavailable');
+  assert.equal(await mirroredPendingMainline.locator('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])').count(), 0,
+    'the homepage pending Unit 5 tail must remain noninteractive');
+
+  await page.locator('#home-events [data-mainline-chain="u23_empires"]').click();
+  await page.waitForFunction(() => {
+    const api = document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter;
+    const state = api?.getLearningState?.();
+    return api?.getState?.().period === 'u2' && state?.chainPanel === 'unit'
+      && state?.chainId === 'u23_empires' && state?.chainStep === 0;
+  });
+  const mirroredSegmentState = await frame.locator('body').evaluate(() => ({
+    state: window.__mapFilter.getLearningState(),
+    period: window.__mapFilter.getState().period,
+    selectedPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+      .map(group => group.querySelector('text')?.textContent.trim()),
+  }));
+  assert.equal(mirroredSegmentState.period, 'u2', 'homepage u23 segment must select Unit 2');
+  assert.equal(mirroredSegmentState.state.chainPanel, 'unit', 'homepage u23 segment must restore Current Unit');
+  assert.equal(mirroredSegmentState.state.chainId, 'u23_empires', 'homepage u23 segment must open its chain');
+  assert.equal(mirroredSegmentState.state.chainStep, 0, 'homepage u23 segment must open its first ring');
+  assert.ok(mirroredSegmentState.selectedPins.includes('8'), 'homepage u23 segment must select boundary pin 8');
+  await expectVisible(page.locator('#home-events .rt-stops-chain'),
+    'homepage u23 segment must return the mirrored panel to Current Unit content');
+  assert.deepEqual(await trimmedTexts(page.locator('#home-events [data-chain-panel-view][aria-pressed="true"]')), ['当前单元'],
+    'homepage u23 segment must restore only the Current Unit panel control');
+
   await page.locator('.map-card-head [data-learning-view="map"]').click();
   await page.locator('.map-card-head [data-learning-view="chain"]').click();
   await page.waitForFunction(() => {

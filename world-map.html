@@ -2939,7 +2939,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     }).join('');
     const incomingSeam = chainSeamHTML(route, 'from');
     const outgoingSeam = chainSeamHTML(route, 'to');
-    return `<div class="route-panel">
+    return `<div class="route-panel${isChain ? ' chain-route-panel' : ''}">
       ${isChain ? chainPanelToggleHTML() : ''}
       <div class="rt-top">
         <div class="rt-head">
@@ -3475,6 +3475,15 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     eventZone.classList.remove('fit-content');
   }
 
+  function setChainPanelView(view) {
+    if (view === 'mainline') renderCourseMainline();
+    else if (view === 'unit') showCurrentUnitChain();
+  }
+
+  function openMainlineChain(chainId) {
+    openChainBoundary(chainId, 'first');
+  }
+
   // 本单元的全部链,主干链在前、补充链在后。归属写在每条链的 units 上,不再硬编码 id ——
   // 之前 chainForUnit 里写死 'u1_tapestry',换链时对不上就静默落到空态,踩过一次。
   function chainsForUnit(unitId) {
@@ -3644,14 +3653,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   eventPanel.addEventListener('click', e => {
     const chainPanelView = e.target.closest('[data-chain-panel-view]');
     if (chainPanelView) {
-      if (chainPanelView.dataset.chainPanelView === 'mainline') renderCourseMainline();
-      else showCurrentUnitChain();
+      setChainPanelView(chainPanelView.dataset.chainPanelView);
       return;
     }
     const mainlineChain = e.target.closest('[data-mainline-chain]');
     if (mainlineChain) {
-      activeChainPanel = 'unit';
-      openChainBoundary(mainlineChain.dataset.mainlineChain, 'first');
+      openMainlineChain(mainlineChain.dataset.mainlineChain);
       return;
     }
     const boundary = e.target.closest('[data-chain-boundary]');
@@ -4459,6 +4466,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       openPicker: kind => renderPicker(kind),
       setMapMode: mode => showMapMode(mode),
       setLearningView: view => showLearningView(view),
+      setChainPanelView,
+      openMainlineChain,
       getLearningState: () => Object.freeze({
         view: activeLearningView,
         mapMode: activeMapMode,

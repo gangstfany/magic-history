@@ -364,6 +364,31 @@ nav.topnav {
 .home-events .rt-top { position: sticky; top: 0; z-index: 3; background: inherit;
   margin: -16px -20px 0; padding: 16px 20px 13px;
   box-shadow: 0 7px 9px -9px rgba(43,33,24,.45); }
+.home-events .chain-panel-toggle { position: sticky; top: 0; z-index: 4; display: flex; flex-wrap: wrap; gap: 6px; margin: -16px -20px 12px; padding: 16px 20px 10px; background: #fffdf8; }
+.home-events .chain-panel-toggle button { flex: 1 1 112px; min-width: 0; min-height: 36px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink-soft); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.home-events .chain-panel-toggle button:hover { border-color: var(--ink-soft); }
+.home-events .chain-panel-toggle button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: #fff; }
+.home-events .chain-panel-toggle button:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.home-events .chain-route-panel .rt-top { top: 62px; margin-top: 0; }
+.home-events .course-mainline { padding: 16px 20px 20px; border-bottom: 1px solid var(--line); background: #fffdf8; }
+.home-events .course-mainline-head { margin: 0 0 13px; }
+.home-events .course-mainline-title { font-size: 17px; font-weight: 800; }
+.home-events .course-mainline-subtitle { margin: 5px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.55; }
+.home-events .course-mainline-sequence { display: flex; flex-direction: column; align-items: stretch; min-width: 0; }
+.home-events .mainline-segment { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; width: 100%; min-width: 0; padding: 12px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--card); color: var(--ink); font: inherit; text-align: left; }
+.home-events button.mainline-segment { cursor: pointer; }
+.home-events button.mainline-segment:hover { border-color: var(--ink-soft); background: #fffaf0; }
+.home-events button.mainline-segment:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.home-events .mainline-segment.active { border-color: #76539a; box-shadow: 0 0 0 1px rgba(118,83,154,.22); }
+.home-events .mainline-node { width: 11px; height: 11px; border-radius: 50%; background: #76539a; box-shadow: 0 0 0 4px rgba(118,83,154,.12); }
+.home-events .mainline-copy { min-width: 0; }
+.home-events .mainline-name { display: block; overflow-wrap: anywhere; font-size: 12.5px; font-weight: 800; line-height: 1.5; }
+.home-events .mainline-units { display: block; margin-top: 3px; color: var(--ink-soft); font-size: 11px; font-weight: 700; }
+.home-events .mainline-rings { color: var(--ink-soft); font-size: 11px; font-weight: 800; white-space: nowrap; }
+.home-events .mainline-bridge { position: relative; margin: 0 0 0 18px; padding: 10px 9px 10px 20px; border-left: 2px solid #287f83; color: var(--ink-soft); font-size: 11.5px; line-height: 1.55; overflow-wrap: anywhere; }
+.home-events .mainline-bridge::before { content: "↓"; position: absolute; left: -8px; top: 50%; transform: translateY(-50%); padding: 1px 2px; background: #fffdf8; color: #287f83; font-weight: 900; }
+.home-events .mainline-segment-pending { border-style: dashed; background: var(--paper); color: var(--ink-soft); }
+.home-events .mainline-segment-pending .mainline-node { background: var(--ink-faint); box-shadow: none; }
 .home-events .rt-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .home-events .rt-name { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
 .home-events .rt-progress { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
@@ -914,6 +939,18 @@ nav.topnav {
       // 商路:入口 chip / 站点 / 上一站下一站播放退出 —— 面板是拷过来的,监听不会跟过来,这边代理
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
       if (!win || !win.__mapFilter) return;
+      const chainPanelView = e.target.closest('[data-chain-panel-view]');
+      if (chainPanelView && win.__mapFilter.setChainPanelView) {
+        win.__mapFilter.setChainPanelView(chainPanelView.dataset.chainPanelView);
+        syncHomeEvents();
+        return;
+      }
+      const mainlineChain = e.target.closest('[data-mainline-chain]');
+      if (mainlineChain && win.__mapFilter.openMainlineChain) {
+        win.__mapFilter.openMainlineChain(mainlineChain.dataset.mainlineChain);
+        syncHomeEvents();
+        return;
+      }
       const qs = e.target.closest('[data-quiz-start]');
       if (qs) { win.__mapFilter.startQuiz(qs.dataset.quizStart); setTimeout(syncHomeEvents, 140); return; }
       if (e.target.closest('[data-quiz-book]')) { win.__mapFilter.quizBook(); setTimeout(syncHomeEvents, 140); return; }
