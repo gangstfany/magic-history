@@ -2398,7 +2398,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         'Malacca 对通过 Strait of Malacca 的船只收费，用这笔钱建海军防海盗，1400 年代苏丹强到把国势扩入 Sumatra 与马来半岛南部 · AMSCO 明写 Malacca 的繁荣建立在贸易而非农业、采矿或制造之上 · Gujarat 充当东西之间的中介，关税收入数倍于某些欧洲国家的全部身家 · Mali 除黄金外几乎对进入西非的一切贸易课税，用税收买马匹与铁兵器再去控制产地 · 商人要求可比价的通货，各地由丝、锡锭、cowrie shells 转向金属货币的 money economy · Abdul Razzak 1442 年记 Calicut 商人卸货后既不设防也不查账，因为知道货不会被偷',
         'Mansa Musa 1324 年朝觐，携 100 峰骆驼、数千随从与沿途分发的黄金；归国后在 Timbuktu 兴建宗教学校、在各穆斯林贸易城建清真寺 · Timbuktu 成为世界闻名的伊斯兰学术中心，到 1500 年代书籍售价高于多数商品 · Indian Ocean 商人多因通婚而非传教或征服把伊斯兰带入南亚，子女随之在穆斯林传统中长大 · Swahili 由 Bantu 语与阿拉伯语混成，Urdu 以 Hindi 语法配阿拉伯语与波斯语词汇 · 伊斯兰学者把希腊经典译成阿拉伯语，救下 Aristotle 等人的著作，并带回印度数学与中国造纸术 · 造纸术 13 世纪由中国传入欧洲，火药与火器同样自中国外传',
         '蒙古征服把携带鼠疫的跳蚤自中国南部带至中亚，再入东南亚与欧洲，走的是既有的商路与军路 · AMSCO 明写人畜同宿的 caravanserai 可能助推了传播，因为牲口多半带着染疫的跳蚤 · 1347 年抵欧，1347–1351 年达峰，欧洲约三分之一人口死亡 · 1332–1347 年间约 2,500 万中国人与其他亚洲人死亡；1346 与 1349 年 Constantinople 被夺去约半城人口 · Kashgar 在遭游牧势力连番征服后衰落，1389–90 年被 Tamerlane 洗劫 · 同期 Great Zimbabwe 因过度放牧于 1400 年代末被弃，欧洲的毁林与滥垦造成水土流失，Little Ice Age（c.1300–c.1800）继续压低产量',
-        '1405 年 Yongle 遣穆斯林太监 Zheng He（1371–1433）首航，此后共七次，远至印尼、锡兰、阿拉伯、东非海岸与 Cape of Good Hope · 舰队鼎盛时逾 300 艘船、载 28,000 人，目的是彰显国威并接受朝贡，带回中国人第一次见到的长颈鹿 · 儒家批评者认为频繁的对外接触威胁农本社会秩序，也有人嫌开销太大 · Yongle 之子 Zhu Gaozhi 终止航行，劝阻国人出海，并把建造两桅以上船只定为可罚之罪 · 航行短期内清除了中国沿海与东南亚的海盗，停航后海盗立即卷土重来 · 货量增加迫使船越造越大，也倒逼航海知识与技术升级',
+        '1405 年 Yongle 遣穆斯林太监 Zheng He（1371–1433）首航，此后共七次，远至印尼、锡兰、阿拉伯与东非海岸 · 舰队鼎盛时逾 300 艘船、载 28,000 人，目的是彰显国威并接受朝贡，带回中国人第一次见到的长颈鹿 · 儒家批评者认为频繁的对外接触威胁农本社会秩序，也有人嫌开销太大 · Yongle 之子 Zhu Gaozhi 终止航行，劝阻国人出海，并把建造两桅以上船只定为可罚之罪 · 航行短期内清除了中国沿海与东南亚的海盗，停航后海盗立即卷土重来 · 货量增加迫使船越造越大，也倒逼航海知识与技术升级',
         '1350 年代 White Lotus Society 秘密串联，1368 年贫农出身的僧人 Zhu Yuanzhang 推翻 Yuan，建立 Ming Dynasty（1368–1644） · Kublai Khan 曾重建 Zhongdu 为 Dadu（今北京），以宗教宽容换取被压制群体的忠诚，却废科举、用外族，最终失去士绅支持 · 蒙古为全部征服地施行一套统一的国际法；AMSCO 明写蒙古衰落之后，欧亚各地的王国与国家继续或照抄了这套集权做法 · 蒙古的速度与突袭终结了西欧披甲骑士，攻城技术终结了城墙城市的时代；有人认为火炮就是中国火药、穆斯林喷火器与欧洲铸钟技术拼合而成的蒙古发明 · 1453 年 Constantinople 在 53 天围城后陷于 Ottomans · 中国依旧只认欧洲的金银，而欧洲对糖的需求日后成为美洲大规模奴役的关键因素'
       ],
       links: [
@@ -4590,6 +4590,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       setLearningView: view => showLearningView(view),
       setChainPanelView,
       openMainlineChain,
+      openChainBoundary,
       getLearningState: () => Object.freeze({
         view: activeLearningView,
         mapMode: activeMapMode,

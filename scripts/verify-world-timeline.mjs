@@ -132,6 +132,18 @@ async function verifyTimeline(page, port) {
   assert.ok(initialState.excludedPre1200Count > 0, 'pre-1200 source records must be explicitly excluded from Timeline');
   assert.equal(initialState.anchorlessRecordCount, 0, 'current AP World source data has no anchorless records');
   assert.equal(initialState.anchorlessSupported, false, 'API must document the current anchorless-data limitation');
+  const reviewedUnitAssignments = await page.evaluate(() => {
+    const visibleKeysFor = (unit) => {
+      window.__mapFilter.setPeriod(unit);
+      return [...window.getTimelineState().visibleEventKeys];
+    };
+    return { u1: visibleKeysFor('u1'), u2: visibleKeysFor('u2') };
+  });
+  assert.ok(reviewedUnitAssignments.u1.includes('world-event-1-0'), 'Song source 1:0 must remain assigned to Unit 1');
+  assert.ok(reviewedUnitAssignments.u1.includes('world-event-3-0'), 'Baghdad source 3:0 must remain assigned to Unit 1');
+  assert.ok(!reviewedUnitAssignments.u1.includes('world-event-23-4'), 'Black Death source 23:4 must leave Unit 1');
+  assert.ok(reviewedUnitAssignments.u2.includes('world-event-23-4'), 'Black Death source 23:4 must be assigned to Unit 2');
+  await page.evaluate(() => window.__mapFilter.setPeriod(''));
   // Unit 归属按与 1200-1450 的实质重叠判断,不按起始年份:一个始于 1185 的幕府、始于 960 的宋朝,
   // 主体都延续在课程窗口里。所以这里查的是事件的结束年,而不是 sortYear。
   assert.ok(initialState.visibleEvents.every((event) => event.endYear >= 1200), 'Timeline must exclude every event that ends before 1200');
@@ -1266,6 +1278,24 @@ async function verifyHomeLearningShell(page, port) {
     'homepage Unit 2 segment must return the mirrored panel to Current Unit content');
   assert.deepEqual(await trimmedTexts(page.locator('#home-events [data-chain-panel-view][aria-pressed="true"]')), ['当前单元'],
     'homepage Unit 2 segment must restore only the Current Unit panel control');
+
+  await page.locator('#home-events [data-chain-seam="to"] [data-chain-boundary]').click();
+  await page.waitForTimeout(180);
+  const mirroredOutgoingSeamState = await frame.locator('body').evaluate(() => ({
+    state: window.__mapFilter.getLearningState(),
+    period: window.__mapFilter.getState().period,
+    selectedPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+      .map(group => group.querySelector('text')?.textContent.trim()),
+  }));
+  assert.equal(mirroredOutgoingSeamState.period, 'u3', 'homepage Unit 2 seam must select Unit 3');
+  assert.equal(mirroredOutgoingSeamState.state.chainId, 'u23_empires',
+    'homepage Unit 2 seam must open the Unit 3 empires chain');
+  assert.equal(mirroredOutgoingSeamState.state.chainStep, 0,
+    'homepage Unit 2 seam must select the Unit 3 first ring');
+  assert.ok(mirroredOutgoingSeamState.selectedPins.includes('8'),
+    'homepage Unit 2 seam must synchronize the Unit 3 boundary anchor');
+  assert.match(await page.locator('#home-events [data-route-step].now').innerText(), /8.*Karakorum/is,
+    'homepage must refresh its mirrored panel after cross-Unit seam navigation');
 
   await page.locator('.map-card-head [data-learning-view="map"]').click();
   await page.locator('.map-card-head [data-learning-view="chain"]').click();

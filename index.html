@@ -951,6 +951,15 @@ nav.topnav {
         syncHomeEvents();
         return;
       }
+      const chainBoundary = e.target.closest('[data-chain-boundary]');
+      if (chainBoundary && win.__mapFilter.openChainBoundary) {
+        win.__mapFilter.openChainBoundary(
+          chainBoundary.dataset.chainBoundary,
+          chainBoundary.dataset.boundaryStep
+        );
+        syncHomeEvents();
+        return;
+      }
       const qs = e.target.closest('[data-quiz-start]');
       if (qs) { win.__mapFilter.startQuiz(qs.dataset.quizStart); setTimeout(syncHomeEvents, 140); return; }
       if (e.target.closest('[data-quiz-book]')) { win.__mapFilter.quizBook(); setTimeout(syncHomeEvents, 140); return; }
