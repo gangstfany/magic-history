@@ -177,6 +177,35 @@ h1 .en { color: var(--accent); }
    .home-events .rt-top。若将来这一页也给 .event-zone 设了高度和 overflow:auto,
    再把 position: sticky 加回来。 */
 .rt-top { padding: 0 0 11px; }
+.chain-panel-toggle { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.chain-panel-toggle button { flex: 1 1 112px; min-width: 0; min-height: 36px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-soft); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.chain-panel-toggle button:hover { border-color: var(--ink-soft); }
+.chain-panel-toggle button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: #fff; }
+.chain-panel-toggle button:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.course-mainline { padding: 16px 20px 20px; border-bottom: 1px solid var(--line); background: #fffdf8; }
+.course-mainline-head { margin: 0 0 13px; }
+.course-mainline-title { font-size: 17px; font-weight: 800; }
+.course-mainline-subtitle { margin: 5px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.55; }
+.course-mainline-sequence { display: flex; flex-direction: column; align-items: stretch; min-width: 0; }
+.mainline-segment { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; width: 100%; min-width: 0; padding: 12px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); color: var(--ink); font: inherit; text-align: left; }
+button.mainline-segment { cursor: pointer; }
+button.mainline-segment:hover { border-color: var(--ink-soft); background: #fffaf0; }
+button.mainline-segment:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.mainline-segment.active { border-color: #76539a; box-shadow: 0 0 0 1px rgba(118,83,154,.22); }
+.mainline-node { width: 11px; height: 11px; border-radius: 50%; background: #76539a; box-shadow: 0 0 0 4px rgba(118,83,154,.12); }
+.mainline-copy { min-width: 0; }
+.mainline-name { display: block; overflow-wrap: anywhere; font-size: 12.5px; font-weight: 800; line-height: 1.5; }
+.mainline-units { display: block; margin-top: 3px; color: var(--ink-soft); font-size: 11px; font-weight: 700; }
+.mainline-rings { color: var(--ink-soft); font-size: 11px; font-weight: 800; white-space: nowrap; }
+.mainline-bridge { position: relative; margin: 0 0 0 18px; padding: 10px 9px 10px 20px; border-left: 2px solid #287f83; color: var(--ink-soft); font-size: 11.5px; line-height: 1.55; overflow-wrap: anywhere; }
+.mainline-bridge::before { content: "↓"; position: absolute; left: -8px; top: 50%; transform: translateY(-50%); padding: 1px 2px; background: #fffdf8; color: #287f83; font-weight: 900; }
+.mainline-segment-pending { border-style: dashed; background: var(--surface-sunken); color: var(--ink-soft); }
+.mainline-segment-pending .mainline-node { background: var(--ink-faint); box-shadow: none; }
+@media (max-width: 720px) {
+  .course-mainline { padding: 14px; }
+  .chain-panel-toggle button { white-space: normal; }
+  .mainline-segment { padding: 11px; }
+}
 .rt-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .rt-name { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
 .rt-progress { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
@@ -2911,6 +2940,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const incomingSeam = chainSeamHTML(route, 'from');
     const outgoingSeam = chainSeamHTML(route, 'to');
     return `<div class="route-panel">
+      ${isChain ? chainPanelToggleHTML() : ''}
       <div class="rt-top">
         <div class="rt-head">
           <div class="rt-name">${route.name}</div>
@@ -3402,6 +3432,48 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const learningTabs = [...document.querySelectorAll('.learning-view-tab')];
   let activeLearningView = 'chain';
   let activeMapMode = 'events';
+  let activeChainPanel = 'unit';
+
+  function chainPanelToggleHTML() {
+    return `<div class="chain-panel-toggle" role="group" aria-label="因果链范围">`
+      + `<button type="button" data-chain-panel-view="unit" aria-pressed="${activeChainPanel === 'unit'}">当前单元</button>`
+      + `<button type="button" data-chain-panel-view="mainline" aria-pressed="${activeChainPanel === 'mainline'}">九单元主线</button>`
+      + `</div>`;
+  }
+
+  function renderCourseMainline() {
+    activeChainPanel = 'mainline';
+    stopAutoPlay();
+    const segments = getCourseMainline();
+    const currentUnit = document.getElementById('periodFilter')?.value || 'u1';
+    const sequence = segments.map(segment => {
+      if (segment.pending) {
+        const unitNumber = segment.entryUnit.slice(1);
+        return `<div class="mainline-segment mainline-segment-pending" data-mainline-pending>`
+          + `<span class="mainline-node" aria-hidden="true"></span>`
+          + `<span class="mainline-copy"><span class="mainline-name">Unit ${unitNumber}</span>`
+          + `<span class="mainline-units">待建</span></span></div>`;
+      }
+      const isActive = segment.units.includes(currentUnit);
+      const unitLabel = segment.units.length > 1
+        ? `Unit ${segment.units[0].slice(1)}→${segment.units[segment.units.length - 1].slice(1)}`
+        : `Unit ${segment.units[0].slice(1)}`;
+      return `<button type="button" class="mainline-segment${isActive ? ' active' : ''}" data-mainline-chain="${segment.id}"${isActive ? ' aria-current="true"' : ''}>`
+        + `<span class="mainline-node" aria-hidden="true"></span>`
+        + `<span class="mainline-copy"><span class="mainline-name">${segment.name}</span>`
+        + `<span class="mainline-units">${unitLabel}</span></span>`
+        + `<span class="mainline-rings">${segment.rings} 环</span></button>`
+        + `<div class="mainline-bridge" data-mainline-bridge>${segment.to.summary}</div>`;
+    }).join('');
+    eventEmpty.style.display = 'none';
+    eventPanel.innerHTML = `<div class="course-mainline" data-course-mainline>`
+      + `${chainPanelToggleHTML()}`
+      + `<div class="course-mainline-head"><div class="course-mainline-title">九单元主线</div>`
+      + `<p class="course-mainline-subtitle">沿因果交棒纵览课程主干，选择已建单元可回到第一环。</p></div>`
+      + `<div class="course-mainline-sequence">${sequence}</div></div>`;
+    eventPanel.classList.add('show');
+    eventZone.classList.remove('fit-content');
+  }
 
   // 本单元的全部链,主干链在前、补充链在后。归属写在每条链的 units 上,不再硬编码 id ——
   // 之前 chainForUnit 里写死 'u1_tapestry',换链时对不上就静默落到空态,踩过一次。
@@ -3497,6 +3569,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function showCurrentUnitChain() {
+    activeChainPanel = 'unit';
     const unitId = document.getElementById('periodFilter')?.value || 'u1';
     const chainId = chainForUnit(unitId);
     if (chainId) enterRouteMode(chainId);
@@ -3505,7 +3578,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       const unit = (PERIODS_REF || []).find(period => period.id === unitId);
       const unitLabel = unit?.label || `Unit ${unitId.slice(1)}`;
       eventEmpty.style.display = 'none';
-      eventPanel.innerHTML = `<div class="quiz-panel chain-pending"><div class="qz-head">`
+      eventPanel.innerHTML = `<div class="quiz-panel chain-pending">${chainPanelToggleHTML()}<div class="qz-head">`
         + `<div class="qz-title">${unitLabel}</div></div>`
         + `<p class="qz-stem">本单元的因果链正在整理，待完善后会在这里呈现。</p></div>`;
       eventPanel.classList.remove('show');
@@ -3519,6 +3592,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const chain = chainById.get(chainId);
     if (!chain || chain.kind !== 'chain' || chain.tier !== 'main' || !chain.entryUnit) return;
     activeLearningView = 'chain';
+    activeChainPanel = 'unit';
     mapStudyView.hidden = false;
     dismissFirstClickHint();
     eventZone.setAttribute('aria-label', 'Unit 因果链');
@@ -3552,6 +3626,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     activeLearningView = view;
     mapStudyView.hidden = false;
     if (view === 'chain') {
+      activeChainPanel = 'unit';
       dismissFirstClickHint();
       eventZone.setAttribute('aria-label', 'Unit 因果链');
       showCurrentUnitChain();
@@ -3567,6 +3642,18 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   // ↓ 商路模式里这几句要立即执行,必须排在上面三个 const 之后(它们是 const,提前引用会 TDZ 报错)
   // 行程面板的按钮:事件面板是 innerHTML 重铺的,所以走事件委托
   eventPanel.addEventListener('click', e => {
+    const chainPanelView = e.target.closest('[data-chain-panel-view]');
+    if (chainPanelView) {
+      if (chainPanelView.dataset.chainPanelView === 'mainline') renderCourseMainline();
+      else showCurrentUnitChain();
+      return;
+    }
+    const mainlineChain = e.target.closest('[data-mainline-chain]');
+    if (mainlineChain) {
+      activeChainPanel = 'unit';
+      openChainBoundary(mainlineChain.dataset.mainlineChain, 'first');
+      return;
+    }
     const boundary = e.target.closest('[data-chain-boundary]');
     if (boundary) {
       openChainBoundary(boundary.dataset.chainBoundary, boundary.dataset.boundaryStep);
@@ -4375,6 +4462,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       getLearningState: () => Object.freeze({
         view: activeLearningView,
         mapMode: activeMapMode,
+        chainPanel: activeChainPanel,
         label: eventZone.getAttribute('aria-label') || '',
         chainId: routeMode?.route?.kind === 'chain' ? routeMode.route.id : null,
         chainStep: routeMode?.route?.kind === 'chain' ? routeMode.i : null,

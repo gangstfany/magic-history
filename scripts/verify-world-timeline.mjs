@@ -366,6 +366,75 @@ async function verifyLearningShell(page, port) {
   await expectVisible(page.locator('#worldTimelineDock'), 'Timeline Dock must be visible alongside the initial causal chain');
   await expectVisible(page.locator('#eventPanel .rt-stops-chain'), 'Unit 1 causal chain must be visible immediately');
 
+  const chainPanelControls = page.locator('#eventPanel [data-chain-panel-view]');
+  assert.equal(await chainPanelControls.count(), 2,
+    'causal-chain panels must expose exactly two Unit/course-mainline controls');
+  assert.deepEqual(await trimmedTexts(chainPanelControls), ['当前单元', '九单元主线'],
+    'causal-chain panel controls must use the approved two-state labels');
+  assert.equal(await page.locator('#eventPanel [data-chain-panel-view="unit"]').getAttribute('aria-pressed'), 'true',
+    'Current Unit must be pressed by default');
+  assert.equal(await page.locator('#eventPanel [data-chain-panel-view="mainline"]').getAttribute('aria-pressed'), 'false',
+    'course mainline must be released by default');
+
+  await page.evaluate(() => window.__mapFilter.setPeriod('u4'));
+  await page.locator('#eventPanel [data-chain-panel-view="mainline"]').click();
+  await expectVisible(page.locator('#eventPanel [data-course-mainline]'),
+    'course mainline must render inside the existing event panel');
+  assert.equal((await page.evaluate(() => window.__mapFilter.getState())).period, 'u4',
+    'opening the course mainline must preserve the active Unit');
+  await expectVisible(page.locator('#mapStudyView'), 'opening the course mainline must preserve the map');
+  assert.deepEqual(await trimmedTexts(page.locator('#eventPanel [data-chain-panel-view][aria-pressed="true"]')), ['九单元主线'],
+    'opening the course mainline must press only its panel control');
+
+  const implementedMainline = page.locator('#eventPanel [data-mainline-chain]');
+  assert.deepEqual(await implementedMainline.evaluateAll(nodes => nodes.map(node => node.dataset.mainlineChain)),
+    ['u1_main', 'u23_empires', 'u4_atlantic'],
+    'course mainline must render implemented chains in canonical order');
+  const implementedMainlineText = await implementedMainline.allTextContents();
+  courseMainline.filter(segment => !segment.pending).forEach((segment, index) => {
+    assert.ok(implementedMainlineText[index].includes(segment.name),
+      `${segment.id} mainline card must show its canonical name`);
+    assert.match(implementedMainlineText[index], new RegExp(`${segment.rings}\\s*环`),
+      `${segment.id} mainline card must show its canonical ring count`);
+  });
+  const pendingMainline = page.locator('#eventPanel [data-mainline-pending]');
+  assert.match(await pendingMainline.innerText(), /Unit\s*5/i,
+    'course mainline must expose the pending Unit 5 tail');
+  assert.match(await pendingMainline.innerText(), /待建/,
+    'course mainline pending tail must use the approved pending label');
+  assert.equal(await pendingMainline.locator('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])').count(), 0,
+    'course mainline pending tail must contain no focusable descendants');
+  assert.deepEqual(await trimmedTexts(page.locator('#eventPanel [data-mainline-bridge]')),
+    courseMainline.filter(segment => !segment.pending).map(segment => segment.to.summary),
+    'each course-mainline bridge must derive from the preceding segment handoff summary');
+  assert.equal(await page.locator('#eventPanel [data-course-mainline] [data-mainline-chain*="_sub_"]').count(), 0,
+    'supplementary chain IDs must never appear in the course mainline');
+
+  const clickMainlineSegment = async (id, expectedPeriod, expectedPin, expectedRings) => {
+    await page.locator(`#eventPanel [data-mainline-chain="${id}"]`).click();
+    const state = await page.evaluate(() => ({
+      learning: window.__mapFilter.getLearningState(),
+      period: window.__mapFilter.getState().period,
+      selectedPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+        .map(group => group.querySelector('text')?.textContent.trim()),
+    }));
+    assert.equal(state.period, expectedPeriod, `${id} must select its entry Unit`);
+    assert.equal(state.learning.chainPanel, 'unit', `${id} must restore the Current Unit panel`);
+    assert.equal(state.learning.chainId, id, `${id} must open its canonical chain`);
+    assert.equal(state.learning.chainStep, 0, `${id} must open its first ring`);
+    assert.ok(state.selectedPins.includes(String(expectedPin)), `${id} must select first anchor ${expectedPin}`);
+    assert.equal(await page.locator('#eventPanel [data-route-step]').count(), expectedRings,
+      `${id} must preserve its canonical ring count`);
+    assert.deepEqual(await trimmedTexts(page.locator('#eventPanel [data-chain-panel-view][aria-pressed="true"]')), ['当前单元'],
+      `${id} must restore only the Current Unit control`);
+  };
+
+  await clickMainlineSegment('u23_empires', 'u2', 8, 10);
+  await page.locator('#eventPanel [data-chain-panel-view="mainline"]').click();
+  await clickMainlineSegment('u1_main', 'u1', 7, 8);
+  await page.locator('#eventPanel [data-chain-panel-view="mainline"]').click();
+  await clickMainlineSegment('u4_atlantic', 'u4', 42, 7);
+
   await page.evaluate(() => window.__mapFilter.setPeriod('u2'));
   const unit23Seams = page.locator('#eventPanel [data-chain-seam]');
   assert.equal(await unit23Seams.count(), 2,
@@ -943,6 +1012,35 @@ async function verifyLearningShell(page, port) {
     'responsive verification must finish with only Chain pressed');
   await expectVisible(page.locator('#eventPanel .rt-stops-chain'),
     'responsive verification must finish with Chain content visible');
+  const narrowToggleBoxes = await page.locator('#eventPanel [data-chain-panel-view]').evaluateAll(nodes =>
+    nodes.map(node => {
+      const box = node.getBoundingClientRect();
+      return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
+    }));
+  assert.equal(narrowToggleBoxes.length, 2, 'responsive Chain panel must retain both panel controls');
+  assert.ok(narrowToggleBoxes[0].right <= narrowToggleBoxes[1].left || narrowToggleBoxes[0].bottom <= narrowToggleBoxes[1].top,
+    'at 700x900, causal-chain panel controls must not overlap');
+  await page.locator('#eventPanel [data-chain-panel-view="mainline"]').click();
+  await expectVisible(page.locator('#eventPanel [data-course-mainline]'),
+    'at 700x900, course mainline must render in the stacked right panel');
+  const narrowMainlineLayout = await page.evaluate(() => {
+    const map = document.querySelector('#mapStudyView').getBoundingClientRect();
+    const panel = document.querySelector('#eventZone').getBoundingClientRect();
+    return {
+      stacked: panel.y >= map.y + map.height - 1,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      label: document.querySelector('#eventZone').getAttribute('aria-label'),
+      primaryPressed: [...document.querySelectorAll('.learning-view-tab[aria-pressed="true"]')].map(node => node.textContent.trim()),
+    };
+  });
+  assert.equal(narrowMainlineLayout.stacked, true,
+    'at 700x900, course mainline panel must remain stacked below the map');
+  assert.ok(narrowMainlineLayout.overflow <= 0,
+    `at 700x900, course mainline must not create horizontal overflow; found ${narrowMainlineLayout.overflow}px`);
+  assert.equal(narrowMainlineLayout.label, 'Unit 因果链',
+    'at 700x900, course mainline must retain the causal-chain contextual label');
+  assert.deepEqual(narrowMainlineLayout.primaryPressed, ['因果链'],
+    'at 700x900, course mainline must keep only Chain pressed as the primary view');
 }
 
 async function verifyHomeLearningShell(page, port) {
