@@ -128,7 +128,9 @@ async function verifyTimeline(page, port) {
   assert.ok(initialState.excludedPre1200Count > 0, 'pre-1200 source records must be explicitly excluded from Timeline');
   assert.equal(initialState.anchorlessRecordCount, 0, 'current AP World source data has no anchorless records');
   assert.equal(initialState.anchorlessSupported, false, 'API must document the current anchorless-data limitation');
-  assert.ok(initialState.visibleEvents.every((event) => event.sortYear >= 1200), 'Timeline must exclude every pre-1200 event');
+  // Unit 归属按与 1200-1450 的实质重叠判断,不按起始年份:一个始于 1185 的幕府、始于 960 的宋朝,
+  // 主体都延续在课程窗口里。所以这里查的是事件的结束年,而不是 sortYear。
+  assert.ok(initialState.visibleEvents.every((event) => event.endYear >= 1200), 'Timeline must exclude every event that ends before 1200');
   assert.ok(initialState.visibleEvents.every((event) => /[A-Za-z]/.test(event.titleEn)), 'every explicit English title must contain Latin text');
   assert.ok(initialState.visibleEvents.every((event) => /[\u3400-\u9fff]/.test(event.titleZh)), 'every explicit Chinese title must contain Chinese text');
   const multiRegionEvent = initialState.visibleEvents.find((event) => new Set(event.anchors.map((anchor) => anchor.region)).size > 1);
