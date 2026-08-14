@@ -1,7 +1,9 @@
 # APWH Cross-Unit Mainline Design
 
-Date: 2026-08-14  
-Branch: `feature/apwh-cross-unit-mainline`  
+Date: 2026-08-14
+
+Branch: `feature/apwh-cross-unit-mainline`
+
 Base: `61bcf28`
 
 ## Goal
