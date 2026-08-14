@@ -334,6 +334,26 @@ async function verifyTimeline(page, port) {
 async function verifyLearningShell(page, port) {
   await page.goto(`http://127.0.0.1:${port}/world-map.html`);
   await page.waitForFunction(() => window.__mapFilter);
+  const courseMainline = await page.evaluate(() => window.__mapFilter.getCourseMainline());
+  assert.deepEqual(courseMainline.map(segment => ({
+    id: segment.id,
+    units: segment.units,
+    entryUnit: segment.entryUnit,
+    from: segment.from,
+    toUnit: segment.to?.unit ?? null,
+    toChain: segment.to?.chain ?? null,
+    pending: segment.pending,
+  })), [
+    { id: 'u1_main', units: ['u1'], entryUnit: 'u1', from: null, toUnit: 'u2', toChain: 'u23_empires', pending: false },
+    { id: 'u23_empires', units: ['u2', 'u3'], entryUnit: 'u2', from: 'u1_main', toUnit: 'u4', toChain: 'u4_atlantic', pending: false },
+    { id: 'u4_atlantic', units: ['u4'], entryUnit: 'u4', from: 'u23_empires', toUnit: 'u5', toChain: null, pending: false },
+    { id: null, units: ['u5'], entryUnit: 'u5', from: 'u4_atlantic', toUnit: null, toChain: null, pending: true },
+  ], 'course mainline must expose the approved handoffs and pending Unit 5 tail');
+  assert.ok(courseMainline.filter(segment => !segment.pending)
+    .every(segment => segment.tier === 'main' && segment.to?.summary?.trim()),
+  'implemented course-mainline segments must be main-tier chains with handoff prose');
+  assert.equal(courseMainline.some(segment => segment.id?.includes('_sub_')), false,
+    'supplementary chains must not join the course mainline');
   assert.equal(await page.locator('.learning-view-tab').count(), 3, 'header must expose exactly three learning entries');
   assert.deepEqual(await page.locator('.learning-view-tab').allTextContents(), ['因果链', '地图', '练习']);
   assert.equal((await page.locator('#mapToolbar .mt-field').first().innerText()).split('\n')[0].trim(), 'Unit / 单元');

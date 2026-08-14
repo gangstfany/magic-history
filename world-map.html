@@ -2317,6 +2317,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   // (Link 2 的欧洲/伊斯兰双崩溃、Link 4 的奥斯曼/莫卧儿双实例),分开走地图才点得亮。
   const CHAINS = [
     { id: 'u1_main', kind: 'chain', units: ['u1'], tier: 'main', chip: 'Unit 1 · Surplus → Exchange',
+      entryUnit: 'u1', from: null,
+      to: { unit: 'u2', chain: 'u23_empires', summary: '节点与制度就位 → 蒙古的统一才可能把交换量推上去' },
       name: 'Unit 1 主干链 · 余粮如何一路变成跨区域交换的前提',
       blurb: 'Unit 1 表面是六个地区并排介绍,实则六地在同一段时间跑完同一条路:集约农业挤出可被拿走的余粮,才养得起脱产官僚;官僚一多就要用信仰保证忠诚;合法性稳住后汲取才敢定额化;定额化的税与雇工把货币推进乡村,生产越过自给线,城市随之膨胀成稳定的需求端。要回答的问题是:为什么跨区域贸易网络的大扩张发生在 1200 年之后。',
       exam: 'Topic 1.7 比较型 LEQ 的因果骨架,也可整条压缩成任何 Unit 1 LEQ 的 contextualization;2027 起 DBQ 文件跨 1450–2001,Unit 1 主要落在 contextualization 一两句里,用最后一环即可。最常见失分写法:"China had Champa rice, and then the population grew, and then cities grew, and then trade expanded." 四个 and then 只证明先后顺序;改成 "Champa rice ripened fast enough for two harvests a year, which left a taxable surplus, which is what paid the salaries of the expanded bureaucracy." 判断标准:把 which/because 换成 then 后句子还成立,这句就没解释任何东西。',
@@ -2339,6 +2341,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '长距离交易最怕的不是路远,是陌生人赖账。共享的 sharia、阿拉伯语和穆斯林商人网络让契约在异乡也能执行,风险从「赌人品」降成「讲规矩」,跨区域采买才敢成规模地做。',
               '交棒 Unit 2:蒙古之所以能把中亚到中欧压成一个治安区就带来交换的暴涨,是因为可运的货、接单的城市和追债的规矩在 1200 年前后已由本单元这条链造好。缺了任何一样,草原上的统一只会换来空荡的道路 —— Unit 2 的跨区域网络扩张,扩张的正是这里造出的节点与规则。'] },
     { id: 'u23_empires', kind: 'chain', units: ['u2','u3'], tier: 'main', chip: 'Unit 2→3 · Empires from Ruins',
+      entryUnit: 'u2', from: 'u1_main',
+      to: { unit: 'u4', chain: 'u4_atlantic', summary: '帝国秩序稳定 → 奥斯曼坐收陆路过路费 → 欧洲商人被迫改走海路' },
       name: 'Unit 2→3 主干链 · 帝国如何从废墟中崛起',
       blurb: 'Unit 2 和 Unit 3 不是两章,是一条链:贸易网络的连通性同时送出财富、技术和病菌 —— 财富制造竞争,病菌瓦解旧秩序,技术武装了新崛起的军事集团。c.1450 之后那几个超大帝国不是偶然同时出现的。',
       exam: '这条链是 DBQ Contextualization 的通用素材(任何 c.1450 之后的帝国或航海题,都能用"c.1200–1450 跨区域贸易网络的扩张创造了……的物质与技术条件"开场)。最常见的失分写法是 "In Unit 2 trade expanded, then in Unit 3 empires emerged" —— then 不是 because,序列不等于因果。要说出三个条件:技术(火药)、真空(旧帝国崩溃)、利益(控制商路的财政动力),缺一个都不算完整 Causation。',
@@ -2365,6 +2369,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '意识形态是三套工具里最锋利的一件,也最容易反噬:Ottoman 以 Sunni 哈里发立身、Safavid 以 Shia 立国,合法性之争就此凝固成地缘断层',
               '帝国秩序稳定 → 奥斯曼坐收丝路西端的过路费 → 欧洲商人被迫改走海路 → Unit 4 的大航海从这里出发;白银则先一步把两条链接上了'] },
     { id: 'u4_atlantic', kind: 'chain', units: ['u4'], tier: 'main', chip: 'Unit 4 · Atlantic System',
+      entryUnit: 'u4', from: 'u23_empires',
+      to: { unit: 'u5', summary: '殖民重构的等级秩序 → 革命所要反抗的那个东西' },
       name: 'Unit 4 主干链 · 从大航海到大西洋体系',
       blurb: 'Unit 4 回答一个问题:欧洲如何在 200 年内,从陆基帝国体系的边缘变成全球贸易网络的中心?答案是一条由技术、国家权力、生态交换和劳动力系统串起来的连续因果链。',
       exam: '这条链是 AP 最爱考的因果序列。写 LEQ 时,"人口崩溃→劳动力真空→转向非洲"这一环不能跳 —— 跳了就成了"欧洲人because贪婪所以买奴隶",拿不到因果分。',
@@ -2455,6 +2461,99 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
               '城市规模由周边土地的承载力决定,人与牲畜一旦长期超过这个上限,土地退化就把粮食供给压到城市规模之下 —— 此时迁走比治理便宜,于是首都被整座放弃。而当收入端本身也在缩水时,连维持内部这套班子都成了压垮性的开支。',
               ''] },
   ];
+
+  const chainById = new Map(CHAINS.map(chain => [chain.id, chain]));
+
+  function getCourseMainline() {
+    const mainChains = CHAINS.filter(chain => chain.tier === 'main');
+    const mainIds = new Set(mainChains.map(chain => chain.id));
+
+    mainChains.forEach(chain => {
+      if (chain.from && !chainById.has(chain.from)) {
+        throw new Error(`Course mainline chain "${chain.id}" has unknown predecessor "${chain.from}"`);
+      }
+      if (chain.from && !mainIds.has(chain.from)) {
+        throw new Error(`Course mainline chain "${chain.id}" has non-main predecessor "${chain.from}"`);
+      }
+      if (!chain.to?.chain) return;
+      const successor = chainById.get(chain.to.chain);
+      if (!successor) {
+        throw new Error(`Course mainline chain "${chain.id}" has unknown successor "${chain.to.chain}"`);
+      }
+      if (successor.tier !== 'main') {
+        throw new Error(`Course mainline chain "${chain.id}" has non-main successor "${chain.to.chain}"`);
+      }
+      if (successor.from !== chain.id) {
+        throw new Error(`Course mainline successor "${successor.id}" does not reciprocate predecessor "${chain.id}"`);
+      }
+    });
+
+    mainChains.forEach(chain => {
+      if (!chain.from) return;
+      const predecessor = chainById.get(chain.from);
+      if (predecessor.to?.chain !== chain.id) {
+        throw new Error(`Course mainline predecessor "${predecessor.id}" does not point to successor "${chain.id}"`);
+      }
+    });
+
+    const visitState = new Map();
+    function visit(chain) {
+      if (visitState.get(chain.id) === 'visiting') {
+        throw new Error(`Course mainline contains a cycle at "${chain.id}"`);
+      }
+      if (visitState.get(chain.id) === 'visited') return;
+      visitState.set(chain.id, 'visiting');
+      if (chain.to?.chain) visit(chainById.get(chain.to.chain));
+      visitState.set(chain.id, 'visited');
+    }
+    mainChains.forEach(visit);
+
+    const starts = mainChains.filter(chain => !chain.from);
+    if (starts.length !== 1) {
+      throw new Error(`Course mainline must have exactly one start; found ${starts.length}`);
+    }
+
+    const ordered = [];
+    const seen = new Set();
+    let current = starts[0];
+    while (current && !seen.has(current.id)) {
+      seen.add(current.id);
+      ordered.push(Object.freeze({
+        id: current.id,
+        name: current.name,
+        chip: current.chip,
+        tier: current.tier,
+        units: Object.freeze(current.units.slice()),
+        entryUnit: current.entryUnit,
+        from: current.from,
+        to: current.to ? Object.freeze({ ...current.to }) : null,
+        rings: current.stops.length,
+        pending: false,
+      }));
+      current = current.to?.chain ? chainById.get(current.to.chain) : null;
+    }
+    if (seen.size !== mainChains.length) {
+      const disconnected = mainChains.filter(chain => !seen.has(chain.id)).map(chain => chain.id);
+      throw new Error(`Course mainline is disconnected; unreachable chains: ${disconnected.join(', ')}`);
+    }
+
+    const finalChain = chainById.get(ordered[ordered.length - 1].id);
+    if (finalChain.to && !finalChain.to.chain) {
+      ordered.push(Object.freeze({
+        id: null,
+        name: null,
+        chip: null,
+        tier: null,
+        units: Object.freeze([finalChain.to.unit]),
+        entryUnit: finalChain.to.unit,
+        from: finalChain.id,
+        to: null,
+        rings: 0,
+        pending: true,
+      }));
+    }
+    return Object.freeze(ordered);
+  }
 
   // 入口药丸上不重复"主干链"三个字(选单标题已经写着"因果链"),但单元号要留 —— 链条多起来之后
   // 学生是按单元找链的。首页那份清单是把这里的选单 innerHTML 拷过去的,所以只有这一处真源。
@@ -4181,7 +4280,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       refresh: () => apply(),
       // 商路模式:首页据此建入口、并把行程面板镜像过去
       getRoutes: () => ROUTES.map(r => ({ id: r.id, name: r.name, color: r.color, stops: r.stops.length })),
-      getChains: () => CHAINS.map(c => ({ id: c.id, name: c.name, stops: c.stops.length })),
+      getChains: () => CHAINS.map(c => ({
+        id: c.id, name: c.name, stops: c.stops.length,
+        entryUnit: c.entryUnit, from: c.from, to: c.to ? { ...c.to } : null,
+      })),
+      getCourseMainline,
       enterRoute: id => enterRouteMode(id),
       exitRoute: () => exitRouteMode(),
       routeStep: i => goToStop(i),
