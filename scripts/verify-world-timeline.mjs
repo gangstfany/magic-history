@@ -365,6 +365,74 @@ async function verifyLearningShell(page, port) {
   await expectVisible(page.locator('#mapStudyView'), 'map must be visible alongside the initial causal chain');
   await expectVisible(page.locator('#worldTimelineDock'), 'Timeline Dock must be visible alongside the initial causal chain');
   await expectVisible(page.locator('#eventPanel .rt-stops-chain'), 'Unit 1 causal chain must be visible immediately');
+
+  await page.evaluate(() => window.__mapFilter.setPeriod('u2'));
+  const unit23Seams = page.locator('#eventPanel [data-chain-seam]');
+  assert.equal(await unit23Seams.count(), 2,
+    'Unit 2→3 main chain must render exactly one incoming and one outgoing cross-unit seam');
+  assert.match(await page.locator('#eventPanel [data-chain-seam="from"]').innerText(), /承自\s*UNIT\s*1/i,
+    'Unit 2→3 incoming seam must identify Unit 1');
+  assert.match(await page.locator('#eventPanel [data-chain-seam="to"]').innerText(), /交棒\s*UNIT\s*4/i,
+    'Unit 2→3 outgoing seam must identify Unit 4');
+  assert.equal(await page.locator('#eventPanel [data-route-step]').count(), 10,
+    'cross-unit seams must not change the Unit 2→3 ring count');
+
+  await page.evaluate(() => window.__mapFilter.enterRoute('u1_sub_syncretism'));
+  assert.equal(await page.locator('#eventPanel [data-chain-seam]').count(), 0,
+    'supplementary chains must not render cross-unit seams');
+
+  await page.evaluate(() => window.__mapFilter.enterRoute('u23_empires'));
+  await page.locator('#eventPanel [data-chain-seam="from"] [data-chain-boundary]').click();
+  const incomingBoundaryState = await page.evaluate(() => ({
+    learning: window.__mapFilter.getLearningState(),
+    period: window.__mapFilter.getState().period,
+    selectedPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+      .map(group => group.querySelector('text')?.textContent.trim()),
+  }));
+  assert.equal(incomingBoundaryState.period, 'u1',
+    'incoming seam must select predecessor Unit 1 through the canonical Unit filter');
+  assert.equal(incomingBoundaryState.learning.view, 'chain',
+    'incoming seam must keep the Chain learning view active');
+  assert.equal(incomingBoundaryState.learning.chainId, 'u1_main',
+    'incoming seam must open the Unit 1 main chain');
+  assert.equal(incomingBoundaryState.learning.chainStep, 7,
+    'incoming seam must select the predecessor final ring');
+  assert.ok(incomingBoundaryState.selectedPins.includes('8'),
+    'incoming seam must synchronize the selected map anchor to pin 8');
+  assert.equal(await page.locator('#eventPanel [data-route-step]').count(), 8,
+    'incoming navigation must preserve the Unit 1 chain ring count');
+  assert.equal((await page.locator('#eventPanel [data-route-step].now .rt-num').innerText()).trim(), '8',
+    'incoming navigation must select boundary pin 8');
+  assert.match(await page.locator('#eventPanel [data-route-step].now').innerText(), /Karakorum/i,
+    'incoming navigation must select the Karakorum boundary ring');
+
+  await page.evaluate(() => window.__mapFilter.setPeriod('u2'));
+  await page.locator('#eventPanel [data-chain-seam="to"] [data-chain-boundary]').click();
+  const outgoingBoundaryState = await page.evaluate(() => ({
+    learning: window.__mapFilter.getLearningState(),
+    period: window.__mapFilter.getState().period,
+    selectedPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+      .map(group => group.querySelector('text')?.textContent.trim()),
+  }));
+  assert.equal(outgoingBoundaryState.period, 'u4',
+    'outgoing seam must select successor Unit 4 through the canonical Unit filter');
+  assert.equal(outgoingBoundaryState.learning.chainId, 'u4_atlantic',
+    'outgoing seam must open the Unit 4 Atlantic chain');
+  assert.equal(outgoingBoundaryState.learning.chainStep, 0,
+    'outgoing seam must select the successor first ring');
+  assert.ok(outgoingBoundaryState.selectedPins.includes('42'),
+    'outgoing seam must synchronize the selected map anchor to pin 42');
+  assert.equal(await page.locator('#eventPanel [data-route-step]').count(), 7,
+    'outgoing navigation must preserve the Unit 4 chain ring count');
+  assert.match(await page.locator('#eventPanel [data-route-step].now').innerText(), /42.*Lisbon/is,
+    'outgoing navigation must select Unit 4 first boundary pin 42 at Lisbon');
+  const pendingSeam = page.locator('#eventPanel [data-chain-seam="to"]');
+  assert.match(await pendingSeam.innerText(), /交棒\s*UNIT\s*5/i,
+    'Unit 4 outgoing seam must visibly identify pending Unit 5');
+  assert.equal(await pendingSeam.locator('[data-chain-boundary]').count(), 0,
+    'pending Unit 5 seam must not expose an enabled boundary action');
+
+  await page.evaluate(() => window.__mapFilter.setPeriod('u1'));
   const initialChainPin = await page.locator('#eventPanel [data-route-step].now .rt-num').innerText();
   await page.evaluate((pin) => {
     const group = [...document.querySelectorAll('.pin-group')]

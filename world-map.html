@@ -221,7 +221,20 @@ h1 .en { color: var(--accent); }
 
 .rt-stop .rt-sub { margin-left: 7px; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
 .rt-link { display: flex; gap: 8px; padding: 7px 0 7px 13px; margin: 2px 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
-.rt-arrow { flex: 0 0 auto; color: var(--ink); font-weight: 800; }
+.rt-arrow { flex: 0 0 auto; color: #76539a; font-weight: 800; }
+.rt-seam { margin: 12px 0 0; padding: 11px 13px; border-left: 3px solid #287f83; border-radius: 0 8px 8px 0; background: rgba(40,127,131,0.08); color: var(--ink); }
+.rt-seam + .rt-stops { margin-top: 10px; }
+.rt-stops + .rt-seam { margin-top: 12px; }
+.rt-seam-label { color: #287f83; font-size: 11px; font-weight: 800; letter-spacing: .055em; text-transform: uppercase; }
+.rt-seam-copy { margin: 5px 0 0; font-size: 12px; line-height: 1.65; color: var(--ink-soft); overflow-wrap: anywhere; }
+.rt-seam-action { display: inline-flex; align-items: center; min-height: 34px; margin: 8px 0 0; padding: 0 11px; border: 1px solid rgba(40,127,131,0.45); border-radius: 8px; background: rgba(255,255,255,0.62); color: #287f83; font: inherit; font-size: 12px; font-weight: 800; line-height: 1.35; text-align: left; white-space: normal; cursor: pointer; }
+.rt-seam-action:hover { border-color: #287f83; background: rgba(255,255,255,0.88); }
+.rt-seam-action:focus-visible { outline: 2px solid #287f83; outline-offset: 2px; }
+.rt-seam-pending { display: inline-block; margin: 7px 0 0; color: #287f83; font-size: 11.5px; font-weight: 700; }
+@media (max-width: 720px) {
+  .rt-seam { padding: 10px 11px; }
+  .rt-seam-action { width: 100%; justify-content: center; }
+}
 .rt-evidence { margin: 11px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
 .rt-evidence span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(43,33,24,0.09); color: var(--ink); font-size: 11px; font-weight: 800; }
 .chain-chip .rc-dot { box-shadow: 0 0 0 3px rgba(43,33,24,0.10); }
@@ -2700,7 +2713,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     clearGlowTimers();
   }
   // 筛选器的挂起/恢复由下面的 initSearchFilter 赋值(它在闭包里,外面拿不到内部状态)
-  let suspendFilters = null, restoreFilters = null, applyFiltersToContext = null;
+  let suspendFilters = null, restoreFilters = null, applyFiltersToContext = null, setPeriodFilter = null;
   let currentEventPass = null;   // 同上:出题时用它拿"当前筛选下的题库"
   let onRegionChange = null, filterIsActive = null;   // 地区现在是筛选的一个维度,两边要互相知道
   let PERIODS_REF = null, inPeriodRef = null, CATS_REF = null;   // 时期/主题定义都在那个闭包里,出题要用
@@ -2771,7 +2784,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     moveVehicle(v, from, to, 850);
   }
 
-  function goToStop(i) {
+  function goToStop(i, syncChainAnchor = false) {
     if (!routeMode) return;
     const { route } = routeMode;
     routeMode.i = Math.max(0, Math.min(i, route.stops.length - 1));
@@ -2787,7 +2800,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     placeVehicleAt(route, num);
     if (route.kind === 'chain') {
       renderChainItinerary();
-      selectTimelineByPin(num, true);
+      if (!selectTimelineByPin(num, true) && syncChainAnchor) selectChainMapAnchor(num);
     } else {
       renderEventContent(num, pinBadgeColor(num));
       eventPanel.insertAdjacentHTML('afterbegin', itineraryHTML());
@@ -2894,6 +2907,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         + `<span class="rt-dot"></span><span class="rt-num">${num}</span>`
         + `<span class="rt-city">${label}</span></button>` + conn;
     }).join('');
+    const incomingSeam = chainSeamHTML(route, 'from');
+    const outgoingSeam = chainSeamHTML(route, 'to');
     return `<div class="route-panel">
       <div class="rt-top">
         <div class="rt-head">
@@ -2904,7 +2919,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       </div>
       <p class="rt-blurb">${route.blurb}</p>
       <p class="rt-exam"><span>考点</span>${route.exam}</p>
+      ${incomingSeam}
       <div class="rt-stops${isChain ? ' rt-stops-chain' : ''}">${steps}</div>
+      ${outgoingSeam}
       ${isChain && route.evidence && route.evidence[i] ? `<p class="rt-evidence"><span>核心证据</span>${route.evidence[i]}</p>` : ''}
       <div class="rt-ctrl">
         <button type="button" class="rt-btn" data-route-action="prev" ${i <= 0 ? 'disabled' : ''}>← 上一站</button>
@@ -2913,6 +2930,28 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         <button type="button" class="rt-btn ghost" data-route-action="exit">${isChain ? '退出因果链' : '退出商路'}</button>
       </div>
     </div>`;
+  }
+
+  function chainSeamHTML(route, direction) {
+    if (route.kind !== 'chain' || route.tier === 'sub') return '';
+    if (direction === 'from') {
+      const predecessor = route.from ? chainById.get(route.from) : null;
+      if (!predecessor || predecessor.tier !== 'main' || !predecessor.to?.summary) return '';
+      const unit = predecessor.units[predecessor.units.length - 1];
+      return `<aside class="rt-seam" data-chain-seam="from">`
+        + `<div class="rt-seam-label">承自 UNIT ${unit.slice(1)}</div>`
+        + `<p class="rt-seam-copy">${predecessor.to.summary}</p>`
+        + `<button type="button" class="rt-seam-action" data-chain-boundary="${predecessor.id}" data-boundary-step="last">回看 Unit ${unit.slice(1)} 收束环 ↑</button>`
+        + `</aside>`;
+    }
+    if (direction !== 'to' || !route.to?.summary) return '';
+    const unitNumber = route.to.unit.slice(1);
+    const action = route.to.chain
+      ? `<button type="button" class="rt-seam-action" data-chain-boundary="${route.to.chain}" data-boundary-step="first">进入 Unit ${unitNumber} 起始环 →</button>`
+      : `<span class="rt-seam-pending">Unit ${unitNumber} 因果链待完善</span>`;
+    return `<aside class="rt-seam" data-chain-seam="to">`
+      + `<div class="rt-seam-label">交棒 UNIT ${unitNumber}</div>`
+      + `<p class="rt-seam-copy">${route.to.summary}</p>${action}</aside>`;
   }
 
   // ============ 随堂练习(第一批只做"点地图"题型) ============
@@ -3475,6 +3514,22 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     }
   }
 
+  function openChainBoundary(chainId, boundary) {
+    const chain = chainById.get(chainId);
+    if (!chain || chain.kind !== 'chain' || chain.tier !== 'main' || !chain.entryUnit) return;
+    activeLearningView = 'chain';
+    mapStudyView.hidden = false;
+    dismissFirstClickHint();
+    eventZone.setAttribute('aria-label', 'Unit 因果链');
+    if (typeof setPeriodFilter === 'function') setPeriodFilter(chain.entryUnit);
+    if (routeMode?.route?.id !== chain.id) enterRouteMode(chain.id);
+    if (routeMode?.route?.id === chain.id) {
+      goToStop(boundary === 'last' ? chain.stops.length - 1 : 0, true);
+    }
+    syncLearningTabs();
+    syncMapModeTabs();
+  }
+
   function leaveActiveLearningContent() {
     if (quizMode || eventPanel.querySelector('.quiz-panel')) exitQuiz();
     if (routeMode) exitRouteMode();
@@ -3511,6 +3566,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   // ↓ 商路模式里这几句要立即执行,必须排在上面三个 const 之后(它们是 const,提前引用会 TDZ 报错)
   // 行程面板的按钮:事件面板是 innerHTML 重铺的,所以走事件委托
   eventPanel.addEventListener('click', e => {
+    const boundary = e.target.closest('[data-chain-boundary]');
+    if (boundary) {
+      openChainBoundary(boundary.dataset.chainBoundary, boundary.dataset.boundaryStep);
+      return;
+    }
     const step = e.target.closest('[data-route-step]');
     if (step) { stopAutoPlay(); goToStop(+step.dataset.routeStep); return; }
     const qs2 = e.target.closest('[data-quiz-start]');
@@ -3677,6 +3737,15 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       .some(anchor => String(anchor.num) === String(num)));
     const anchor = (event?.visibleAnchors || event?.anchors || []).find(item => String(item.num) === String(num));
     return event ? selectTimelineEvent(event.key, { reveal, moveMap: false, preferredAnchor: anchor }) : false;
+  }
+
+  function selectChainMapAnchor(num) {
+    selectedTimelineKey = null;
+    selectedTimelineAnchor = { num: String(num), region: pinRegion(num) };
+    timelineTrack.querySelectorAll('.world-timeline-card').forEach(card => card.removeAttribute('aria-current'));
+    svg.querySelectorAll('.pin-group').forEach(group => group.classList.remove('timeline-selected'));
+    const group = findPinGroup(num);
+    if (group) group.classList.add('timeline-selected', 'revealed');
   }
 
   function renderTimeline(events, unitLabel) {
@@ -4173,6 +4242,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       apply();
       if (activeLearningView === 'chain') showCurrentUnitChain();
     }
+    setPeriodFilter = setPeriod;
     // 地区变了要重算(它现在是筛选的一个维度);外面的 activateRegion/deactivateRegion 会调它
     onRegionChange = () => apply();
     filterIsActive = () => filterActive();
@@ -4305,6 +4375,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         view: activeLearningView,
         mapMode: activeMapMode,
         label: eventZone.getAttribute('aria-label') || '',
+        chainId: routeMode?.route?.kind === 'chain' ? routeMode.route.id : null,
+        chainStep: routeMode?.route?.kind === 'chain' ? routeMode.i : null,
       }),
       // 随堂练习
       startQuiz: mode => startQuiz(mode),
