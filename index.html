@@ -395,6 +395,19 @@ nav.topnav {
 .home-events .rt-blurb { margin: 9px 0 0; font-size: 13px; line-height: 1.7; color: var(--ink); }
 .home-events .rt-exam { margin: 7px 0 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-soft); }
 .home-events .rt-exam span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(43,33,24,0.09); color: var(--ink); font-size: 11px; font-weight: 800; }
+.home-events .rt-seam { margin: 12px 0 0; padding: 11px 13px; border-left: 3px solid #287f83; border-radius: 0 8px 8px 0; background: rgba(40,127,131,0.08); color: var(--ink); }
+.home-events .rt-seam + .rt-stops { margin-top: 10px; }
+.home-events .rt-stops + .rt-seam { margin-top: 12px; }
+.home-events .rt-seam-label { color: #176369; font-size: 11px; font-weight: 800; letter-spacing: .055em; text-transform: uppercase; }
+.home-events .rt-seam-copy { margin: 5px 0 0; font-size: 12px; line-height: 1.65; color: var(--ink-soft); overflow-wrap: anywhere; }
+.home-events .rt-seam-action { display: inline-flex; align-items: center; min-height: 34px; margin: 8px 0 0; padding: 0 11px; border: 1px solid rgba(40,127,131,0.45); border-radius: 8px; background: rgba(255,255,255,0.62); color: #176369; font: inherit; font-size: 12px; font-weight: 800; line-height: 1.35; text-align: left; white-space: normal; cursor: pointer; }
+.home-events .rt-seam-action:hover { border-color: #287f83; background: rgba(255,255,255,0.88); }
+.home-events .rt-seam-action:focus-visible { outline: 2px solid #287f83; outline-offset: 2px; }
+.home-events .rt-seam-pending { display: inline-block; margin: 7px 0 0; color: #176369; font-size: 11.5px; font-weight: 700; }
+@media (max-width: 720px) {
+  .home-events .rt-seam { padding: 10px 11px; }
+  .home-events .rt-seam-action { width: 100%; justify-content: center; }
+}
 .home-events .rt-stops { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; }
 .home-events .rt-stop { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .home-events .rt-stop .rt-dot { width: 7px; height: 7px; border-radius: 50%; background: #b7ae9c; }

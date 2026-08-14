@@ -233,7 +233,11 @@ async function verifyTimeline(page, port) {
   assert.equal(await track.count(), 1, 'Timeline Dock must expose exactly one track');
   await expectVisible(track, 'AP World Timeline track must be visible');
 
-  const periods = (await page.evaluate(() => window.__mapFilter.getPeriodOptions())).filter(({ value }) => value);
+  const allPeriodOptions = await page.evaluate(() => window.__mapFilter.getPeriodOptions());
+  assert.deepEqual(allPeriodOptions.map(({ value }) => value),
+    ['', 'u1', 'u2', 'u3', 'u4', 'u5', 'u6', 'u7', 'u8', 'u9'],
+    'AP World Unit options must place All Units first, followed by Unit 1 through Unit 9');
+  const periods = allPeriodOptions.filter(({ value }) => value);
   assert.equal(periods.length, 9, 'AP World Timeline must cover the nine non-empty Unit options');
   assert.deepEqual(periods.map(({ label }) => label.replace(/\s*\(\d+\)$/, '')), [
     'Unit 1 · The Global Tapestry', 'Unit 2 · Networks of Exchange',
@@ -1278,6 +1282,31 @@ async function verifyHomeLearningShell(page, port) {
     'homepage Unit 2 segment must return the mirrored panel to Current Unit content');
   assert.deepEqual(await trimmedTexts(page.locator('#home-events [data-chain-panel-view][aria-pressed="true"]')), ['当前单元'],
     'homepage Unit 2 segment must restore only the Current Unit panel control');
+
+  const readSeamStyles = (seam) => {
+    const action = seam.querySelector('.rt-seam-action');
+    const copy = seam.querySelector('.rt-seam-copy');
+    const seamStyle = getComputedStyle(seam);
+    const actionStyle = getComputedStyle(action);
+    const copyStyle = getComputedStyle(copy);
+    return {
+      seamBackground: seamStyle.backgroundColor,
+      seamBorderLeftWidth: seamStyle.borderLeftWidth,
+      seamBorderRadius: seamStyle.borderRadius,
+      seamPadding: seamStyle.padding,
+      actionBorderRadius: actionStyle.borderRadius,
+      actionFontFamily: actionStyle.fontFamily,
+      actionFontSize: actionStyle.fontSize,
+      actionFontWeight: actionStyle.fontWeight,
+      actionMinHeight: actionStyle.minHeight,
+      copyFontSize: copyStyle.fontSize,
+      copyLineHeight: copyStyle.lineHeight,
+    };
+  };
+  const mirroredSeamStyles = await page.locator('#home-events [data-chain-seam="to"]').evaluate(readSeamStyles);
+  const independentSeamStyles = await frame.locator('#eventPanel [data-chain-seam="to"]').evaluate(readSeamStyles);
+  assert.deepEqual(mirroredSeamStyles, independentSeamStyles,
+    'homepage cross-Unit seam must preserve the independent APWH panel typography and card styling');
 
   await page.locator('#home-events [data-chain-seam="to"] [data-chain-boundary]').click();
   await page.waitForTimeout(180);

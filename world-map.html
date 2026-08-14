@@ -4510,10 +4510,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         sel.appendChild(el);
       });
     }
-    const periodOptions = PERIODS.map(p => ({ value: p.id, label: `${p.label} (${periodCount(p)})` }))
-      .concat([{ value: '', label: `全部 Units (${totalEvents})` }]);
+    const periodOptions = [{ value: '', label: `全部 Units (${totalEvents})` }]
+      .concat(PERIODS.map(p => ({ value: p.id, label: `${p.label} (${periodCount(p)})` })));
 
     fillSelect(periodSel, periodOptions);
+    if (periodSel) periodSel.value = activePeriod;
     if (periodSel) periodSel.addEventListener('change', () => setPeriod(periodSel.value));
     // 主题药丸:多选,点一下切换开关
     if (catsBox) cats.forEach(c => {
