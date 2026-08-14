@@ -378,9 +378,9 @@ async function verifyLearningShell(page, port) {
   })), [
     { id: 'u1_main', units: ['u1'], entryUnit: 'u1', from: null, toUnit: 'u2', toChain: 'u2_main', pending: false },
     { id: 'u2_main', units: ['u2'], entryUnit: 'u2', from: 'u1_main', toUnit: 'u3', toChain: 'u3_main', pending: false },
-    { id: 'u3_main', units: ['u3'], entryUnit: 'u3', from: 'u2_main', toUnit: 'u4', toChain: 'u4_atlantic', pending: false },
-    { id: 'u4_atlantic', units: ['u4'], entryUnit: 'u4', from: 'u3_main', toUnit: 'u5', toChain: null, pending: false },
-    { id: null, units: ['u5'], entryUnit: 'u5', from: 'u4_atlantic', toUnit: null, toChain: null, pending: true },
+    { id: 'u3_main', units: ['u3'], entryUnit: 'u3', from: 'u2_main', toUnit: 'u4', toChain: 'u4_main', pending: false },
+    { id: 'u4_main', units: ['u4'], entryUnit: 'u4', from: 'u3_main', toUnit: 'u5', toChain: null, pending: false },
+    { id: null, units: ['u5'], entryUnit: 'u5', from: 'u4_main', toUnit: null, toChain: null, pending: true },
   ], 'course mainline must expose the approved handoffs and pending Unit 5 tail');
   assert.ok(courseMainline.filter(segment => !segment.pending)
     .every(segment => segment.tier === 'main' && segment.to?.summary?.trim()),
@@ -421,7 +421,7 @@ async function verifyLearningShell(page, port) {
 
   const implementedMainline = page.locator('#eventPanel [data-mainline-chain]');
   assert.deepEqual(await implementedMainline.evaluateAll(nodes => nodes.map(node => node.dataset.mainlineChain)),
-    ['u1_main', 'u2_main', 'u3_main', 'u4_atlantic'],
+    ['u1_main', 'u2_main', 'u3_main', 'u4_main'],
     'course mainline must render implemented chains in canonical order');
   const implementedMainlineText = await implementedMainline.allTextContents();
   courseMainline.filter(segment => !segment.pending).forEach((segment, index) => {
@@ -470,7 +470,7 @@ async function verifyLearningShell(page, port) {
   await page.locator('#eventPanel [data-chain-panel-view="mainline"]').click();
   await clickMainlineSegment('u1_main', 'u1', 7, 8);
   await page.locator('#eventPanel [data-chain-panel-view="mainline"]').click();
-  await clickMainlineSegment('u4_atlantic', 'u4', 42, 7);
+  await clickMainlineSegment('u4_main', 'u4', 42, 8);
 
   await page.evaluate(() => window.__mapFilter.setPeriod('u2'));
   const unit2Seams = page.locator('#eventPanel [data-chain-seam]');
@@ -578,7 +578,7 @@ async function verifyLearningShell(page, port) {
   }));
   assert.equal(unit3OutgoingBoundaryState.period, 'u4',
     'Unit 3 outgoing seam must select successor Unit 4 through the canonical Unit filter');
-  assert.equal(unit3OutgoingBoundaryState.learning.chainId, 'u4_atlantic',
+  assert.equal(unit3OutgoingBoundaryState.learning.chainId, 'u4_main',
     'Unit 3 outgoing seam must open the Unit 4 Atlantic chain');
   assert.ok(unit3OutgoingBoundaryState.selectedPins.includes('42'),
     'Unit 3 outgoing seam must synchronize the selected map anchor to pin 42');
@@ -1256,7 +1256,7 @@ async function verifyHomeLearningShell(page, port) {
     'clicking the homepage course-mainline control must refresh the mirrored panel');
   const mirroredMainlineSegments = page.locator('#home-events [data-mainline-chain]');
   assert.deepEqual(await mirroredMainlineSegments.evaluateAll(nodes => nodes.map(node => node.dataset.mainlineChain)),
-    ['u1_main', 'u2_main', 'u3_main', 'u4_atlantic'],
+    ['u1_main', 'u2_main', 'u3_main', 'u4_main'],
     'the homepage must mirror canonical implemented mainline segments');
   const mirroredMainlineText = await mirroredMainlineSegments.allTextContents();
   embeddedCourseMainline.filter(segment => !segment.pending).forEach((segment, index) => {

@@ -2507,7 +2507,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
     { id: 'u3_main', kind: 'chain', units: ['u3'], tier: 'main', chip: 'Land-Based Empires',
       entryUnit: 'u3', from: 'u2_main',
-      to: { unit: 'u4', chain: 'u4_atlantic', summary: '陆基帝国把全部力气押在同一件事上——把连片的土地变成年年可征的岁入，于是它们的军队、官僚与合法性全都朝内、朝陆地生长，海面对它们只是边界不是收入；Safavid 没有海军，Mughal 只有一支很小的，Ming 与 Qing 把欧洲人限在 Guangzhou 一港。海上因此留出一块没人要的空白，只能由收入本来就依赖海路的一方去填，Unit 4 的主战场也就随之移到大洋与大西洋体系。' },
+      to: { unit: 'u4', chain: 'u4_main', summary: '陆基帝国把全部力气押在同一件事上——把连片的土地变成年年可征的岁入，于是它们的军队、官僚与合法性全都朝内、朝陆地生长，海面对它们只是边界不是收入；Safavid 没有海军，Mughal 只有一支很小的，Ming 与 Qing 把欧洲人限在 Guangzhou 一港。海上因此留出一块没人要的空白，只能由收入本来就依赖海路的一方去填，Unit 4 的主战场也就随之移到大洋与大西洋体系。' },
       name: '广土怎么被造出来，又怎么把自己绑死',
       blurb: 'Unit 3 常被读成「五个帝国各介绍一遍」，但五个帝国是在同一道题上被反复考的：火器让征服的速度远远快过治理的速度，于是每一个帝国都在同一段时间里被迫补同一批工具——领薪官僚、被驯化的军事贵族、用石头和经文铸出来的合法性。这些工具让帝国立住了，也把它绑死了：合法性一旦挂在宗教上，统治者就退不出宗教争端；收入一旦挂在土地和陆路上，它就没有理由去看海。要回答的问题是：为什么这些帝国在 1450 年后同时成型，又在 1750 年前后同时把主动权让给了海上。',
       exam: 'Unit 3 Review 里 LEQ 2（changes in government 如何造成权力集中）与 LEQ 3/4（南亚与西南亚、俄国与中国的陆基帝国是否以相似方式发展）共用的骨架，也是 Topic 3.4 essential question 的标准答法。2027 起 DBQ 文件跨 1450–2001，Unit 3 常落在 contextualization 与第一段，取第一环与末环两句即可。最常见失分写法：「The Ottomans used gunpowder, and then they conquered Constantinople, and then they built a bureaucracy, and then they declined.」四个 and then 只排了顺序；改成「Because cannon reduced a siege from a season of starvation to a matter of days, conquest outran administration — which is why every one of these empires had to invent a salaried officialdom after, not before, it had already swallowed a multiethnic territory.」判断标准与 U1、U2 相同：把 which/because 换成 then 后句子还成立，这句就没解释任何东西。',
@@ -2608,28 +2608,109 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         ''
       ] },
 
-    { id: 'u4_atlantic', kind: 'chain', units: ['u4'], tier: 'main', chip: 'Unit 4 · Atlantic System',
+    { id: 'u4_main', kind: 'chain', units: ['u4'], tier: 'main', chip: 'Maritime Empires',
       entryUnit: 'u4', from: 'u3_main',
-      to: { unit: 'u5', summary: '殖民重构的等级秩序 → 革命所要反抗的那个东西' },
-      name: 'Unit 4 主干链 · 从大航海到大西洋体系',
-      blurb: 'Unit 4 回答一个问题:欧洲如何在 200 年内,从陆基帝国体系的边缘变成全球贸易网络的中心?答案是一条由技术、国家权力、生态交换和劳动力系统串起来的连续因果链。',
-      exam: '这条链是 AP 最爱考的因果序列。写 LEQ 时,"人口崩溃→劳动力真空→转向非洲"这一环不能跳 —— 跳了就成了"欧洲人because贪婪所以买奴隶",拿不到因果分。',
-      stops: [42, 104, 45, 68, 87, 78, 49],
-      labels: ['技术储备积累', '国家支持的探索进入 Indian Ocean', '哥伦布大交换', '天花与人口崩溃', '大西洋贸易体系', '对殖民权力的抵抗', '全球社会等级重构'],
-      evidence: ['Compass · Astrolabe · Lateen sail · Caravel · Prince Henry',
-                 'Prince Henry 的航海赞助 · Dias 1488 绕过好望角 · da Gama 1498 抵达 Mombasa 与 Calicut · Portuguese Crown 的国家投入 · fortified trading posts 武装商站',
-                 'Smallpox · Potato · Maize · Sugar plantation demand',
-                 '90% indigenous decline · 劳动力真空 · encomienda',
-                 '12M 被掳 · Middle Passage · Potosí · mercantilism',
-                 'Ana Nzinga · Quilombo · Maroon societies · Candomblé',
-                 'Peninsulares · Criollos · Mestizos · limpieza de sangre'],
-      links: ['技术储备 + Ottoman 贸易封锁 + 国家竞争压力 = 欧洲各国开始系统性支持海洋探索,葡萄牙先沿非洲海岸南下找通往香料产地的水路',
-              '绕非洲这条路成功了,却是挤进一个已经运转千年的 Indian Ocean 网络当第 N 个买家;想拿到定价权就得另找一条自己独占的航路 —— 卡斯蒂利亚押的西行方案由此拿到王室背书',
-              '旧大陆病菌随人与牲畜一起登陆,美洲原住民从未接触过、毫无免疫',
-              '美洲原住民大规模死亡 → 种植园劳动力严重短缺 → 欧洲殖民者转向非洲获取被奴役劳动力',
-              '被奴役者与非洲统治者从不是被动接受 —— 从 Ndongo 到巴西内陆,抵抗贯穿整个体系',
-              '殖民扩张重构了全球的种族、阶级与性别等级,创造了 Unit 5 革命所要反抗的那个不平等秩序'] },
-    // ---- 补充链:主干装不下、但 AP 常考的支线。每条最后一环没有下一站,links 末位留空串 ----
+      to: { unit: 'u5', summary: '白银、糖与被强制的劳动把美洲、非洲、欧洲与亚洲锁进同一个能年年清算的循环，而这个循环需要一套长期指派「谁在哪一环干活」的办法，于是位置被写进出生：受洗时定级，除通婚外不能上移。这套秩序同时造出两批必然要撞上它的人——被压在 peninsulares 之下、掌握殖民地财富却拿不到最高职位的 criollos，和被写在最底层、在 Saint-Domingue 一类地方人数远超自由人的被奴役者。下一个时代要推翻的不是抽象的暴政，而是这套按出身分配劳动与官职的秩序。' },
+      name: '海上那块空白被填满之后',
+      blurb: 'Unit 4 最容易被读成一串探险家的名字，但 AMSCO 的排布是一条收支线：谁的收入依赖海路，谁才出海；出海的人先买通行权而不是买土地；等他们撞上一块没有现成货流可抽的大陆，就必须自己把可卖的东西种出来挖出来，而人手在这一刻被疾病抽空。后面四环讲这个缺口怎么被一步步补上，以及补的办法怎么从临时征发变成写进出生登记的等级。',
+      exam: 'Unit 4 Review LEQ 2（economic systems 与 labor systems 的延续与变化）和 LEQ 3（slavery 的变与不变）共用的骨架，也是 Topic 4.4 与 4.8 essential question 的标准答法；2027 起 DBQ 文件跨 1450–2001，本单元常落在 contextualization 与主体第一、二段。最常见失分写法：「Europeans wanted cheap labor, so they brought enslaved Africans to the Americas.」这句把最关键的两步跳掉了，拿不到因果分；要写成「Because European diseases killed more than half the indigenous population within a century, and because the survivors could escape into terrain they knew and kin networks that would hide them, the labor that plantations needed could no longer be taken locally — which is why planters turned to a supply that could be moved across an ocean and could not walk home.」判断标准与前三单元相同：把 because/which 换成 then 后句子还成立，这句就没解释任何东西。',
+      stops: [42, 2, 68, 57, 60, 87, 12, 49],
+      labels: ['出海的理由只有一种', '买通行权不买土地', '先上岸的是病', '短缺把义务改成强制', '甘蔗把手伸向非洲', '火器换人换出一条回路', '白银把太平洋接上', '血统被写进出生登记'],
+      evidence: [
+        'AMSCO 明写 Portugal 这个小王国东边被 Castile 与 Aragon 夹住，could expand only overseas · Prince Henry the Navigator（1394–1460）是第一位资助航海远征的欧洲君主，目的是找一条全水路的东行航线并寻求非洲黄金；在他手里 Portugal 开始以海路输入被奴役的非洲人，取代原先的陆路奴隶贸易 · Bartholomew Diaz 1488 年绕过 Cape of Good Hope，因怕哗变而折返；Vasco da Gama 1498 年抵达 India · 地中海沿岸的意大利城市垄断了欧洲对亚洲的贸易并借此操纵价格，把 Spain、Portugal 以及后来的 France、England 与 Netherlands 逼去找新航线 · Omani-European rivalry 是 Columbus 去找通往 India 新路的原因之一 · 技术是拼起来的：magnetic compass 出自中国，astrolabe 由 12 世纪的穆斯林航海者改良，lateen sail 用于阿拉伯与印度洋，配上方帆才第一次让船在大洋上逆风改向；再加 cartography、astronomical chart 与对洋流风向的记录 · 人口压力与 primogeniture laws 让财富之家的次子拿不到土地，17 世纪初宗教少数派又在找能容下自己的地方',
+        'Portuguese 沿印度洋修起一串堡垒：1507 年 Hormuz、1510 年 Goa、1511 年 Malacca（Malay Peninsula），目的是垄断该区域的香料贸易并对 Malacca 与 Hormuz 之间往来的一切船只发放许可 · 由此形成 trading post empire，靠小据点而非大片领土；印度洋贸易被限定给愿意买通行许可的人 · 1509 年 Battle of Diu，Portuguese 在 Arabian Sea 击败 Gujaratis、Mamluks of Egypt 与 Calicut 的 Zamorin 加上 Venice 支持的联合舰队 · AMSCO 特意对照：印度洋原有的商人历来向控制航道与港口的国家缴税缴费、按宗教与族群关系结网，不用武力保护贸易，某地收费太高就换个地方——Portuguese 带来的是海军优势、宗教热情与从亚洲内部贸易里牟利的决心 · 1498 年 da Gama 的船抵达东非，Portuguese 随后以重炮帆船与堡垒接管 Kilwa、Mombasa 等 Swahili 城邦的贸易，AMSCO 写这次接管把该地区推入一场毁灭性的衰退 · Ming 禁私人海外贸易、毁船坞、限造船尺寸；Japan 1587 年禁基督教礼拜、1630 年代驱逐几乎所有外国人，只留少数荷兰商人在 Nagasaki 港的小岛上',
+        '两个半球此前几乎完全隔绝，美洲原住民对欧洲人带来的病菌没有免疫力；AMSCO 明写马匹、火药与金属兵器固然助了征服，但造成绝大多数死亡的是疾病 · conquistadores 如 Hernán Cortés 与 Francisco Pizarro 带来 smallpox，经呼吸道传播；随殖民者上岸的还有昆虫、老鼠等带病动物，measles、influenza、malaria 同样大量致死 · 不到一个世纪，美洲原住民人口仅因疾病就下降五成以上，部分地区损失达九成，AMSCO 称之为人类史上最大的人口灾难之一 · Columbus 第一次航行相信 Hispaniola 遍地是金，实际加勒比金子稀少，他与船员掳走 Taínos 带回西班牙为奴 · 1521 年 Cortés 击垮的是已被 smallpox 削弱的 Aztec，Tenochtitlan 被毁、Mexico City 建在废墟上；Pizarro 俘获 Atahualpa，Inca 照要求以黄金填满一室，1533 年西班牙人仍杀了他，1572 年完成对 Inca 的征服 · 16 世纪初西班牙人设 encomienda 以取得美洲的黄金与资源，encomenderos 强迫原住民为其劳作、换取食物与居所，AMSCO 直言这套强制劳动制度以残酷著称',
+        '黄金没让 conquistadores 发财，Mexico 与 Peru 的白银却救活了局面；用 mercury 把银从矿石里分离出来提高了银矿的利润率 · 到 16 世纪末，Mexico 的 Zacatecas、尤其是今 Peru 安第斯山中的 Potosí 成为兴旺的银矿中心 · 银矿要人，而原住民肯做除最危险之外的一切工作；西班牙当局于是把 Inca 原有的 mit’a——年轻男子须为公共工程服一定劳役——改造成强制体系：村社被迫按比例送出男性人口去矿里做最危险的活，工钱极低 · 1622 年 Vázquez de Espinosa 记 Huancavelica 汞矿于 1570–1571 年因汞矿传闻而建镇，山上有三四千名原住民在矿中劳作，装满矿袋的人还要背着矿石爬上那种空手都难以攀登的绳梯 · 西班牙王室常把土地赏给 conquistadores，地主在其上发展小麦、水果、蔬菜与糖的农业，形成 hacienda system，同样用强制劳动 · José Cuello 指出，几乎就在 1542 年 New Laws 宣布奴役原住民非法的同时，1541–1542 年的 Mixtón War 给了在北部边疆合法保留这一做法的理由，Zacatecas 发现白银更把西属北部的西班牙-原住民关系定型，奴役与 encomienda 在北部 New Spain 一直存活到 18 世纪',
+        '1494 年 Treaty of Tordesillas 把美洲一分为二，Brazil 归 Portugal，其余归 Spain · Spain 与西属美洲靠白银获利，Portugal 帝国押在农业上：Brazil 气候湿热、土地广阔，最适合甘蔗 · 可疾病已经消灭了原住民人口，劳力不足，而被迫下甘蔗地的人还大量逃进无人测绘的Brazil 内陆丛林 · Portuguese 于是从非洲输入被奴役的人，尤其来自 Kongo Kingdom 与 Swahili 海岸诸城 · AMSCO 的 Why Africans 一节把理由并成三条：土地多而使土地生利的劳力少；欧洲人最初强迫原住民下矿下地，却被欧洲疾病成片消灭；幸存的原住民奴隶常能逃脱，因为与欧洲人相比他们更熟悉地形、有可以保护自己的社会网络、且能在本地人口中隐身——反复奴役 Native Americans 的努力宣告失败 · 北美的种植园主招募欧洲 indentured servants 来种烟草，但这些人多半受不了美洲的重体力与气候，而且只须做约七年，熬过契约就成了自由劳动者，因此不被地主视为理想劳工 · 甘蔗种植园被叫作 engenhos，即Portuguese 语的引擎，因劳动条件恶劣，园主每年损失五到一成劳动力 · 糖在欧洲市场的利润把跨大西洋被掳卖的非洲人数量急剧推高；奴隶输入者把九成以上送往加勒比与南美，只有约百分之六去了英属北美；到 19 世纪中叶为止，渡海去美洲的非洲人多于欧洲人 · 西班牙人看到 Portugal 在种植园农业上的成功，回头在加勒比种糖与烟草，糖很快盖过白银成为欧洲各帝国的主要摇钱树',
+        '被掳的非洲人先被关进西非的 barracoons，即所谓 slave castles；今日 Ghana 保存着这些 Points of No Return，Senegal 的 Île de Gorée 上还留着 House of Slaves · 横渡大西洋的这一程叫 Middle Passage，因为它是俘虏整段旅程的中间一段；航程通常约六周，一船人可能死掉一半，而在这场从 16 世纪初延续到 19 世纪中叶的贸易里，约一到一成半的非洲俘虏没能活着抵达美洲；许多人在海上起事，多数被镇压 · 这条回路被称作 triangular trade：船把火器一类欧洲制成品运到西非，再把被奴役的非洲人运到美洲，然后装上糖或烟草运回欧洲；糖是美洲最赚钱的货，到 1700 年代，加勒比的糖与朗姆在英国造出巨额财富，法国与荷兰次之 · 非洲一侧不是被动的：沿岸统治者用奴隶向欧洲人换取火药与火炮，从而在与邻村作战时占据军事优势；Dahomey 因袭掠邻村捕人卖给欧洲商人而变强，Oyo 亦然；有些非洲城邦靠卖人致富 · Kongo 的 King Afonso 起初允许在本国进行奴隶贸易，后来看清袭掠无法控制，既不愿把本国精英交出去，也不愿 Kongo 被抽空人口，更看到自己的权威正在被削弱——他的臣民可以绕开他直接拿人换欧洲货，而在欧洲人到来之前他能控制领地内的一切贸易 · 1624 年 Ana Nzinga 成为 south-central Africa 的 Ndongo 之主，为换取保护与终止 Portugal 的掳人袭掠而与 Portugal 结盟并受洗，教父是葡属殖民地总督；同盟破裂后她西走夺取 Matamba，在 Ndongo 煽动叛乱、转与荷兰人结盟，并宣布逃亡的奴隶在 Matamba 可获自由，统治数十年并把 Matamba 建成经济强邦',
+        '中国是美洲白银特别热切的买家；白银从今 Mexico 横渡太平洋去东亚，靠的是在 Philippines 停靠的重武装西班牙帆船 galleons · 在 Manila 的贸易站上，欧洲人用白银换丝绸、香料一类奢侈品，甚至换金块；Manila galleons 让白银贸易兴盛起来 · 中国政府随后开始以白银作为主要货币；到 17 世纪初，白银已成为全球经济体系里的支配性力量 · 有专家估计，16 世纪全球经济中的白银总量增至三倍 · 西属美洲的白银流向亚洲，亚洲货物又在大西洋市场被抢购，形成一个新的全球循环 · Commercial Revolution 的四个成因被并列：欧洲海外殖民地的发展、新海路的开通、人口增长，以及部分由人口压力、部分由被开采并投入流通的金银增加所造成的通货膨胀；16 世纪到 17 世纪初的高通胀被称作 Price Revolution · AMSCO 同时写明反面：大量金银流入 Spain 与 China 也带来负面经济后果，流通中的货币量增加引起通胀，而 Spain 的白银引发的通胀又助推了西班牙帝国的衰落',
+        '欧洲移民、被输入的非洲人与被征服的原住民并存，造出一套以种族与血统为准的新社会等级；肤色在美洲乃至所有欧洲殖民地都成了权力与地位的标记，而在西、葡两帝国，种族与族裔背景在此后数百年里以正式方式界定社会地位 · casta system 的顺序是：出生在 Iberian peninsula 的 peninsulares 居顶，其次是生在美洲的欧洲血统者 criollos，再下是混血的 castas——其中 mestizos 在上，mulattoes 次之，zambos 再次，原住民与被奴役的非洲人垫底 · 人在受洗时被划定等级，除通婚外不能上移；处在底层的人要缴更高的税与贡赋，而他们恰恰最负担不起；西班牙人还专门绘制 casta 画来展示这套分类 · 西班牙王室派 viceroys 作为代表治理殖民地，又设 audiencias 即王室法庭供西班牙移民上诉 viceroy 的决定；但欧美之间运输与通信迟缓，王室难以直接控制 New Spain，也就不把心思放在西半球的殖民事务上 · Cortés 一类征服者下令焚毁被视为不洁的原住民书籍，因此以 Nahuatl 写成的原始记载几乎不存，1545 年起西班牙神父 Bernardino de Sahagún 编纂的 Florentine Codex 反倒成为被引用最多的 Aztec 生活史料之一 · AMSCO 记到 1750 年，生在美洲的西班牙血统者已开始鼓噪脱离西班牙王室独立 · 与之并行的是被写在底层的人从未停止的动作：Jamaica 的 Maroon 是逃亡非洲奴隶的后代，他们建起独立聚落，逃奴出身的 Queen Nanny 把全岛的 Maroon 联合起来，1728–1740 与 1795–1796 两度爆发 Maroon wars；1663 年 Virginia 的 Gloucester County Rebellion 里，被奴役的非洲人与白人契约仆役合谋向总督索求自由；1680 年 Pueblo Revolt 中 Pueblo 与 Apache 杀死约四百名西班牙人、驱走其余、毁掉教堂，西班牙人直到 1692 年才重新占领'
+      ],
+      links: [
+        'Portugal 的人少，守不住大片领土——AMSCO 明写它 lacking the workers and the ships necessary for the enforcement of a large trade empire。既然占不起地，它要买的就只能是别人已经在做的生意里的一份抽成权：谁从哪条水道过、谁付多少。',
+        '这套模式有个前提：目的地必须已经有别人在做的货流可以抽成。可向西的船撞上的是一块没有香料市场可抽的大陆——要让它产生收入，就得自己把可卖的东西种出来、挖出来，而这需要大量人手。偏偏在需要人手的同一时刻，人手先被抽空了。',
+        '疾病不是政策，可它留下的比例必须由政策处理：矿脉和土地都还在原处，能下井、能下地的人却少了一半以上。西班牙人于是没有另造一套征发办法，而是把当地原本就存在的义务劳动改写成强制——这样既省去建制的成本，又能借用被征服社会自己的点名名册。',
+        'mit’a 之所以还转得动，靠的是两个条件：安第斯还剩下能按村社点名的人口，而矿在高原上、逃出去也无处可去。低地热带的甘蔗带这两个条件都不成立——那里的原住民死得更彻底，活下来的又熟悉地形、有能藏住他们的亲族网络、还能混进本地人群里。同一套办法在那里失效。',
+        '每年损失五到一成，意味着这不是一次性采购，而是一条必须常年补货的线：今年买的人，几年后要按同样的数目再买一次。常年补货要求非洲一侧有稳定的交货方，而欧洲人手里最能立刻改变当地力量对比、因此最好用来付账的东西，是火器。',
+        '这条大西洋回路结算的是货——糖、烟、朗姆。可这些货在亚洲卖不动：AMSCO 明写亚洲人急于用丝绸、瓷器、钢制品换的是白银。欧洲人手里唯一被亚洲市场接受的东西是白银，而白银恰好和糖出自同一批殖民地。于是大西洋这条回路必须再接上一条：从美洲直接横渡太平洋。',
+        '白银让整个体系可以年年清账，也让每一环的产出都被折成同一种价格。可一旦每年的产量与每年的死亡率都成了能算出来的数字，谁去补上死掉的那一批就不能再靠临时抓人回答。西属美洲给出的答案，是把一个人该待的位置写进他的出生。',
+        '交棒 Unit 5：这套等级不是观念的产物，而是那个循环的调度表——它要保证每年补上的劳动力落在固定的位置上，所以它把位置写进受洗登记，让人一出生就被指派好该在哪一环干活。可同一张表也造出两批必然要撞上它的人：一批是被压在 peninsulares 之下、掌握着殖民地财富却拿不到最高职位的 criollos，AMSCO 明写他们到 1750 年已在要求独立；另一批是被写在最底层、在 Saint-Domingue 这类地方人数远超自由人的被奴役者，以及他们已经建起独立聚落、打过两场战争的 Maroon 后代。所以下一个时代的革命不是欧洲新观念飘过来的结果，而是这套按出身分配劳动与官职的秩序被它自己制造出来的人推倒——要反抗的对象，正是本单元造出来的东西。'
+      ] },
+
+    { id: 'u4_sub_silver', kind: 'chain', units: ['u4'], tier: 'sub', chip: 'Silver Circuit',
+      name: '银在哪一端变成钱',
+      blurb: '白银常被简写成「美洲的银流进了中国」，但 AMSCO 把它的三个终点分别记了账：在美洲它是强制劳动的产物，在亚洲它变成货币，在西班牙它变成物价。这条链解释为什么挖到银的国家不是最后的赢家——它拿到的是购买力，而购买力会被自己的数量稀释。',
+      exam: '对应 Topic 4.5 的 SAQ「Explain ONE way in which mercantilism affected economies in Africa and Asia」与 Topic 4.3 的 MCQ（矿产对 Spain 与世界的影响，正解是通胀与白银在世界范围贬值）。最常见失分写法：「Spain got rich from silver, so Spain became the most powerful country in Europe.」只说了一半，且与 AMSCO 明写的结论相反；要写成「白银使西班牙能买到东西，却没有使西班牙能生产东西；流通中的银越多，同一笔银能换到的货就越少，AMSCO 明写这场通胀助推了帝国的衰落」。第二个高频错误是把 mercantilism 说成「自由贸易的反面就是收关税」——它的核心是国家用高关税与殖民地把金银留在国内、让出口大于进口，AMSCO 明写它 required heavy government involvement。',
+      stops: [58, 12, 45, 43],
+      labels: ['银从两座山里出来', '银的买家都在东边', '到岸的是钱不是产业', '国家把钱变成军队'],
+      evidence: [
+        '到 16 世纪末，Mexico 的 Zacatecas 与安第斯山中的 Potosí 成为兴旺的银矿中心 · 用 mercury 把银从矿石中分离出来提高了利润率，1570–1571 年 Huancavelica 因汞矿而建镇，山上有三四千名原住民在矿中劳作 · 银矿需要劳力，西班牙当局把 Inca 的 mit’a 从公共工程劳役改造成强制体系，村社按比例送人下最危险的矿井，工钱极低 · José Cuello 指出 Zacatecas 发现白银 sealed the fate of Spanish-Indian relations，使奴役与 encomienda 在北部 New Spain 存续到 18 世纪 · 海外白银产量中有一部分直接归西班牙王室',
+        '中国是美洲白银特别热切的买家；白银从今 Mexico 横渡太平洋去东亚，靠在 Philippines 停靠的重武装 galleons · 在 Manila 的贸易站，欧洲人以白银换丝绸、香料乃至金块 · 中国政府随后以白银为主要货币，到 17 世纪初白银成为全球经济体系的支配力量 · 亚洲人急于用丝绸、瓷器、钢制品换取白银，而亚洲货物又在大西洋市场被抢购 · 有专家估计 16 世纪全球经济中的白银总量增至三倍',
+        'Earl J. Hamilton 记 1503–1660 年西班牙自美洲输入金银的曲线，在 1581–1600 年间达到峰值 · Commercial Revolution 由四件事共同促成：欧洲海外殖民地的发展、新海路的开通、人口增长，以及通货膨胀——后者部分来自人口压力，部分来自被开采并投入流通的金银增加 · 16 世纪至 17 世纪初的高通胀被称作 Price Revolution · AMSCO 在 Topic 4.3 开篇即写：西班牙成功地在美洲开采白银，然而这些白银在西班牙点起通胀，而通胀又助推了西班牙帝国的衰落 · Topic 4.8 重申：大量金银流入 Spain 与 China 同样产生负面经济后果，流通货币量增加引起通胀',
+        '17 世纪的欧洲人普遍以一国积累的金银多寡衡量其财富，因此各国定下政策：尽可能多卖给别国以最大化流入的金银，尽可能少买以减少流出——这套 mercantilism 需要政府的大量介入 · 它通过高关税与建立殖民地加强政府对经济的控制，而 Spain 在美洲设殖民地的主要目的就是尽可能多地供应金银 · 海外白银产量的一部分直接归王室，帝国用这笔钱扩军并开拓对外贸易 · 维持贸易格局的另一手是由欧洲统治者特许的 monopoly：西班牙政府先垄断国内所有烟草，再垄断其美洲殖民地所有烟草，烟草收入约占西班牙总岁入的三分之一 · 王室派 viceroys 治理殖民地并设 audiencias 供上诉，但欧美之间运输通信迟缓，王室难以直接控制 New Spain · 与之对照，AMSCO 明写在 Spain 与 Portugal，投资主要由政府自己通过给特定探险者拨款来完成'
+      ],
+      links: [
+        '从矿口出来的银不是财富本身，只是购买力，而购买力必须找到肯要它的市场才变成东西。当时肯以最好的货来换银的市场不在欧洲——它在东边。',
+        '亚洲吸走的是银，交出的是货，而货被运回欧洲卖成利润。可运回欧洲的银同样在增加，只是这一端没有能吸收它的商品市场——同一笔钱追着数量没有同步增长的货，价格就只能往上走。',
+        '通胀把王室的收入蚀掉一层，而王室的开销并没有跟着缩水。要在钱越来越不值钱的情况下保住收入，国家能做的不是增产，而是改规矩：把进出口和殖民地的买卖握在自己手里。',
+        ''
+      ] },
+
+    { id: 'u4_sub_resistance', kind: 'chain', units: ['u4'], tier: 'sub', chip: 'Forms of Resistance',
+      name: '抵抗的形状由手里还剩什么决定',
+      blurb: 'AMSCO 把 Topic 4.6 整章都用来记反抗，但它记的这些反抗形状差得很远：有的是国王写信，有的是船上起事，有的是逃进山里另立聚落，有的是把神藏在圣徒的名字底下。这条链把它们排成一个判据——一个人能采取哪种反抗，取决于他手里还剩下什么：还剩国家的用谈判，还剩人数的用起事，还剩地形的用逃亡，什么都不剩的只剩记忆。',
+      exam: '直接对应 Topic 4.6 的 SAQ（比较 Pueblo Revolts 与 Maratha–Mughal 之战、比较 Pueblo Revolts 与 Cossack Revolts）与 Topic 4.5 的 SAQ（Vodou 作为宗教融合的例子）。最常见失分写法：「Enslaved people resisted by rebelling.」这是同义反复，没有任何机制；要写成「船上的起事几乎都被镇压，因为俘虏被关在货舱、没有武器也没有可退之处；到岸之后反抗才常见起来，AMSCO 明写尤其在被奴役非洲人数量超过自由欧洲人的地方——人数是那里唯一可用的资源」。第二个高频错误是把 syncretism 说成「他们保留了自己的宗教」——AMSCO 记的是合并：Vodou 把多个非洲与印第安族群的灵合在一起，还用天主教礼仪的片段补上失传的祷文、用圣像来代表各路 mistè。',
+      stops: [91, 59, 66, 55],
+      labels: ['供货一侧管不住自己', '人数决定敢不敢动手', '跑出去自己立规矩', '拿不走土地就带走神'],
+      evidence: [
+        '奴役在非洲早于欧洲人来找劳力就已存在，包括大量女性被作为家户劳动者奴役；在许多社会里土地由全体共有，个人要确立财富与权势，除了展示自己拥有的财物，也展示自己拥有的被奴役者 · 欧洲人也不是第一批来找非洲劳力的外来者：Postclassical Era（600–1450）的阿拉伯商人常在东非 Swahili 海岸买人 · 15 世纪后期 Portuguese 船队抵达 Kongo Kingdom 求购奴隶，最初把他们带回欧洲做家仆 · 沿岸的非洲领袖发觉本国能从奴隶贸易获利后，入侵邻近社会捕人；有时也交出本国下层的战俘、仆役或罪犯 · Kongo 的 King Afonso 明白奴隶袭掠并不容易控制，他既不打算把本国精英交出去，也不愿 Kongo 被抽空人口；他还看到自己的权威正被削弱——臣民可以绕开他直接拿人换欧洲货，而在欧洲人到来之前他能控制领地内的一切贸易',
+        '许多被掳的非洲人在海上试图起事，但多数起义被镇压 · Middle Passage 通常约六周，俘虏被塞进阴湿的货舱，给的水、食物与活动空间都极少；一船人可能死掉一半，整段贸易史上约一到一成半的俘虏死于途中 · AMSCO 的输入地表把去向排成：Portuguese 殖民地 39%，British West Indian 殖民地 18%，Spanish 殖民地 18%，French 殖民地 14%，British 大陆殖民地 6%，Dutch West Indian 2% · 奴隶起义在美洲很常见，尤其是在被奴役非洲人数量超过自由欧洲人的地方 · 1663 年 Virginia 的 Gloucester County Rebellion 是今美国境内有记载的第一次奴隶起义，被奴役非洲人与白人契约仆役合谋向总督索求自由，当局事先获悉，设伏并逮捕了他们 · 英格兰 1655 年击败西班牙殖民者、夺取 Jamaica 大部',
+        'Maroons 是 Jamaica 逃亡非洲奴隶的后代，他们逃离主人、建起独立聚落；逃奴出身的 Queen Nanny 把全岛的 Maroon 联合起来，后来被Jamaica 人尊为民族英雄；加勒比与前西属美洲的被奴役者为争取自由打了 Maroon wars（1728–1740、1795–1796） · 在 Brazil，许多被迫下甘蔗地的人逃进未经测绘的内陆丛林，这正是 Portuguese 转而从非洲输入被奴役者的直接原因之一 · Ana Nzinga 西走夺取 Matamba 后宣布逃亡的奴隶在 Matamba 可获自由，统治数十年并把它建成经济强邦 · 1680 年的 Pueblo Revolt 里，Pueblo 与 Apache 杀死约四百名西班牙人、驱走其余、毁掉教堂，西班牙人退守 El Paso 直到 1692 年；此前自 1599 年 Acoma Revolt 起已有多次起事被察觉并残酷镇压 · Vodun 意为灵或神，源自被奴役并生活在 Saint-Domingue（今 Haiti）的 Dahomey、Kongo 与 Yoruba 诸族',
+        '语言几乎没能被带过来：俘虏被从各自的社群里剥离，同一条船上的人来自西非乃至东非各处，多数人没有共同语言，一代之后大多失去母语；他们把殖民者的 English、Spanish、French、Portuguese 与西非语汇及语法揉成新的语言，统称 creole，在被奴役非洲人比例更高的加勒比一直沿用至今，美国境内的例外是 South Carolina 与 Georgia 沿海的 Gullah 或 Geechee · 宗教却被合并着带了过来：Santería 意为圣徒之路，本是非洲信仰，在 Cuba 流行后传遍拉美与北美；Vodun 源自 Saint-Domingue 的 Dahomey、Kongo 与 Yoruba 诸族；Candomblé 意为为敬神而跳的舞，在 Brazil 由 Yoruba、Fon 与 Bantu 的信仰合成 · 非洲人把击鼓、舞蹈以及灵可以附身并借人行事的信念与天主教揉在一起；美国境内被奴役的非洲人还奠下了 African American church 的根基，它至今是非裔社群里最古老、最稳固的机构之一 · 约十分之一的被奴役非洲人信伊斯兰，这是伊斯兰在美洲的第一次显著存在 · 音乐被当作生存手段：唱家乡的调子熬过长工时，也用来与其他被奴役者沟通，例如在筹划逃亡时；他们把欧洲的基督教音乐与自己的宗教歌合成 Negro spirituals，还造出与西非弦乐器极相似的 banjo · 西属殖民地也生出大量融合：与原住民节日重合的天主教圣徒日被格外隆重地庆祝，Mexico 出现围绕肤色黝黑的 Virgin of Guadalupe 的崇拜'
+      ],
+      links: [
+        '一位国王能做的是谈判与禁令，可他的筹码来自对贸易的垄断，而这份垄断已经被绕过去了。一旦货被装上船，反抗的位置就从谈判桌移到了货舱——那里没有国家，只有人数与关押的间隔。',
+        '人数能发动一次起事，却守不住一块地方——起事失败就是被捕与镇压。要把一次爆发变成能延续的东西，需要的不是更多人，而是一处对方进不来的地形。',
+        '逃亡要有山、有林、有海岛的内陆；在平坦的甘蔗岛与被清空的矿区，这个条件不存在。而且 Pueblo Revolt 之后的事说明，连胜利者也发现有些东西赶不走：Popay 下令洗去洗礼、废掉基督教婚姻，可西班牙人带来的铁器、绵羊、牛与果树早已长进日常生活里。既然连清除都做不到，被压在最底下的人反过来用的正是同一件事——把带不走的东西改造成自己的。',
+        ''
+      ] },
+
+    { id: 'u4_sub_africa', kind: 'chain', units: ['u4'], tier: 'sub', chip: 'African Consequences',
+      name: '非洲一侧的账怎么结',
+      blurb: '讲大西洋奴隶贸易时最容易只写非洲被抽走了多少人，但 AMSCO 记的是一套会自我加速的机制：卖人换枪、有枪的更容易捕人、捕人再换更多枪。这条链沿这条机制往下算，算到人口结构、算到经济结构，最后算到一个看似不相干的内陆帝国——它没有参与这门生意，却被同一批火器打垮。',
+      exam: '对应 Unit 4 Review LEQ 3（systems of slavery 的变与不变）与 Topic 4.5 的地图题（那张奴隶贸易图最能支持的结论是：1500–1800 年非洲人口增长低于没有奴隶贸易时的水平）。最常见失分写法：「The slave trade made Africa poor.」笼统且与 AMSCO 的记述不符；要写成「卖人换回的是枪与布这类用完即止的货，不是能自己再生产的东西——AMSCO 明写这些以掳掠为业的王国因此在经济上依赖欧洲货、迟迟没有发展出自己生产商品的复杂经济，这才为 19 世纪末的欧洲征服铺了路」。第二个高频错误是把非洲人写成完全被动的受害者：AMSCO 同时记了 Dahomey 与 Oyo 的选择、Afonso 的抗议与 Nzinga 的转向，写因果时必须写出他们各自在算什么。',
+      stops: [100, 85, 99, 74],
+      labels: ['枪与俘虏互相喂养', '供货范围被拉到两岸', '走掉的多是男人', '内陆强权也被火器打垮'],
+      evidence: [
+        '在地方统治者的配合下，先是 Portuguese、随后是其他欧洲商人在非洲沿岸设立贸易站；一些统治者用奴隶向欧洲人换取火药与火炮，这让那些沿岸政权在与邻村作战时占据军事优势 · Kingdom of Dahomey 因袭掠他村捕人卖给欧洲商人而变强；Dahomey 与 Oyo 这类进行奴隶掳掠的社会靠向欧洲人卖俘虏而变富 · 这门交易同时有政治后果：当 Dahomey 这样的社会用奴隶换到枪，它的掳掠队就能轻易压制没有火器的邻族；没有火器的邻族无法抵挡掳掠，掳掠者于是更富、火力更强 · 结果是族群之间的战争因奴隶贸易而更频繁、更血腥 · 与此同时，海上贸易网络的扩张也支撑了一些非洲国家的成长，包括 Asante Empire 与 Kingdom of the Kongo，参与贸易使它们的影响力上升；英国人在西非设的贸易站就被 Asante Empire 限制住了影响',
+        'Brazil 的甘蔗需要常年补充劳力，Portuguese 因此从非洲输入被奴役者，尤其来自 Kongo Kingdom 与 Swahili 海岸诸城 · 东非本来就有一条长期运转的奴隶贸易：经陆路或印度洋，东非的被奴役者被卖给北非、中东与印度的买家，许多人被运到 Madagascar 一类东南岸外的岛屿，这条贸易在 18、19 世纪达到高峰 · 印度洋这一侧被卖的人际遇不同：他们更可能在海港做航运业的劳工与家仆，有些人当水手甚至士兵；住在城镇里，他们有机会形成自己的社群、与自由劳动者一同做工；落到伊斯兰社群的人享有某些权利，例如结婚的权利 · 结果是非洲的词汇、音乐样式与习俗至今可以在 Oman、India 等地找到 · 而 AMSCO 同时明写：正是 Atlantic slave trade 对非洲社会造成的破坏最大',
+        '被掳的非洲人先被关进西非的 barracoons 即 slave castles；今日 Ghana 保存着这些 Points of No Return，Senegal 的 Île de Gorée 上留着 House of Slaves · 受影响最深的是今 Ghana 与 Benin 一带的西非民族，多数被掳或被卖的非洲人出自那里 · 这些地区的性别分布严重失衡，因为被带走的人中超过三分之二是男性；女性占多数的结果是 polygyny 上升，并迫使女性承担传统上属于男性的工作 · 人口迁移同时改变了非洲故土与被掳者所到国家的人口结构；为维持被奴役人口的规模而持续外运，造成非洲输出国长达一个世纪的人口下降；AMSCO 又写，Atlantic slave trade 使非洲人口的增长慢于没有这门贸易时的水平 · 家庭组织被打乱，家人常被拆散；人被当作商品即 chattel slavery 之后，社会与家庭的组合更多由供需而非亲属纽带决定 · 反向的一笔是 Columbian Exchange 带来的新作物：maize、peanuts 与 manioc 成为非洲人的主食，改善的饮食最终又推高了人口',
+        'Portuguese 1509 年在 Arabian Sea 的海战里大胜，1578 年在陆上打 Morocco 却是另一种结局 · 那一仗打完，Morocco 国库见底，于是转头向内陆去夺 Songhai Kingdom 的财富，尽管对另一个穆斯林国家开战是被禁止的 · Moroccan 军队带着数千士兵、骆驼与马匹，以及八门火炮和其他火器，走了数月才抵达 Songhai · 在 Gao 附近的一战中，人数占优的 Songhai 被火器的威力压垮，帝国崩解；AMSCO 在 Topic 4.5 把这一战记作 1590 年，在 Unit 3 正文则记作 1591 年 · AMSCO 随后写道，Spain 与 Portugal 不久便占去了这片领土的大部分'
+      ],
+      links: [
+        '这个循环要维持，就得不断找到新的捕获对象，供货点因此一步步往内陆和沿岸两头铺开。当美洲那一端每年都要按固定数目补货，欧洲人也不再只在一个海岸买人——他们绕到大陆的另一侧去买。',
+        '两侧都在外运人口，破坏程度却不同——差别不在于非洲有没有奴役，而在于大西洋那一端把人当成会按年损耗的消耗品，因此需求量既大又必须年年重来。这种量级的抽取，不只减少人口总数，还会把留下来的人口结构本身改变。',
+        '卖人换回来的是枪与布这类用完即止的货，而不是能自己再生产的东西。AMSCO 明写这些以掳掠为业的王国因此在经济上依赖欧洲货、迟迟没有发展出自己生产商品的复杂经济，从而为 19 世纪末的欧洲征服铺了路。可在同一段时间，另一类非洲强权连参与这门生意的机会都没有——它的财富压在跨撒哈拉的陆路上，而火器已经能横穿沙漠。',
+        ''
+      ] },
+
+    { id: 'u4_sub_company', kind: 'chain', units: ['u4'], tier: 'sub', chip: 'Chartered Companies',
+      name: '公司怎么长成半个国家',
+      blurb: 'AMSCO 用 Dutch East India Company 1602 年的章程开启 Topic 4.5，那句话很值得注意：章程说全体居民都可以参股，出多出少随意。这条链解释这句话为什么重要——它把远洋贸易的风险从国王一个人身上切成许多份，于是原本只有国家才承担得起的武装贸易，变成了一家可以持续经营的生意；而这家生意后来在印度做了国家才做的事。',
+      exam: '对应 Topic 4.5 essential question 与 SAQ「Explain ONE way in which the Commercial Revolution transformed global economies」，也是 Topic 4.2 的 MCQ（Portugal 为什么建 trading post empire，正解是它只有足够的人力与实力维持贸易站而非大帝国）。最常见失分写法：「Joint-stock companies raised money for trade, so trade grew.」raise money 不是机制；要写成「limited liability 把亏损的上限锁在出资额上，投资者因此愿意把钱投进一趟可能整船沉掉的航行；风险被切碎之后，能够常年维持武装船队的就不再只有王室」。第二个高频错误是把 EIC 说成一开始就统治印度——AMSCO 明写它起初只是沿岸小堡垒、受 Mughal 制约、几乎不控制领土，是后来靠利用穆斯林与 Hindu 之间的紧张、与地方统治者缔约、并用受欧洲训练的 sepoys 才向内陆扩张的。',
+      stops: [104, 44, 39],
+      labels: ['武装的贸易被证明可行', '风险被切成股份', '抽成的人开始统治'],
+      evidence: [
+        '印度洋原有的商人历来向控制航道与港口的国家缴税缴费，靠宗教与族群关系结网，不用武力保护贸易，某地收费太高就换个地方 · Portuguese 却带着更强的海军力量、宗教热情与从亚洲内部贸易牟利的决心而来，用军事优势夺取贸易控制权，沿印度洋商路建起一串武装贸易站 · 1498 年 da Gama 的船抵达东非，Portuguese 随后以重炮帆船与堡垒接管 Kilwa、Mombasa 等 Swahili 城邦的贸易，AMSCO 写这次接管把该地区推入毁灭性的衰退 · 堡垒链自 1507 年 Hormuz、1510 年 Goa 到 1511 年 Malacca，目的是垄断香料贸易并对往来船只发放许可 · 但 Portugal 是小国，缺乏维持大贸易帝国所需的人与船；许多 Portuguese 商人不理会本国政府自行交易，官员腐败又拖了后腿，到 17 世纪 Dutch 与 English 已在东亚与它争锋；Dutch 夺下 Malacca，1620 年在 Java 建 Batavia 要塞并图谋垄断香料，English 因此转向 India 并把 Portuguese 挤出南亚',
+        '1602 年 Dutch East India Company 的章程写明：联省的全体居民都可参股，出资多少随意 · joint-stock companies 由购买股份的投资者共同拥有，人们把资本投进公司，同时分享探险与贸易的利润和风险 · limited liability 的原则是投资者对公司债务与其他责任的承担不超过其投资额，这让投资变得更安全 · Dutch、English 与 French 都在 17 世纪建起股份公司，包括 1600 年的 British East India Company 与 1602 年的 Dutch East India Company；而在 Spain 与 Portugal，投资主要由政府自己通过给特定探险者拨款完成 · 荷兰人长期是欧洲的贸易中间商，17 世纪大部分时间里荷兰船比对手更快更轻；fluyt 是荷兰人 16 至 17 世纪的主力商船 · 荷兰 1602 年就有证券交易所，1609 年 Bank of Amsterdam 已在做国际货币交易，荷兰的生活水准居欧洲之首 · 反面案例是 18 世纪初 France 与 England 双双栽进 financial bubbles：股价被买疯之后泡沫破裂，投资者巨亏、大批破产，经济受创 · 资本从企业家手里流向劳动者，使劳动者有条件成为消费者甚至投资者，尽管教会限制，高息放贷仍成为常事',
+        '维持这些贸易格局的办法之一是由欧洲统治者特许的 monopoly：把独家贸易权授给某些商人（通常经由股份公司）或政府自己 · triangular trade 的三段是：欧洲制成品如火器运往西非，被奴役的非洲人运往美洲，再装糖或烟草运回欧洲；糖是美洲最赚钱的货，到 1700 年代，加勒比的糖与朗姆在英国造出巨额财富，法国与荷兰次之 · British East India Company 起初与 Mughal Empire 建立商业关系，其沿岸小堡垒只顾贸易获利，受 Mughal 之力所限、几乎不控制领土 · 随后它开始扩张：利用印度穆斯林与 Hindu 之间的紧张，通过与地方统治者缔约来增加自己的政治权力，并借受欧洲训练的印度私兵 sepoys 向内陆推进；最终英国在政治与军事上介入之深，使它控制了次大陆的大部分 · 英国人也在西非设贸易站，但受 Asante Empire 限制；非洲、印度等地的贸易站各自成为一个 node，即多条线路的交点、来自世界各地货物的集散中心，为全球化铺路 · 18 世纪中叶 France 与 Great Britain 及各自的盟友在五大洲争夺 Seven Years’ War，1763 年英国的胜利把法国人赶出 India，也把法国人赶出 Canada'
+      ],
+      links: [
+        '武装贸易能挣钱，但它的成本结构对一个王室很不利：船队要常年在海上、损失是一次性的巨额亏空，而王室的钱同时还要打仗。要把这门生意做成能持续的，必须先让亏损不再落在同一个钱包里。',
+        '公司从统治者那里拿到的不只是钱，还有一纸特许：在某片海域独家做买卖的权利。而一旦一家公司同时拥有股本、船队、火炮与独家特许，它与一个收税的政权之间就只差一件事——把抽成的对象从货换成人。',
+        ''
+      ] },
+
     { id: 'u1_sub_syncretism', kind: 'chain', units: ['u1'], tier: 'sub', chip: 'Unit 1 · Religious Syncretism',
       name: 'Unit 1 补充链 · 普世宗教要被本地改写才站得住',
       blurb: '1200–1450 年伊斯兰教、佛教、基督教都在扩张,但扩张的方式不是替换而是嫁接。这条链解释一件在 AP 里经常被写反的事:「皈依人数上升」和「本地文化被取代」是两件事。',
