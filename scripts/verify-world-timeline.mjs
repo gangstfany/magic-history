@@ -389,7 +389,7 @@ async function verifyLearningShell(page, port) {
 
   const implementedMainline = page.locator('#eventPanel [data-mainline-chain]');
   assert.deepEqual(await implementedMainline.evaluateAll(nodes => nodes.map(node => node.dataset.mainlineChain)),
-    ['u1_main', 'u23_empires', 'u4_atlantic'],
+    ['u1_main', 'u2_main', 'u23_empires', 'u4_atlantic'],
     'course mainline must render implemented chains in canonical order');
   const implementedMainlineText = await implementedMainline.allTextContents();
   courseMainline.filter(segment => !segment.pending).forEach((segment, index) => {
@@ -432,22 +432,24 @@ async function verifyLearningShell(page, port) {
       `${id} must restore only the Current Unit control`);
   };
 
-  await clickMainlineSegment('u23_empires', 'u2', 8, 10);
+  await clickMainlineSegment('u2_main', 'u2', 73, 8);
+  await page.locator('#eventPanel [data-chain-panel-view="mainline"]').click();
+  await clickMainlineSegment('u23_empires', 'u3', 8, 10);
   await page.locator('#eventPanel [data-chain-panel-view="mainline"]').click();
   await clickMainlineSegment('u1_main', 'u1', 7, 8);
   await page.locator('#eventPanel [data-chain-panel-view="mainline"]').click();
   await clickMainlineSegment('u4_atlantic', 'u4', 42, 7);
 
   await page.evaluate(() => window.__mapFilter.setPeriod('u2'));
-  const unit23Seams = page.locator('#eventPanel [data-chain-seam]');
-  assert.equal(await unit23Seams.count(), 2,
-    'Unit 2→3 main chain must render exactly one incoming and one outgoing cross-unit seam');
+  const unit2Seams = page.locator('#eventPanel [data-chain-seam]');
+  assert.equal(await unit2Seams.count(), 2,
+    'Unit 2 main chain must render exactly one incoming and one outgoing cross-unit seam');
   assert.match(await page.locator('#eventPanel [data-chain-seam="from"]').innerText(), /承自\s*UNIT\s*1/i,
-    'Unit 2→3 incoming seam must identify Unit 1');
-  assert.match(await page.locator('#eventPanel [data-chain-seam="to"]').innerText(), /交棒\s*UNIT\s*4/i,
-    'Unit 2→3 outgoing seam must identify Unit 4');
-  assert.equal(await page.locator('#eventPanel [data-route-step]').count(), 10,
-    'cross-unit seams must not change the Unit 2→3 ring count');
+    'Unit 2 incoming seam must identify Unit 1');
+  assert.match(await page.locator('#eventPanel [data-chain-seam="to"]').innerText(), /交棒\s*UNIT\s*3/i,
+    'Unit 2 outgoing seam must identify Unit 3');
+  assert.equal(await page.locator('#eventPanel [data-route-step]').count(), 8,
+    'cross-unit seams must not change the Unit 2 ring count');
   const seamAccessibility = await page.evaluate(() => {
     const rgba = (value) => {
       const parts = value.match(/[\d.]+/g)?.map(Number) || [];
@@ -489,7 +491,7 @@ async function verifyLearningShell(page, port) {
   assert.equal(await page.locator('#eventPanel [data-chain-seam]').count(), 0,
     'supplementary chains must not render cross-unit seams');
 
-  await page.evaluate(() => window.__mapFilter.enterRoute('u23_empires'));
+  await page.evaluate(() => window.__mapFilter.enterRoute('u2_main'));
   await page.locator('#eventPanel [data-chain-seam="from"] [data-chain-boundary]').click();
   const incomingBoundaryState = await page.evaluate(() => ({
     learning: window.__mapFilter.getLearningState(),
@@ -522,18 +524,34 @@ async function verifyLearningShell(page, port) {
     selectedPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
       .map(group => group.querySelector('text')?.textContent.trim()),
   }));
-  assert.equal(outgoingBoundaryState.period, 'u4',
-    'outgoing seam must select successor Unit 4 through the canonical Unit filter');
-  assert.equal(outgoingBoundaryState.learning.chainId, 'u4_atlantic',
-    'outgoing seam must open the Unit 4 Atlantic chain');
+  assert.equal(outgoingBoundaryState.period, 'u3',
+    'outgoing seam must select successor Unit 3 through the canonical Unit filter');
+  assert.equal(outgoingBoundaryState.learning.chainId, 'u23_empires',
+    'outgoing seam must open the Unit 3 empires chain');
   assert.equal(outgoingBoundaryState.learning.chainStep, 0,
     'outgoing seam must select the successor first ring');
-  assert.ok(outgoingBoundaryState.selectedPins.includes('42'),
-    'outgoing seam must synchronize the selected map anchor to pin 42');
-  assert.equal(await page.locator('#eventPanel [data-route-step]').count(), 7,
-    'outgoing navigation must preserve the Unit 4 chain ring count');
+  assert.ok(outgoingBoundaryState.selectedPins.includes('8'),
+    'outgoing seam must synchronize the selected map anchor to pin 8');
+  assert.equal(await page.locator('#eventPanel [data-route-step]').count(), 10,
+    'outgoing navigation must preserve the Unit 3 chain ring count');
+  assert.match(await page.locator('#eventPanel [data-route-step].now').innerText(), /8.*Karakorum/is,
+    'outgoing navigation must select Unit 3 first boundary pin 8 at Karakorum');
+
+  await page.locator('#eventPanel [data-chain-seam="to"] [data-chain-boundary]').click();
+  const unit3OutgoingBoundaryState = await page.evaluate(() => ({
+    learning: window.__mapFilter.getLearningState(),
+    period: window.__mapFilter.getState().period,
+    selectedPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+      .map(group => group.querySelector('text')?.textContent.trim()),
+  }));
+  assert.equal(unit3OutgoingBoundaryState.period, 'u4',
+    'Unit 3 outgoing seam must select successor Unit 4 through the canonical Unit filter');
+  assert.equal(unit3OutgoingBoundaryState.learning.chainId, 'u4_atlantic',
+    'Unit 3 outgoing seam must open the Unit 4 Atlantic chain');
+  assert.ok(unit3OutgoingBoundaryState.selectedPins.includes('42'),
+    'Unit 3 outgoing seam must synchronize the selected map anchor to pin 42');
   assert.match(await page.locator('#eventPanel [data-route-step].now').innerText(), /42.*Lisbon/is,
-    'outgoing navigation must select Unit 4 first boundary pin 42 at Lisbon');
+    'Unit 3 outgoing navigation must select Unit 4 first boundary pin 42 at Lisbon');
   const pendingSeam = page.locator('#eventPanel [data-chain-seam="to"]');
   assert.match(await pendingSeam.innerText(), /交棒\s*UNIT\s*5/i,
     'Unit 4 outgoing seam must visibly identify pending Unit 5');
@@ -1206,7 +1224,7 @@ async function verifyHomeLearningShell(page, port) {
     'clicking the homepage course-mainline control must refresh the mirrored panel');
   const mirroredMainlineSegments = page.locator('#home-events [data-mainline-chain]');
   assert.deepEqual(await mirroredMainlineSegments.evaluateAll(nodes => nodes.map(node => node.dataset.mainlineChain)),
-    ['u1_main', 'u23_empires', 'u4_atlantic'],
+    ['u1_main', 'u2_main', 'u23_empires', 'u4_atlantic'],
     'the homepage must mirror canonical implemented mainline segments');
   const mirroredMainlineText = await mirroredMainlineSegments.allTextContents();
   embeddedCourseMainline.filter(segment => !segment.pending).forEach((segment, index) => {
@@ -1226,12 +1244,12 @@ async function verifyHomeLearningShell(page, port) {
   assert.equal(await mirroredPendingMainline.locator('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])').count(), 0,
     'the homepage pending Unit 5 tail must remain noninteractive');
 
-  await page.locator('#home-events [data-mainline-chain="u23_empires"]').click();
+  await page.locator('#home-events [data-mainline-chain="u2_main"]').click();
   await page.waitForFunction(() => {
     const api = document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter;
     const state = api?.getLearningState?.();
     return api?.getState?.().period === 'u2' && state?.chainPanel === 'unit'
-      && state?.chainId === 'u23_empires' && state?.chainStep === 0;
+      && state?.chainId === 'u2_main' && state?.chainStep === 0;
   });
   const mirroredSegmentState = await frame.locator('body').evaluate(() => ({
     state: window.__mapFilter.getLearningState(),
@@ -1239,15 +1257,15 @@ async function verifyHomeLearningShell(page, port) {
     selectedPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
       .map(group => group.querySelector('text')?.textContent.trim()),
   }));
-  assert.equal(mirroredSegmentState.period, 'u2', 'homepage u23 segment must select Unit 2');
-  assert.equal(mirroredSegmentState.state.chainPanel, 'unit', 'homepage u23 segment must restore Current Unit');
-  assert.equal(mirroredSegmentState.state.chainId, 'u23_empires', 'homepage u23 segment must open its chain');
-  assert.equal(mirroredSegmentState.state.chainStep, 0, 'homepage u23 segment must open its first ring');
-  assert.ok(mirroredSegmentState.selectedPins.includes('8'), 'homepage u23 segment must select boundary pin 8');
+  assert.equal(mirroredSegmentState.period, 'u2', 'homepage Unit 2 segment must select Unit 2');
+  assert.equal(mirroredSegmentState.state.chainPanel, 'unit', 'homepage Unit 2 segment must restore Current Unit');
+  assert.equal(mirroredSegmentState.state.chainId, 'u2_main', 'homepage Unit 2 segment must open its chain');
+  assert.equal(mirroredSegmentState.state.chainStep, 0, 'homepage Unit 2 segment must open its first ring');
+  assert.ok(mirroredSegmentState.selectedPins.includes('73'), 'homepage Unit 2 segment must select boundary pin 73');
   await expectVisible(page.locator('#home-events .rt-stops-chain'),
-    'homepage u23 segment must return the mirrored panel to Current Unit content');
+    'homepage Unit 2 segment must return the mirrored panel to Current Unit content');
   assert.deepEqual(await trimmedTexts(page.locator('#home-events [data-chain-panel-view][aria-pressed="true"]')), ['当前单元'],
-    'homepage u23 segment must restore only the Current Unit panel control');
+    'homepage Unit 2 segment must restore only the Current Unit panel control');
 
   await page.locator('.map-card-head [data-learning-view="map"]').click();
   await page.locator('.map-card-head [data-learning-view="chain"]').click();
