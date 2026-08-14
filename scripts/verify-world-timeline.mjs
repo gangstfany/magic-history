@@ -344,8 +344,9 @@ async function verifyLearningShell(page, port) {
     toChain: segment.to?.chain ?? null,
     pending: segment.pending,
   })), [
-    { id: 'u1_main', units: ['u1'], entryUnit: 'u1', from: null, toUnit: 'u2', toChain: 'u23_empires', pending: false },
-    { id: 'u23_empires', units: ['u2', 'u3'], entryUnit: 'u2', from: 'u1_main', toUnit: 'u4', toChain: 'u4_atlantic', pending: false },
+    { id: 'u1_main', units: ['u1'], entryUnit: 'u1', from: null, toUnit: 'u2', toChain: 'u2_main', pending: false },
+    { id: 'u2_main', units: ['u2'], entryUnit: 'u2', from: 'u1_main', toUnit: 'u3', toChain: 'u23_empires', pending: false },
+    { id: 'u23_empires', units: ['u3'], entryUnit: 'u3', from: 'u2_main', toUnit: 'u4', toChain: 'u4_atlantic', pending: false },
     { id: 'u4_atlantic', units: ['u4'], entryUnit: 'u4', from: 'u23_empires', toUnit: 'u5', toChain: null, pending: false },
     { id: null, units: ['u5'], entryUnit: 'u5', from: 'u4_atlantic', toUnit: null, toChain: null, pending: true },
   ], 'course mainline must expose the approved handoffs and pending Unit 5 tail');
