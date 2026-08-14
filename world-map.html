@@ -197,16 +197,18 @@ h1 .en { color: var(--accent); }
 /* 控制条 sticky 吸底,会盖住最后一环。链条越长越明显(U1 主干链 8 环时正好压住交棒 Unit 2 那一环) */
 .rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 52px; }
 .rt-stops-chain .rt-stop { justify-content: flex-start; text-align: left; }
-/* 链内切换器:主干链是骨架、补充链是支线,用形状分层,不靠颜色暗示 */
-.rt-switch { margin: 10px 0 0; }
-.rt-spine { display: flex; width: 100%; align-items: center; gap: 7px; min-height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 800; color: var(--ink); cursor: pointer; text-align: left; }
+/* 链内切换器:主干链与补充链各占一行,标签列等宽,两个控件左右边缘对齐 —— 之前四块东西
+   各自为政地堆着,窄栏里显得很挤。层级靠"一个是常驻按钮、一个是多选下拉"来分。 */
+.rt-switch { display: flex; flex-direction: column; gap: 6px; margin: 9px 0 0; }
+.rt-pick { display: flex; align-items: center; gap: 9px; }
+.rt-pick-lb { flex: 0 0 42px; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); }
+.rt-spine { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 34px;
+  padding: 0 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--card);
+  font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; text-align: left; }
 .rt-spine:hover { border-color: var(--ink-soft); }
 .rt-spine.on { border-color: var(--ink); background: rgba(43,33,24,0.05); }
 .rt-spine .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; background: var(--ink) !important; }
-.rs-tag { flex: 0 0 auto; padding: 2px 5px; border-radius: 4px; font-size: 10.5px; font-weight: 800; color: var(--ink); background: rgba(43,33,24,0.09); }
 .rs-name { flex: 1 1 auto; min-width: 0; }
-.rt-branch-row { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; }
-.rt-branch-label { flex: 0 0 auto; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); }
 .rt-branch-select { flex: 1 1 auto; min-width: 0; font: inherit; min-height: 34px; border: 1px solid var(--line);
   border-radius: 8px; padding: 4px 8px; color: var(--ink); background: var(--card); font-size: 12.5px; font-weight: 700; cursor: pointer; }
 .rt-branch-select:hover { border-color: var(--ink-soft); }
@@ -3059,8 +3061,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
           + `</div>`;
       };
       // 颜色走 CSS 变量,不写死主题色(#5a2d7a 是「文化与宗教」,复用会让学生分不清)
-      body = group('main', '主干链 · 单元的因果脊', 'var(--ink)', '', true)
-           + group('sub', '补充链 · 主干装不下的支线', 'var(--ink-soft)', ' chain-chip-sub', false);
+      body = group('main', '主干链', 'var(--ink)', '', true)
+           + group('sub', '补充链', 'var(--ink-soft)', ' chain-chip-sub', false);
     } else if (kind === 'route') {
       body = `<div class="route-picker">` + ROUTES.map(r =>
         `<button type="button" class="route-chip" data-route-go="${r.id}">`
@@ -3277,26 +3279,25 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (list.length < 2) return '';
     const spine = list.find(c => (c.tier || 'main') === 'main');
     const branches = list.filter(c => (c.tier || 'main') === 'sub');
-    const spineHTML = spine ? `<button type="button" class="rt-spine${spine.id === current.id ? ' on' : ''}"`
-      + `${spine.id === current.id ? ' aria-current="true"' : ''} data-route-go="${spine.id}" title="${spine.name}">`
-      + `<span class="rc-dot"></span>`
-      + `<span class="rs-tag">主干链</span>`
-      + `<span class="rs-name">${chainShortName(spine)}</span>`
-      + `<span class="rc-count">${spine.stops.length} 环</span></button>` : '';
-    // 补充链收成一行下拉:五颗药丸在窄栏里各占一行,约 180px,把链条挤到屏幕下半。
-    // 用 select 而不是自制菜单,是为了跟工具栏那个 Unit 下拉同一种控件 —— 学生不用再学一次,
-    // 键盘和读屏也是白得的。骨架条仍是整条,不并进下拉:一进去两者就又变回并列关系了。
-    const activeBranch = branches.find(c => c.id === current.id);
-    const branchHTML = branches.length
-      ? `<div class="rt-branch-row">`
-        + `<label class="rt-branch-label" for="chainBranchPick">补充链</label>`
-        + `<select id="chainBranchPick" class="rt-branch-select" data-chain-pick>`
-        + `<option value="">${activeBranch ? '换一条补充链…' : `主干装不下的支线 · ${branches.length} 条`}</option>`
+    const onBranch = branches.some(c => c.id === current.id);
+    // 主干链和补充链做成同一组对齐的行:标签列等宽,两个控件左右边缘对齐。
+    // 行首标签已经写着"主干链",骨架条里就不再挂一个同名芯片了。
+    const spineRow = spine
+      ? `<div class="rt-pick"><span class="rt-pick-lb">主干链</span>`
+        + `<button type="button" class="rt-spine${spine.id === current.id ? ' on' : ''}"`
+        + `${spine.id === current.id ? ' aria-current="true"' : ''} data-route-go="${spine.id}" title="${spine.name}">`
+        + `<span class="rc-dot"></span><span class="rs-name">${chainShortName(spine)}</span>`
+        + `<span class="rc-count">${spine.stops.length} 环</span></button></div>`
+      : '';
+    const branchRow = branches.length
+      ? `<div class="rt-pick"><span class="rt-pick-lb">补充链</span>`
+        + `<select class="rt-branch-select" data-chain-pick aria-label="切换到补充链">`
+        + `<option value="">${onBranch ? '换一条…' : '选一条…'}</option>`
         + branches.map(c => `<option value="${c.id}"${c.id === current.id ? ' selected' : ''}>`
             + `${chainShortName(c)} · ${c.stops.length} 环</option>`).join('')
         + `</select></div>`
       : '';
-    return `<div class="rt-switch" role="group" aria-label="本单元的因果链">${spineHTML}${branchHTML}</div>`;
+    return `<div class="rt-switch" role="group" aria-label="本单元的因果链">${spineRow}${branchRow}</div>`;
   }
 
   function syncLearningTabs() {
