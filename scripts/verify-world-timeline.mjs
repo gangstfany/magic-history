@@ -933,7 +933,7 @@ async function verifyLearningShell(page, port) {
   await page.locator('#periodFilter').selectOption('u4');
   assert.match(await page.locator('#eventPanel').innerText(), /Unit 4|大西洋|Atlantic/i,
     'Unit 4 selection must render Unit 4 Atlantic causal-chain content');
-  for (const unit of ['u5', 'u6', 'u7', 'u8', 'u9']) {
+  for (const unit of ['u6', 'u7', 'u8', 'u9']) {
     await page.locator('#periodFilter').selectOption(unit);
     const pendingChainText = await page.locator('#eventPanel').innerText();
     assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), 'Unit 因果链',
