@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PAGE_FILE = join(PROJECT_ROOT, 'world-map.html');
+const SOURCE_ID_BASELINE_FILE = join(PROJECT_ROOT, 'scripts', 'world-source-id-baseline.json');
 const MIME_TYPES = Object.freeze({
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
@@ -132,6 +133,45 @@ async function verifyTimeline(page, port) {
   assert.ok(initialState.excludedPre1200Count > 0, 'pre-1200 source records must be explicitly excluded from Timeline');
   assert.equal(initialState.anchorlessRecordCount, 0, 'current AP World source data has no anchorless records');
   assert.equal(initialState.anchorlessSupported, false, 'API must document the current anchorless-data limitation');
+  // source id 是"标点内第几条"按文档顺序算出来的,它同时进了 Unit 映射表、事件 key 和本文件的断言。
+  // 新记录一旦插在同一标点已有记录之前,后面每条的 id 都会静默改指向另一段史实 —— 单元归属跟着错位,
+  // 而且没有任何东西会报错。基线文件记下建 Unit 8 之前每个 id 的语义,这里逐条比对。
+  const baseline = JSON.parse(await readFile(SOURCE_ID_BASELINE_FILE, 'utf8'));
+  const liveSourceIds = await page.evaluate(() => {
+    const counts = {};
+    const out = {};
+    document.querySelectorAll('.panel .entry').forEach((entry) => {
+      const num = entry.querySelector('.citynum')?.textContent.trim();
+      const yr = entry.querySelector('.yr')?.textContent.trim();
+      if (!num || !yr) return;
+      const ordinal = counts[num] = (counts[num] ?? -1) + 1;
+      const trig = (entry.querySelector('.trig')?.textContent || '').replace(/\s+/g, ' ').trim();
+      out[`${num}:${ordinal}`] = `${yr}|${trig.slice(0, 24)}`;
+    });
+    return out;
+  });
+  const drifted = Object.entries(baseline.signatures)
+    .filter(([id, signature]) => liveSourceIds[id] !== signature)
+    .map(([id, signature]) => ({ id, was: signature, now: liveSourceIds[id] ?? '(gone)' }));
+  const revised = Object.entries(baseline.revised);
+  assert.deepEqual(drifted.map((entry) => entry.id).sort(), revised.map(([id]) => id).sort(),
+    `only the records revised on purpose may change what a source id means; drifted: ${JSON.stringify(drifted)}`);
+  for (const [id, record] of revised) {
+    assert.equal(liveSourceIds[id], record.after,
+      `${id} was revised on purpose and must now read as the baseline records it: ${record.why}`);
+  }
+  const countByPin = (ids) => ids.reduce((tally, id) => {
+    const pin = id.split(':')[0];
+    tally[pin] = (tally[pin] || 0) + 1;
+    return tally;
+  }, {});
+  const baselineCounts = countByPin(Object.keys(baseline.signatures));
+  const liveCounts = countByPin(Object.keys(liveSourceIds));
+  for (const [pin, count] of Object.entries(baselineCounts)) {
+    assert.ok((liveCounts[pin] || 0) >= count,
+      `pin ${pin} must only ever gain records, never lose them (${liveCounts[pin] || 0} < ${count})`);
+  }
+
   const reviewedUnitAssignments = await page.evaluate(() => {
     const visibleKeysFor = (unit) => {
       window.__mapFilter.setPeriod(unit);
