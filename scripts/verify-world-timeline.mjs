@@ -423,12 +423,17 @@ async function verifyLearningShell(page, port) {
     { id: 'u5_main', units: ['u5'], entryUnit: 'u5', from: 'u4_main', toUnit: 'u6', toChain: 'u6_main', pending: false },
     { id: 'u6_main', units: ['u6'], entryUnit: 'u6', from: 'u5_main', toUnit: 'u7', toChain: 'u7_main', pending: false },
     { id: 'u7_main', units: ['u7'], entryUnit: 'u7', from: 'u6_main', toUnit: 'u8', toChain: 'u8_main', pending: false },
-    { id: 'u8_main', units: ['u8'], entryUnit: 'u8', from: 'u7_main', toUnit: 'u9', toChain: null, pending: false },
-    { id: null, units: ['u9'], entryUnit: 'u9', from: 'u8_main', toUnit: null, toChain: null, pending: true },
-  ], 'course mainline must expose the approved handoffs and pending Unit 9 tail');
-  assert.ok(courseMainline.filter(segment => !segment.pending)
-    .every(segment => segment.tier === 'main' && segment.to?.summary?.trim()),
-  'implemented course-mainline segments must be main-tier chains with handoff prose');
+    { id: 'u8_main', units: ['u8'], entryUnit: 'u8', from: 'u7_main', toUnit: 'u9', toChain: 'u9_main', pending: false },
+    { id: 'u9_main', units: ['u9'], entryUnit: 'u9', from: 'u8_main', toUnit: null, toChain: null, pending: false },
+  ], 'course mainline must expose all nine approved units and no pending tail');
+  assert.equal(courseMainline.some(segment => segment.pending), false,
+    'every unit now has an approved chain, so the mainline must not render a pending tail');
+  assert.ok(courseMainline.every(segment => segment.tier === 'main'),
+    'course-mainline segments must all be main-tier chains');
+  assert.ok(courseMainline.slice(0, -1).every(segment => segment.to?.summary?.trim()),
+    'every segment but the last must own the prose for its outgoing seam');
+  assert.equal(courseMainline[courseMainline.length - 1].to, null,
+    'the final unit hands off to nobody, so it must carry no outgoing seam');
   assert.equal(courseMainline.some(segment => segment.id?.includes('_sub_')), false,
     'supplementary chains must not join the course mainline');
   assert.equal(await page.locator('.learning-view-tab').count(), 3, 'header must expose exactly three learning entries');
@@ -465,7 +470,7 @@ async function verifyLearningShell(page, port) {
 
   const implementedMainline = page.locator('#eventPanel [data-mainline-chain]');
   assert.deepEqual(await implementedMainline.evaluateAll(nodes => nodes.map(node => node.dataset.mainlineChain)),
-    ['u1_main', 'u2_main', 'u3_main', 'u4_main', 'u5_main', 'u6_main', 'u7_main', 'u8_main'],
+    ['u1_main', 'u2_main', 'u3_main', 'u4_main', 'u5_main', 'u6_main', 'u7_main', 'u8_main', 'u9_main'],
     'course mainline must render implemented chains in canonical order');
   const implementedMainlineText = await implementedMainline.allTextContents();
   courseMainline.filter(segment => !segment.pending).forEach((segment, index) => {
@@ -474,18 +479,13 @@ async function verifyLearningShell(page, port) {
     assert.match(implementedMainlineText[index], new RegExp(`${segment.rings}\\s*环`),
       `${segment.id} mainline card must show its canonical ring count`);
   });
-  const pendingMainline = page.locator('#eventPanel [data-mainline-pending]');
-  assert.match(await pendingMainline.innerText(), /Unit\s*9/i,
-    'course mainline must expose the pending Unit 9 tail');
-  assert.match(await pendingMainline.innerText(), /待建/,
-    'course mainline pending tail must use the approved pending label');
-  assert.equal(await pendingMainline.getAttribute('aria-disabled'), 'true',
-    'course mainline pending tail must be programmatically unavailable');
-  assert.equal(await pendingMainline.locator('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])').count(), 0,
-    'course mainline pending tail must contain no focusable descendants');
+  assert.equal(await page.locator('#eventPanel [data-mainline-pending]').count(), 0,
+    'with all nine units built the course mainline must render no pending tail');
   assert.deepEqual(await trimmedTexts(page.locator('#eventPanel [data-mainline-bridge]')),
-    courseMainline.filter(segment => !segment.pending).map(segment => segment.to.summary),
+    courseMainline.filter(segment => segment.to?.summary).map(segment => segment.to.summary),
     'each course-mainline bridge must derive from the preceding segment handoff summary');
+  assert.equal(await page.locator('#eventPanel [data-mainline-bridge]').count(), courseMainline.length - 1,
+    'a bridge is a handoff between two segments, so the last segment must not render one');
   assert.equal(await page.locator('#eventPanel [data-course-mainline] [data-mainline-chain*="_sub_"]').count(), 0,
     'supplementary chain IDs must never appear in the course mainline');
 
@@ -632,13 +632,18 @@ async function verifyLearningShell(page, port) {
     'Unit 4 outgoing seam must identify the implemented Unit 5 chain');
   await page.evaluate(() => window.__mapFilter.setPeriod('u8'));
   await page.locator('[data-learning-view="chain"]').click();
-  const pendingSeam = page.locator('#eventPanel [data-chain-seam="to"]');
-  assert.match(await pendingSeam.innerText(), /交棒\s*UNIT\s*9/i,
-    'Unit 8 outgoing seam must visibly identify pending Unit 9');
-  assert.equal(await pendingSeam.locator('[data-chain-boundary]').count(), 0,
-    'pending Unit 9 seam must not expose an enabled boundary action');
-  assert.equal(await pendingSeam.locator('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])').count(), 0,
-    'pending Unit 9 seam must contain no focusable descendants');
+  const finalSeam = page.locator('#eventPanel [data-chain-seam="to"]');
+  assert.match(await finalSeam.innerText(), /交棒\s*UNIT\s*9/i,
+    'Unit 8 outgoing seam must identify Unit 9');
+  assert.equal(await finalSeam.locator('[data-chain-boundary]').getAttribute('data-chain-boundary'), 'u9_main',
+    'Unit 8 outgoing seam must open the implemented Unit 9 chain');
+  assert.equal(await finalSeam.locator('.rt-seam-pending').count(), 0,
+    'Unit 9 is built, so its incoming seam must not be labelled pending');
+  await page.evaluate(() => window.__mapFilter.setPeriod('u9'));
+  assert.equal(await page.locator('#eventPanel [data-chain-seam="to"]').count(), 0,
+    'the final unit hands off to nobody, so it must render no outgoing seam');
+  assert.match(await page.locator('#eventPanel [data-chain-seam="from"]').innerText(), /承自\s*UNIT\s*8/i,
+    'the final unit must still carry its incoming seam from Unit 8');
 
   await page.evaluate(() => window.__mapFilter.setPeriod('u1'));
   const initialChainPin = await page.locator('#eventPanel [data-route-step].now .rt-num').innerText();
@@ -976,19 +981,16 @@ async function verifyLearningShell(page, port) {
   await page.locator('#periodFilter').selectOption('u4');
   assert.match(await page.locator('#eventPanel').innerText(), /Unit 4|大西洋|Atlantic/i,
     'Unit 4 selection must render Unit 4 Atlantic causal-chain content');
-  for (const unit of ['u9']) {
+  // 九个单元现在都有链,所以"待建"空态已经无法到达 —— 这里改成正面断言:每个单元都渲染出自己的链。
+  for (const unit of ['u1', 'u2', 'u3', 'u4', 'u5', 'u6', 'u7', 'u8', 'u9']) {
     await page.locator('#periodFilter').selectOption(unit);
-    const pendingChainText = await page.locator('#eventPanel').innerText();
     assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), 'Unit 因果链',
-      `${unit}: missing approved chain must retain the Unit causal-chain label`);
-    assert.match(pendingChainText, new RegExp(`Unit\\s*${unit.slice(1)}`, 'i'),
-      `${unit}: pending chain state must identify the selected Unit`);
-    assert.match(pendingChainText, /因果链正在整理|因果链待完善/,
-      `${unit}: pending chain state must explain that its causal chain is being completed`);
-    assert.equal(await page.locator('#eventPanel .rt-stops-chain').count(), 0,
-      `${unit}: missing approved chain must not fabricate a chain`);
-    assert.equal(await page.locator('#eventPanel [data-route-go]').count(), 0,
-      `${unit}: missing approved chain must not show unrelated chain choices`);
+      `${unit}: the Unit causal-chain label must survive every Unit switch`);
+    await expectVisible(page.locator('#eventPanel .rt-stops-chain'), `${unit}: must render its approved chain`);
+    assert.equal(await page.locator('#eventPanel [data-route-go]').count(), 1,
+      `${unit}: must expose exactly one main-chain choice`);
+    assert.doesNotMatch(await page.locator('#eventPanel').innerText(), /因果链正在整理|因果链待完善/,
+      `${unit}: no unit may still advertise a pending chain`);
   }
   await page.locator('#periodFilter').selectOption('u4');
   await page.locator('[data-learning-view="practice"]').click();
@@ -1304,7 +1306,7 @@ async function verifyHomeLearningShell(page, port) {
     'clicking the homepage course-mainline control must refresh the mirrored panel');
   const mirroredMainlineSegments = page.locator('#home-events [data-mainline-chain]');
   assert.deepEqual(await mirroredMainlineSegments.evaluateAll(nodes => nodes.map(node => node.dataset.mainlineChain)),
-    ['u1_main', 'u2_main', 'u3_main', 'u4_main', 'u5_main', 'u6_main', 'u7_main', 'u8_main'],
+    ['u1_main', 'u2_main', 'u3_main', 'u4_main', 'u5_main', 'u6_main', 'u7_main', 'u8_main', 'u9_main'],
     'the homepage must mirror canonical implemented mainline segments');
   const mirroredMainlineText = await mirroredMainlineSegments.allTextContents();
   embeddedCourseMainline.filter(segment => !segment.pending).forEach((segment, index) => {
@@ -1314,15 +1316,10 @@ async function verifyHomeLearningShell(page, port) {
       `homepage ${segment.id} card must show its canonical ring count`);
   });
   assert.deepEqual(await trimmedTexts(page.locator('#home-events [data-mainline-bridge]')),
-    embeddedCourseMainline.filter(segment => !segment.pending).map(segment => segment.to.summary),
+    embeddedCourseMainline.filter(segment => segment.to?.summary).map(segment => segment.to.summary),
     'the homepage must mirror canonical mainline bridges');
-  const mirroredPendingMainline = page.locator('#home-events [data-mainline-pending]');
-  assert.match(await mirroredPendingMainline.innerText(), /Unit\s*9.*待建/is,
-    'the homepage must mirror the pending Unit 9 tail');
-  assert.equal(await mirroredPendingMainline.getAttribute('aria-disabled'), 'true',
-    'the homepage pending Unit 9 tail must remain programmatically unavailable');
-  assert.equal(await mirroredPendingMainline.locator('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])').count(), 0,
-    'the homepage pending Unit 9 tail must remain noninteractive');
+  assert.equal(await page.locator('#home-events [data-mainline-pending]').count(), 0,
+    'the homepage must mirror a course mainline with no pending tail');
 
   await page.locator('#home-events [data-mainline-chain="u2_main"]').click();
   await page.waitForFunction(() => {
