@@ -153,12 +153,11 @@ async function verifyTimeline(page, port) {
   const drifted = Object.entries(baseline.signatures)
     .filter(([id, signature]) => liveSourceIds[id] !== signature)
     .map(([id, signature]) => ({ id, was: signature, now: liveSourceIds[id] ?? '(gone)' }));
-  const revised = Object.entries(baseline.revised);
-  assert.deepEqual(drifted.map((entry) => entry.id).sort(), revised.map(([id]) => id).sort(),
-    `only the records revised on purpose may change what a source id means; drifted: ${JSON.stringify(drifted)}`);
-  for (const [id, record] of revised) {
-    assert.equal(liveSourceIds[id], record.after,
-      `${id} was revised on purpose and must now read as the baseline records it: ${record.why}`);
+  assert.deepEqual(drifted, [],
+    `no source id may change what it points at; revise the baseline in the same commit and log it: ${JSON.stringify(drifted)}`);
+  for (const entry of baseline.revisionLog) {
+    assert.equal(liveSourceIds[entry.id], entry.after,
+      `${entry.id} is logged as revised on purpose and must read as the log records it: ${entry.why}`);
   }
   const countByPin = (ids) => ids.reduce((tally, id) => {
     const pin = id.split(':')[0];
@@ -170,6 +169,42 @@ async function verifyTimeline(page, port) {
   for (const [pin, count] of Object.entries(baselineCounts)) {
     assert.ok((liveCounts[pin] || 0) >= count,
       `pin ${pin} must only ever gain records, never lose them (${liveCounts[pin] || 0} < ${count})`);
+  }
+
+  // 注:少数记录在 Timeline 上共用一个事件(WORLD_TIMELINE_EVENT_ALIASES,如 Middle Passage 的三条),
+  // 所以这里核对的是"declared 必须是该单元、该标点上的一条记录",不拿它去反推事件 key。
+  // 一个标点上常有同一单元的好几条记录。哪一条是这一环讲的那条,必须由链自己写明(stopEvents),
+  // 否则步进时只能按年份取第一条 —— Unit 9 最后一环就会点亮 1948 年的人权宣言而不是 2015 年的巴黎协定。
+  const ringRecords = await page.evaluate(() => window.__mapFilter.getChains().map((chain) => ({
+    id: chain.id, units: chain.units, stopPins: chain.stopPins, stopEvents: chain.stopEvents,
+  })));
+  const recordsByUnitPin = await page.evaluate(() => {
+    const counts = {};
+    const byId = {};
+    document.querySelectorAll('.panel .entry').forEach((entry) => {
+      const num = entry.querySelector('.citynum')?.textContent.trim();
+      const yr = entry.querySelector('.yr')?.textContent.trim();
+      if (!num || !yr) return;
+      const ordinal = counts[num] = (counts[num] ?? -1) + 1;
+      byId[`${num}:${ordinal}`] = num;
+    });
+    return byId;
+  });
+  const unitMembership = await page.evaluate(() => window.getTimelineState().unitMembers || null);
+  for (const chain of ringRecords) {
+    const unit = (chain.units || [])[0];
+    if (!unit || !unitMembership) continue;
+    const members = unitMembership[unit] || [];
+    chain.stopPins.forEach((pin, index) => {
+      const onPin = members.filter((id) => recordsByUnitPin[id] === String(pin));
+      const declared = chain.stopEvents[index];
+      if (onPin.length > 1) {
+        assert.ok(declared, `${chain.id} ring ${index + 1} sits on pin ${pin}, which carries ${onPin.length} ${unit} records, so it must name the one it means`);
+        assert.ok(onPin.includes(declared), `${chain.id} ring ${index + 1} names ${declared}, which is not a ${unit} record on pin ${pin}`);
+      } else if (declared) {
+        assert.ok(onPin.includes(declared), `${chain.id} ring ${index + 1} names ${declared}, which is not a ${unit} record on pin ${pin}`);
+      }
+    });
   }
 
   const reviewedUnitAssignments = await page.evaluate(() => {
