@@ -121,6 +121,21 @@ async function verifyTimeline(page, port) {
   assert.ok(response?.ok(), `world-map.html is unavailable (HTTP ${response?.status() || 'no response'})`);
   await page.waitForFunction(() => Boolean(window.__mapFilter), undefined, { timeout: 8_000 });
   await page.locator('[data-learning-view="map"]').click();
+  await page.locator('#periodFilter').selectOption('u1');
+  await page.evaluate(() => window.__mapFilter.openHit('1', 'asia'));
+  await expectVisible(page.locator('#eventPanel .event-list'),
+    'Hangzhou must keep its ordinary event cards');
+  const hangzhouStudyEntry = page.locator('#eventPanel [data-location-study-open="1"]');
+  await expectVisible(hangzhouStudyEntry,
+    'Hangzhou must offer the secondary location-study action');
+  assert.equal(await hangzhouStudyEntry.innerText(), 'View all 3 study points',
+    'the Hangzhou action must use the approved English count label');
+  assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 1,
+    'an ordinary location panel must expose one study entry action');
+
+  await page.evaluate(() => window.__mapFilter.openHit('23', 'europe'));
+  assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 0,
+    'a non-trial location must retain the original event-card UI');
   await page.evaluate(() => window.__mapFilter.setPeriod(''));
 
   const initialState = await page.evaluate(() => window.getTimelineState());

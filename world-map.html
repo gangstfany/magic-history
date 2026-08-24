@@ -380,6 +380,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 .event-list.count-1 .event-card { max-width: 620px; margin-left: auto; margin-right: auto; }
 .event-list.count-2 { columns: initial; display: flex; gap: 14px; align-items: stretch; }
 .event-list.count-2 .event-card { flex: 1 1 0; min-width: 0; }
+.location-study-entry { display: flex; justify-content: center; margin-top: 8px; }
+.location-study-open { min-height: 44px; }
+.location-study-open:focus-visible { outline: 3px solid #28708a; outline-offset: 2px; }
 .event-card {
   break-inside: avoid; margin: 0 0 14px;
   border: 1px solid var(--line); border-left: 4px solid var(--ink-faint); border-radius: 10px;
@@ -2195,6 +2198,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 </div>
 </div>
 
+<script src="data/apwh-u1-location-study.js"></script>
 <script>
 (function () {
   const svg = document.querySelector('.worldmap');
@@ -3867,6 +3871,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
   // 筛选器的挂起/恢复由下面的 initSearchFilter 赋值(它在闭包里,外面拿不到内部状态)
   let suspendFilters = null, restoreFilters = null, applyFiltersToContext = null, setPeriodFilter = null;
+  let getActivePeriod = () => document.getElementById('periodFilter')?.value || 'u1';
   let currentEventPass = null;   // 同上:出题时用它拿"当前筛选下的题库"
   let onRegionChange = null, filterIsActive = null;   // 地区现在是筛选的一个维度,两边要互相知道
   let PERIODS_REF = null, inPeriodRef = null, CATS_REF = null;   // 时期/主题定义都在那个闭包里,出题要用
@@ -4853,6 +4858,33 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
   const CAT_ICON = {};   // 分类不再用 emoji 标记,保留这个映射只为渲染代码不必改
 
+  function locationStudyRecords(num) {
+    if (getActivePeriod() !== 'u1') return [];
+    const api = window.APWH_U1_LOCATION_STUDY;
+    if (!api || typeof api.getByLocation !== 'function') return [];
+    let records;
+    try {
+      records = api.getByLocation(String(num));
+    } catch {
+      return [];
+    }
+    if (!Array.isArray(records)) return [];
+    const locationNumber = String(num);
+    return records.filter(record => {
+      if (!record || record.locationNumber !== locationNumber || !record.mainEventKey) return false;
+      return timelineEventByKey.get(record.mainEventKey)?.unit === 'u1';
+    });
+  }
+
+  function locationStudyEntryHTML(num) {
+    const records = locationStudyRecords(num);
+    if (!records.length) return '';
+    const locationNumber = escapeTimelineText(num);
+    return `<div class="location-study-entry">`
+      + `<button type="button" class="rt-btn location-study-open" data-location-study-open="${locationNumber}">`
+      + `View all ${escapeTimelineText(records.length)} study points</button></div>`;
+  }
+
   // 只负责把某个标点的历史事件渲染进当前上下文事件面板,不涉及路线/聚光灯 —— 骆驼每到一站也会调它
   function renderEventContent(num, badgeColor) {
     const items = index[num] || [];
@@ -4867,7 +4899,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         + `<div class="ec-top">`
         + `<span class="ec-yr">${it.yr}</span><span class="ec-cat">${CAT_ICON[it.catAbbr] || ''} ${it.catFull}</span></div>`
         + `<div class="ec-trig">${it.trigHTML}</div></div>`).join('')
-      + `</div>`;
+      + `</div>`
+      + locationStudyEntryHTML(num);
     eventPanel.innerHTML = html;
     eventEmpty.style.display = 'none';
     eventPanel.classList.remove('show');
@@ -4920,7 +4953,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       + `<div class="city-name">${escapeTimelineText(anchor?.it.city || event.titleEn)}</div><div class="city-count">Timeline event</div></div>`
       + `<div class="event-list count-1"><div class="event-card" style="border-left-color:${it.catColor || '#8b1a1a'}">`
       + `<div class="ec-top"><span class="ec-yr">${escapeTimelineText(event.yr)}</span><span class="ec-cat">${escapeTimelineText(it.catFull)}</span></div>`
-      + `<div class="ec-trig">${it.trigHTML || escapeTimelineText(event.titleZh)}</div></div></div>`;
+      + `<div class="ec-trig">${it.trigHTML || escapeTimelineText(event.titleZh)}</div></div></div>`
+      + locationStudyEntryHTML(anchor?.num || '');
     eventEmpty.style.display = 'none';
     eventPanel.classList.add('show');
     eventZone.classList.add('fit-content');
@@ -5317,6 +5351,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const allCats = new Set(cats.map(c => c.abbr));
     let activeCats = new Set(allCats);   // 主题是多选药丸:默认全选,取消勾选就减掉
     let activePeriod = 'u1';
+    getActivePeriod = () => activePeriod;
     let query = '';
     let tokens = [];          // query 按空格切出来的词,全部命中才算命中
     let onCountChange = null; // 首页父页面订阅计数变化
