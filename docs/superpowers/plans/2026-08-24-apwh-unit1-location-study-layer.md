@@ -35,7 +35,7 @@ import test from 'node:test';
 await import('../data/apwh-u1-location-study.js');
 
 const api = globalThis.APWH_U1_LOCATION_STUDY;
-const trialPins = ['1', '2', '3', '9', '73'];
+const trialPins = ['1', '3', '6', '7', '73'];
 
 test('publishes the Unit 1 location-study API', () => {
   assert.ok(api);
@@ -460,8 +460,8 @@ Extend the browser verifier to check all five location entry counts, English cop
 
 ```js
 for (const [number, region, expected] of [
-  ['1', 'asia', 3], ['2', 'asia', 2], ['3', 'mideast', 2],
-  ['9', 'mideast', 2], ['73', 'africa', 3],
+  ['1', 'asia', 3], ['3', 'mideast', 2], ['6', 'asia', 2],
+  ['7', 'asia', 2], ['73', 'africa', 3],
 ]) {
   await page.evaluate(({ number, region }) => window.__mapFilter.openHit(number, region), { number, region });
   const button = page.locator(`#eventPanel [data-location-study-open="${number}"]`);
