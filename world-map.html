@@ -4039,9 +4039,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function enterRouteMode(id) {
-    clearLocationStudyState();
     const route = allTrails().find(r => r.id === id);
     if (!route) return;
+    clearLocationStudyState();
     const restoreTradeContext = route.kind === 'chain' && routeMode?.route?.kind !== 'chain';
     exitRouteMode(!restoreTradeContext);       // 商路之间替换保持挂起;商路转链条先还原学习上下文
     hideAllRoutes();
@@ -5105,6 +5105,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function renderTimelineDetail(event, anchor) {
+    clearLocationStudyState();
     const it = anchor?.it || event.it;
     const badge = anchor?.num || '·';
     eventPanel.innerHTML = `<div class="event-head"><div class="badge" style="background:${it.catColor || '#8b1a1a'}">${escapeTimelineText(badge)}</div>`
@@ -5670,7 +5671,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         b.setAttribute('aria-pressed', activeCats.has(b.dataset.cat) ? 'true' : 'false'));
     }
     function setPeriod(id) {
-      activePeriod = id === '' ? '' : (id || 'u1');
+      const nextPeriod = id === '' ? '' : (id || 'u1');
+      if (nextPeriod !== activePeriod) clearLocationStudyState();
+      activePeriod = nextPeriod;
       if (periodSel) periodSel.value = activePeriod;
       apply();
       if (activeLearningView === 'chain') showCurrentUnitChain();

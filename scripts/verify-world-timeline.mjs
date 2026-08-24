@@ -318,13 +318,23 @@ async function verifyTimeline(page, port) {
   await expectVisible(narrowStudyView, 'at 390x844, Space must open the Timbuktu study view');
   const narrowRows = narrowStudyView.locator('[data-study-event]');
   assert.equal(await narrowRows.count(), 3, 'at 390x844, all Timbuktu study points must remain available');
-  await narrowRows.nth(1).click();
+  const narrowControls = await narrowRows.evaluateAll(rows => rows.map(row => row.getAttribute('aria-controls')));
+  assert.equal(new Set(narrowControls).size, narrowControls.length,
+    'every Timbuktu study toggle must reference a unique detail id');
+  assert.ok(narrowControls.every(Boolean), 'every Timbuktu study toggle must expose aria-controls');
+  await narrowRows.nth(1).focus();
+  await narrowRows.nth(1).press(' ');
   assert.equal(await narrowRows.nth(0).getAttribute('aria-expanded'), 'false',
     'expanding a second narrow study point must collapse the first');
   assert.equal(await narrowRows.nth(1).getAttribute('aria-expanded'), 'true',
     'the second narrow study point must expose its expanded state');
+  assert.equal(await narrowRows.nth(1).evaluate(element => document.activeElement === element), true,
+    'keyboard expansion must restore focus to the activated study toggle');
   assert.equal(await narrowStudyView.locator('[data-study-detail]').count(), 1,
     'at 390x844, only one study detail may be expanded');
+  const expandedDetailId = await narrowStudyView.locator('[data-study-detail]').evaluate(element => element.parentElement.id);
+  assert.equal(await narrowRows.nth(1).getAttribute('aria-controls'), expandedDetailId,
+    'the expanded toggle aria-controls must resolve to its visible detail container');
   const narrowOverflow = await page.evaluate(() => {
     const panel = document.querySelector('#eventPanel');
     const evidence = [...document.querySelectorAll('[data-study-detail] li')];
@@ -344,17 +354,78 @@ async function verifyTimeline(page, port) {
       && narrowOverflow.evidence.every(item => item.scroll <= item.client),
     `390x844 long evidence must wrap inside the panel: ${JSON.stringify(narrowOverflow)}`);
 
+  await page.evaluate(() => window.__mapFilter.enterRoute('not-a-real-route'));
+  await expectVisible(narrowStudyView,
+    'an invalid public route id must leave the visible study view intact');
+  assert.equal(await narrowRows.nth(1).getAttribute('aria-expanded'), 'true',
+    'an invalid public route id must preserve the expanded study point');
+  await narrowRows.nth(2).press('Enter');
+  assert.equal(await narrowRows.nth(2).getAttribute('aria-expanded'), 'true',
+    'study interactions must remain live after an invalid route request');
+  assert.equal(await narrowStudyView.locator('[data-study-detail]').count(), 1,
+    'an invalid route request must preserve one-at-a-time study expansion');
+  await narrowRows.nth(1).press('Enter');
+
+  const openTimbuktuFromTimeline = async () => {
+    const selected = await page.evaluate(() => window.__mapFilter.selectTimelineEvent(
+      'world-event-73-0', { num: '73', region: 'africa' }));
+    assert.equal(selected, true, 'the Unit 1 Timbuktu Timeline event must remain selectable');
+    const entry = page.locator('#eventPanel [data-location-study-open="73"]');
+    await expectVisible(entry, 'the Timbuktu Timeline detail must expose its study entry');
+    await entry.click();
+    await expectVisible(page.locator('#eventPanel [data-location-study-view="73"]'),
+      'the Timbuktu study view must reopen from Timeline detail');
+  };
+  const assertDefaultTimbuktuExpansion = async message => {
+    const rows = page.locator('#eventPanel [data-location-study-view="73"] [data-study-event]');
+    assert.equal(await rows.nth(0).getAttribute('aria-expanded'), 'true', `${message}: first point`);
+    assert.equal(await rows.nth(1).getAttribute('aria-expanded'), 'false', `${message}: second point`);
+    assert.equal(await page.locator('#eventPanel [data-location-study-view="73"] [data-study-detail]').count(), 1,
+      `${message}: detail count`);
+  };
+
+  await page.evaluate(() => window.__mapFilter.setPeriod('u2'));
+  assert.equal(await page.locator('#eventPanel [data-location-study-view]').count(), 0,
+    'changing Unit while studying must exit the active location-study view');
+  assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 0,
+    'Unit 2 must not expose a Unit 1 location-study entry');
+  await page.evaluate(() => window.__mapFilter.setPeriod('u1'));
+  await openTimbuktuFromTimeline();
+  await assertDefaultTimbuktuExpansion('a Unit change must clear the previous expansion');
+
+  await page.locator('#eventPanel [data-study-event]').nth(1).click();
+
   await page.locator('[data-learning-view="chain"]').click();
   await expectVisible(page.locator('#eventPanel .rt-stops-chain'),
     'Chain must still open after narrow location-study use');
   assert.equal(await page.locator('#eventPanel [data-location-study-view]').count(), 0,
     'Chain must clear stale location-study markup');
   await page.locator('[data-learning-view="map"]').click();
+  await openTimbuktuFromTimeline();
+  await assertDefaultTimbuktuExpansion('Chain must clear the previous expansion');
+
+  await page.locator('#eventPanel [data-study-event]').nth(1).click();
+  await page.evaluate(() => window.__mapFilter.enterRoute('mansa_musa_hajj'));
+  await expectVisible(page.locator('#eventPanel .route-panel'),
+    'a valid route must still open directly from an active study view');
+  assert.equal(await page.locator('#eventPanel [data-location-study-view]').count(), 0,
+    'a valid route must clear stale location-study markup');
+  await page.evaluate(() => window.__mapFilter.exitRoute());
+  await page.evaluate(() => window.__mapFilter.setLearningView('map'));
+  await openTimbuktuFromTimeline();
+  await assertDefaultTimbuktuExpansion('a valid Route must clear the previous expansion');
+
+  await page.locator('#eventPanel [data-study-event]').nth(1).click();
   await page.locator('[data-map-mode="routes"]').click();
   await expectVisible(page.locator('#eventPanel [data-route-go]').first(),
     'the route picker must still open after location-study use');
   assert.equal(await page.locator('#eventPanel [data-location-study-view]').count(), 0,
     'the route picker must not retain stale location-study markup');
+  await page.locator('[data-map-mode="events"]').click();
+  await openTimbuktuFromTimeline();
+  await assertDefaultTimbuktuExpansion('Routes must clear the previous expansion');
+
+  await page.locator('#eventPanel [data-study-event]').nth(1).click();
   await page.locator('[data-learning-view="practice"]').click();
   await expectVisible(page.locator('#eventPanel [data-quiz-start="all"]'),
     'Practice picker must still open after location-study use');
@@ -364,6 +435,17 @@ async function verifyTimeline(page, port) {
   assert.equal(await page.locator('#eventPanel [data-location-study-view]').count(), 0,
     'Practice must clear stale location-study markup');
   await page.locator('[data-learning-view="map"]').click();
+  await openTimbuktuFromTimeline();
+  await assertDefaultTimbuktuExpansion('Practice must clear the previous expansion');
+
+  await page.locator('#eventPanel [data-study-event]').nth(1).click();
+  await page.evaluate(() => window.__mapFilter.openHit('23', 'europe'));
+  await expectVisible(page.locator('#eventPanel .event-list'),
+    'an ordinary non-trial event panel must still open after study use');
+  assert.equal(await page.locator('#eventPanel [data-location-study-view]').count(), 0,
+    'ordinary event rendering must clear stale location-study markup');
+  await openTimbuktuFromTimeline();
+  await assertDefaultTimbuktuExpansion('ordinary event rendering must clear the previous expansion');
   await page.setViewportSize({ width: 900, height: 700 });
   await page.evaluate(() => window.__mapFilter.setPeriod(''));
 
