@@ -96,6 +96,26 @@ test('ships the exact twelve complete English study points', () => {
   }
 });
 
+test('keeps every nested trial-data string English-only', () => {
+  const strings = [];
+  const collectStrings = value => {
+    if (typeof value === 'string') {
+      strings.push(value);
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach(collectStrings);
+      return;
+    }
+    if (value && typeof value === 'object') Object.values(value).forEach(collectStrings);
+  };
+
+  collectStrings(api.records);
+  assert.ok(strings.length > api.records.length * 10,
+    'the recursive check must traverse nested people, terms, evidence, and sources');
+  for (const value of strings) assert.doesNotMatch(value, /[\u3400-\u9fff]/);
+});
+
 test('record comparator exercises end-year and id tie breakers', () => {
   const records = [
     { id: 'z', startYear: 1200, endYear: 1400 },

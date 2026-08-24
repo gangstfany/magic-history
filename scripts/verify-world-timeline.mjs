@@ -143,6 +143,12 @@ async function verifyTimeline(page, port) {
     category: panel.querySelector('.ec-cat')?.textContent.trim(),
     body: panel.querySelector('.ec-trig')?.textContent.replace(/\s+/g, ' ').trim(),
   }));
+  assert.equal(timelineDetailBeforeStudy.city, 'Hangzhou',
+    'the study action must coexist with the canonical Hangzhou location heading');
+  assert.ok(timelineDetailBeforeStudy.cardCount >= 1,
+    'the study action must preserve at least one ordinary Hangzhou event card');
+  assert.ok(timelineDetailBeforeStudy.year && timelineDetailBeforeStudy.category && timelineDetailBeforeStudy.body,
+    'the preserved ordinary card must retain its date, category, and historical body');
 
   const beforeStudy = await page.evaluate(() => {
     const filter = window.__mapFilter.getState();
@@ -244,6 +250,39 @@ async function verifyTimeline(page, port) {
   assert.deepEqual(afterStudy, beforeStudy,
     'study-view round trips must preserve filters, Timeline selection, location, and the map transform');
 
+  for (const fixture of [
+    { number: '1', region: 'asia', count: 3, name: 'Hangzhou' },
+    { number: '3', region: 'mideast', count: 2, name: 'Baghdad' },
+    { number: '6', region: 'asia', count: 2, name: 'Delhi' },
+    { number: '7', region: 'asia', count: 2, name: 'Angkor' },
+    { number: '73', region: 'africa', count: 3, name: 'Timbuktu' },
+  ]) {
+    await page.evaluate(({ number, region }) => window.__mapFilter.openHit(number, region), fixture);
+    const entry = page.locator(`#eventPanel [data-location-study-open="${fixture.number}"]`);
+    await expectVisible(entry, `pin ${fixture.number} must expose its study action`);
+    assert.equal((await entry.innerText()).trim(), `View all ${fixture.count} study points`,
+      `pin ${fixture.number} must expose the exact English study count`);
+    await entry.press('Enter');
+    const view = page.locator(`#eventPanel [data-location-study-view="${fixture.number}"]`);
+    await expectVisible(view, `pin ${fixture.number} study view must open from the keyboard`);
+    assert.equal((await view.locator('h2').innerText()).trim(), `${fixture.name} · Unit 1`,
+      `pin ${fixture.number} must render its English location heading`);
+    assert.equal(await view.locator('[data-study-event]').count(), fixture.count,
+      `pin ${fixture.number} must render the exact study-point count`);
+    assert.doesNotMatch(await view.innerText(), /[\u3400-\u9fff]/,
+      `pin ${fixture.number} study view must render English-only copy`);
+    await view.locator(`[data-location-study-back="${fixture.number}"]`).click();
+  }
+
+  await page.evaluate(() => window.__mapFilter.setPeriod('u2'));
+  await page.evaluate(() => window.__mapFilter.openHit('1', 'asia'));
+  assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 0,
+    'trial locations must not expose study actions outside Unit 1');
+  await page.evaluate(() => window.__mapFilter.setPeriod('u1'));
+  await page.evaluate(() => window.__mapFilter.openHit('1', 'asia'));
+  await expectVisible(page.locator('#eventPanel [data-location-study-open="1"]'),
+    'returning to Unit 1 must restore the trial study action');
+
   await page.evaluate(() => window.__mapFilter.openHit('23', 'europe'));
   assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 0,
     'a non-trial location must retain the original event-card UI');
@@ -268,6 +307,64 @@ async function verifyTimeline(page, port) {
   assert.equal(await page.locator('#eventPanel [data-route-action]').count(), 4,
     'route controls must remain intact after navigating back to a trial location');
   await page.evaluate(() => window.__mapFilter.exitRoute());
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.__mapFilter.setPeriod('u1'));
+  await page.evaluate(() => window.__mapFilter.openHit('73', 'africa'));
+  const narrowEntry = page.locator('#eventPanel [data-location-study-open="73"]');
+  await narrowEntry.focus();
+  await narrowEntry.press(' ');
+  const narrowStudyView = page.locator('#eventPanel [data-location-study-view="73"]');
+  await expectVisible(narrowStudyView, 'at 390x844, Space must open the Timbuktu study view');
+  const narrowRows = narrowStudyView.locator('[data-study-event]');
+  assert.equal(await narrowRows.count(), 3, 'at 390x844, all Timbuktu study points must remain available');
+  await narrowRows.nth(1).click();
+  assert.equal(await narrowRows.nth(0).getAttribute('aria-expanded'), 'false',
+    'expanding a second narrow study point must collapse the first');
+  assert.equal(await narrowRows.nth(1).getAttribute('aria-expanded'), 'true',
+    'the second narrow study point must expose its expanded state');
+  assert.equal(await narrowStudyView.locator('[data-study-detail]').count(), 1,
+    'at 390x844, only one study detail may be expanded');
+  const narrowOverflow = await page.evaluate(() => {
+    const panel = document.querySelector('#eventPanel');
+    const evidence = [...document.querySelectorAll('[data-study-detail] li')];
+    return {
+      pageClient: document.documentElement.clientWidth,
+      pageScroll: document.documentElement.scrollWidth,
+      panelClient: panel.clientWidth,
+      panelScroll: panel.scrollWidth,
+      evidence: evidence.map(item => ({ client: item.clientWidth, scroll: item.scrollWidth })),
+    };
+  });
+  assert.ok(narrowOverflow.pageScroll <= narrowOverflow.pageClient,
+    `390x844 study view must not overflow the page: ${JSON.stringify(narrowOverflow)}`);
+  assert.ok(narrowOverflow.panelScroll <= narrowOverflow.panelClient,
+    `390x844 study view must not overflow the event panel: ${JSON.stringify(narrowOverflow)}`);
+  assert.ok(narrowOverflow.evidence.length >= 2
+      && narrowOverflow.evidence.every(item => item.scroll <= item.client),
+    `390x844 long evidence must wrap inside the panel: ${JSON.stringify(narrowOverflow)}`);
+
+  await page.locator('[data-learning-view="chain"]').click();
+  await expectVisible(page.locator('#eventPanel .rt-stops-chain'),
+    'Chain must still open after narrow location-study use');
+  assert.equal(await page.locator('#eventPanel [data-location-study-view]').count(), 0,
+    'Chain must clear stale location-study markup');
+  await page.locator('[data-learning-view="map"]').click();
+  await page.locator('[data-map-mode="routes"]').click();
+  await expectVisible(page.locator('#eventPanel [data-route-go]').first(),
+    'the route picker must still open after location-study use');
+  assert.equal(await page.locator('#eventPanel [data-location-study-view]').count(), 0,
+    'the route picker must not retain stale location-study markup');
+  await page.locator('[data-learning-view="practice"]').click();
+  await expectVisible(page.locator('#eventPanel [data-quiz-start="all"]'),
+    'Practice picker must still open after location-study use');
+  await page.locator('#eventPanel [data-quiz-start="all"]').click();
+  await expectVisible(page.locator('#eventPanel .quiz-panel'),
+    'Practice must still start after location-study use');
+  assert.equal(await page.locator('#eventPanel [data-location-study-view]').count(), 0,
+    'Practice must clear stale location-study markup');
+  await page.locator('[data-learning-view="map"]').click();
+  await page.setViewportSize({ width: 900, height: 700 });
   await page.evaluate(() => window.__mapFilter.setPeriod(''));
 
   const initialState = await page.evaluate(() => window.getTimelineState());

@@ -4039,6 +4039,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function enterRouteMode(id) {
+    clearLocationStudyState();
     const route = allTrails().find(r => r.id === id);
     if (!route) return;
     const restoreTradeContext = route.kind === 'chain' && routeMode?.route?.kind !== 'chain';
@@ -4242,6 +4243,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function startQuiz(mode) {
+    clearLocationStudyState();
     exitRouteMode(true);
     const pools = quizPools();
     if (mode === 'review') {            // 只练错题:两个题库都缩到"待复习"的那些
@@ -4381,6 +4383,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   // 三组功能原本只在事件面板的空态里露出,学生一旦点开某一站、或搜了个词,入口就全没了 ——
   // 唯一回去的办法是再点一次同一地块取消选中,没人会知道。所以标题行放常驻入口,任何状态下都能打开。
   function renderPicker(kind) {
+    clearLocationStudyState();
     const restoreTradeContext = kind === 'chain' && routeMode?.route?.kind !== 'chain';
     exitRouteMode(!restoreTradeContext);
     quizMode = null;
@@ -4843,9 +4846,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (studyBack) {
       const number = studyBack.dataset.locationStudyBack;
       const returnContext = locationStudyState.returnContext;
-      locationStudyState.locationNumber = null;
-      locationStudyState.expandedStudyId = null;
-      locationStudyState.returnContext = null;
+      clearLocationStudyState();
       const timelineEvent = returnContext?.kind === 'timeline'
         ? timelineEventByKey.get(returnContext.eventKey) : null;
       if (timelineEvent) {
@@ -4932,6 +4933,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     returnContext: null,
   };
 
+  function clearLocationStudyState() {
+    locationStudyState.locationNumber = null;
+    locationStudyState.expandedStudyId = null;
+    locationStudyState.returnContext = null;
+  }
+
   const CAT_ICON = {};   // 分类不再用 emoji 标记,保留这个映射只为渲染代码不必改
 
   function ordinaryLocationStudyContext() {
@@ -4974,6 +4981,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
   // 只负责把某个标点的历史事件渲染进当前上下文事件面板,不涉及路线/聚光灯 —— 骆驼每到一站也会调它
   function renderEventContent(num, badgeColor) {
+    clearLocationStudyState();
     const items = index[num] || [];
     if (!items.length) return;
     activeNum = num;
