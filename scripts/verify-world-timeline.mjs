@@ -112,6 +112,94 @@ async function expectVisible(locator, message) {
   assert.ok(await locator.isVisible(), message);
 }
 
+async function waitForStableAttribute(locator, attribute, {
+  consecutiveFrames = 3,
+  timeout = 2_000,
+  label = `${attribute} attribute`,
+} = {}) {
+  return locator.evaluate((element, options) => new Promise((resolve, reject) => {
+    let previous = element.getAttribute(options.attribute);
+    let stableFrames = 0;
+    let sampledFrames = 0;
+    const recent = [previous];
+    const timer = setTimeout(() => {
+      reject(new Error(`${options.label} did not stabilize across ${options.consecutiveFrames} consecutive animation frames within ${options.timeout}ms; sampled ${sampledFrames} frames; recent values: ${JSON.stringify(recent)}`));
+    }, options.timeout);
+    const sample = () => {
+      const current = element.getAttribute(options.attribute);
+      sampledFrames++;
+      if (current === previous) stableFrames++;
+      else {
+        previous = current;
+        stableFrames = 0;
+      }
+      recent.push(current);
+      if (recent.length > 6) recent.shift();
+      if (stableFrames >= options.consecutiveFrames) {
+        clearTimeout(timer);
+        resolve({ value: current, sampledFrames });
+        return;
+      }
+      requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  }), { attribute, consecutiveFrames, timeout, label });
+}
+
+async function embeddedWorldLayoutSnapshot(page) {
+  return page.evaluate(() => {
+    const frame = document.querySelector('#worldMapFrame');
+    const wrap = frame?.closest('.home-map-wrap');
+    const split = frame?.closest('.map-events-split');
+    const study = frame?.contentDocument?.querySelector('#mapStudyView');
+    const mapZone = frame?.contentDocument?.querySelector('.map-zone');
+    const boxHeight = element => element ? element.getBoundingClientRect().height : null;
+    return {
+      innerWidth: window.innerWidth,
+      mapZoneHeight: boxHeight(mapZone),
+      studyHeight: boxHeight(study),
+      wrapHeight: boxHeight(wrap),
+      frameHeight: boxHeight(frame),
+      splitHeight: boxHeight(split),
+      wrapInline: wrap?.style.height || '',
+      frameInline: frame?.style.height || '',
+      splitInline: split?.style.height || '',
+    };
+  });
+}
+
+async function waitForEmbeddedWorldLayout(page, {
+  viewportWidth,
+  mapZoneHeight,
+  timeout = 2_000,
+}) {
+  try {
+    await page.waitForFunction(({ expectedViewportWidth, expectedMapZoneHeight }) => {
+      const frame = document.querySelector('#worldMapFrame');
+      const wrap = frame?.closest('.home-map-wrap');
+      const split = frame?.closest('.map-events-split');
+      const study = frame?.contentDocument?.querySelector('#mapStudyView');
+      const mapZone = frame?.contentDocument?.querySelector('.map-zone');
+      if (!frame || !wrap || !split || !study || !mapZone) return false;
+      const studyHeight = Math.ceil(study.getBoundingClientRect().height);
+      const synchronizedHeights = [wrap, frame, split]
+        .every(element => Math.round(element.getBoundingClientRect().height) === studyHeight);
+      return window.innerWidth === expectedViewportWidth
+        && Math.round(mapZone.getBoundingClientRect().height) === expectedMapZoneHeight
+        && synchronizedHeights;
+    }, {
+      expectedViewportWidth: viewportWidth,
+      expectedMapZoneHeight: mapZoneHeight,
+    }, { timeout });
+  } catch (error) {
+    const snapshot = await embeddedWorldLayoutSnapshot(page);
+    throw new Error(`embedded World layout did not synchronize within ${timeout}ms: ${JSON.stringify(snapshot)}`, {
+      cause: error,
+    });
+  }
+  return embeddedWorldLayoutSnapshot(page);
+}
+
 async function trimmedTexts(locator) {
   return (await locator.allTextContents()).map(text => text.trim());
 }
@@ -149,6 +237,10 @@ async function verifyTimeline(page, port) {
     'the study action must preserve at least one ordinary Hangzhou event card');
   assert.ok(timelineDetailBeforeStudy.year && timelineDetailBeforeStudy.category && timelineDetailBeforeStudy.body,
     'the preserved ordinary card must retain its date, category, and historical body');
+
+  await waitForStableAttribute(page.locator('#zoom-layer'), 'transform', {
+    label: 'the initial Map camera transform',
+  });
 
   const beforeStudy = await page.evaluate(() => {
     const filter = window.__mapFilter.getState();
@@ -219,6 +311,9 @@ async function verifyTimeline(page, port) {
   await expectVisible(restoredStudyEntry, 'Back must restore the Hangzhou study entry action');
   assert.equal(await restoredStudyEntry.evaluate(element => document.activeElement === element), true,
     'returning to location events must restore focus to the study entry action');
+  await waitForStableAttribute(page.locator('#zoom-layer'), 'transform', {
+    label: 'the restored Map camera transform',
+  });
   const timelineDetailAfterStudy = await page.locator('#eventPanel').evaluate(panel => ({
     city: panel.querySelector('.city-name')?.textContent.trim(),
     cityCount: panel.querySelector('.city-count')?.textContent.trim(),
@@ -1515,6 +1610,7 @@ async function verifyHomeLearningShell(page, port) {
   await page.waitForFunction(() => document.querySelector('#hostPeriod')?.options.length > 1);
 
   await page.setViewportSize({ width: 1440, height: 900 });
+  await waitForEmbeddedWorldLayout(page, { viewportWidth: 1440, mapZoneHeight: 500 });
   const desktopWorkspace = await page.locator('.map-card[data-subject="world"]').evaluate(card => {
     const shell = card.closest('.card').getBoundingClientRect();
     const module = card.getBoundingClientRect();
