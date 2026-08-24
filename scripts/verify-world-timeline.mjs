@@ -133,6 +133,86 @@ async function verifyTimeline(page, port) {
   assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 1,
     'an ordinary location panel must expose one study entry action');
 
+  const beforeStudy = await page.evaluate(() => {
+    const filter = window.__mapFilter.getState();
+    const timeline = window.getTimelineState();
+    return {
+      filter: { query: filter.query, period: filter.period, cats: [...filter.cats].sort() },
+      timeline: {
+        selectedEventKey: timeline.selectedEventKey,
+        selectedAnchor: timeline.selectedAnchor,
+      },
+      selectedLocation: document.querySelector('#eventPanel .event-head .badge')?.textContent.trim(),
+      selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+        .map(group => group.querySelector('text')?.textContent.trim()).filter(Boolean).sort(),
+      mapTransform: document.querySelector('#zoom-layer')?.getAttribute('transform'),
+    };
+  });
+
+  await hangzhouStudyEntry.click();
+  const hangzhouStudyView = page.locator('#eventPanel [data-location-study-view="1"]');
+  await expectVisible(hangzhouStudyView, 'Hangzhou study view must open in the event panel');
+  const studyHeading = hangzhouStudyView.locator('h2');
+  assert.equal((await studyHeading.innerText()).trim(), 'Hangzhou · Unit 1',
+    'the location-study heading must use the approved English context label');
+  assert.equal(await studyHeading.evaluate(element => document.activeElement === element), true,
+    'opening the study view must move focus to its heading');
+
+  const studyRows = hangzhouStudyView.locator('[data-study-event]');
+  assert.equal(await studyRows.count(), 3, 'Hangzhou must render three study points');
+  assert.deepEqual(await trimmedTexts(hangzhouStudyView.locator('[data-study-date]')),
+    ['960–1279', '1000–1279', '1100–1279'],
+    'Hangzhou study points must remain in chronological order');
+  assert.equal(await hangzhouStudyView.locator('[data-study-main-event]').count(), 3,
+    'every compact study row must visibly represent its linked main event');
+  for (const linkedEvent of await trimmedTexts(hangzhouStudyView.locator('[data-study-main-event]'))) {
+    assert.match(linkedEvent, /Linked main event:/i,
+      'compact study rows must label their main-event linkage in English');
+    assert.match(linkedEvent, /Song/i,
+      'Hangzhou study rows must identify their Song main event');
+  }
+
+  const secondStudyButton = studyRows.nth(1);
+  await secondStudyButton.click();
+  assert.equal(await hangzhouStudyView.locator('[data-study-detail]').count(), 1,
+    'expanding a study point must leave exactly one detail section open');
+  assert.equal(await secondStudyButton.getAttribute('aria-expanded'), 'true',
+    'the newly expanded study point must expose its state');
+  assert.equal(await secondStudyButton.getAttribute('aria-current'), 'true',
+    'the active study point must expose current-item semantics');
+  assert.equal(await secondStudyButton.evaluate(element => document.activeElement === element), true,
+    'expanding a study point must restore focus to its toggle after rerendering');
+  const studyDetailText = await hangzhouStudyView.locator('[data-study-detail]').innerText();
+  for (const heading of ['Significance', 'Key people', 'Key terms', 'Evidence', 'Exam connection', 'Source']) {
+    assert.match(studyDetailText, new RegExp(heading, 'i'),
+      `expanded study detail must include ${heading}`);
+  }
+
+  await hangzhouStudyView.locator('[data-location-study-back="1"]').click();
+  await expectVisible(page.locator('#eventPanel .event-list'), 'Back must restore Hangzhou event cards');
+  const restoredStudyEntry = page.locator('#eventPanel [data-location-study-open="1"]');
+  await expectVisible(restoredStudyEntry, 'Back must restore the Hangzhou study entry action');
+  assert.equal(await restoredStudyEntry.evaluate(element => document.activeElement === element), true,
+    'returning to location events must restore focus to the study entry action');
+
+  const afterStudy = await page.evaluate(() => {
+    const filter = window.__mapFilter.getState();
+    const timeline = window.getTimelineState();
+    return {
+      filter: { query: filter.query, period: filter.period, cats: [...filter.cats].sort() },
+      timeline: {
+        selectedEventKey: timeline.selectedEventKey,
+        selectedAnchor: timeline.selectedAnchor,
+      },
+      selectedLocation: document.querySelector('#eventPanel .event-head .badge')?.textContent.trim(),
+      selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+        .map(group => group.querySelector('text')?.textContent.trim()).filter(Boolean).sort(),
+      mapTransform: document.querySelector('#zoom-layer')?.getAttribute('transform'),
+    };
+  });
+  assert.deepEqual(afterStudy, beforeStudy,
+    'study-view round trips must preserve filters, Timeline selection, location, and the map transform');
+
   await page.evaluate(() => window.__mapFilter.openHit('23', 'europe'));
   assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 0,
     'a non-trial location must retain the original event-card UI');

@@ -383,6 +383,38 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 .location-study-entry { display: flex; justify-content: center; margin-top: 8px; }
 .location-study-open { min-height: 44px; }
 .location-study-open:focus-visible { outline: 3px solid #28708a; outline-offset: 2px; }
+.location-study-view { display: grid; gap: 14px; min-width: 0; overflow-wrap: anywhere; }
+.location-study-back { justify-self: start; min-height: 44px; }
+.location-study-title { margin: 0; font-size: 22px; line-height: 1.25; letter-spacing: -0.01em; }
+.location-study-title:focus { outline: none; }
+.location-study-title:focus-visible { border-radius: 4px; outline: 3px solid #28708a; outline-offset: 4px; }
+.location-study-context { margin: -6px 0 0; color: var(--ink-soft); font-size: 12px; font-weight: 700; }
+.location-study-list { display: grid; gap: 10px; min-width: 0; }
+.location-study-item { min-width: 0; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); box-shadow: var(--shadow-sm); overflow: hidden; }
+.location-study-toggle { display: grid; grid-template-columns: minmax(82px, auto) minmax(0, 1fr); gap: 5px 12px; width: 100%; min-height: 44px; padding: 13px 15px; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.location-study-toggle:hover { background: #fffaf0; }
+.location-study-toggle[aria-expanded="true"] { background: #f7efe0; }
+.location-study-toggle:focus-visible { position: relative; z-index: 1; outline: 3px solid #28708a; outline-offset: -3px; }
+.location-study-date { grid-row: 1 / span 3; color: var(--accent); font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.location-study-name { min-width: 0; font-size: 14px; line-height: 1.35; }
+.location-study-summary { min-width: 0; color: var(--ink-soft); font-size: 12.5px; font-weight: 500; line-height: 1.55; }
+.location-study-main { min-width: 0; color: #176369; font-size: 11.5px; font-weight: 800; line-height: 1.45; }
+.location-study-detail { display: grid; gap: 13px; padding: 14px 15px 17px; border-top: 1px solid var(--line); background: #fffdf8; }
+.location-study-detail section, .location-study-detail p, .location-study-detail ul, .location-study-detail dl { min-width: 0; margin: 0; }
+.location-study-detail h3 { margin: 0 0 5px; font-size: 12px; color: var(--ink); }
+.location-study-detail p, .location-study-detail li, .location-study-detail dd { color: var(--ink-soft); font-size: 12.5px; line-height: 1.6; }
+.location-study-detail ul { padding-left: 20px; }
+.location-study-detail li + li { margin-top: 4px; }
+.location-study-detail dl { display: grid; grid-template-columns: minmax(90px, auto) minmax(0, 1fr); gap: 5px 10px; }
+.location-study-detail dt { font-size: 12.5px; font-weight: 800; }
+.location-study-detail dd { margin: 0; }
+@media (max-width: 560px) {
+  .event-panel { padding-inline: 16px; }
+  .location-study-toggle { grid-template-columns: minmax(0, 1fr); }
+  .location-study-date { grid-row: auto; }
+  .location-study-detail dl { grid-template-columns: minmax(0, 1fr); }
+  .location-study-detail dd + dt { margin-top: 5px; }
+}
 .event-card {
   break-inside: avoid; margin: 0 0 14px;
   border: 1px solid var(--line); border-left: 4px solid var(--ink-faint); border-radius: 10px;
@@ -4786,6 +4818,26 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   // ↓ 商路模式里这几句要立即执行,必须排在上面三个 const 之后(它们是 const,提前引用会 TDZ 报错)
   // 行程面板的按钮:事件面板是 innerHTML 重铺的,所以走事件委托
   eventPanel.addEventListener('click', e => {
+    const studyOpen = e.target.closest('[data-location-study-open]');
+    if (studyOpen) {
+      renderLocationStudy(studyOpen.dataset.locationStudyOpen, { focusHeading: true });
+      return;
+    }
+    const studyItem = e.target.closest('[data-study-event]');
+    if (studyItem && locationStudyState.locationNumber) {
+      locationStudyState.expandedStudyId = studyItem.dataset.studyEvent;
+      renderLocationStudy(locationStudyState.locationNumber, { focusStudyId: studyItem.dataset.studyEvent });
+      return;
+    }
+    const studyBack = e.target.closest('[data-location-study-back]');
+    if (studyBack) {
+      const number = studyBack.dataset.locationStudyBack;
+      locationStudyState.locationNumber = null;
+      locationStudyState.expandedStudyId = null;
+      renderEventContent(number, pinBadgeColor(number));
+      eventPanel.querySelector(`[data-location-study-open="${CSS.escape(number)}"]`)?.focus();
+      return;
+    }
     const chainPanelView = e.target.closest('[data-chain-panel-view]');
     if (chainPanelView) {
       setChainPanelView(chainPanelView.dataset.chainPanelView);
@@ -4855,6 +4907,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (chip) enterRouteMode(chip.dataset.routeGo);
   });
   let activeNum = null;
+  const locationStudyState = {
+    locationNumber: null,
+    expandedStudyId: null,
+  };
 
   const CAT_ICON = {};   // 分类不再用 emoji 标记,保留这个映射只为渲染代码不必改
 
@@ -4927,6 +4983,69 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const escapeTimelineText = value => String(value || '').replace(/[&<>"']/g, ch => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[ch]);
+
+  function studyDetailHTML(record) {
+    const people = record.keyPeople.map(person => `<dt>${escapeTimelineText(person.name)}</dt>`
+      + `<dd>${escapeTimelineText(person.role)}</dd>`).join('');
+    const terms = record.keyTerms.map(item => `<dt>${escapeTimelineText(item.term)}</dt>`
+      + `<dd>${escapeTimelineText(item.explanation)}</dd>`).join('');
+    const evidence = record.evidence.map(item => `<li>${escapeTimelineText(item)}</li>`).join('');
+    return `<div class="location-study-detail" data-study-detail="${escapeTimelineText(record.id)}">`
+      + `<section><h3>Significance</h3><p>${escapeTimelineText(record.significance)}</p></section>`
+      + `<section><h3>Key people</h3><dl>${people}</dl></section>`
+      + `<section><h3>Key terms</h3><dl>${terms}</dl></section>`
+      + `<section><h3>Evidence</h3><ul>${evidence}</ul></section>`
+      + `<section><h3>Exam connection</h3><p>${escapeTimelineText(record.examConnection)}</p></section>`
+      + `<section><h3>Source</h3><p>${escapeTimelineText(record.source.id)} · ${escapeTimelineText(record.source.locator)}</p></section>`
+      + `</div>`;
+  }
+
+  function renderLocationStudy(number, { focusHeading = false, focusStudyId = null } = {}) {
+    const locationNumber = String(number);
+    const records = locationStudyRecords(locationNumber);
+    if (!records.length) {
+      renderEventContent(locationNumber, pinBadgeColor(locationNumber));
+      return;
+    }
+    locationStudyState.locationNumber = locationNumber;
+    if (!records.some(record => record.id === locationStudyState.expandedStudyId)) {
+      locationStudyState.expandedStudyId = records[0].id;
+    }
+    const api = window.APWH_U1_LOCATION_STUDY;
+    const locationName = api.locationName(locationNumber);
+    const regionNames = Object.freeze({
+      asia: 'Asia', mideast: 'Middle East and Central Asia', europe: 'Europe',
+      americas: 'Americas', africa: 'Africa',
+    });
+    const regionName = regionNames[pinRegion(locationNumber)] || 'World History';
+    const rows = records.map(record => {
+      const expanded = record.id === locationStudyState.expandedStudyId;
+      const linkedMainEvent = timelineEventByKey.get(record.mainEventKey);
+      const detailId = `study-detail-${record.id}`;
+      return `<article class="location-study-item">`
+        + `<button type="button" class="location-study-toggle" data-study-event="${escapeTimelineText(record.id)}"`
+        + ` aria-expanded="${expanded}" aria-current="${expanded}" aria-controls="${escapeTimelineText(detailId)}">`
+        + `<span class="location-study-date" data-study-date>${escapeTimelineText(record.dateLabel)}</span>`
+        + `<strong class="location-study-name">${escapeTimelineText(record.title)}</strong>`
+        + `<span class="location-study-summary">${escapeTimelineText(record.summary)}</span>`
+        + `<span class="location-study-main" data-study-main-event>`
+        + `Linked main event: ${escapeTimelineText(linkedMainEvent.titleEn)}</span></button>`
+        + (expanded ? `<div id="${escapeTimelineText(detailId)}">${studyDetailHTML(record)}</div>` : '')
+        + `</article>`;
+    }).join('');
+    eventPanel.innerHTML = `<div class="location-study-view" data-location-study-view="${escapeTimelineText(locationNumber)}">`
+      + `<button type="button" class="rt-btn ghost location-study-back" data-location-study-back="${escapeTimelineText(locationNumber)}">Back to location events</button>`
+      + `<h2 class="location-study-title" tabindex="-1">${escapeTimelineText(locationName)} · Unit 1</h2>`
+      + `<p class="location-study-context">${escapeTimelineText(regionName)} · ${escapeTimelineText(records.length)} study points · chronological order</p>`
+      + `<div class="location-study-list">${rows}</div></div>`;
+    eventEmpty.style.display = 'none';
+    eventPanel.classList.add('show');
+    eventZone.classList.remove('fit-content');
+    if (focusHeading) eventPanel.querySelector('.location-study-title')?.focus();
+    else if (focusStudyId) {
+      eventPanel.querySelector(`[data-study-event="${CSS.escape(focusStudyId)}"]`)?.focus();
+    }
+  }
 
   function revealTimelineCard(key) {
     const card = timelineTrack.querySelector(`[data-event-key="${CSS.escape(key)}"]`);
