@@ -151,18 +151,29 @@ async function embeddedWorldLayoutSnapshot(page) {
     const frame = document.querySelector('#worldMapFrame');
     const wrap = frame?.closest('.home-map-wrap');
     const split = frame?.closest('.map-events-split');
+    const panel = document.querySelector('#home-events');
     const study = frame?.contentDocument?.querySelector('#mapStudyView');
     const mapZone = frame?.contentDocument?.querySelector('.map-zone');
     const boxHeight = element => element ? element.getBoundingClientRect().height : null;
+    const frameBox = frame?.getBoundingClientRect();
+    const panelBox = panel?.getBoundingClientRect();
     return {
       innerWidth: window.innerWidth,
       mapZoneHeight: boxHeight(mapZone),
       studyHeight: boxHeight(study),
       wrapHeight: boxHeight(wrap),
       frameHeight: boxHeight(frame),
+      panelHeight: boxHeight(panel),
       splitHeight: boxHeight(split),
+      adjacency: frameBox && panelBox ? {
+        panelAfterFrameX: panelBox.x >= frameBox.right - 1,
+        panelAfterFrameY: panelBox.y >= frameBox.bottom - 1,
+        frame: { x: frameBox.x, y: frameBox.y, width: frameBox.width, height: frameBox.height },
+        panel: { x: panelBox.x, y: panelBox.y, width: panelBox.width, height: panelBox.height },
+      } : null,
       wrapInline: wrap?.style.height || '',
       frameInline: frame?.style.height || '',
+      panelInline: panel?.style.height || '',
       splitInline: split?.style.height || '',
     };
   });
@@ -174,23 +185,54 @@ async function waitForEmbeddedWorldLayout(page, {
   timeout = 2_000,
 }) {
   try {
-    await page.waitForFunction(({ expectedViewportWidth, expectedMapZoneHeight }) => {
-      const frame = document.querySelector('#worldMapFrame');
-      const wrap = frame?.closest('.home-map-wrap');
-      const split = frame?.closest('.map-events-split');
-      const study = frame?.contentDocument?.querySelector('#mapStudyView');
-      const mapZone = frame?.contentDocument?.querySelector('.map-zone');
-      if (!frame || !wrap || !split || !study || !mapZone) return false;
-      const studyHeight = Math.ceil(study.getBoundingClientRect().height);
-      const synchronizedHeights = [wrap, frame, split]
-        .every(element => Math.round(element.getBoundingClientRect().height) === studyHeight);
-      return window.innerWidth === expectedViewportWidth
-        && Math.round(mapZone.getBoundingClientRect().height) === expectedMapZoneHeight
-        && synchronizedHeights;
-    }, {
+    await page.locator('#worldMapFrame').evaluate((frame, options) => new Promise((resolve, reject) => {
+      let stableFrames = 0;
+      let sampledFrames = 0;
+      const timer = setTimeout(() => reject(new Error(
+        `layout did not settle across ${options.consecutiveFrames} frames after ${sampledFrames} samples`)), options.timeout);
+      const sample = () => {
+        const wrap = frame.closest('.home-map-wrap');
+        const split = frame.closest('.map-events-split');
+        const panel = document.querySelector('#home-events');
+        const study = frame.contentDocument?.querySelector('#mapStudyView');
+        const mapZone = frame.contentDocument?.querySelector('.map-zone');
+        sampledFrames++;
+        let matches = false;
+        if (wrap && split && panel && study && mapZone) {
+          const frameBox = frame.getBoundingClientRect();
+          const wrapBox = wrap.getBoundingClientRect();
+          const splitBox = split.getBoundingClientRect();
+          const panelBox = panel.getBoundingClientRect();
+          const studyHeight = study.getBoundingClientRect().height;
+          const near = (left, right) => Math.abs(left - right) <= 1;
+          const synchronizedHeights = [frameBox.height, wrapBox.height, panelBox.height]
+            .every(height => near(height, studyHeight));
+          const narrow = options.expectedViewportWidth <= 900;
+          const adjacent = narrow
+            ? panelBox.y >= frameBox.bottom - 1
+            : panelBox.x >= frameBox.right - 1;
+          const splitFits = narrow
+            ? near(splitBox.height, frameBox.height + panelBox.height)
+            : near(splitBox.height, studyHeight);
+          matches = window.innerWidth === options.expectedViewportWidth
+            && near(mapZone.getBoundingClientRect().height, options.expectedMapZoneHeight)
+            && synchronizedHeights && adjacent && splitFits;
+        }
+        stableFrames = matches ? stableFrames + 1 : 0;
+        if (stableFrames >= options.consecutiveFrames) {
+          clearTimeout(timer);
+          resolve();
+          return;
+        }
+        requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    }), {
       expectedViewportWidth: viewportWidth,
       expectedMapZoneHeight: mapZoneHeight,
-    }, { timeout });
+      consecutiveFrames: 4,
+      timeout,
+    });
   } catch (error) {
     const snapshot = await embeddedWorldLayoutSnapshot(page);
     throw new Error(`embedded World layout did not synchronize within ${timeout}ms: ${JSON.stringify(snapshot)}`, {
@@ -1676,11 +1718,29 @@ async function verifyHomeLearningShell(page, port) {
     'the primary homepage must retain cloned ordinary Hangzhou cards');
   assert.equal((await homeStudyEntry.innerText()).trim(), 'View all 3 study points',
     'the primary homepage must clone the exact English Hangzhou study label');
+  await page.locator('body').evaluate(() => document.activeElement?.blur());
+  for (let tabs = 0; tabs < 60
+      && !await homeStudyEntry.evaluate(element => document.activeElement === element); tabs++) {
+    await page.keyboard.press('Tab');
+  }
+  assert.equal(await homeStudyEntry.evaluate(element => document.activeElement === element), true,
+    'keyboard navigation must reach the cloned study entry');
   const homeEntryPresentation = await homeStudyEntry.evaluate(element => {
     const style = getComputedStyle(element);
     const box = element.getBoundingClientRect();
-    return { height: box.height, outlineStyle: style.outlineStyle, whiteSpace: style.whiteSpace };
+    return {
+      height: box.height,
+      outlineStyle: style.outlineStyle,
+      outlineWidth: parseFloat(style.outlineWidth),
+      whiteSpace: style.whiteSpace,
+    };
   });
+  assert.notEqual(homeEntryPresentation.outlineStyle, 'none',
+    `the focused cloned study entry must show a visible outline: ${JSON.stringify(homeEntryPresentation)}`);
+  assert.ok(homeEntryPresentation.outlineWidth >= 2,
+    `the focused cloned study entry outline must be substantial: ${JSON.stringify(homeEntryPresentation)}`);
+  assert.equal(homeEntryPresentation.whiteSpace, 'normal',
+    `the cloned study entry label must be allowed to wrap: ${JSON.stringify(homeEntryPresentation)}`);
 
   const originalHomeLocation = await page.locator('#home-events').evaluate(panel => ({
     city: panel.querySelector('.city-name')?.textContent.trim(),
@@ -1702,9 +1762,10 @@ async function verifyHomeLearningShell(page, port) {
   const rejectedHomeStudyActions = await frame.locator('body').evaluate(() => ({
     open: window.__mapFilter.openLocationStudy('73'),
     toggle: window.__mapFilter.toggleLocationStudy('not-a-study-point'),
+    adversarialToggle: window.__mapFilter.toggleLocationStudy(`not-a-study'][data-study-event="x"]`),
   }));
-  assert.deepEqual(rejectedHomeStudyActions, { open: false, toggle: false },
-    'the public homepage study bridge must reject unrelated locations and arbitrary study ids');
+  assert.deepEqual(rejectedHomeStudyActions, { open: false, toggle: false, adversarialToggle: false },
+    'the public homepage study bridge must reject unrelated locations and arbitrary or selector-like study ids');
   assert.equal(await homeStudyView.locator('[data-study-event][aria-expanded="true"]').count(), 1,
     'rejected public study actions must preserve the one-open-detail state');
 
@@ -1717,12 +1778,17 @@ async function verifyHomeLearningShell(page, port) {
       viewScrollWidth: view.scrollWidth,
       rowHeight: rowBox.height,
       rowDisplay: getComputedStyle(row).display,
+      rowWhiteSpace: getComputedStyle(row).whiteSpace,
     };
   });
   assert.ok(homeStudyDesktopPresentation.rowHeight >= 44,
     `the desktop cloned study toggle must retain a 44px target: ${JSON.stringify(homeStudyDesktopPresentation)}`);
   assert.ok(homeStudyDesktopPresentation.viewScrollWidth <= homeStudyDesktopPresentation.viewWidth + 1,
     `the desktop cloned study view must not overflow: ${JSON.stringify(homeStudyDesktopPresentation)}`);
+  assert.equal(homeStudyDesktopPresentation.rowDisplay, 'grid',
+    `the cloned study row must retain its two-column desktop layout: ${JSON.stringify(homeStudyDesktopPresentation)}`);
+  assert.equal(homeStudyDesktopPresentation.rowWhiteSpace, 'normal',
+    `the cloned study row copy must wrap normally: ${JSON.stringify(homeStudyDesktopPresentation)}`);
 
   await page.setViewportSize({ width: 700, height: 900 });
   const secondHomeStudyRow = homeStudyView.locator('[data-study-event]').nth(1);
@@ -1774,15 +1840,11 @@ async function verifyHomeLearningShell(page, port) {
 
   for (const viewport of [{ width: 1100, height: 850 }, { width: 700, height: 900 }]) {
     await page.setViewportSize(viewport);
-    await page.waitForTimeout(180);
-    await page.waitForFunction(({ width }) => {
-      const frame = document.querySelector('#worldMapFrame')?.getBoundingClientRect();
-      const panel = document.querySelector('#home-events')?.getBoundingClientRect();
-      if (!frame || !panel || window.innerWidth !== width) return false;
-      return width > 900
-        ? panel.x >= frame.x + frame.width - 1
-        : panel.y >= frame.y + frame.height - 1;
-    }, { width: viewport.width });
+    await waitForEmbeddedWorldLayout(page, {
+      viewportWidth: viewport.width,
+      mapZoneHeight: viewport.width <= 900 ? 300 : 500,
+      timeout: 4_000,
+    });
     const sourceLayout = await frame.locator('body').evaluate(() => {
       const map = document.querySelector('.map-zone').getBoundingClientRect();
       const dock = document.querySelector('#worldTimelineDock').getBoundingClientRect();
