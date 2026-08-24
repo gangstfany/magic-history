@@ -29,10 +29,16 @@ const expectedIds = [
   'apwh-u1-timbuktu-mansa-musa-pilgrimage',
   'apwh-u1-timbuktu-islamic-learning-griots',
 ];
+const recordKeys = [
+  'dateLabel', 'endYear', 'evidence', 'examConnection', 'id', 'keyPeople', 'keyTerms',
+  'locationNumber', 'mainEventKey', 'significance', 'source', 'startYear', 'summary', 'title',
+];
+const isNonEmptyString = value => typeof value === 'string' && value.trim().length > 0;
 
 test('publishes the Unit 1 location-study API', () => {
   assert.ok(api);
   assert.equal(typeof api.getByLocation, 'function');
+  assert.equal(typeof api.compareRecords, 'function');
   assert.deepEqual([...api.locationNumbers], trialPins);
 });
 
@@ -58,19 +64,47 @@ test('ships the exact twelve complete English study points', () => {
     const records = api.getByLocation(number);
     assert.ok(records.length >= 2 && records.length <= 3, `${number} count`);
     for (const record of records) {
+      assert.deepEqual(Object.keys(record).sort(), recordKeys);
       assert.equal(record.locationNumber, number);
+      assert.ok(isNonEmptyString(record.dateLabel), `${record.id} date label`);
+      assert.ok(Number.isInteger(record.startYear) && Number.isFinite(record.startYear));
+      assert.ok(Number.isInteger(record.endYear) && Number.isFinite(record.endYear));
+      assert.ok(record.endYear >= record.startYear, `${record.id} date order`);
+      for (const field of ['title', 'summary', 'significance', 'examConnection']) {
+        assert.ok(isNonEmptyString(record[field]), `${record.id} ${field}`);
+      }
       assert.match(record.title, /[A-Za-z]/);
       assert.match(record.summary, /[A-Za-z]/);
       assert.ok(record.significance.length >= 60, `${record.id} significance`);
       assert.ok(record.examConnection.length >= 60, `${record.id} exam connection`);
       assert.ok(record.keyPeople.length >= 1, `${record.id} people`);
+      assert.ok(record.keyPeople.every(person => isNonEmptyString(person.name)
+        && isNonEmptyString(person.role)), `${record.id} person schema`);
       assert.ok(record.keyTerms.length >= 2, `${record.id} terms`);
+      assert.ok(record.keyTerms.every(item => isNonEmptyString(item.term)
+        && isNonEmptyString(item.explanation)), `${record.id} term schema`);
       assert.ok(record.evidence.length >= 2, `${record.id} evidence`);
+      assert.ok(record.evidence.every(isNonEmptyString), `${record.id} evidence schema`);
       assert.ok(validMainEvents.has(record.mainEventKey), `${record.id} main event`);
+      assert.ok(isNonEmptyString(record.source.id), `${record.id} source id`);
+      assert.ok(isNonEmptyString(record.source.locator), `${record.id} source locator`);
       assert.equal(record.source.id, 'amsco-apwh-u1');
-      assert.match(record.source.locator, /AMSCO.*Topic.*p\./i);
+      assert.match(record.source.locator,
+        /^AMSCO AP World History, Unit 1, Topics? 1\.[1-4](?: and 1\.[1-4])?(?:; Topic 2\.2 trade mechanism context)?$/);
+      assert.doesNotMatch(record.source.locator, /varies by edition|TBD|placeholder/i);
     }
   }
+});
+
+test('record comparator exercises end-year and id tie breakers', () => {
+  const records = [
+    { id: 'z', startYear: 1200, endYear: 1400 },
+    { id: 'b', startYear: 1200, endYear: 1300 },
+    { id: 'a', startYear: 1200, endYear: 1300 },
+    { id: 'early', startYear: 1100, endYear: 1450 },
+  ];
+  assert.deepEqual([...records].sort(api.compareRecords).map(record => record.id),
+    ['early', 'a', 'b', 'z']);
 });
 
 test('uses globally unique stable study identifiers', () => {

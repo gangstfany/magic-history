@@ -19,6 +19,12 @@
     });
   }
 
+  function compareRecords(a, b) {
+    return a.startYear - b.startYear
+      || a.endYear - b.endYear
+      || a.id.localeCompare(b.id);
+  }
+
   const STUDY_EVENTS = Object.freeze([
     freezeRecord({
       id: 'apwh-u1-hangzhou-song-commercial-revolution',
@@ -40,7 +46,7 @@
         'Hangzhou became a major political and commercial center linked to both inland and maritime exchange.',
       ],
       examConnection: 'Use this case to explain how state stability and expanding markets changed economic life in East Asia during the period c. 1200–1450.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Topics 1.1 and 1.2, p. range varies by edition.' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topics 1.1 and 1.2' },
     }),
     freezeRecord({
       id: 'apwh-u1-hangzhou-grand-canal-urban-market',
@@ -62,7 +68,7 @@
         'Reliable water transport moved bulky grain more efficiently than overland shipment and supported large cities.',
       ],
       examConnection: 'Use the Grand Canal as evidence that government infrastructure could integrate regional economies and support urban growth in Song China.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Topics 1.1 and 1.2, p. range varies by edition.' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topics 1.1 and 1.2' },
     }),
     freezeRecord({
       id: 'apwh-u1-hangzhou-paper-money-maritime-tools',
@@ -84,7 +90,7 @@
         'Chinese mariners used the compass and improved ship design to navigate regional sea routes.',
       ],
       examConnection: 'Use these innovations to explain how financial practices and navigation technologies increased the scale of exchange in and beyond East Asia.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Topics 1.1 and 1.2, p. range varies by edition.' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topics 1.1 and 1.2' },
     }),
     freezeRecord({
       id: 'apwh-u1-angkor-khmer-hydraulic-state',
@@ -106,7 +112,7 @@
         'Rice surpluses supported a dense capital and the labor required for temples and public works.',
       ],
       examConnection: 'Use Angkor to explain how rulers in South and Southeast Asia connected environmental management, agricultural surplus, and state building.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Topic 1.3, p. range varies by edition.' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.3' },
     }),
     freezeRecord({
       id: 'apwh-u1-angkor-hindu-buddhist-legitimation',
@@ -128,7 +134,7 @@
         'Khmer religious life shifted from strongly Hindu court traditions toward Buddhism without erasing Angkor as a sacred center.',
       ],
       examConnection: 'Use this transition to explain how Southeast Asian states adapted imported religions to legitimize rulers and maintain political continuity.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Topic 1.3, p. range varies by edition.' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.3' },
     }),
     freezeRecord({
       id: 'apwh-u1-delhi-sultanate-state-building',
@@ -150,7 +156,7 @@
         'The sultanate preserved many local social practices even as it introduced Persianate and Islamic political traditions.',
       ],
       examConnection: 'Use Delhi to explain how a religious minority could build a state by combining conquest with selective accommodation of local society.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Topic 1.3, p. range varies by edition.' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.3' },
     }),
     freezeRecord({
       id: 'apwh-u1-delhi-bhakti-sufi-devotion',
@@ -172,7 +178,7 @@
         'Sufi teachers formed communities that helped Islam take root through teaching and personal example.',
       ],
       examConnection: 'Use Bhakti and Sufism to explain cultural interaction in South Asia while avoiding the claim that the two religions simply merged.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Topic 1.3, p. range varies by edition.' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.3' },
     }),
     freezeRecord({
       id: 'apwh-u1-baghdad-abbasid-knowledge-hub',
@@ -194,7 +200,7 @@
         'Abbasid patronage supported advances in mathematics, medicine, astronomy, and philosophy.',
       ],
       examConnection: 'Use Baghdad to explain how states and cities preserved, combined, and transmitted knowledge across regional and religious boundaries.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Topic 1.2, p. range varies by edition.' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.2' },
     }),
     freezeRecord({
       id: 'apwh-u1-baghdad-merchant-ulema-network',
@@ -216,7 +222,7 @@
         'Ulama provided teaching and legal interpretation across states whose rulers and dynasties changed over time.',
       ],
       examConnection: 'Use this network to explain how a shared religious and legal culture maintained continuity across politically divided Islamic states.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Topic 1.2, p. range varies by edition.' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.2' },
     }),
     freezeRecord({
       id: 'apwh-u1-timbuktu-mali-gold-salt-tax',
@@ -238,7 +244,7 @@
         'Caravans exchanged West African gold for salt, textiles, horses, and other North African goods.',
       ],
       examConnection: 'Use Mali to explain how African states converted control of trade routes and commodities into military and political power.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Topic 1.4; Topic 2.2 trade mechanism context, p. range varies by edition.' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.4; Topic 2.2 trade mechanism context' },
     }),
     freezeRecord({
       id: 'apwh-u1-timbuktu-islamic-learning-griots',
@@ -260,7 +266,7 @@
         'Griots continued to preserve dynastic and community memory through recitation and music.',
       ],
       examConnection: 'Use Timbuktu to explain cultural continuity and change: Islamic learning expanded while oral specialists retained important social roles.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Topic 1.4, p. range varies by edition.' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.4' },
     }),
     freezeRecord({
       id: 'apwh-u1-timbuktu-mansa-musa-pilgrimage',
@@ -282,7 +288,7 @@
         'After the pilgrimage, he sponsored mosques, religious schools, and scholars in Mali.',
       ],
       examConnection: 'Use the pilgrimage to explain how an African ruler employed religion and wealth to build legitimacy and strengthen interregional connections.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Topic 1.4, p. range varies by edition.' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.4' },
     }),
   ]);
 
@@ -290,9 +296,7 @@
   for (const number of Object.keys(TRIAL_LOCATIONS)) {
     const records = STUDY_EVENTS
       .filter(record => record.locationNumber === number)
-      .sort((a, b) => a.startYear - b.startYear
-        || a.endYear - b.endYear
-        || a.id.localeCompare(b.id));
+      .sort(compareRecords);
     byLocation.set(number, Object.freeze(records));
   }
 
@@ -300,6 +304,7 @@
     locationNumbers: Object.freeze(Object.keys(TRIAL_LOCATIONS)),
     locationName(number) { return TRIAL_LOCATIONS[String(number)] || null; },
     getByLocation(number) { return [...(byLocation.get(String(number)) || [])]; },
+    compareRecords,
     records: STUDY_EVENTS,
   });
 
