@@ -386,8 +386,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 .location-study-view { display: grid; gap: 14px; min-width: 0; overflow-wrap: anywhere; }
 .location-study-back { justify-self: start; min-height: 44px; }
 .location-study-title { margin: 0; font-size: 22px; line-height: 1.25; letter-spacing: -0.01em; }
-.location-study-title:focus { outline: none; }
-.location-study-title:focus-visible { border-radius: 4px; outline: 3px solid #28708a; outline-offset: 4px; }
+.location-study-title:focus { border-radius: 4px; outline: 3px solid #28708a; outline-offset: 4px; }
 .location-study-context { margin: -6px 0 0; color: var(--ink-soft); font-size: 12px; font-weight: 700; }
 .location-study-list { display: grid; gap: 10px; min-width: 0; }
 .location-study-item { min-width: 0; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); box-shadow: var(--shadow-sm); overflow: hidden; }
@@ -4820,6 +4819,17 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   eventPanel.addEventListener('click', e => {
     const studyOpen = e.target.closest('[data-location-study-open]');
     if (studyOpen) {
+      if (!ordinaryLocationStudyContext()) return;
+      locationStudyState.returnContext = studyOpen.dataset.locationStudyOrigin === 'timeline'
+        ? {
+            kind: 'timeline',
+            eventKey: studyOpen.dataset.locationStudyEventKey,
+            anchor: {
+              num: studyOpen.dataset.locationStudyAnchorNum,
+              region: studyOpen.dataset.locationStudyAnchorRegion,
+            },
+          }
+        : { kind: 'location' };
       renderLocationStudy(studyOpen.dataset.locationStudyOpen, { focusHeading: true });
       return;
     }
@@ -4832,9 +4842,18 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const studyBack = e.target.closest('[data-location-study-back]');
     if (studyBack) {
       const number = studyBack.dataset.locationStudyBack;
+      const returnContext = locationStudyState.returnContext;
       locationStudyState.locationNumber = null;
       locationStudyState.expandedStudyId = null;
-      renderEventContent(number, pinBadgeColor(number));
+      locationStudyState.returnContext = null;
+      const timelineEvent = returnContext?.kind === 'timeline'
+        ? timelineEventByKey.get(returnContext.eventKey) : null;
+      if (timelineEvent) {
+        const anchor = preferredTimelineAnchor(timelineEvent, returnContext.anchor);
+        renderTimelineDetail(timelineEvent, anchor);
+      } else {
+        renderEventContent(number, pinBadgeColor(number));
+      }
       eventPanel.querySelector(`[data-location-study-open="${CSS.escape(number)}"]`)?.focus();
       return;
     }
@@ -4910,11 +4929,17 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const locationStudyState = {
     locationNumber: null,
     expandedStudyId: null,
+    returnContext: null,
   };
 
   const CAT_ICON = {};   // 分类不再用 emoji 标记,保留这个映射只为渲染代码不必改
 
+  function ordinaryLocationStudyContext() {
+    return activeLearningView === 'map' && activeMapMode === 'events' && !routeMode && !quizMode;
+  }
+
   function locationStudyRecords(num) {
+    if (!ordinaryLocationStudyContext()) return [];
     if (getActivePeriod() !== 'u1') return [];
     const api = window.APWH_U1_LOCATION_STUDY;
     if (!api || typeof api.getByLocation !== 'function') return [];
@@ -4932,12 +4957,18 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     });
   }
 
-  function locationStudyEntryHTML(num) {
+  function locationStudyEntryHTML(num, origin = { kind: 'location' }) {
     const records = locationStudyRecords(num);
     if (!records.length) return '';
     const locationNumber = escapeTimelineText(num);
+    const originAttributes = origin.kind === 'timeline'
+      ? ` data-location-study-origin="timeline"`
+        + ` data-location-study-event-key="${escapeTimelineText(origin.eventKey)}"`
+        + ` data-location-study-anchor-num="${escapeTimelineText(origin.anchor?.num)}"`
+        + ` data-location-study-anchor-region="${escapeTimelineText(origin.anchor?.region)}"`
+      : ` data-location-study-origin="location"`;
     return `<div class="location-study-entry">`
-      + `<button type="button" class="rt-btn location-study-open" data-location-study-open="${locationNumber}">`
+      + `<button type="button" class="rt-btn location-study-open" data-location-study-open="${locationNumber}"${originAttributes}>`
       + `View all ${escapeTimelineText(records.length)} study points</button></div>`;
   }
 
@@ -4956,7 +4987,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         + `<span class="ec-yr">${it.yr}</span><span class="ec-cat">${CAT_ICON[it.catAbbr] || ''} ${it.catFull}</span></div>`
         + `<div class="ec-trig">${it.trigHTML}</div></div>`).join('')
       + `</div>`
-      + locationStudyEntryHTML(num);
+      + locationStudyEntryHTML(num, { kind: 'location' });
     eventPanel.innerHTML = html;
     eventEmpty.style.display = 'none';
     eventPanel.classList.remove('show');
@@ -5073,7 +5104,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       + `<div class="event-list count-1"><div class="event-card" style="border-left-color:${it.catColor || '#8b1a1a'}">`
       + `<div class="ec-top"><span class="ec-yr">${escapeTimelineText(event.yr)}</span><span class="ec-cat">${escapeTimelineText(it.catFull)}</span></div>`
       + `<div class="ec-trig">${it.trigHTML || escapeTimelineText(event.titleZh)}</div></div></div>`
-      + locationStudyEntryHTML(anchor?.num || '');
+      + locationStudyEntryHTML(anchor?.num || '', {
+        kind: 'timeline', eventKey: event.key,
+        anchor: { num: anchor?.num || '', region: anchor?.region || '' },
+      });
     eventEmpty.style.display = 'none';
     eventPanel.classList.add('show');
     eventZone.classList.add('fit-content');

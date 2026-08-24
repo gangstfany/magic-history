@@ -133,6 +133,17 @@ async function verifyTimeline(page, port) {
   assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 1,
     'an ordinary location panel must expose one study entry action');
 
+  const timelineDetailBeforeStudy = await page.locator('#eventPanel').evaluate(panel => ({
+    city: panel.querySelector('.city-name')?.textContent.trim(),
+    cityCount: panel.querySelector('.city-count')?.textContent.trim(),
+    badge: panel.querySelector('.badge')?.textContent.trim(),
+    badgeStyle: panel.querySelector('.badge')?.getAttribute('style'),
+    cardCount: panel.querySelectorAll('.event-card').length,
+    year: panel.querySelector('.ec-yr')?.textContent.trim(),
+    category: panel.querySelector('.ec-cat')?.textContent.trim(),
+    body: panel.querySelector('.ec-trig')?.textContent.replace(/\s+/g, ' ').trim(),
+  }));
+
   const beforeStudy = await page.evaluate(() => {
     const filter = window.__mapFilter.getState();
     const timeline = window.getTimelineState();
@@ -157,6 +168,14 @@ async function verifyTimeline(page, port) {
     'the location-study heading must use the approved English context label');
   assert.equal(await studyHeading.evaluate(element => document.activeElement === element), true,
     'opening the study view must move focus to its heading');
+  const studyHeadingFocus = await studyHeading.evaluate(element => {
+    const style = getComputedStyle(element);
+    return { style: style.outlineStyle, width: parseFloat(style.outlineWidth) };
+  });
+  assert.notEqual(studyHeadingFocus.style, 'none',
+    'the programmatically focused study heading must have a visible focus outline');
+  assert.ok(studyHeadingFocus.width >= 2,
+    'the programmatically focused study heading must have a substantial focus outline');
 
   const studyRows = hangzhouStudyView.locator('[data-study-event]');
   assert.equal(await studyRows.count(), 3, 'Hangzhou must render three study points');
@@ -194,6 +213,18 @@ async function verifyTimeline(page, port) {
   await expectVisible(restoredStudyEntry, 'Back must restore the Hangzhou study entry action');
   assert.equal(await restoredStudyEntry.evaluate(element => document.activeElement === element), true,
     'returning to location events must restore focus to the study entry action');
+  const timelineDetailAfterStudy = await page.locator('#eventPanel').evaluate(panel => ({
+    city: panel.querySelector('.city-name')?.textContent.trim(),
+    cityCount: panel.querySelector('.city-count')?.textContent.trim(),
+    badge: panel.querySelector('.badge')?.textContent.trim(),
+    badgeStyle: panel.querySelector('.badge')?.getAttribute('style'),
+    cardCount: panel.querySelectorAll('.event-card').length,
+    year: panel.querySelector('.ec-yr')?.textContent.trim(),
+    category: panel.querySelector('.ec-cat')?.textContent.trim(),
+    body: panel.querySelector('.ec-trig')?.textContent.replace(/\s+/g, ' ').trim(),
+  }));
+  assert.deepEqual(timelineDetailAfterStudy, timelineDetailBeforeStudy,
+    'Back must restore the exact canonical Timeline event detail that opened the study view');
 
   const afterStudy = await page.evaluate(() => {
     const filter = window.__mapFilter.getState();
@@ -216,6 +247,27 @@ async function verifyTimeline(page, port) {
   await page.evaluate(() => window.__mapFilter.openHit('23', 'europe'));
   assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 0,
     'a non-trial location must retain the original event-card UI');
+
+  await page.evaluate(() => window.__mapFilter.enterRoute('mansa_musa_hajj'));
+  await expectVisible(page.locator('#eventPanel .route-panel'),
+    'the Unit 1 Mansa Musa trade route must open at trial pin 73');
+  assert.equal((await page.locator('#eventPanel [data-route-step].now .rt-num').innerText()).trim(), '73',
+    'the route isolation fixture must begin at trial location Timbuktu');
+  assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 0,
+    'trade-route stops must never expose a location-study entry action');
+  assert.equal(await page.locator('#eventPanel [data-route-action]').count(), 4,
+    'the route panel must retain its complete control set at a trial location');
+  await page.locator('#eventPanel [data-route-action="next"]').click();
+  assert.equal((await page.locator('#eventPanel [data-route-step].now .rt-num').innerText()).trim(), '84',
+    'route Next must remain usable after rendering a trial-location stop');
+  await page.locator('#eventPanel [data-route-action="prev"]').click();
+  assert.equal((await page.locator('#eventPanel [data-route-step].now .rt-num').innerText()).trim(), '73',
+    'route Previous must return to the trial location without orphaning the itinerary');
+  assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 0,
+    'returning to a trial route stop must keep the study action isolated');
+  assert.equal(await page.locator('#eventPanel [data-route-action]').count(), 4,
+    'route controls must remain intact after navigating back to a trial location');
+  await page.evaluate(() => window.__mapFilter.exitRoute());
   await page.evaluate(() => window.__mapFilter.setPeriod(''));
 
   const initialState = await page.evaluate(() => window.getTimelineState());
