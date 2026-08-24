@@ -9,10 +9,10 @@ Add a small, production-shaped Unit 1 trial that separates existing map events f
 The trial covers five representative Unit 1 locations:
 
 - Hangzhou
-- Samarkand
+- Angkor
+- Delhi
 - Baghdad
 - Timbuktu
-- Malacca
 
 Each location receives two or three study events, for approximately twelve to fifteen study events in total. No other Unit receives study-event data or a location-study entry point in this iteration.
 

@@ -73,9 +73,9 @@ Create `data/apwh-u1-location-study.js` with a global API that works in a plain 
 
   const TRIAL_LOCATIONS = Object.freeze({
     '1': 'Hangzhou',
-    '2': 'Malacca',
     '3': 'Baghdad',
-    '9': 'Samarkand',
+    '6': 'Delhi',
+    '7': 'Angkor',
     '73': 'Timbuktu',
   });
   const STUDY_EVENTS = Object.freeze([]);
@@ -127,8 +127,8 @@ Append tests that require two or three records at every trial location, English-
 
 ```js
 const validMainEvents = new Set([
-  'world-event-1-0', 'world-event-2-0', 'world-event-3-0',
-  'world-event-9-0', 'world-event-73-0', 'world-event-73-1',
+  'world-event-1-0', 'world-event-3-0', 'world-event-6-0',
+  'world-event-6-4', 'world-event-7-0', 'world-event-73-0',
   'world-event-73-2', 'world-event-73-3',
 ]);
 
@@ -154,7 +154,7 @@ test('ships two or three complete English study points per trial location', () =
 test('uses globally unique stable study identifiers', () => {
   const ids = api.records.map(item => item.id);
   assert.equal(new Set(ids).size, ids.length);
-  assert.ok(ids.every(id => /^apwh-u1-(hangzhou|malacca|baghdad|samarkand|timbuktu)-/.test(id)));
+  assert.ok(ids.every(id => /^apwh-u1-(hangzhou|angkor|delhi|baghdad|timbuktu)-/.test(id)));
 });
 ```
 
@@ -173,12 +173,12 @@ Populate `STUDY_EVENTS` with the following twelve records, all visible prose in 
 | Hangzhou | `song-commercial-revolution` | 960–1279 | Song Commercial Revolution | `world-event-1-0` |
 | Hangzhou | `grand-canal-urban-market` | 1000–1279 | Grand Canal and the Hangzhou Market | `world-event-1-0` |
 | Hangzhou | `paper-money-maritime-tools` | 1100–1279 | Paper Money and Maritime Technology | `world-event-1-0` |
-| Malacca | `strait-toll-state` | 1350–1450 | A Toll State on the Strait of Malacca | `world-event-2-0` |
-| Malacca | `monsoon-diaspora-port` | 1350–1450 | Monsoon Trade and Merchant Diasporas | `world-event-2-0` |
+| Angkor | `khmer-hydraulic-state` | 802–1431 | Angkor's Hydraulic State | `world-event-7-0` |
+| Angkor | `hindu-buddhist-legitimation` | 1113–1431 | Hindu and Buddhist Legitimation at Angkor | `world-event-7-0` |
+| Delhi | `sultanate-state-building` | 1206–1450 | Delhi Sultanate State Building | `world-event-6-0` |
+| Delhi | `bhakti-sufi-devotion` | 1100–1450 | Bhakti and Sufi Devotional Traditions | `world-event-6-4` |
 | Baghdad | `abbasid-knowledge-hub` | 750–1258 | Baghdad as an Abbasid Knowledge Hub | `world-event-3-0` |
 | Baghdad | `merchant-ulema-network` | 1000–1450 | Merchants, Ulama, and Islamic Trade | `world-event-3-0` |
-| Samarkand | `sogdian-diaspora` | 1200–1450 | Sogdian Merchant Diasporas | `world-event-9-0` |
-| Samarkand | `caravanserai-credit` | 1200–1450 | Caravanserai, Credit, and Silk Road Finance | `world-event-9-0` |
 | Timbuktu | `mali-gold-salt-tax` | 1235–1450 | Mali, Gold, Salt, and Transit Taxation | `world-event-73-0` |
 | Timbuktu | `mansa-musa-pilgrimage` | 1324 | Mansa Musa's Pilgrimage | `world-event-73-3` |
 | Timbuktu | `islamic-learning-griots` | 1300–1450 | Islamic Learning and Griot Memory | `world-event-73-2` |
@@ -222,7 +222,7 @@ Create `docs/data-sources/apwh-u1-location-study-source-ledger.md` with one row 
 | `apwh-u1-hangzhou-song-commercial-revolution` | 1.1–1.2 | `world-event-1-0` | AMSCO Unit 1, Topics 1.1–1.2 | Song commercialization, Grand Canal, Hangzhou market, paper money |
 ```
 
-Assign ledger topics explicitly: Hangzhou records use Topics 1.1 and 1.2; Malacca records use Topic 1.3 with Topic 2.3 only for the monsoon mechanism; Baghdad records use Topic 1.2; Samarkand records use Topic 2.1 only as Unit 1 Silk Road context; Timbuktu records use Topic 1.4 with Topic 2.2 only for trans-Saharan mechanics. Each row names its linked `world-event-*` key and lists the particular claim covered by that locator.
+Assign ledger topics explicitly: Hangzhou records use Topics 1.1 and 1.2; Angkor records use Topic 1.3; Delhi records use Topic 1.3; Baghdad records use Topic 1.2; Timbuktu records use Topic 1.4, with Topic 2.2 used only where a trans-Saharan trade mechanism needs that supporting context. Each row names its linked `world-event-*` key and lists the particular claim covered by that locator.
 
 - [ ] **Step 5: Run tests and verify GREEN**
 
