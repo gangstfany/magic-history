@@ -8,7 +8,7 @@ Add a small, production-shaped Unit 1 trial that separates existing map events f
 
 The trial covers five representative Unit 1 locations:
 
-- Chang'an
+- Hangzhou
 - Samarkand
 - Baghdad
 - Timbuktu
@@ -22,15 +22,17 @@ The trial does not add a new global mode, redesign the map, replace existing eve
 
 The existing location click remains the first step. It continues to render the current location event cards exactly as it does today.
 
-For the five trial locations only, the event panel adds a secondary action labeled `查看全部 N 个考点`. Activating it replaces the event-card content inside the existing event zone with a location study view. This is the approved “B” interaction: ordinary location behavior stays intact, while the deeper study layer is one explicit action away.
+For the five trial locations only, the event panel adds a secondary action labeled `View all N study points`. Activating it replaces the event-card content inside the existing event zone with a location study view. This is the approved “B” interaction: ordinary location behavior stays intact, while the deeper study layer is one explicit action away.
 
 The location study view contains:
 
 1. A heading with the location name, region, and `Unit 1` context.
 2. A chronological list of the location's study events.
-3. Compact study-event rows showing date, bilingual title, summary, and the linked main event.
+3. Compact study-event rows showing date, English title, summary, and the linked main event.
 4. One expanded study event at a time, revealing significance, key people, key terms, evidence, exam connection, and source locator.
-5. A `返回地点事件` control that restores the original event cards for the same map location.
+5. A `Back to location events` control that restores the original event cards for the same map location.
+
+All newly introduced interface copy and study content is displayed in English. The trial does not add bilingual labels to the location-study layer.
 
 Entering or leaving the location study view must preserve the current period, theme filters, search query, selected location, map zoom, and pan. It must not start or exit a causal chain, trade route, quiz, or mistake-book workflow.
 
@@ -45,7 +47,7 @@ Each study event contains:
 - Stable identifier
 - Location number matching an existing APWH map location
 - Linked main-event identifier or stable event key
-- English and Chinese titles
+- English title
 - Start year, optional end year, and display date
 - Short summary
 - Historical significance
@@ -104,7 +106,7 @@ Automated tests must prove:
 2. Every study record resolves to a valid existing location, linked main event, and source locator.
 3. Each location returns two or three study events sorted chronologically.
 4. Each study record contains the required people, terms, evidence, significance, and exam connection fields.
-5. The five trial location panels render `查看全部 N 个考点`; other Unit 1 and non-Unit-1 locations do not.
+5. The five trial location panels render `View all N study points`; other Unit 1 and non-Unit-1 locations do not.
 6. Entering, expanding, and returning work through semantic controls.
 7. Map filters, search, zoom, pan, and selected location remain unchanged across the round trip.
 8. Existing causal-chain, route, quiz, mistake-book, and APWH verification suites continue to pass.
