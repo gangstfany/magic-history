@@ -414,9 +414,10 @@ async function verifyTimeline(page, port) {
   const narrowRows = narrowStudyView.locator('[data-study-event]');
   assert.equal(await narrowRows.count(), 3, 'at 390x844, all Timbuktu study points must remain available');
   const narrowControls = await narrowRows.evaluateAll(rows => rows.map(row => row.getAttribute('aria-controls')));
-  assert.equal(new Set(narrowControls).size, narrowControls.length,
-    'every Timbuktu study toggle must reference a unique detail id');
-  assert.ok(narrowControls.every(Boolean), 'every Timbuktu study toggle must expose aria-controls');
+  assert.equal(narrowControls.filter(Boolean).length, 1,
+    'only the expanded Timbuktu study toggle may expose aria-controls');
+  assert.ok(narrowControls.slice(1).every(value => value === null),
+    'collapsed Timbuktu study toggles must not expose dangling aria-controls');
   await narrowRows.nth(1).focus();
   await narrowRows.nth(1).press(' ');
   assert.equal(await narrowRows.nth(0).getAttribute('aria-expanded'), 'false',
@@ -1652,8 +1653,136 @@ async function verifyHomeLearningShell(page, port) {
   assert.ok(Math.abs(canvasHeightAfterTheme - canvasHeightBeforeTheme) <= 2,
     'opening and closing theme filters must not permanently reduce the map canvas');
 
+  // The shipped experience is index.html, where the contextual panel is cloned out of the
+  // iframe. Prove that the clone remains a real control surface for the Unit 1 study layer.
+  await page.locator('.map-card-head [data-learning-view="map"]').click();
+  await page.waitForFunction(() =>
+    document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getLearningState().view === 'map');
+  await page.locator('#hostPeriod').selectOption('u1');
+  await page.waitForFunction(() =>
+    document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getState().period === 'u1');
+  const homeHangzhouTitle = await frame.locator('body').evaluate(() =>
+    window.getTimelineState().visibleEvents.find(event => event.key === 'world-event-1-0')?.titleEn);
+  assert.ok(homeHangzhouTitle, 'the homepage search fixture must resolve Hangzhou in Unit 1');
+  await page.locator('#hostSearch').fill(homeHangzhouTitle);
+  const homeHangzhouResult = page.locator('#home-events [data-event-key="world-event-1-0"]');
+  await homeHangzhouResult.waitFor();
+  await homeHangzhouResult.click();
+  const homeStudyEntry = page.locator('#home-events [data-location-study-open="1"]');
+  await homeStudyEntry.waitFor();
+  await expectVisible(homeStudyEntry,
+    'the primary homepage must mirror Hangzhou ordinary cards and its location-study action');
+  assert.ok(await page.locator('#home-events .event-card').count() >= 1,
+    'the primary homepage must retain cloned ordinary Hangzhou cards');
+  assert.equal((await homeStudyEntry.innerText()).trim(), 'View all 3 study points',
+    'the primary homepage must clone the exact English Hangzhou study label');
+  const homeEntryPresentation = await homeStudyEntry.evaluate(element => {
+    const style = getComputedStyle(element);
+    const box = element.getBoundingClientRect();
+    return { height: box.height, outlineStyle: style.outlineStyle, whiteSpace: style.whiteSpace };
+  });
+
+  const originalHomeLocation = await page.locator('#home-events').evaluate(panel => ({
+    city: panel.querySelector('.city-name')?.textContent.trim(),
+    badge: panel.querySelector('.badge')?.textContent.trim(),
+    cards: [...panel.querySelectorAll('.event-card')].map(card => card.textContent.replace(/\s+/g, ' ').trim()),
+  }));
+  await homeStudyEntry.click();
+  const homeStudyView = page.locator('#home-events [data-location-study-view="1"]');
+  await expectVisible(homeStudyView,
+    'activating the cloned homepage study action must open the Hangzhou study view');
+  const homeStudyHeading = homeStudyView.locator('.location-study-title');
+  assert.equal((await homeStudyHeading.innerText()).trim(), 'Hangzhou · Unit 1',
+    'the cloned homepage study view must retain its English heading');
+  assert.equal(await homeStudyHeading.evaluate(element => document.activeElement === element), true,
+    'opening study from the clone must focus the cloned heading');
+  const homeStudyRows = homeStudyView.locator('[data-study-event]');
+  assert.equal(await homeStudyRows.count(), 3,
+    'the cloned homepage study view must expose all three Hangzhou study points');
+  const rejectedHomeStudyActions = await frame.locator('body').evaluate(() => ({
+    open: window.__mapFilter.openLocationStudy('73'),
+    toggle: window.__mapFilter.toggleLocationStudy('not-a-study-point'),
+  }));
+  assert.deepEqual(rejectedHomeStudyActions, { open: false, toggle: false },
+    'the public homepage study bridge must reject unrelated locations and arbitrary study ids');
+  assert.equal(await homeStudyView.locator('[data-study-event][aria-expanded="true"]').count(), 1,
+    'rejected public study actions must preserve the one-open-detail state');
+
+  const homeStudyDesktopPresentation = await homeStudyView.evaluate(view => {
+    const row = view.querySelector('[data-study-event]');
+    const viewBox = view.getBoundingClientRect();
+    const rowBox = row.getBoundingClientRect();
+    return {
+      viewWidth: viewBox.width,
+      viewScrollWidth: view.scrollWidth,
+      rowHeight: rowBox.height,
+      rowDisplay: getComputedStyle(row).display,
+    };
+  });
+  assert.ok(homeStudyDesktopPresentation.rowHeight >= 44,
+    `the desktop cloned study toggle must retain a 44px target: ${JSON.stringify(homeStudyDesktopPresentation)}`);
+  assert.ok(homeStudyDesktopPresentation.viewScrollWidth <= homeStudyDesktopPresentation.viewWidth + 1,
+    `the desktop cloned study view must not overflow: ${JSON.stringify(homeStudyDesktopPresentation)}`);
+
+  await page.setViewportSize({ width: 700, height: 900 });
+  const secondHomeStudyRow = homeStudyView.locator('[data-study-event]').nth(1);
+  await secondHomeStudyRow.click();
+  assert.equal(await homeStudyView.locator('[data-study-detail]').count(), 1,
+    'expanding from cloned controls must leave exactly one study detail visible');
+  assert.equal(await secondHomeStudyRow.getAttribute('aria-expanded'), 'true',
+    'the cloned non-default study toggle must expose expanded state');
+  assert.equal(await secondHomeStudyRow.evaluate(element => document.activeElement === element), true,
+    'expanding from cloned controls must return focus to the cloned toggle');
+  const expandedHomeDetailId = await homeStudyView.locator('[data-study-detail]').evaluate(
+    detail => detail.parentElement.id);
+  assert.equal(await secondHomeStudyRow.getAttribute('aria-controls'), expandedHomeDetailId,
+    'the cloned expanded toggle must control its one visible detail');
+  assert.ok((await homeStudyView.locator('[data-study-event][aria-controls]').count()) === 1,
+    'collapsed cloned study toggles must not expose dangling aria-controls references');
+  const homeStudyNarrowOverflow = await page.evaluate(() => ({
+    pageClient: document.documentElement.clientWidth,
+    pageScroll: document.documentElement.scrollWidth,
+    panelClient: document.querySelector('#home-events').clientWidth,
+    panelScroll: document.querySelector('#home-events').scrollWidth,
+  }));
+  assert.ok(homeStudyNarrowOverflow.pageScroll <= homeStudyNarrowOverflow.pageClient + 1,
+    `the narrow homepage study view must not overflow the page: ${JSON.stringify(homeStudyNarrowOverflow)}`);
+  assert.ok(homeStudyNarrowOverflow.panelScroll <= homeStudyNarrowOverflow.panelClient + 1,
+    `the narrow homepage study view must not overflow its panel: ${JSON.stringify(homeStudyNarrowOverflow)}`);
+
+  await homeStudyView.locator('[data-location-study-back="1"]').click();
+  const restoredHomeStudyEntry = page.locator('#home-events [data-location-study-open="1"]');
+  await expectVisible(restoredHomeStudyEntry,
+    'Back from cloned study controls must restore the ordinary Hangzhou panel');
+  assert.equal(await restoredHomeStudyEntry.evaluate(element => document.activeElement === element), true,
+    'Back from the clone must focus the restored cloned study entry');
+  assert.ok(homeEntryPresentation.height >= 44,
+    `the cloned study entry must retain a 44px target: ${JSON.stringify(homeEntryPresentation)}`);
+  const restoredHomeLocation = await page.locator('#home-events').evaluate(panel => ({
+    city: panel.querySelector('.city-name')?.textContent.trim(),
+    badge: panel.querySelector('.badge')?.textContent.trim(),
+    cards: [...panel.querySelectorAll('.event-card')].map(card => card.textContent.replace(/\s+/g, ' ').trim()),
+  }));
+  assert.deepEqual(restoredHomeLocation, originalHomeLocation,
+    'Back from the clone must restore the exact ordinary panel identity');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('#hostSearch').fill('');
+  await page.locator('#hostPeriod').selectOption('');
+  await page.locator('.map-card-head [data-learning-view="chain"]').click();
+  await page.waitForFunction(() =>
+    document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getLearningState().view === 'chain');
+
   for (const viewport of [{ width: 1100, height: 850 }, { width: 700, height: 900 }]) {
     await page.setViewportSize(viewport);
+    await page.waitForTimeout(180);
+    await page.waitForFunction(({ width }) => {
+      const frame = document.querySelector('#worldMapFrame')?.getBoundingClientRect();
+      const panel = document.querySelector('#home-events')?.getBoundingClientRect();
+      if (!frame || !panel || window.innerWidth !== width) return false;
+      return width > 900
+        ? panel.x >= frame.x + frame.width - 1
+        : panel.y >= frame.y + frame.height - 1;
+    }, { width: viewport.width });
     const sourceLayout = await frame.locator('body').evaluate(() => {
       const map = document.querySelector('.map-zone').getBoundingClientRect();
       const dock = document.querySelector('#worldTimelineDock').getBoundingClientRect();

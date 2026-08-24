@@ -456,6 +456,41 @@ nav.topnav {
 .home-events .rt-btn.ghost { color: var(--ink-soft); }
 .home-events .rt-btn[disabled] { opacity: .38; cursor: default; }
 .home-events .rt-stop:focus-visible, .home-events .rt-btn:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+/* ---- Unit 1 location study (cloned from the embedded map panel) ---- */
+.home-events .location-study-entry { display: flex; justify-content: center; margin: 8px 18px 22px; }
+.home-events .location-study-open { min-height: 44px; white-space: normal; }
+.home-events .location-study-open:focus-visible { outline: 3px solid #28708a; outline-offset: 2px; }
+.home-events .location-study-view { display: grid; gap: 14px; min-width: 0; padding: 16px 18px 22px; overflow-wrap: anywhere; }
+.home-events .location-study-back { justify-self: start; min-height: 44px; white-space: normal; }
+.home-events .location-study-title { margin: 0; color: var(--ink); font-size: 22px; line-height: 1.25; letter-spacing: -0.01em; }
+.home-events .location-study-title:focus { border-radius: 4px; outline: 3px solid #28708a; outline-offset: 4px; }
+.home-events .location-study-context { margin: -6px 0 0; color: var(--ink-soft); font-size: 12px; font-weight: 700; }
+.home-events .location-study-list { display: grid; gap: 10px; min-width: 0; }
+.home-events .location-study-item { min-width: 0; border: 1px solid var(--line); border-radius: 11px; background: var(--card); box-shadow: 0 1px 2px rgba(33,31,28,0.06); overflow: hidden; }
+.home-events .location-study-toggle { display: grid; grid-template-columns: minmax(82px, auto) minmax(0, 1fr); gap: 5px 12px; width: 100%; min-height: 44px; padding: 13px 15px; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.home-events .location-study-toggle:hover { background: #fffaf0; }
+.home-events .location-study-toggle[aria-expanded="true"] { background: #f7efe0; }
+.home-events .location-study-toggle:focus-visible { position: relative; z-index: 1; outline: 3px solid #28708a; outline-offset: -3px; }
+.home-events .location-study-date { grid-row: 1 / span 3; color: var(--terracotta); font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.home-events .location-study-name { min-width: 0; font-size: 14px; line-height: 1.35; }
+.home-events .location-study-summary { min-width: 0; color: var(--ink-soft); font-size: 12.5px; font-weight: 500; line-height: 1.55; }
+.home-events .location-study-main { min-width: 0; color: #176369; font-size: 11.5px; font-weight: 800; line-height: 1.45; }
+.home-events .location-study-detail { display: grid; gap: 13px; padding: 14px 15px 17px; border-top: 1px solid var(--line); background: #fffdf8; }
+.home-events .location-study-detail section, .home-events .location-study-detail p, .home-events .location-study-detail ul, .home-events .location-study-detail dl { min-width: 0; margin: 0; }
+.home-events .location-study-detail h3 { margin: 0 0 5px; color: var(--ink); font-size: 12px; }
+.home-events .location-study-detail p, .home-events .location-study-detail li, .home-events .location-study-detail dd { color: var(--ink-soft); font-size: 12.5px; line-height: 1.6; }
+.home-events .location-study-detail ul { padding-left: 20px; }
+.home-events .location-study-detail li + li { margin-top: 4px; }
+.home-events .location-study-detail dl { display: grid; grid-template-columns: minmax(90px, auto) minmax(0, 1fr); gap: 5px 10px; }
+.home-events .location-study-detail dt { font-size: 12.5px; font-weight: 800; }
+.home-events .location-study-detail dd { margin: 0; }
+@media (max-width: 720px) {
+  .home-events .location-study-view { padding: 14px 14px 20px; }
+  .home-events .location-study-toggle { grid-template-columns: minmax(0, 1fr); }
+  .home-events .location-study-date { grid-row: auto; }
+  .home-events .location-study-detail dl { grid-template-columns: minmax(0, 1fr); }
+  .home-events .location-study-detail dd + dt { margin-top: 5px; }
+}
 /* 空态里的商路入口 */
 .home-events .route-picker { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 12px 0 0; }
 .home-events .route-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
@@ -952,6 +987,33 @@ nav.topnav {
       // 商路:入口 chip / 站点 / 上一站下一站播放退出 —— 面板是拷过来的,监听不会跟过来,这边代理
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
       if (!win || !win.__mapFilter) return;
+      const studyOpen = e.target.closest('[data-location-study-open]');
+      if (studyOpen && win.__mapFilter.openLocationStudy) {
+        const number = studyOpen.dataset.locationStudyOpen;
+        if (win.__mapFilter.openLocationStudy(number)) {
+          syncHomeEvents();
+          homeEvents.querySelector('.location-study-title')?.focus();
+        }
+        return;
+      }
+      const studyToggle = e.target.closest('[data-study-event]');
+      if (studyToggle && win.__mapFilter.toggleLocationStudy) {
+        const studyId = studyToggle.dataset.studyEvent;
+        if (win.__mapFilter.toggleLocationStudy(studyId)) {
+          syncHomeEvents();
+          homeEvents.querySelector(`[data-study-event="${CSS.escape(studyId)}"]`)?.focus();
+        }
+        return;
+      }
+      const studyBack = e.target.closest('[data-location-study-back]');
+      if (studyBack && win.__mapFilter.backLocationStudy) {
+        const number = studyBack.dataset.locationStudyBack;
+        if (win.__mapFilter.backLocationStudy()) {
+          syncHomeEvents();
+          homeEvents.querySelector(`[data-location-study-open="${CSS.escape(number)}"]`)?.focus();
+        }
+        return;
+      }
       const chainPanelView = e.target.closest('[data-chain-panel-view]');
       if (chainPanelView && win.__mapFilter.setChainPanelView) {
         win.__mapFilter.setChainPanelView(chainPanelView.dataset.chainPanelView);

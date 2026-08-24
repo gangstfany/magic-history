@@ -4822,40 +4822,17 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   eventPanel.addEventListener('click', e => {
     const studyOpen = e.target.closest('[data-location-study-open]');
     if (studyOpen) {
-      if (!ordinaryLocationStudyContext()) return;
-      locationStudyState.returnContext = studyOpen.dataset.locationStudyOrigin === 'timeline'
-        ? {
-            kind: 'timeline',
-            eventKey: studyOpen.dataset.locationStudyEventKey,
-            anchor: {
-              num: studyOpen.dataset.locationStudyAnchorNum,
-              region: studyOpen.dataset.locationStudyAnchorRegion,
-            },
-          }
-        : { kind: 'location' };
-      renderLocationStudy(studyOpen.dataset.locationStudyOpen, { focusHeading: true });
+      openLocationStudyFromEntry(studyOpen, { focusHeading: true });
       return;
     }
     const studyItem = e.target.closest('[data-study-event]');
     if (studyItem && locationStudyState.locationNumber) {
-      locationStudyState.expandedStudyId = studyItem.dataset.studyEvent;
-      renderLocationStudy(locationStudyState.locationNumber, { focusStudyId: studyItem.dataset.studyEvent });
+      toggleLocationStudy(studyItem.dataset.studyEvent, { focusToggle: true });
       return;
     }
     const studyBack = e.target.closest('[data-location-study-back]');
     if (studyBack) {
-      const number = studyBack.dataset.locationStudyBack;
-      const returnContext = locationStudyState.returnContext;
-      clearLocationStudyState();
-      const timelineEvent = returnContext?.kind === 'timeline'
-        ? timelineEventByKey.get(returnContext.eventKey) : null;
-      if (timelineEvent) {
-        const anchor = preferredTimelineAnchor(timelineEvent, returnContext.anchor);
-        renderTimelineDetail(timelineEvent, anchor);
-      } else {
-        renderEventContent(number, pinBadgeColor(number));
-      }
-      eventPanel.querySelector(`[data-location-study-open="${CSS.escape(number)}"]`)?.focus();
+      backFromLocationStudy({ focusEntry: true });
       return;
     }
     const chainPanelView = e.target.closest('[data-chain-panel-view]');
@@ -5063,7 +5040,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       const detailId = `study-detail-${record.id}`;
       return `<article class="location-study-item">`
         + `<button type="button" class="location-study-toggle" data-study-event="${escapeTimelineText(record.id)}"`
-        + ` aria-expanded="${expanded}" aria-current="${expanded}" aria-controls="${escapeTimelineText(detailId)}">`
+        + ` aria-expanded="${expanded}" aria-current="${expanded}"`
+        + (expanded ? ` aria-controls="${escapeTimelineText(detailId)}"` : '') + `>`
         + `<span class="location-study-date" data-study-date>${escapeTimelineText(record.dateLabel)}</span>`
         + `<strong class="location-study-name">${escapeTimelineText(record.title)}</strong>`
         + `<span class="location-study-summary">${escapeTimelineText(record.summary)}</span>`
@@ -5084,6 +5062,70 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     else if (focusStudyId) {
       eventPanel.querySelector(`[data-study-event="${CSS.escape(focusStudyId)}"]`)?.focus();
     }
+  }
+
+  function openLocationStudyFromEntry(entry, { focusHeading = false } = {}) {
+    if (!ordinaryLocationStudyContext() || !entry || !eventPanel.contains(entry)) return false;
+    const number = String(entry.dataset.locationStudyOpen || '');
+    if (!number || !locationStudyRecords(number).length) return false;
+    if (entry.dataset.locationStudyOrigin === 'timeline') {
+      const timelineEvent = timelineEventByKey.get(entry.dataset.locationStudyEventKey);
+      const anchor = timelineEvent && preferredTimelineAnchor(timelineEvent, {
+        num: entry.dataset.locationStudyAnchorNum,
+        region: entry.dataset.locationStudyAnchorRegion,
+      });
+      if (!timelineEvent || timelineEvent.unit !== 'u1' || String(anchor?.num) !== number) return false;
+      locationStudyState.returnContext = {
+        kind: 'timeline',
+        eventKey: timelineEvent.key,
+        anchor: { num: anchor.num, region: anchor.region },
+      };
+    } else {
+      if (entry.dataset.locationStudyOrigin !== 'location' || String(activeNum) !== number) return false;
+      locationStudyState.returnContext = { kind: 'location' };
+    }
+    renderLocationStudy(number, { focusHeading });
+    return locationStudyState.locationNumber === number;
+  }
+
+  function openLocationStudy(number, { focusHeading = false } = {}) {
+    if (!ordinaryLocationStudyContext()) return false;
+    const locationNumber = String(number || '');
+    const entry = eventPanel.querySelector(
+      `[data-location-study-open="${CSS.escape(locationNumber)}"]`);
+    return openLocationStudyFromEntry(entry, { focusHeading });
+  }
+
+  function toggleLocationStudy(studyId, { focusToggle = false } = {}) {
+    const locationNumber = locationStudyState.locationNumber;
+    if (!locationNumber || !ordinaryLocationStudyContext()) return false;
+    const id = String(studyId || '');
+    if (!locationStudyRecords(locationNumber).some(record => record.id === id)) return false;
+    const toggle = eventPanel.querySelector(`[data-study-event="${CSS.escape(id)}"]`);
+    if (!toggle) return false;
+    locationStudyState.expandedStudyId = id;
+    renderLocationStudy(locationNumber, { focusStudyId: focusToggle ? id : null });
+    return locationStudyState.expandedStudyId === id;
+  }
+
+  function backFromLocationStudy({ focusEntry = false } = {}) {
+    const number = locationStudyState.locationNumber;
+    if (!number || !ordinaryLocationStudyContext()
+        || !eventPanel.querySelector(`[data-location-study-back="${CSS.escape(number)}"]`)) return false;
+    const returnContext = locationStudyState.returnContext;
+    clearLocationStudyState();
+    const timelineEvent = returnContext?.kind === 'timeline'
+      ? timelineEventByKey.get(returnContext.eventKey) : null;
+    if (timelineEvent) {
+      const anchor = preferredTimelineAnchor(timelineEvent, returnContext.anchor);
+      renderTimelineDetail(timelineEvent, anchor);
+    } else {
+      renderEventContent(number, pinBadgeColor(number));
+    }
+    const entry = eventPanel.querySelector(
+      `[data-location-study-open="${CSS.escape(number)}"]`);
+    if (focusEntry) entry?.focus();
+    return !!entry;
   }
 
   function revealTimelineCard(key) {
@@ -5785,6 +5827,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       selectTimelineEvent: (key, preferredAnchor) => selectTimelineEvent(key, {
         reveal: true, moveMap: true, preferredAnchor
       }),
+      openLocationStudy: number => openLocationStudy(number),
+      toggleLocationStudy: studyId => toggleLocationStudy(studyId),
+      backLocationStudy: () => backFromLocationStudy(),
       // 切科目回来时用:按当前筛选状态重算一遍,让面板和工具栏对齐
       refresh: () => apply(),
       // 商路模式:首页据此建入口、并把行程面板镜像过去
