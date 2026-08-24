@@ -188,9 +188,17 @@ async function waitForEmbeddedWorldLayout(page, {
     await page.locator('#worldMapFrame').evaluate((frame, options) => new Promise((resolve, reject) => {
       let stableFrames = 0;
       let sampledFrames = 0;
-      const timer = setTimeout(() => reject(new Error(
-        `layout did not settle across ${options.consecutiveFrames} frames after ${sampledFrames} samples`)), options.timeout);
+      let frameId = null;
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        if (frameId !== null) cancelAnimationFrame(frameId);
+        reject(new Error(
+          `layout did not settle across ${options.consecutiveFrames} frames after ${sampledFrames} samples`));
+      }, options.timeout);
       const sample = () => {
+        if (settled) return;
         const wrap = frame.closest('.home-map-wrap');
         const split = frame.closest('.map-events-split');
         const panel = document.querySelector('#home-events');
@@ -220,13 +228,14 @@ async function waitForEmbeddedWorldLayout(page, {
         }
         stableFrames = matches ? stableFrames + 1 : 0;
         if (stableFrames >= options.consecutiveFrames) {
+          settled = true;
           clearTimeout(timer);
           resolve();
           return;
         }
-        requestAnimationFrame(sample);
+        frameId = requestAnimationFrame(sample);
       };
-      requestAnimationFrame(sample);
+      frameId = requestAnimationFrame(sample);
     }), {
       expectedViewportWidth: viewportWidth,
       expectedMapZoneHeight: mapZoneHeight,
