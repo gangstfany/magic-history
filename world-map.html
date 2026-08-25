@@ -400,21 +400,50 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 .location-study-name { min-width: 0; font-size: 14px; line-height: 1.35; }
 .location-study-summary { min-width: 0; color: var(--ink-soft); font-size: 12.5px; font-weight: 500; line-height: 1.55; }
 .location-study-main { min-width: 0; color: #176369; font-size: 11.5px; font-weight: 800; line-height: 1.45; }
-.location-study-detail { display: grid; gap: 13px; padding: 14px 15px 17px; border-top: 1px solid var(--line); background: #fffdf8; }
-.location-study-detail section, .location-study-detail p, .location-study-detail ul, .location-study-detail dl { min-width: 0; margin: 0; }
-.location-study-detail h3 { margin: 0 0 5px; font-size: 12px; color: var(--ink); }
-.location-study-detail p, .location-study-detail li, .location-study-detail dd { color: var(--ink-soft); font-size: 12.5px; line-height: 1.6; }
+.location-study-detail { display: grid; gap: 16px; min-width: 0; padding: 18px 17px 20px; border-top: 2px solid #b85e3c; background: #fffaf0; overflow-wrap: anywhere; }
+.location-study-detail header, .location-study-detail section, .location-study-detail p, .location-study-detail ul, .location-study-detail dl { min-width: 0; margin: 0; }
+.location-study-detail-header { display: grid; gap: 7px; padding-bottom: 14px; border-bottom: 1px solid #decfbd; }
+.location-study-eyebrow { color: #9a472c; font-size: 11px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+.location-study-topics, .location-study-themes { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.location-study-topic, .location-study-theme { display: inline-flex; align-items: center; min-height: 26px; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; line-height: 1.2; }
+.location-study-topic { border: 1px solid #d7b299; color: #874228; background: #fff4e7; }
+.location-study-theme { border: 1px solid color-mix(in srgb, var(--study-theme-color, #8b1a1a) 55%, #fff); color: #fff; background: var(--study-theme-color, #8b1a1a); }
+.location-study-detail-title { margin: 2px 0 0; color: #4b271c; font-size: 19px; line-height: 1.3; }
+.location-study-detail-date { color: #9a472c; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.location-study-core { display: grid; gap: 13px; min-width: 0; }
+.location-study-core section { display: grid; gap: 5px; }
+.location-study-core h3, .location-study-connection-group h4 { margin: 0; color: #5a2c20; font-size: 12px; line-height: 1.4; }
+.location-study-detail p, .location-study-detail li, .location-study-detail dd { color: var(--ink-soft); font-size: 12.5px; line-height: 1.65; }
+.location-study-region { padding: 9px 11px; border: 1px solid #d8bba7; border-radius: 8px; background: #fffdf8; font-weight: 750; }
+.location-study-exam { padding: 11px 12px; border-left: 4px solid #28708a; border-radius: 7px; background: #edf6f7; }
+.location-study-disclosures { min-width: 0; border-top: 1px solid #d8c9b8; }
+.location-study-disclosure { min-width: 0; border-bottom: 1px solid #d8c9b8; }
+.location-study-disclosure summary { display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 44px; padding: 7px 2px; color: #5a2c20; font-size: 12.5px; font-weight: 850; cursor: pointer; list-style: none; }
+.location-study-disclosure summary::-webkit-details-marker { display: none; }
+.location-study-disclosure summary::before { content: "+"; display: inline-grid; place-items: center; flex: 0 0 22px; width: 22px; height: 22px; border: 1px solid #b85e3c; border-radius: 50%; font-size: 16px; line-height: 1; }
+.location-study-disclosure[open] summary::before { content: "−"; }
+.location-study-disclosure summary:focus-visible, .location-study-connection:focus-visible { outline: 3px solid #28708a; outline-offset: 2px; }
+.location-study-disclosure-body { min-width: 0; padding: 2px 2px 14px 33px; }
 .location-study-detail ul { padding-left: 20px; }
-.location-study-detail li + li { margin-top: 4px; }
-.location-study-detail dl { display: grid; grid-template-columns: minmax(90px, auto) minmax(0, 1fr); gap: 5px 10px; }
-.location-study-detail dt { font-size: 12.5px; font-weight: 800; }
-.location-study-detail dd { margin: 0; }
+.location-study-detail li + li { margin-top: 5px; }
+.location-study-term-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.location-study-term-grid > div, .location-study-people > div { min-width: 0; padding: 9px 10px; border: 1px solid #e2d4c4; border-radius: 7px; background: #fffdf8; }
+.location-study-detail dt { font-size: 12.5px; font-weight: 850; }
+.location-study-detail dd { margin: 3px 0 0; }
+.location-study-people { display: grid; gap: 8px; }
+.location-study-connections { display: grid; gap: 13px; min-width: 0; }
+.location-study-connection-group { display: grid; gap: 7px; min-width: 0; }
+.location-study-connection-list { display: grid; gap: 8px; min-width: 0; }
+.location-study-connection { display: grid; gap: 3px; width: 100%; min-width: 0; min-height: 44px; padding: 9px 10px; border: 1px solid #bd765b; border-radius: 8px; background: #fffdf8; color: var(--ink); font: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.location-study-connection:hover { background: #fff1e3; }
+.location-study-connection strong { color: #773a27; font-size: 12.5px; }
+.location-study-connection span { color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
 @media (max-width: 560px) {
   .event-panel { padding-inline: 16px; }
   .location-study-toggle { grid-template-columns: minmax(0, 1fr); }
   .location-study-date { grid-row: auto; }
-  .location-study-detail dl { grid-template-columns: minmax(0, 1fr); }
-  .location-study-detail dd + dt { margin-top: 5px; }
+  .location-study-term-grid { grid-template-columns: minmax(0, 1fr); }
+  .location-study-disclosure-body { padding-left: 2px; }
 }
 .event-card {
   break-inside: avoid; margin: 0 0 14px;
@@ -4894,6 +4923,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (pick && pick.value) enterRouteMode(pick.value);
   });
 
+  eventPanel.addEventListener('toggle', e => {
+    const disclosure = e.target.closest('details[data-study-disclosure][data-study-id]');
+    if (!disclosure || !eventPanel.contains(disclosure)) return;
+    setLocationStudyDisclosure(disclosure.dataset.studyId,
+      disclosure.dataset.studyDisclosure, disclosure.open);
+  }, true);
+
   eventEmpty.addEventListener('click', e => {
     const qs = e.target.closest('[data-quiz-start]');
     if (qs) { startQuiz(qs.dataset.quizStart); return; }
@@ -4910,12 +4946,18 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     locationNumber: null,
     expandedStudyId: null,
     returnContext: null,
+    openDisclosures: new Set(),
+    connectionStack: [],
+    pendingRestore: null,
   };
 
   function clearLocationStudyState() {
     locationStudyState.locationNumber = null;
     locationStudyState.expandedStudyId = null;
     locationStudyState.returnContext = null;
+    locationStudyState.openDisclosures.clear();
+    locationStudyState.connectionStack.length = 0;
+    locationStudyState.pendingRestore = null;
   }
 
   const CAT_ICON = {};   // 分类不再用 emoji 标记,保留这个映射只为渲染代码不必改
@@ -5002,19 +5044,88 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[ch]);
 
+  const regionNames = Object.freeze({
+    asia: 'Asia', mideast: 'Middle East and Central Asia', europe: 'Europe',
+    americas: 'Americas', africa: 'Africa',
+  });
+  const STUDY_DISCLOSURE_KEYS = new Set(['terms', 'evidence', 'connections', 'people', 'source']);
+
+  function studyRegionLabel(record) {
+    const api = window.APWH_U1_LOCATION_STUDY;
+    const locationName = api.locationName(record.locationNumber);
+    const regionName = regionNames[pinRegion(record.locationNumber)];
+    return locationName && regionName ? `${locationName} · ${regionName}` : '';
+  }
+
+  function studyDisclosureHTML(record, key, label, count, body) {
+    if (!count) return '';
+    const open = locationStudyState.openDisclosures.has(`${record.id}:${key}`);
+    return `<details class="location-study-disclosure" data-study-disclosure="${key}"`
+      + ` data-study-id="${escapeTimelineText(record.id)}"${open ? ' open' : ''}>`
+      + `<summary>${escapeTimelineText(label)} (${count})</summary>`
+      + `<div class="location-study-disclosure-body">${body}</div></details>`;
+  }
+
+  function studyRelationshipGroupHTML(record, label, targetIds) {
+    const api = window.APWH_U1_LOCATION_STUDY;
+    const connections = targetIds.map(targetId => {
+      const target = api.getById(targetId);
+      if (!target) return '';
+      return `<button type="button" class="location-study-connection"`
+        + ` data-study-connection="${escapeTimelineText(targetId)}"`
+        + ` data-study-connection-from="${escapeTimelineText(record.id)}">`
+        + `<strong>${escapeTimelineText(target.title)}</strong>`
+        + `<span>${escapeTimelineText(record.connectionNotes[targetId])}</span></button>`;
+    }).filter(Boolean).join('');
+    if (!connections) return '';
+    return `<section class="location-study-connection-group" data-study-connection-group>`
+      + `<h4>${escapeTimelineText(label)}</h4>`
+      + `<div class="location-study-connection-list">${connections}</div></section>`;
+  }
+
   function studyDetailHTML(record) {
-    const people = record.keyPeople.map(person => `<dt>${escapeTimelineText(person.name)}</dt>`
-      + `<dd>${escapeTimelineText(person.role)}</dd>`).join('');
-    const terms = record.keyTerms.map(item => `<dt>${escapeTimelineText(item.term)}</dt>`
-      + `<dd>${escapeTimelineText(item.explanation)}</dd>`).join('');
+    const people = record.keyPeople.map(person => `<div><dt>${escapeTimelineText(person.name)}</dt>`
+      + `<dd>${escapeTimelineText(person.role)}</dd></div>`).join('');
+    const terms = record.keyTerms.map(item => `<div><dt>${escapeTimelineText(item.term)}</dt>`
+      + `<dd>${escapeTimelineText(item.explanation)}</dd></div>`).join('');
     const evidence = record.evidence.map(item => `<li>${escapeTimelineText(item)}</li>`).join('');
+    const connectionCount = record.causeStudyPointIds.length + record.effectStudyPointIds.length
+      + record.relatedStudyPointIds.length;
+    const connections = studyRelationshipGroupHTML(record, 'Cause', record.causeStudyPointIds)
+      + studyRelationshipGroupHTML(record, 'Effect', record.effectStudyPointIds)
+      + studyRelationshipGroupHTML(record, 'Related Event', record.relatedStudyPointIds);
+    const sourceCount = record.source.id && record.source.locator ? 1 : 0;
+    const topics = record.topicCodes.map(code => `<span class="location-study-topic" data-study-topic>`
+      + `Topic ${escapeTimelineText(code)}</span>`).join('');
+    const themes = record.themeIds.map(themeId => {
+      const color = CATEGORY_BY_ABBR[themeId]?.catColor;
+      return `<span class="location-study-theme" data-study-theme`
+        + (color ? ` style="--study-theme-color:${escapeTimelineText(color)}"` : '')
+        + `>${escapeTimelineText(themeId)}</span>`;
+    }).join('');
     return `<div class="location-study-detail" data-study-detail="${escapeTimelineText(record.id)}">`
-      + `<section><h3>Significance</h3><p>${escapeTimelineText(record.significance)}</p></section>`
-      + `<section><h3>Key people</h3><dl>${people}</dl></section>`
-      + `<section><h3>Key terms</h3><dl>${terms}</dl></section>`
-      + `<section><h3>Evidence</h3><ul>${evidence}</ul></section>`
-      + `<section><h3>Exam connection</h3><p>${escapeTimelineText(record.examConnection)}</p></section>`
-      + `<section><h3>Source</h3><p>${escapeTimelineText(record.source.id)} · ${escapeTimelineText(record.source.locator)}</p></section>`
+      + `<header class="location-study-detail-header">`
+      + `<div class="location-study-eyebrow">Unit 1 study point</div>`
+      + `<div class="location-study-topics">${topics}</div>`
+      + `<div class="location-study-themes">${themes}</div>`
+      + `<h3 class="location-study-detail-title">${escapeTimelineText(record.title)}</h3>`
+      + `<div class="location-study-detail-date">${escapeTimelineText(record.dateLabel)}</div></header>`
+      + `<div class="location-study-core">`
+      + `<section><h3 data-study-core-label>Region</h3><p class="location-study-region" data-study-region>${escapeTimelineText(studyRegionLabel(record))}</p></section>`
+      + `<section><h3 data-study-core-label>Summary</h3><p>${escapeTimelineText(record.summary)}</p></section>`
+      + `<section><h3 data-study-core-label>Why It Matters</h3><p>${escapeTimelineText(record.significance)}</p></section>`
+      + `<section class="location-study-exam"><h3 data-study-core-label>Use It on the Exam</h3><p>${escapeTimelineText(record.examConnection)}</p></section>`
+      + `</div><div class="location-study-disclosures">`
+      + studyDisclosureHTML(record, 'terms', 'Key Terms', record.keyTerms.length,
+        `<dl class="location-study-term-grid">${terms}</dl>`)
+      + studyDisclosureHTML(record, 'evidence', 'Evidence', record.evidence.length, `<ul>${evidence}</ul>`)
+      + studyDisclosureHTML(record, 'connections', 'Connections', connectionCount,
+        `<div class="location-study-connections">${connections}</div>`)
+      + studyDisclosureHTML(record, 'people', 'People', record.keyPeople.length,
+        `<dl class="location-study-people">${people}</dl>`)
+      + studyDisclosureHTML(record, 'source', 'Source', sourceCount,
+        `<p>${escapeTimelineText(record.source.id)} · ${escapeTimelineText(record.source.locator)}</p>`)
+      + `</div>`
       + `</div>`;
   }
 
@@ -5031,11 +5142,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     }
     const api = window.APWH_U1_LOCATION_STUDY;
     const locationName = api.locationName(locationNumber);
-    const regionNames = Object.freeze({
-      asia: 'Asia', mideast: 'Middle East and Central Asia', europe: 'Europe',
-      americas: 'Americas', africa: 'Africa',
-    });
-    const regionName = regionNames[pinRegion(locationNumber)] || 'World History';
+    const regionName = regionNames[pinRegion(locationNumber)];
     const rows = records.map(record => {
       const expanded = record.id === locationStudyState.expandedStudyId;
       const linkedMainEvent = timelineEventByKey.get(record.mainEventKey);
@@ -5108,6 +5215,22 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     locationStudyState.expandedStudyId = id;
     renderLocationStudy(locationNumber, { focusStudyId: focusToggle ? id : null });
     return locationStudyState.expandedStudyId === id;
+  }
+
+  function setLocationStudyDisclosure(studyId, key, open) {
+    const locationNumber = locationStudyState.locationNumber;
+    const id = String(studyId || '');
+    const disclosureKey = String(key || '');
+    if (!locationNumber || id !== locationStudyState.expandedStudyId
+        || !STUDY_DISCLOSURE_KEYS.has(disclosureKey)
+        || !locationStudyRecords(locationNumber).some(record => record.id === id)) return false;
+    const stateKey = `${id}:${disclosureKey}`;
+    if (open) locationStudyState.openDisclosures.add(stateKey);
+    else locationStudyState.openDisclosures.delete(stateKey);
+    const canonical = eventPanel.querySelector(`details[data-study-id="${CSS.escape(id)}"]`
+      + `[data-study-disclosure="${CSS.escape(disclosureKey)}"]`);
+    if (canonical && canonical.open !== Boolean(open)) canonical.open = Boolean(open);
+    return true;
   }
 
   function backFromLocationStudy({ focusEntry = false } = {}) {

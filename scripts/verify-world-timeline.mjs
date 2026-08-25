@@ -396,6 +396,90 @@ async function verifyTimeline(page, port) {
       'Hangzhou study rows must identify their Song main event');
   }
 
+  const firstStudyDetail = hangzhouStudyView.locator('[data-study-detail="apwh-u1-hangzhou-song-commercial-revolution"]');
+  await expectVisible(firstStudyDetail, 'the first Hangzhou study point must start expanded');
+  assert.equal((await firstStudyDetail.locator('.location-study-eyebrow').textContent()).trim(), 'Unit 1 study point',
+    'expanded detail must establish its Unit 1 context');
+  assert.equal((await firstStudyDetail.locator('.location-study-detail-title').innerText()).trim(),
+    'Song Commercial Revolution', 'expanded detail must keep its title clear');
+  assert.equal((await firstStudyDetail.locator('.location-study-detail-date').innerText()).trim(), '960–1279',
+    'expanded detail must keep its date clear');
+  assert.deepEqual(await trimmedTexts(firstStudyDetail.locator('[data-study-topic]')),
+    ['Topic 1.1', 'Topic 1.7'],
+    'expanded detail must show every approved topic code with the Topic prefix');
+  assert.deepEqual(await trimmedTexts(firstStudyDetail.locator('[data-study-theme]')),
+    ['ECN', 'GOV'],
+    'expanded detail must show the approved existing map theme IDs');
+  assert.deepEqual(await trimmedTexts(firstStudyDetail.locator('[data-study-core-label]')),
+    ['Region', 'Summary', 'Why It Matters', 'Use It on the Exam'],
+    'expanded detail must keep the four core sections visible in the approved order');
+  assert.match((await firstStudyDetail.locator('[data-study-region]').innerText()).trim(), /Hangzhou.*Asia/s,
+    'Region must combine the canonical location name and broad map region');
+
+  const supportingDetails = firstStudyDetail.locator('details[data-study-disclosure]');
+  assert.equal(await supportingDetails.count(), 5,
+    'the first Hangzhou detail must render all five nonempty supporting disclosures');
+  assert.deepEqual(await trimmedTexts(supportingDetails.locator('summary')),
+    ['Key Terms (2)', 'Evidence (2)', 'Connections (2)', 'People (1)', 'Source (1)'],
+    'supporting disclosures must use the approved order, labels, and counts');
+  assert.deepEqual(await supportingDetails.evaluateAll(details => details.map(detail => detail.open)),
+    [false, false, false, false, false],
+    'supporting disclosures must start collapsed');
+
+  const connectionsDisclosure = firstStudyDetail.locator('details[data-study-disclosure="connections"]');
+  const connectionsSummary = connectionsDisclosure.locator('summary');
+  const summaryIndicator = async () => connectionsSummary.evaluate(summary =>
+    getComputedStyle(summary, '::before').content.replaceAll('"', ''));
+  assert.equal(await summaryIndicator(), '+', 'a collapsed disclosure must expose a visible plus indicator');
+  await connectionsSummary.click();
+  assert.equal(await connectionsSummary.evaluate(element => document.activeElement === element), true,
+    'mouse toggling a disclosure must keep focus on its summary');
+  assert.equal(await connectionsDisclosure.getAttribute('open'), '',
+    'mouse toggling must reveal connection content');
+  assert.equal(await summaryIndicator(), '−', 'an open disclosure must expose a visible minus indicator');
+  const focusedSummaryStyle = await connectionsSummary.evaluate(summary => {
+    const style = getComputedStyle(summary);
+    return { minHeight: parseFloat(style.minHeight), outlineWidth: parseFloat(style.outlineWidth) };
+  });
+  assert.ok(focusedSummaryStyle.minHeight >= 44, 'disclosure summaries must retain a 44px touch target');
+  assert.ok(focusedSummaryStyle.outlineWidth >= 2, 'focused disclosure summaries must have a visible focus outline');
+  assert.deepEqual(await trimmedTexts(connectionsDisclosure.locator('[data-study-connection-group] > h4')),
+    ['Cause', 'Effect'],
+    'connection groups must render only nonempty groups in the approved order');
+  const connectionButtons = connectionsDisclosure.locator('button[data-study-connection]');
+  assert.equal(await connectionButtons.count(), 2, 'declared Hangzhou connections must render as two real buttons');
+  assert.ok(await connectionButtons.first().evaluate(button => parseFloat(getComputedStyle(button).minHeight)) >= 44,
+    'connection buttons must retain a 44px touch target');
+  assert.deepEqual(await connectionButtons.evaluateAll(buttons => buttons.map(button => ({
+    type: button.getAttribute('type'),
+    target: button.dataset.studyConnection,
+    source: button.dataset.studyConnectionFrom,
+    title: button.querySelector('strong')?.textContent.trim(),
+    note: button.querySelector('span')?.textContent.trim(),
+  }))), [
+    {
+      type: 'button',
+      target: 'apwh-u1-hangzhou-grand-canal-urban-market',
+      source: 'apwh-u1-hangzhou-song-commercial-revolution',
+      title: 'Grand Canal and the Hangzhou Market',
+      note: 'Canal transport integrated productive regions with Hangzhou, supporting the urban demand and market exchange associated with Song commercialization.',
+    },
+    {
+      type: 'button',
+      target: 'apwh-u1-hangzhou-paper-money-maritime-tools',
+      source: 'apwh-u1-hangzhou-song-commercial-revolution',
+      title: 'Paper Money and Maritime Technology',
+      note: 'Expanding markets increased demand for scalable currency and safer long-distance navigation.',
+    },
+  ], 'connection buttons must use only declared targets, titles, and notes');
+  await connectionsSummary.press('Space');
+  assert.equal(await connectionsSummary.evaluate(element => document.activeElement === element), true,
+    'keyboard toggling a disclosure must keep focus on its summary');
+  assert.equal(await connectionsDisclosure.getAttribute('open'), null,
+    'keyboard toggling must collapse connection content');
+  assert.equal(await summaryIndicator(), '+', 'keyboard collapse must restore the plus indicator');
+  await connectionsSummary.click();
+
   const secondStudyButton = studyRows.nth(1);
   await secondStudyButton.click();
   assert.equal(await hangzhouStudyView.locator('[data-study-detail]').count(), 1,
@@ -406,11 +490,14 @@ async function verifyTimeline(page, port) {
     'the active study point must expose current-item semantics');
   assert.equal(await secondStudyButton.evaluate(element => document.activeElement === element), true,
     'expanding a study point must restore focus to its toggle after rerendering');
-  const studyDetailText = await hangzhouStudyView.locator('[data-study-detail]').innerText();
-  for (const heading of ['Significance', 'Key people', 'Key terms', 'Evidence', 'Exam connection', 'Source']) {
-    assert.match(studyDetailText, new RegExp(heading, 'i'),
-      `expanded study detail must include ${heading}`);
-  }
+  assert.deepEqual(await trimmedTexts(hangzhouStudyView.locator('[data-study-detail] [data-study-core-label]')),
+    ['Region', 'Summary', 'Why It Matters', 'Use It on the Exam'],
+    'switching study points must preserve the progressive core hierarchy');
+  await studyRows.first().click();
+  assert.equal(await hangzhouStudyView.locator(
+    '[data-study-detail="apwh-u1-hangzhou-song-commercial-revolution"] details[data-study-disclosure="connections"]'
+  ).getAttribute('open'), '',
+  'native disclosure state must survive a study-row rerender through the capture-phase toggle handler');
 
   await hangzhouStudyView.locator('[data-location-study-back="1"]').click();
   await expectVisible(page.locator('#eventPanel .event-list'), 'Back must restore Hangzhou event cards');
