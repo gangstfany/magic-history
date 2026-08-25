@@ -9,9 +9,107 @@
     '73': 'Timbuktu',
   });
 
+  const VALID_TOPIC_CODES = new Set(['1.1', '1.2', '1.3', '1.5', '1.7']);
+  const VALID_THEME_IDS = new Set(['GOV', 'ECN', 'CDI', 'SIO', 'TEC']);
+  const STUDY_CONTEXT = {
+    'apwh-u1-hangzhou-song-commercial-revolution': [['1.1', '1.7'], ['ECN', 'GOV']],
+    'apwh-u1-hangzhou-grand-canal-urban-market': [['1.1', '1.7'], ['ECN', 'GOV', 'TEC']],
+    'apwh-u1-hangzhou-paper-money-maritime-tools': [['1.1', '1.7'], ['ECN', 'TEC']],
+    'apwh-u1-angkor-khmer-hydraulic-state': [['1.3', '1.7'], ['GOV', 'ECN', 'TEC']],
+    'apwh-u1-angkor-hindu-buddhist-legitimation': [['1.3', '1.7'], ['GOV', 'CDI']],
+    'apwh-u1-delhi-sultanate-state-building': [['1.3', '1.7'], ['GOV', 'CDI']],
+    'apwh-u1-delhi-bhakti-sufi-devotion': [['1.3', '1.7'], ['CDI', 'SIO']],
+    'apwh-u1-baghdad-abbasid-knowledge-hub': [['1.2', '1.7'], ['CDI', 'TEC']],
+    'apwh-u1-baghdad-merchant-ulema-network': [['1.2', '1.7'], ['ECN', 'CDI']],
+    'apwh-u1-timbuktu-mali-gold-salt-tax': [['1.5', '1.7'], ['ECN', 'GOV']],
+    'apwh-u1-timbuktu-islamic-learning-griots': [['1.5', '1.7'], ['CDI', 'SIO']],
+    'apwh-u1-timbuktu-mansa-musa-pilgrimage': [['1.5', '1.7'], ['GOV', 'ECN', 'CDI']],
+  };
+
+  const CONNECTION_DATA = new Map(Object.keys(STUDY_CONTEXT).map(id => [id, {
+    causeStudyPointIds: [],
+    effectStudyPointIds: [],
+    relatedStudyPointIds: [],
+    connectionNotes: {},
+  }]));
+
+  function addCausalConnection(causeId, effectId, note) {
+    CONNECTION_DATA.get(causeId).effectStudyPointIds.push(effectId);
+    CONNECTION_DATA.get(effectId).causeStudyPointIds.push(causeId);
+    CONNECTION_DATA.get(causeId).connectionNotes[effectId] = note;
+    CONNECTION_DATA.get(effectId).connectionNotes[causeId] = note;
+  }
+
+  function addRelatedConnection(leftId, rightId, note) {
+    CONNECTION_DATA.get(leftId).relatedStudyPointIds.push(rightId);
+    CONNECTION_DATA.get(rightId).relatedStudyPointIds.push(leftId);
+    CONNECTION_DATA.get(leftId).connectionNotes[rightId] = note;
+    CONNECTION_DATA.get(rightId).connectionNotes[leftId] = note;
+  }
+
+  addCausalConnection(
+    'apwh-u1-hangzhou-grand-canal-urban-market',
+    'apwh-u1-hangzhou-song-commercial-revolution',
+    'Canal transport integrated productive regions with Hangzhou, supporting the urban demand and market exchange associated with Song commercialization.',
+  );
+  addCausalConnection(
+    'apwh-u1-hangzhou-song-commercial-revolution',
+    'apwh-u1-hangzhou-paper-money-maritime-tools',
+    'Expanding markets increased demand for scalable currency and safer long-distance navigation.',
+  );
+  addCausalConnection(
+    'apwh-u1-angkor-khmer-hydraulic-state',
+    'apwh-u1-angkor-hindu-buddhist-legitimation',
+    'Agricultural surplus and organized labor helped Khmer rulers finance monumental religious patronage.',
+  );
+  addCausalConnection(
+    'apwh-u1-timbuktu-mali-gold-salt-tax',
+    'apwh-u1-timbuktu-mansa-musa-pilgrimage',
+    "Revenue from Mali's control of trade helped finance Mansa Musa's pilgrimage and public display of wealth.",
+  );
+  addCausalConnection(
+    'apwh-u1-timbuktu-mansa-musa-pilgrimage',
+    'apwh-u1-timbuktu-islamic-learning-griots',
+    "Mansa Musa's post-pilgrimage patronage strengthened mosques, schools, and scholarly connections in Mali.",
+  );
+
+  addRelatedConnection(
+    'apwh-u1-delhi-sultanate-state-building',
+    'apwh-u1-delhi-bhakti-sufi-devotion',
+    'Both developments show how Islamic institutions interacted with a predominantly Hindu South Asian society without erasing religious distinctions.',
+  );
+  addRelatedConnection(
+    'apwh-u1-baghdad-abbasid-knowledge-hub',
+    'apwh-u1-baghdad-merchant-ulema-network',
+    "Scholarship, religious learning, and trusted urban networks reinforced Baghdad's wider role in the Islamic world.",
+  );
+  addRelatedConnection(
+    'apwh-u1-baghdad-merchant-ulema-network',
+    'apwh-u1-delhi-bhakti-sufi-devotion',
+    'Mobile Muslim teachers and shared religious networks help compare the spread and local adaptation of Islam across regions.',
+  );
+  addRelatedConnection(
+    'apwh-u1-baghdad-merchant-ulema-network',
+    'apwh-u1-timbuktu-islamic-learning-griots',
+    'Commercial and scholarly networks carried Islamic institutions while local societies retained distinct cultural practices.',
+  );
+
   function freezeRecord(record) {
+    const [topicCodes, themeIds] = STUDY_CONTEXT[record.id] || [[], []];
+    const connections = CONNECTION_DATA.get(record.id) || {
+      causeStudyPointIds: [],
+      effectStudyPointIds: [],
+      relatedStudyPointIds: [],
+      connectionNotes: {},
+    };
     return Object.freeze({
       ...record,
+      topicCodes: Object.freeze([...topicCodes]),
+      themeIds: Object.freeze([...themeIds]),
+      causeStudyPointIds: Object.freeze([...connections.causeStudyPointIds]),
+      effectStudyPointIds: Object.freeze([...connections.effectStudyPointIds]),
+      relatedStudyPointIds: Object.freeze([...connections.relatedStudyPointIds]),
+      connectionNotes: Object.freeze({ ...connections.connectionNotes }),
       keyPeople: Object.freeze(record.keyPeople.map(person => Object.freeze({ ...person }))),
       keyTerms: Object.freeze(record.keyTerms.map(item => Object.freeze({ ...item }))),
       evidence: Object.freeze([...record.evidence]),
@@ -292,6 +390,63 @@
     }),
   ]);
 
+  const byId = new Map(STUDY_EVENTS.map(record => [record.id, record]));
+
+  function validateStudyGraph() {
+    if (byId.size !== STUDY_EVENTS.length) {
+      throw new Error('Unit 1 study graph contains duplicate record IDs');
+    }
+
+    const categoryReciprocals = {
+      causeStudyPointIds: 'effectStudyPointIds',
+      effectStudyPointIds: 'causeStudyPointIds',
+      relatedStudyPointIds: 'relatedStudyPointIds',
+    };
+
+    for (const record of STUDY_EVENTS) {
+      const fail = rule => { throw new Error(`Invalid Unit 1 study record ${record.id}: ${rule}`); };
+      if (!record.topicCodes.length || record.topicCodes.some(code => !VALID_TOPIC_CODES.has(code))) {
+        fail('invalid topicCodes');
+      }
+      if (!record.themeIds.length || record.themeIds.some(id => !VALID_THEME_IDS.has(id))) {
+        fail('invalid themeIds');
+      }
+      if (new Set(record.topicCodes).size !== record.topicCodes.length) fail('duplicate topicCodes');
+      if (new Set(record.themeIds).size !== record.themeIds.length) fail('duplicate themeIds');
+
+      const categoryKeys = Object.keys(categoryReciprocals);
+      const linkedIds = categoryKeys.flatMap(key => record[key]);
+      if (new Set(linkedIds).size !== linkedIds.length) {
+        fail('duplicate or cross-category connection');
+      }
+
+      for (const key of categoryKeys) {
+        for (const targetId of record[key]) {
+          if (targetId === record.id) fail(`self connection in ${key}`);
+          const target = byId.get(targetId);
+          if (!target) fail(`unresolved connection ${targetId}`);
+          if (!target[categoryReciprocals[key]].includes(record.id)) {
+            fail(`nonreciprocal ${key} connection to ${targetId}`);
+          }
+          const note = record.connectionNotes[targetId];
+          if (typeof note !== 'string' || !/[A-Za-z]/.test(note) || /[\u3400-\u9fff]/.test(note)) {
+            fail(`missing English connection note for ${targetId}`);
+          }
+          if (target.connectionNotes[record.id] !== note) {
+            fail(`nonreciprocal connection note for ${targetId}`);
+          }
+        }
+      }
+
+      const noteIds = Object.keys(record.connectionNotes);
+      if (noteIds.length !== linkedIds.length || noteIds.some(id => !linkedIds.includes(id))) {
+        fail('connectionNotes keys do not match categorized connections');
+      }
+    }
+  }
+
+  validateStudyGraph();
+
   const byLocation = new Map(Object.keys(TRIAL_LOCATIONS).map(number => [number, Object.freeze([])]));
   for (const number of Object.keys(TRIAL_LOCATIONS)) {
     const records = STUDY_EVENTS
@@ -304,6 +459,7 @@
     locationNumbers: Object.freeze(Object.keys(TRIAL_LOCATIONS)),
     locationName(number) { return TRIAL_LOCATIONS[String(number)] || null; },
     getByLocation(number) { return [...(byLocation.get(String(number)) || [])]; },
+    getById(id) { return byId.get(String(id)) || null; },
     compareRecords,
     records: STUDY_EVENTS,
   });

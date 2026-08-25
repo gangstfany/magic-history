@@ -30,16 +30,64 @@ const expectedIds = [
   'apwh-u1-timbuktu-islamic-learning-griots',
 ];
 const recordKeys = [
-  'dateLabel', 'endYear', 'evidence', 'examConnection', 'id', 'keyPeople', 'keyTerms',
-  'locationNumber', 'mainEventKey', 'significance', 'source', 'startYear', 'summary', 'title',
+  'causeStudyPointIds', 'connectionNotes', 'dateLabel', 'effectStudyPointIds', 'endYear',
+  'evidence', 'examConnection', 'id', 'keyPeople', 'keyTerms', 'locationNumber', 'mainEventKey',
+  'relatedStudyPointIds', 'significance', 'source', 'startYear', 'summary', 'themeIds', 'title',
+  'topicCodes',
 ];
 const isNonEmptyString = value => typeof value === 'string' && value.trim().length > 0;
+
+const expectedMetadata = new Map([
+  ['apwh-u1-hangzhou-song-commercial-revolution', [['1.1', '1.7'], ['ECN', 'GOV']]],
+  ['apwh-u1-hangzhou-grand-canal-urban-market', [['1.1', '1.7'], ['ECN', 'GOV', 'TEC']]],
+  ['apwh-u1-hangzhou-paper-money-maritime-tools', [['1.1', '1.7'], ['ECN', 'TEC']]],
+  ['apwh-u1-angkor-khmer-hydraulic-state', [['1.3', '1.7'], ['GOV', 'ECN', 'TEC']]],
+  ['apwh-u1-angkor-hindu-buddhist-legitimation', [['1.3', '1.7'], ['GOV', 'CDI']]],
+  ['apwh-u1-delhi-sultanate-state-building', [['1.3', '1.7'], ['GOV', 'CDI']]],
+  ['apwh-u1-delhi-bhakti-sufi-devotion', [['1.3', '1.7'], ['CDI', 'SIO']]],
+  ['apwh-u1-baghdad-abbasid-knowledge-hub', [['1.2', '1.7'], ['CDI', 'TEC']]],
+  ['apwh-u1-baghdad-merchant-ulema-network', [['1.2', '1.7'], ['ECN', 'CDI']]],
+  ['apwh-u1-timbuktu-mali-gold-salt-tax', [['1.5', '1.7'], ['ECN', 'GOV']]],
+  ['apwh-u1-timbuktu-islamic-learning-griots', [['1.5', '1.7'], ['CDI', 'SIO']]],
+  ['apwh-u1-timbuktu-mansa-musa-pilgrimage', [['1.5', '1.7'], ['GOV', 'ECN', 'CDI']]],
+]);
+
+const expectedCausalEdges = new Map([
+  ['apwh-u1-hangzhou-grand-canal-urban-market->apwh-u1-hangzhou-song-commercial-revolution',
+    'Canal transport integrated productive regions with Hangzhou, supporting the urban demand and market exchange associated with Song commercialization.'],
+  ['apwh-u1-hangzhou-song-commercial-revolution->apwh-u1-hangzhou-paper-money-maritime-tools',
+    'Expanding markets increased demand for scalable currency and safer long-distance navigation.'],
+  ['apwh-u1-angkor-khmer-hydraulic-state->apwh-u1-angkor-hindu-buddhist-legitimation',
+    'Agricultural surplus and organized labor helped Khmer rulers finance monumental religious patronage.'],
+  ['apwh-u1-timbuktu-mali-gold-salt-tax->apwh-u1-timbuktu-mansa-musa-pilgrimage',
+    "Revenue from Mali's control of trade helped finance Mansa Musa's pilgrimage and public display of wealth."],
+  ['apwh-u1-timbuktu-mansa-musa-pilgrimage->apwh-u1-timbuktu-islamic-learning-griots',
+    "Mansa Musa's post-pilgrimage patronage strengthened mosques, schools, and scholarly connections in Mali."],
+]);
+
+const expectedRelatedPairs = new Map([
+  ['apwh-u1-delhi-bhakti-sufi-devotion|apwh-u1-delhi-sultanate-state-building',
+    'Both developments show how Islamic institutions interacted with a predominantly Hindu South Asian society without erasing religious distinctions.'],
+  ['apwh-u1-baghdad-abbasid-knowledge-hub|apwh-u1-baghdad-merchant-ulema-network',
+    "Scholarship, religious learning, and trusted urban networks reinforced Baghdad's wider role in the Islamic world."],
+  ['apwh-u1-baghdad-merchant-ulema-network|apwh-u1-delhi-bhakti-sufi-devotion',
+    'Mobile Muslim teachers and shared religious networks help compare the spread and local adaptation of Islam across regions.'],
+  ['apwh-u1-baghdad-merchant-ulema-network|apwh-u1-timbuktu-islamic-learning-griots',
+    'Commercial and scholarly networks carried Islamic institutions while local societies retained distinct cultural practices.'],
+]);
 
 test('publishes the Unit 1 location-study API', () => {
   assert.ok(api);
   assert.equal(typeof api.getByLocation, 'function');
+  assert.equal(typeof api.getById, 'function');
   assert.equal(typeof api.compareRecords, 'function');
   assert.deepEqual([...api.locationNumbers], trialPins);
+});
+
+test('looks up canonical records by stable id', () => {
+  for (const record of api.records) assert.equal(api.getById(record.id), record);
+  assert.equal(api.getById('missing-study-point'), null);
+  assert.equal(api.getById(null), null);
 });
 
 test('returns a defensive chronological array', () => {
@@ -133,6 +181,86 @@ test('uses globally unique stable study identifiers', () => {
   assert.ok(ids.every(id => /^apwh-u1-(hangzhou|angkor|delhi|baghdad|timbuktu)-/.test(id)));
 });
 
+test('assigns the exact APWH topics and map themes', () => {
+  const validTopics = new Set(['1.1', '1.2', '1.3', '1.5', '1.7']);
+  const validThemes = new Set(['GOV', 'ECN', 'CDI', 'SIO', 'TEC']);
+
+  assert.equal(expectedMetadata.size, api.records.length);
+  for (const record of api.records) {
+    assert.deepEqual([record.topicCodes, record.themeIds], expectedMetadata.get(record.id));
+    assert.ok(record.topicCodes.every(code => validTopics.has(code)), `${record.id} topics`);
+    assert.ok(record.themeIds.every(id => validThemes.has(id)), `${record.id} themes`);
+  }
+});
+
+test('ships the exact reciprocal causal graph and mechanism notes', () => {
+  const actualEdges = new Map();
+  for (const source of api.records) {
+    for (const targetId of source.effectStudyPointIds) {
+      actualEdges.set(`${source.id}->${targetId}`, source.connectionNotes[targetId]);
+    }
+  }
+  assert.deepEqual(actualEdges, expectedCausalEdges);
+
+  for (const [edge, note] of expectedCausalEdges) {
+    const [sourceId, targetId] = edge.split('->');
+    const source = api.getById(sourceId);
+    const target = api.getById(targetId);
+    assert.ok(target.causeStudyPointIds.includes(sourceId), `${edge} reverse cause`);
+    assert.equal(source.connectionNotes[targetId], note, `${edge} source note`);
+    assert.equal(target.connectionNotes[sourceId], note, `${edge} target note`);
+  }
+});
+
+test('ships the exact reciprocal related graph and comparison notes', () => {
+  const actualPairs = new Map();
+  for (const record of api.records) {
+    for (const relatedId of record.relatedStudyPointIds) {
+      const pair = [record.id, relatedId].sort().join('|');
+      actualPairs.set(pair, record.connectionNotes[relatedId]);
+    }
+  }
+  assert.deepEqual(actualPairs, expectedRelatedPairs);
+
+  for (const [pair, note] of expectedRelatedPairs) {
+    const [leftId, rightId] = pair.split('|');
+    const left = api.getById(leftId);
+    const right = api.getById(rightId);
+    assert.ok(left.relatedStudyPointIds.includes(rightId), `${pair} left relation`);
+    assert.ok(right.relatedStudyPointIds.includes(leftId), `${pair} right relation`);
+    assert.equal(left.connectionNotes[rightId], note, `${pair} left note`);
+    assert.equal(right.connectionNotes[leftId], note, `${pair} right note`);
+  }
+});
+
+test('keeps every graph link resolved, unique, categorized once, and documented', () => {
+  const ids = new Set(api.records.map(record => record.id));
+  for (const record of api.records) {
+    const categories = [
+      record.causeStudyPointIds,
+      record.effectStudyPointIds,
+      record.relatedStudyPointIds,
+    ];
+    const links = categories.flat();
+    assert.equal(new Set(links).size, links.length, `${record.id} duplicate or multi-category link`);
+    assert.ok(links.every(id => id !== record.id), `${record.id} self link`);
+    assert.ok(links.every(id => ids.has(id)), `${record.id} unresolved link`);
+    assert.deepEqual(Object.keys(record.connectionNotes).sort(), [...links].sort(),
+      `${record.id} note keys`);
+    assert.ok(Object.values(record.connectionNotes).every(note => isNonEmptyString(note)
+      && /[A-Za-z]/.test(note)), `${record.id} English notes`);
+
+    for (const causeId of record.causeStudyPointIds) {
+      assert.ok(api.getById(causeId).effectStudyPointIds.includes(record.id),
+        `${record.id} cause reciprocity`);
+    }
+    for (const relatedId of record.relatedStudyPointIds) {
+      assert.ok(api.getById(relatedId).relatedStudyPointIds.includes(record.id),
+        `${record.id} related reciprocity`);
+    }
+  }
+});
+
 test('publishes deeply immutable records and a locked global', () => {
   assert.ok(Object.isFrozen(api));
   assert.ok(Object.isFrozen(api.locationNumbers));
@@ -145,6 +273,12 @@ test('publishes deeply immutable records and a locked global', () => {
     assert.ok(record.keyTerms.every(Object.isFrozen));
     assert.ok(Object.isFrozen(record.evidence));
     assert.ok(Object.isFrozen(record.source));
+    assert.ok(Object.isFrozen(record.topicCodes));
+    assert.ok(Object.isFrozen(record.themeIds));
+    assert.ok(Object.isFrozen(record.causeStudyPointIds));
+    assert.ok(Object.isFrozen(record.effectStudyPointIds));
+    assert.ok(Object.isFrozen(record.relatedStudyPointIds));
+    assert.ok(Object.isFrozen(record.connectionNotes));
   }
 
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'APWH_U1_LOCATION_STUDY');
