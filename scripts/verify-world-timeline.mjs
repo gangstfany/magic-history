@@ -419,7 +419,12 @@ async function verifyTimeline(page, port) {
   const supportingDetails = firstStudyDetail.locator('details[data-study-disclosure]');
   assert.equal(await supportingDetails.count(), 5,
     'the first Hangzhou detail must render all five nonempty supporting disclosures');
-  assert.deepEqual(await trimmedTexts(supportingDetails.locator('summary')),
+  const supportingSummaries = supportingDetails.locator('summary[data-study-disclosure-toggle]');
+  assert.deepEqual(await supportingSummaries.evaluateAll(summaries =>
+    summaries.map(summary => summary.dataset.studyDisclosureToggle)),
+    ['terms', 'evidence', 'connections', 'people', 'source'],
+    'supporting summaries must expose the exact lowercase disclosure keys in order');
+  assert.deepEqual(await trimmedTexts(supportingSummaries),
     ['Key Terms (2)', 'Evidence (2)', 'Connections (2)', 'People (1)', 'Source (1)'],
     'supporting disclosures must use the approved order, labels, and counts');
   assert.deepEqual(await supportingDetails.evaluateAll(details => details.map(detail => detail.open)),
@@ -427,7 +432,7 @@ async function verifyTimeline(page, port) {
     'supporting disclosures must start collapsed');
 
   const connectionsDisclosure = firstStudyDetail.locator('details[data-study-disclosure="connections"]');
-  const connectionsSummary = connectionsDisclosure.locator('summary');
+  const connectionsSummary = connectionsDisclosure.locator('summary[data-study-disclosure-toggle="connections"]');
   const summaryIndicator = async () => connectionsSummary.evaluate(summary =>
     getComputedStyle(summary, '::before').content.replaceAll('"', ''));
   assert.equal(await summaryIndicator(), '+', 'a collapsed disclosure must expose a visible plus indicator');
@@ -540,11 +545,11 @@ async function verifyTimeline(page, port) {
     'study-view round trips must preserve filters, Timeline selection, location, and the map transform');
 
   for (const fixture of [
-    { number: '1', region: 'asia', count: 3, name: 'Hangzhou' },
-    { number: '3', region: 'mideast', count: 2, name: 'Baghdad' },
-    { number: '6', region: 'asia', count: 2, name: 'Delhi' },
-    { number: '7', region: 'asia', count: 2, name: 'Angkor' },
-    { number: '73', region: 'africa', count: 3, name: 'Timbuktu' },
+    { number: '1', region: 'asia', broadRegion: 'Asia', count: 3, name: 'Hangzhou' },
+    { number: '3', region: 'mideast', broadRegion: 'Middle East and Central Asia', count: 2, name: 'Baghdad' },
+    { number: '6', region: 'asia', broadRegion: 'Asia', count: 2, name: 'Delhi' },
+    { number: '7', region: 'asia', broadRegion: 'Asia', count: 2, name: 'Angkor' },
+    { number: '73', region: 'africa', broadRegion: 'Africa', count: 3, name: 'Timbuktu' },
   ]) {
     await page.evaluate(({ number, region }) => window.__mapFilter.openHit(number, region), fixture);
     const entry = page.locator(`#eventPanel [data-location-study-open="${fixture.number}"]`);
@@ -558,6 +563,9 @@ async function verifyTimeline(page, port) {
       `pin ${fixture.number} must render its English location heading`);
     assert.equal(await view.locator('[data-study-event]').count(), fixture.count,
       `pin ${fixture.number} must render the exact study-point count`);
+    const regionLabel = (await view.locator('[data-study-detail] [data-study-region]').innerText()).trim();
+    assert.equal(regionLabel, `${fixture.name} · ${fixture.broadRegion}`,
+      `pin ${fixture.number} expanded study point must derive its complete canonical Region label`);
     assert.doesNotMatch(await view.innerText(), /[\u3400-\u9fff]/,
       `pin ${fixture.number} study view must render English-only copy`);
     await view.locator(`[data-location-study-back="${fixture.number}"]`).click();

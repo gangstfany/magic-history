@@ -5054,7 +5054,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const api = window.APWH_U1_LOCATION_STUDY;
     const locationName = api.locationName(record.locationNumber);
     const regionName = regionNames[pinRegion(record.locationNumber)];
-    return locationName && regionName ? `${locationName} · ${regionName}` : '';
+    const missing = [];
+    if (!locationName) missing.push('canonical location name');
+    if (!regionName) missing.push('broad map region');
+    if (missing.length) {
+      throw new Error(`Invalid Unit 1 study location metadata for ${record.id}: missing ${missing.join(' and ')}`);
+    }
+    return `${locationName} · ${regionName}`;
   }
 
   function studyDisclosureHTML(record, key, label, count, body) {
@@ -5062,7 +5068,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const open = locationStudyState.openDisclosures.has(`${record.id}:${key}`);
     return `<details class="location-study-disclosure" data-study-disclosure="${key}"`
       + ` data-study-id="${escapeTimelineText(record.id)}"${open ? ' open' : ''}>`
-      + `<summary>${escapeTimelineText(label)} (${count})</summary>`
+      + `<summary data-study-disclosure-toggle="${escapeTimelineText(key)}">`
+      + `${escapeTimelineText(label)} (${count})</summary>`
       + `<div class="location-study-disclosure-body">${body}</div></details>`;
   }
 
