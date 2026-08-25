@@ -42,6 +42,9 @@
     if (!effect) {
       throw new Error(`Invalid Unit 1 study connection causal: missing effect ${effectId}`);
     }
+    if (causeId === effectId) {
+      throw new Error(`Invalid Unit 1 study connection causal: self connection ${causeId}`);
+    }
     cause.effectStudyPointIds.push(effectId);
     effect.causeStudyPointIds.push(causeId);
     cause.connectionNotes[effectId] = note;
@@ -56,6 +59,9 @@
     }
     if (!right) {
       throw new Error(`Invalid Unit 1 study connection related: missing right ${rightId}`);
+    }
+    if (leftId === rightId) {
+      throw new Error(`Invalid Unit 1 study connection related: self connection ${leftId}`);
     }
     left.relatedStudyPointIds.push(rightId);
     right.relatedStudyPointIds.push(leftId);
@@ -425,32 +431,58 @@
 
     for (const record of STUDY_EVENTS) {
       const fail = rule => { throw new Error(`Invalid Unit 1 study record ${record.id}: ${rule}`); };
-      if (!record.topicCodes.length || record.topicCodes.some(code => !VALID_TOPIC_CODES.has(code))) {
-        fail('invalid topicCodes');
-      }
-      if (!record.themeIds.length || record.themeIds.some(id => !VALID_THEME_IDS.has(id))) {
-        fail('invalid themeIds');
-      }
-      if (new Set(record.topicCodes).size !== record.topicCodes.length) fail('duplicate topicCodes');
-      if (new Set(record.themeIds).size !== record.themeIds.length) fail('duplicate themeIds');
+      if (!record.topicCodes.length) fail('missing topicCodes');
+      const invalidTopicCode = record.topicCodes.find(code => !VALID_TOPIC_CODES.has(code));
+      if (invalidTopicCode) fail(`invalid topicCode ${invalidTopicCode}`);
+      const duplicateTopicCode = record.topicCodes.find(
+        (code, index) => record.topicCodes.indexOf(code) !== index,
+      );
+      if (duplicateTopicCode) fail(`duplicate topicCode ${duplicateTopicCode}`);
+
+      if (!record.themeIds.length) fail('missing themeIds');
+      const invalidThemeId = record.themeIds.find(id => !VALID_THEME_IDS.has(id));
+      if (invalidThemeId) fail(`invalid themeId ${invalidThemeId}`);
+      const duplicateThemeId = record.themeIds.find(
+        (id, index) => record.themeIds.indexOf(id) !== index,
+      );
+      if (duplicateThemeId) fail(`duplicate themeId ${duplicateThemeId}`);
 
       const categoryKeys = Object.keys(categoryReciprocals);
-      const linkedIds = categoryKeys.flatMap(key => record[key]);
-      if (new Set(linkedIds).size !== linkedIds.length) {
-        fail('duplicate or cross-category connection');
+      for (const key of categoryKeys) {
+        const selfLink = record[key].find(targetId => targetId === record.id);
+        if (selfLink) fail(`self connection in ${key}`);
+        const duplicateTarget = record[key].find(
+          (targetId, index) => record[key].indexOf(targetId) !== index,
+        );
+        if (duplicateTarget) fail(`duplicate connection in ${key} to ${duplicateTarget}`);
       }
+
+      const targetCategories = new Map();
+      for (const key of categoryKeys) {
+        for (const targetId of record[key]) {
+          const previousCategory = targetCategories.get(targetId);
+          if (previousCategory) {
+            fail(`cross-category connection ${targetId} in ${previousCategory} and ${key}`);
+          }
+          targetCategories.set(targetId, key);
+        }
+      }
+
+      const linkedIds = categoryKeys.flatMap(key => record[key]);
 
       for (const key of categoryKeys) {
         for (const targetId of record[key]) {
-          if (targetId === record.id) fail(`self connection in ${key}`);
           const target = byId.get(targetId);
           if (!target) fail(`unresolved connection ${targetId}`);
           if (!target[categoryReciprocals[key]].includes(record.id)) {
             fail(`nonreciprocal ${key} connection to ${targetId}`);
           }
           const note = record.connectionNotes[targetId];
-          if (typeof note !== 'string' || !/[A-Za-z]/.test(note) || /[\u3400-\u9fff]/.test(note)) {
-            fail(`missing English connection note for ${targetId}`);
+          if (typeof note !== 'string' || !note.trim()) {
+            fail(`missing connection note for ${targetId}`);
+          }
+          if (!/[A-Za-z]/.test(note) || /[\u3400-\u9fff]/.test(note)) {
+            fail(`non-English connection note for ${targetId}`);
           }
           if (target.connectionNotes[record.id] !== note) {
             fail(`nonreciprocal connection note for ${targetId}`);
@@ -459,9 +491,8 @@
       }
 
       const noteIds = Object.keys(record.connectionNotes);
-      if (noteIds.length !== linkedIds.length || noteIds.some(id => !linkedIds.includes(id))) {
-        fail('connectionNotes keys do not match categorized connections');
-      }
+      const extraNoteId = noteIds.find(id => !linkedIds.includes(id));
+      if (extraNoteId) fail(`extra connection note key ${extraNoteId}`);
     }
   }
 

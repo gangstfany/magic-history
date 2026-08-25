@@ -10,6 +10,20 @@ const dataModuleSource = readFileSync(
   new URL('../data/apwh-u1-location-study.js', import.meta.url),
   'utf8',
 );
+const replaceDataSource = (label, search, replacement) => {
+  const malformedSource = dataModuleSource.replace(search, replacement);
+  assert.notEqual(malformedSource, dataModuleSource, `${label} fixture mutation`);
+  return malformedSource;
+};
+const assertDataModuleError = (label, malformedSource, expectedMessage) => {
+  assert.throws(
+    () => runInNewContext(malformedSource, {}),
+    error => {
+      assert.equal(error.message, expectedMessage, `${label} diagnostic`);
+      return true;
+    },
+  );
+};
 const trialPins = ['1', '3', '6', '7', '73'];
 const validMainEvents = new Set([
   'world-event-1-0',
@@ -316,6 +330,159 @@ test('names the offending record when rejecting a duplicate study id', () => {
     () => runInNewContext(malformedSource, {}),
     new RegExp(`Invalid Unit 1 study record ${duplicateId}: duplicate record ID`),
   );
+});
+
+const songId = 'apwh-u1-hangzhou-song-commercial-revolution';
+const canalId = 'apwh-u1-hangzhou-grand-canal-urban-market';
+const paperId = 'apwh-u1-hangzhou-paper-money-maritime-tools';
+const songContext = `    '${songId}': [['1.1', '1.7'], ['ECN', 'GOV']],`;
+const validationFailureCases = [
+  {
+    label: 'invalid topic',
+    malformedSource: replaceDataSource(
+      'invalid topic', songContext,
+      `    '${songId}': [['9.9', '1.7'], ['ECN', 'GOV']],`,
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: invalid topicCode 9.9`,
+  },
+  {
+    label: 'duplicate topic',
+    malformedSource: replaceDataSource(
+      'duplicate topic', songContext,
+      `    '${songId}': [['1.1', '1.1'], ['ECN', 'GOV']],`,
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: duplicate topicCode 1.1`,
+  },
+  {
+    label: 'invalid theme',
+    malformedSource: replaceDataSource(
+      'invalid theme', songContext,
+      `    '${songId}': [['1.1', '1.7'], ['BAD', 'GOV']],`,
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: invalid themeId BAD`,
+  },
+  {
+    label: 'duplicate theme',
+    malformedSource: replaceDataSource(
+      'duplicate theme', songContext,
+      `    '${songId}': [['1.1', '1.7'], ['ECN', 'ECN']],`,
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: duplicate themeId ECN`,
+  },
+  {
+    label: 'configured causal self link',
+    malformedSource: replaceDataSource(
+      'configured causal self link',
+      `addCausalConnection(\n    '${canalId}',\n    '${songId}',`,
+      `addCausalConnection(\n    '${canalId}',\n    '${canalId}',`,
+    ),
+    expectedMessage: `Invalid Unit 1 study connection causal: self connection ${canalId}`,
+  },
+  {
+    label: 'frozen self link',
+    malformedSource: replaceDataSource(
+      'frozen self link',
+      '      effectStudyPointIds: Object.freeze([...connections.effectStudyPointIds]),',
+      '      effectStudyPointIds: Object.freeze([...connections.effectStudyPointIds, record.id]),',
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: self connection in effectStudyPointIds`,
+  },
+  {
+    label: 'duplicate within category',
+    malformedSource: replaceDataSource(
+      'duplicate within category',
+      '    cause.effectStudyPointIds.push(effectId);',
+      '    cause.effectStudyPointIds.push(effectId, effectId);',
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: duplicate connection in effectStudyPointIds to ${paperId}`,
+  },
+  {
+    label: 'cross-category target reuse',
+    malformedSource: replaceDataSource(
+      'cross-category target reuse',
+      '    effect.causeStudyPointIds.push(causeId);',
+      '    effect.causeStudyPointIds.push(causeId);\n'
+        + '    cause.relatedStudyPointIds.push(effectId);\n'
+        + '    effect.relatedStudyPointIds.push(causeId);',
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: cross-category connection ${canalId} in causeStudyPointIds and relatedStudyPointIds`,
+  },
+  {
+    label: 'unresolved frozen link',
+    malformedSource: replaceDataSource(
+      'unresolved frozen link',
+      '      effectStudyPointIds: Object.freeze([...connections.effectStudyPointIds]),',
+      "      effectStudyPointIds: Object.freeze([...connections.effectStudyPointIds, 'apwh-u1-missing-frozen']),",
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: unresolved connection apwh-u1-missing-frozen`,
+  },
+  {
+    label: 'nonreciprocity',
+    malformedSource: replaceDataSource(
+      'nonreciprocity',
+      '    effect.causeStudyPointIds.push(causeId);',
+      '    // Omit reverse cause for malformed test fixture.',
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: nonreciprocal effectStudyPointIds connection to ${paperId}`,
+  },
+  {
+    label: 'missing note',
+    malformedSource: replaceDataSource(
+      'missing note',
+      '    cause.connectionNotes[effectId] = note;\n    effect.connectionNotes[causeId] = note;',
+      '    // Omit both notes for malformed test fixture.',
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: missing connection note for ${canalId}`,
+  },
+  {
+    label: 'non-English note',
+    malformedSource: replaceDataSource(
+      'non-English note',
+      'Canal transport integrated productive regions with Hangzhou, supporting the urban demand and market exchange associated with Song commercialization.',
+      '12345.',
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: non-English connection note for ${canalId}`,
+  },
+  {
+    label: 'reciprocal note disagreement',
+    malformedSource: replaceDataSource(
+      'reciprocal note disagreement',
+      '    effect.connectionNotes[causeId] = note;',
+      "    effect.connectionNotes[causeId] = `${note} Different.`;",
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: nonreciprocal connection note for ${canalId}`,
+  },
+  {
+    label: 'extra note key',
+    malformedSource: replaceDataSource(
+      'extra note key',
+      '      connectionNotes: Object.freeze({ ...connections.connectionNotes }),',
+      "      connectionNotes: Object.freeze({ ...connections.connectionNotes, 'apwh-u1-extra-note': 'Extra note.' }),",
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: extra connection note key apwh-u1-extra-note`,
+  },
+];
+
+for (const { label, malformedSource, expectedMessage } of validationFailureCases) {
+  test(`reports ${label} with the offending record and rule`, () => {
+    assertDataModuleError(label, malformedSource, expectedMessage);
+  });
+}
+
+test('defensive and frozen relationship mutations cannot change canonical reads', () => {
+  const originalLocationIds = api.getByLocation('1').map(record => record.id);
+  const mutableRead = api.getByLocation('1');
+  mutableRead.pop();
+  mutableRead.reverse();
+  assert.deepEqual(api.getByLocation('1').map(record => record.id), originalLocationIds);
+
+  const canonical = api.getById(songId);
+  const originalEffects = [...canonical.effectStudyPointIds];
+  const originalNotes = { ...canonical.connectionNotes };
+  assert.throws(() => canonical.effectStudyPointIds.push('apwh-u1-injected'), TypeError);
+  assert.throws(() => { canonical.connectionNotes['apwh-u1-injected'] = 'Injected.'; }, TypeError);
+  assert.deepEqual(api.getById(songId).effectStudyPointIds, originalEffects);
+  assert.deepEqual(api.getById(songId).connectionNotes, originalNotes);
 });
 
 test('publishes deeply immutable records and a locked global', () => {
