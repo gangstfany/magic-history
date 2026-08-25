@@ -1,9 +1,15 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 
 await import('../data/apwh-u1-location-study.js');
 
 const api = globalThis.APWH_U1_LOCATION_STUDY;
+const dataModuleSource = readFileSync(
+  new URL('../data/apwh-u1-location-study.js', import.meta.url),
+  'utf8',
+);
 const trialPins = ['1', '3', '6', '7', '73'];
 const validMainEvents = new Set([
   'world-event-1-0',
@@ -259,6 +265,57 @@ test('keeps every graph link resolved, unique, categorized once, and documented'
         `${record.id} related reciprocity`);
     }
   }
+});
+
+test('rejects missing causal and related endpoints with descriptive connection errors', () => {
+  const cases = [
+    {
+      relation: 'causal',
+      endpoint: 'cause',
+      missingId: 'apwh-u1-missing-cause',
+      pattern: /(addCausalConnection\(\n\s+)'[^']+'/,
+    },
+    {
+      relation: 'causal',
+      endpoint: 'effect',
+      missingId: 'apwh-u1-missing-effect',
+      pattern: /(addCausalConnection\(\n\s+'[^']+',\n\s+)'[^']+'/,
+    },
+    {
+      relation: 'related',
+      endpoint: 'left',
+      missingId: 'apwh-u1-missing-left',
+      pattern: /(addRelatedConnection\(\n\s+)'[^']+'/,
+    },
+    {
+      relation: 'related',
+      endpoint: 'right',
+      missingId: 'apwh-u1-missing-right',
+      pattern: /(addRelatedConnection\(\n\s+'[^']+',\n\s+)'[^']+'/,
+    },
+  ];
+
+  for (const { relation, endpoint, missingId, pattern } of cases) {
+    const malformedSource = dataModuleSource.replace(pattern, `$1'${missingId}'`);
+    assert.notEqual(malformedSource, dataModuleSource, `${relation} ${endpoint} fixture mutation`);
+    assert.throws(
+      () => runInNewContext(malformedSource, {}),
+      new RegExp(`Invalid Unit 1 study connection ${relation}: missing ${endpoint} ${missingId}`),
+    );
+  }
+});
+
+test('names the offending record when rejecting a duplicate study id', () => {
+  const duplicateId = 'apwh-u1-hangzhou-song-commercial-revolution';
+  const malformedSource = dataModuleSource.replace(
+    "freezeRecord({\n      id: 'apwh-u1-hangzhou-grand-canal-urban-market',",
+    `freezeRecord({\n      id: '${duplicateId}',`,
+  );
+  assert.notEqual(malformedSource, dataModuleSource, 'duplicate fixture mutation');
+  assert.throws(
+    () => runInNewContext(malformedSource, {}),
+    new RegExp(`Invalid Unit 1 study record ${duplicateId}: duplicate record ID`),
+  );
 });
 
 test('publishes deeply immutable records and a locked global', () => {

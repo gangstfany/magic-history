@@ -34,17 +34,33 @@
   }]));
 
   function addCausalConnection(causeId, effectId, note) {
-    CONNECTION_DATA.get(causeId).effectStudyPointIds.push(effectId);
-    CONNECTION_DATA.get(effectId).causeStudyPointIds.push(causeId);
-    CONNECTION_DATA.get(causeId).connectionNotes[effectId] = note;
-    CONNECTION_DATA.get(effectId).connectionNotes[causeId] = note;
+    const cause = CONNECTION_DATA.get(causeId);
+    const effect = CONNECTION_DATA.get(effectId);
+    if (!cause) {
+      throw new Error(`Invalid Unit 1 study connection causal: missing cause ${causeId}`);
+    }
+    if (!effect) {
+      throw new Error(`Invalid Unit 1 study connection causal: missing effect ${effectId}`);
+    }
+    cause.effectStudyPointIds.push(effectId);
+    effect.causeStudyPointIds.push(causeId);
+    cause.connectionNotes[effectId] = note;
+    effect.connectionNotes[causeId] = note;
   }
 
   function addRelatedConnection(leftId, rightId, note) {
-    CONNECTION_DATA.get(leftId).relatedStudyPointIds.push(rightId);
-    CONNECTION_DATA.get(rightId).relatedStudyPointIds.push(leftId);
-    CONNECTION_DATA.get(leftId).connectionNotes[rightId] = note;
-    CONNECTION_DATA.get(rightId).connectionNotes[leftId] = note;
+    const left = CONNECTION_DATA.get(leftId);
+    const right = CONNECTION_DATA.get(rightId);
+    if (!left) {
+      throw new Error(`Invalid Unit 1 study connection related: missing left ${leftId}`);
+    }
+    if (!right) {
+      throw new Error(`Invalid Unit 1 study connection related: missing right ${rightId}`);
+    }
+    left.relatedStudyPointIds.push(rightId);
+    right.relatedStudyPointIds.push(leftId);
+    left.connectionNotes[rightId] = note;
+    right.connectionNotes[leftId] = note;
   }
 
   addCausalConnection(
@@ -393,8 +409,12 @@
   const byId = new Map(STUDY_EVENTS.map(record => [record.id, record]));
 
   function validateStudyGraph() {
-    if (byId.size !== STUDY_EVENTS.length) {
-      throw new Error('Unit 1 study graph contains duplicate record IDs');
+    const seenIds = new Set();
+    for (const record of STUDY_EVENTS) {
+      if (seenIds.has(record.id)) {
+        throw new Error(`Invalid Unit 1 study record ${record.id}: duplicate record ID`);
+      }
+      seenIds.add(record.id);
     }
 
     const categoryReciprocals = {
