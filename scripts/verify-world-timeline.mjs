@@ -270,6 +270,47 @@ async function buttonSurfaceMetrics(locator) {
   }));
 }
 
+async function buttonSurfacePaint(locator) {
+  return locator.evaluate(button => {
+    const style = getComputedStyle(button);
+    const surface = getComputedStyle(button, '::before');
+    return {
+      buttonBackground: style.backgroundColor,
+      buttonIsolation: style.isolation,
+      color: style.color,
+      surfaceBackground: surface.backgroundColor,
+      surfaceBorder: surface.borderColor,
+      surfaceBorderStyle: surface.borderStyle,
+      surfaceBorderWidth: surface.borderWidth,
+      surfaceContent: surface.content,
+      surfacePosition: surface.position,
+      surfaceZIndex: surface.zIndex,
+    };
+  });
+}
+
+async function assertPaintedPillConsistency(selected, hovered, label) {
+  const selectedPaint = await buttonSurfacePaint(selected);
+  assert.equal(selectedPaint.buttonBackground, 'rgba(0, 0, 0, 0)', `${label}: button hit target must remain transparent`);
+  assert.equal(selectedPaint.buttonIsolation, 'isolate', `${label}: button must isolate its painted surface`);
+  assert.equal(selectedPaint.surfaceContent, '""', `${label}: painted surface must generate content`);
+  assert.equal(selectedPaint.surfacePosition, 'absolute', `${label}: painted surface must remain positioned inside its button`);
+  assert.equal(selectedPaint.surfaceZIndex, '-1', `${label}: painted surface must remain behind its label`);
+  assert.equal(selectedPaint.surfaceBorderStyle, 'solid', `${label}: painted surface must retain its visible border`);
+  assert.equal(selectedPaint.surfaceBorderWidth, '1px', `${label}: painted surface must retain its visible border width`);
+  assert.notEqual(selectedPaint.surfaceBorder, 'rgba(0, 0, 0, 0)', `${label}: painted surface border must remain visible`);
+  assert.notEqual(selectedPaint.surfaceBackground, 'rgba(0, 0, 0, 0)', `${label}: selected surface must be visibly painted`);
+  assert.equal(selectedPaint.surfaceBackground, selectedPaint.surfaceBorder,
+    `${label}: selected surface border and background must use the same color`);
+  assert.equal(selectedPaint.color, 'rgb(255, 255, 255)', `${label}: selected label must remain white`);
+
+  await hovered.hover();
+  const hoverPaint = await buttonSurfacePaint(hovered);
+  assert.notEqual(hoverPaint.surfaceBorder, 'rgba(0, 0, 0, 0)', `${label}: unselected surface border must remain visible`);
+  assert.equal(hoverPaint.surfaceBorder, selectedPaint.surfaceBorder,
+    `${label}: hover border must match the selected surface color`);
+}
+
 async function verifyTimeline(page, port) {
   const response = await page.goto(`http://127.0.0.1:${port}/world-map.html`, { waitUntil: 'networkidle' });
   assert.ok(response?.ok(), `world-map.html is unavailable (HTTP ${response?.status() || 'no response'})`);
@@ -1328,6 +1369,10 @@ async function verifyLearningShell(page, port) {
     { hitHeight: 44, fontSize: '13px', paddingLeft: '14px', paddingRight: '14px', surfaceTop: '3px', surfaceBottom: '3px' },
     { hitHeight: 44, fontSize: '13px', paddingLeft: '14px', paddingRight: '14px', surfaceTop: '3px', surfaceBottom: '3px' },
   ], 'standalone Map secondary modes must pair a 44px hit target with a 38px painted pill');
+  await assertPaintedPillConsistency(
+    page.locator('#mapPanelTabs [data-map-mode="events"]'),
+    page.locator('#mapPanelTabs [data-map-mode="routes"]'),
+    'standalone Map secondary modes');
   assert.equal(await page.locator('[data-map-mode="events"]').getAttribute('aria-pressed'), 'true',
     'Event Details must be the initially pressed Map secondary mode');
   assert.deepEqual(await trimmedTexts(page.locator('[data-map-mode][aria-pressed="true"]')), ['事件详情'],
@@ -1634,6 +1679,12 @@ async function verifyLearningShell(page, port) {
     assert.deepEqual(await trimmedTexts(page.locator('.learning-view-tab[aria-pressed="true"]')), [mode.label],
       `at 700x900, exactly ${mode.label} must be pressed`);
     await expectVisible(page.locator(mode.content), `at 700x900, ${mode.label} must render its mode content`);
+    if (mode.id === 'map') {
+      assert.deepEqual(await buttonSurfaceMetrics(page.locator('#mapPanelTabs [data-map-mode]')), [
+        { hitHeight: 44, fontSize: '13px', paddingLeft: '14px', paddingRight: '14px', surfaceTop: '3px', surfaceBottom: '3px' },
+        { hitHeight: 44, fontSize: '13px', paddingLeft: '14px', paddingRight: '14px', surfaceTop: '3px', surfaceBottom: '3px' },
+      ], 'at 700x900, Map secondary modes must retain compact painted pills and 44px hit targets');
+    }
   }
   await page.locator('[data-learning-view="chain"]').click();
   assert.equal(await page.locator('#eventZone').getAttribute('aria-label'), 'Unit 因果链',
@@ -2137,6 +2188,10 @@ async function verifyHomeLearningShell(page, port) {
     { hitHeight: 44, fontSize: '13px', paddingLeft: '14px', paddingRight: '14px', surfaceTop: '3px', surfaceBottom: '3px' },
     { hitHeight: 44, fontSize: '13px', paddingLeft: '14px', paddingRight: '14px', surfaceTop: '3px', surfaceBottom: '3px' },
   ], 'homepage Map secondary modes must pair a 44px hit target with a 38px painted pill');
+  await assertPaintedPillConsistency(
+    page.locator('#home-events [data-map-mode="events"]'),
+    page.locator('#home-events [data-map-mode="routes"]'),
+    'homepage Map secondary modes');
   assert.deepEqual(await trimmedTexts(page.locator('#home-events [data-map-mode][aria-pressed="true"]')), ['事件详情'],
     'the homepage Map mirror must initially press only Event Details');
   assert.doesNotMatch(await page.locator('#home-events').innerText(), /Practice|随堂练习/,
