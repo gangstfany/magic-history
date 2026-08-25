@@ -414,6 +414,10 @@
 
   const byId = new Map(STUDY_EVENTS.map(record => [record.id, record]));
 
+  function describeRuleValue(value) {
+    return value === '' ? '""' : String(value);
+  }
+
   function validateStudyGraph() {
     const seenIds = new Set();
     for (const record of STUDY_EVENTS) {
@@ -432,29 +436,41 @@
     for (const record of STUDY_EVENTS) {
       const fail = rule => { throw new Error(`Invalid Unit 1 study record ${record.id}: ${rule}`); };
       if (!record.topicCodes.length) fail('missing topicCodes');
-      const invalidTopicCode = record.topicCodes.find(code => !VALID_TOPIC_CODES.has(code));
-      if (invalidTopicCode) fail(`invalid topicCode ${invalidTopicCode}`);
-      const duplicateTopicCode = record.topicCodes.find(
+      const invalidTopicIndex = record.topicCodes.findIndex(code => !VALID_TOPIC_CODES.has(code));
+      if (invalidTopicIndex !== -1) {
+        fail(`invalid topicCode ${describeRuleValue(record.topicCodes[invalidTopicIndex])}`);
+      }
+      const duplicateTopicIndex = record.topicCodes.findIndex(
         (code, index) => record.topicCodes.indexOf(code) !== index,
       );
-      if (duplicateTopicCode) fail(`duplicate topicCode ${duplicateTopicCode}`);
+      if (duplicateTopicIndex !== -1) {
+        fail(`duplicate topicCode ${describeRuleValue(record.topicCodes[duplicateTopicIndex])}`);
+      }
 
       if (!record.themeIds.length) fail('missing themeIds');
-      const invalidThemeId = record.themeIds.find(id => !VALID_THEME_IDS.has(id));
-      if (invalidThemeId) fail(`invalid themeId ${invalidThemeId}`);
-      const duplicateThemeId = record.themeIds.find(
+      const invalidThemeIndex = record.themeIds.findIndex(id => !VALID_THEME_IDS.has(id));
+      if (invalidThemeIndex !== -1) {
+        fail(`invalid themeId ${describeRuleValue(record.themeIds[invalidThemeIndex])}`);
+      }
+      const duplicateThemeIndex = record.themeIds.findIndex(
         (id, index) => record.themeIds.indexOf(id) !== index,
       );
-      if (duplicateThemeId) fail(`duplicate themeId ${duplicateThemeId}`);
+      if (duplicateThemeIndex !== -1) {
+        fail(`duplicate themeId ${describeRuleValue(record.themeIds[duplicateThemeIndex])}`);
+      }
 
       const categoryKeys = Object.keys(categoryReciprocals);
       for (const key of categoryKeys) {
-        const selfLink = record[key].find(targetId => targetId === record.id);
-        if (selfLink) fail(`self connection in ${key}`);
-        const duplicateTarget = record[key].find(
+        if (record[key].some(targetId => targetId === record.id)) {
+          fail(`self connection in ${key}`);
+        }
+        const duplicateTargetIndex = record[key].findIndex(
           (targetId, index) => record[key].indexOf(targetId) !== index,
         );
-        if (duplicateTarget) fail(`duplicate connection in ${key} to ${duplicateTarget}`);
+        if (duplicateTargetIndex !== -1) {
+          const duplicateTarget = describeRuleValue(record[key][duplicateTargetIndex]);
+          fail(`duplicate connection in ${key} to ${duplicateTarget}`);
+        }
       }
 
       const targetCategories = new Map();
@@ -491,8 +507,10 @@
       }
 
       const noteIds = Object.keys(record.connectionNotes);
-      const extraNoteId = noteIds.find(id => !linkedIds.includes(id));
-      if (extraNoteId) fail(`extra connection note key ${extraNoteId}`);
+      const extraNoteIndex = noteIds.findIndex(id => !linkedIds.includes(id));
+      if (extraNoteIndex !== -1) {
+        fail(`extra connection note key ${describeRuleValue(noteIds[extraNoteIndex])}`);
+      }
     }
   }
 

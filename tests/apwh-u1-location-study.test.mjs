@@ -338,6 +338,22 @@ const paperId = 'apwh-u1-hangzhou-paper-money-maritime-tools';
 const songContext = `    '${songId}': [['1.1', '1.7'], ['ECN', 'GOV']],`;
 const validationFailureCases = [
   {
+    label: 'missing topic array values',
+    malformedSource: replaceDataSource(
+      'missing topic array values', songContext,
+      `    '${songId}': [[], ['ECN', 'GOV']],`,
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: missing topicCodes`,
+  },
+  {
+    label: 'empty-string invalid topic',
+    malformedSource: replaceDataSource(
+      'empty-string invalid topic', songContext,
+      `    '${songId}': [['', '1.7'], ['ECN', 'GOV']],`,
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: invalid topicCode ""`,
+  },
+  {
     label: 'invalid topic',
     malformedSource: replaceDataSource(
       'invalid topic', songContext,
@@ -352,6 +368,22 @@ const validationFailureCases = [
       `    '${songId}': [['1.1', '1.1'], ['ECN', 'GOV']],`,
     ),
     expectedMessage: `Invalid Unit 1 study record ${songId}: duplicate topicCode 1.1`,
+  },
+  {
+    label: 'missing theme array values',
+    malformedSource: replaceDataSource(
+      'missing theme array values', songContext,
+      `    '${songId}': [['1.1', '1.7'], []],`,
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: missing themeIds`,
+  },
+  {
+    label: 'empty-string invalid theme',
+    malformedSource: replaceDataSource(
+      'empty-string invalid theme', songContext,
+      `    '${songId}': [['1.1', '1.7'], ['', 'GOV']],`,
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: invalid themeId ""`,
   },
   {
     label: 'invalid theme',
@@ -395,6 +427,15 @@ const validationFailureCases = [
       '    cause.effectStudyPointIds.push(effectId, effectId);',
     ),
     expectedMessage: `Invalid Unit 1 study record ${songId}: duplicate connection in effectStudyPointIds to ${paperId}`,
+  },
+  {
+    label: 'duplicate empty target within category',
+    malformedSource: replaceDataSource(
+      'duplicate empty target within category',
+      '      effectStudyPointIds: Object.freeze([...connections.effectStudyPointIds]),',
+      "      effectStudyPointIds: Object.freeze([...connections.effectStudyPointIds, '', '']),",
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: duplicate connection in effectStudyPointIds to ""`,
   },
   {
     label: 'cross-category target reuse',
@@ -460,6 +501,15 @@ const validationFailureCases = [
       "      connectionNotes: Object.freeze({ ...connections.connectionNotes, 'apwh-u1-extra-note': 'Extra note.' }),",
     ),
     expectedMessage: `Invalid Unit 1 study record ${songId}: extra connection note key apwh-u1-extra-note`,
+  },
+  {
+    label: 'empty extra note key',
+    malformedSource: replaceDataSource(
+      'empty extra note key',
+      '      connectionNotes: Object.freeze({ ...connections.connectionNotes }),',
+      "      connectionNotes: Object.freeze({ ...connections.connectionNotes, '': 'Extra note.' }),",
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: extra connection note key ""`,
   },
 ];
 
