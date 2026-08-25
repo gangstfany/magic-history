@@ -255,6 +255,21 @@ async function trimmedTexts(locator) {
   return (await locator.allTextContents()).map(text => text.trim());
 }
 
+async function buttonSurfaceMetrics(locator) {
+  return locator.evaluateAll(buttons => buttons.map(button => {
+    const style = getComputedStyle(button);
+    const surface = getComputedStyle(button, '::before');
+    return {
+      hitHeight: button.getBoundingClientRect().height,
+      fontSize: style.fontSize,
+      paddingLeft: style.paddingLeft,
+      paddingRight: style.paddingRight,
+      surfaceTop: surface.top,
+      surfaceBottom: surface.bottom,
+    };
+  }));
+}
+
 async function verifyTimeline(page, port) {
   const response = await page.goto(`http://127.0.0.1:${port}/world-map.html`, { waitUntil: 'networkidle' });
   assert.ok(response?.ok(), `world-map.html is unavailable (HTTP ${response?.status() || 'no response'})`);
@@ -1309,6 +1324,10 @@ async function verifyLearningShell(page, port) {
   const mapModes = page.locator('[data-map-mode]');
   assert.deepEqual(await trimmedTexts(mapModes), ['事件详情', '商路'],
     'Map must expose exactly the Event Details and Routes secondary modes');
+  assert.deepEqual(await buttonSurfaceMetrics(page.locator('#mapPanelTabs [data-map-mode]')), [
+    { hitHeight: 44, fontSize: '13px', paddingLeft: '14px', paddingRight: '14px', surfaceTop: '3px', surfaceBottom: '3px' },
+    { hitHeight: 44, fontSize: '13px', paddingLeft: '14px', paddingRight: '14px', surfaceTop: '3px', surfaceBottom: '3px' },
+  ], 'standalone Map secondary modes must pair a 44px hit target with a 38px painted pill');
   assert.equal(await page.locator('[data-map-mode="events"]').getAttribute('aria-pressed'), 'true',
     'Event Details must be the initially pressed Map secondary mode');
   assert.deepEqual(await trimmedTexts(page.locator('[data-map-mode][aria-pressed="true"]')), ['事件详情'],
@@ -2114,6 +2133,10 @@ async function verifyHomeLearningShell(page, port) {
     'the homepage event mirror must copy the source Event Details label');
   assert.deepEqual(await trimmedTexts(page.locator('#home-events [data-map-mode]')), ['事件详情', '商路'],
     'the homepage Map mirror must expose Event Details and Routes secondary modes');
+  assert.deepEqual(await buttonSurfaceMetrics(page.locator('#home-events [data-map-mode]')), [
+    { hitHeight: 44, fontSize: '13px', paddingLeft: '14px', paddingRight: '14px', surfaceTop: '3px', surfaceBottom: '3px' },
+    { hitHeight: 44, fontSize: '13px', paddingLeft: '14px', paddingRight: '14px', surfaceTop: '3px', surfaceBottom: '3px' },
+  ], 'homepage Map secondary modes must pair a 44px hit target with a 38px painted pill');
   assert.deepEqual(await trimmedTexts(page.locator('#home-events [data-map-mode][aria-pressed="true"]')), ['事件详情'],
     'the homepage Map mirror must initially press only Event Details');
   assert.doesNotMatch(await page.locator('#home-events').innerText(), /Practice|随堂练习/,

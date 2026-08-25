@@ -499,8 +499,10 @@ nav.topnav {
 .home-events .route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
 .home-events .rc-count { white-space: nowrap; color: var(--ink-soft); font-weight: 600; }
 .home-events .map-panel-tabs { display: flex; gap: 8px; padding: 0 0 12px; }
-.home-events .map-panel-tabs button { min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
-.home-events .map-panel-tabs button[aria-pressed="true"] { border-color: var(--terracotta); background: var(--terracotta); color: #fff; }
+.home-events .map-panel-tabs button { position: relative; isolation: isolate; min-height: 44px; padding: 0 14px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.home-events .map-panel-tabs button::before { content: ""; position: absolute; inset: 3px 0; z-index: -1; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); }
+.home-events .map-panel-tabs button[aria-pressed="true"] { color: #fff; }
+.home-events .map-panel-tabs button[aria-pressed="true"]::before { border-color: var(--terracotta); background: var(--terracotta); }
 .home-events .map-panel-tabs button:focus-visible { outline: 3px solid #28708a; outline-offset: 2px; }
 
 .home-events .search-none { padding: 46px 22px; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--ink-soft); line-height: 1.8; }
