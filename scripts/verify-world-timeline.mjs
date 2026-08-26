@@ -655,7 +655,7 @@ async function verifyTimeline(page, port) {
   await termsSummary.click();
   const standaloneTermGrid = firstStudyDetail.locator('.location-study-term-grid');
   const standaloneTermLayout = await keyTermLayout(standaloneTermGrid);
-  assertHorizontalKeyTermLayout(standaloneTermLayout, 'desktop standalone Key Terms');
+  assertStackedKeyTermLayout(standaloneTermLayout, 'narrow desktop standalone Key Terms');
   await assertComponentAwareKeyTermLayout(page, standaloneTermGrid, 'standalone Key Terms component');
   await termsSummary.click();
 
