@@ -1,7 +1,7 @@
 # APWH Unit 1 Progressive Study Detail Design
 
 Date: 2026-08-25
-Status: Approved visual direction; awaiting written-spec review
+Status: Implemented and verified
 
 ## Goal
 

@@ -255,6 +255,86 @@ async function trimmedTexts(locator) {
   return (await locator.allTextContents()).map(text => text.trim());
 }
 
+async function assertProgressiveCoreVisible(detail, label) {
+  const coreSections = detail.locator('[data-study-core-label]');
+  assert.equal(await coreSections.count(), 4, `${label} must render all four always-visible core sections`);
+  for (let index = 0; index < 4; index++) {
+    assert.equal(await coreSections.nth(index).isVisible(), true,
+      `${label} core section ${index + 1} must be visible without interaction`);
+  }
+}
+
+async function assertStudyControlAccessibility(detail, label) {
+  const page = detail.page();
+  const focusWithKeyboard = async control => {
+    await control.focus();
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Shift+Tab');
+    assert.equal(await control.evaluate(element => document.activeElement === element), true,
+      `${label} keyboard traversal must return focus to the inspected control`);
+  };
+  const summaries = detail.locator('summary[data-study-disclosure-toggle]');
+  for (let index = 0; index < await summaries.count(); index++) {
+    const summary = summaries.nth(index);
+    await focusWithKeyboard(summary);
+    const presentation = await summary.evaluate(element => {
+      const style = getComputedStyle(element);
+      return {
+        height: element.getBoundingClientRect().height,
+        outlineStyle: style.outlineStyle,
+        outlineWidth: parseFloat(style.outlineWidth),
+      };
+    });
+    assert.ok(presentation.height >= 44,
+      `${label} disclosure ${index + 1} must retain a 44px target: ${JSON.stringify(presentation)}`);
+    assert.notEqual(presentation.outlineStyle, 'none',
+      `${label} focused disclosure ${index + 1} must expose a non-none outline`);
+    assert.ok(presentation.outlineWidth >= 2,
+      `${label} focused disclosure ${index + 1} must expose at least a 2px outline`);
+  }
+
+  const visibleConnections = detail.locator('button[data-study-connection]:visible');
+  for (let index = 0; index < await visibleConnections.count(); index++) {
+    const button = visibleConnections.nth(index);
+    await focusWithKeyboard(button);
+    const presentation = await button.evaluate(element => {
+      const style = getComputedStyle(element);
+      const title = element.querySelector('strong');
+      const note = element.querySelector('span');
+      return {
+        height: element.getBoundingClientRect().height,
+        outlineStyle: style.outlineStyle,
+        outlineWidth: parseFloat(style.outlineWidth),
+        whiteSpace: style.whiteSpace,
+        titleWhiteSpace: title && getComputedStyle(title).whiteSpace,
+        noteWhiteSpace: note && getComputedStyle(note).whiteSpace,
+        clientWidth: element.clientWidth,
+        scrollWidth: element.scrollWidth,
+        titleClientWidth: title?.clientWidth,
+        titleScrollWidth: title?.scrollWidth,
+        noteClientWidth: note?.clientWidth,
+        noteScrollWidth: note?.scrollWidth,
+      };
+    });
+    assert.ok(presentation.height >= 44,
+      `${label} visible connection ${index + 1} must retain a 44px target: ${JSON.stringify(presentation)}`);
+    assert.notEqual(presentation.outlineStyle, 'none',
+      `${label} focused connection ${index + 1} must expose a non-none outline`);
+    assert.ok(presentation.outlineWidth >= 2,
+      `${label} focused connection ${index + 1} must expose at least a 2px outline`);
+    assert.equal(presentation.whiteSpace, 'normal',
+      `${label} connection ${index + 1} must allow its copy to wrap normally`);
+    assert.equal(presentation.titleWhiteSpace, 'normal',
+      `${label} connection ${index + 1} title must wrap normally`);
+    assert.equal(presentation.noteWhiteSpace, 'normal',
+      `${label} connection ${index + 1} note must wrap normally`);
+    assert.ok(presentation.scrollWidth <= presentation.clientWidth + 1
+        && presentation.titleScrollWidth <= presentation.titleClientWidth + 1
+        && presentation.noteScrollWidth <= presentation.noteClientWidth + 1,
+    `${label} connection ${index + 1} title, note, and button must not overflow: ${JSON.stringify(presentation)}`);
+  }
+}
+
 async function buttonSurfaceMetrics(locator) {
   return locator.evaluateAll(buttons => buttons.map(button => {
     const style = getComputedStyle(button);
@@ -413,6 +493,7 @@ async function verifyTimeline(page, port) {
   assert.deepEqual(await trimmedTexts(firstStudyDetail.locator('[data-study-core-label]')),
     ['Region', 'Summary', 'Why It Matters', 'Use It on the Exam'],
     'expanded detail must keep the four core sections visible in the approved order');
+  await assertProgressiveCoreVisible(firstStudyDetail, 'standalone desktop Hangzhou detail');
   assert.match((await firstStudyDetail.locator('[data-study-region]').innerText()).trim(), /Hangzhou.*Asia/s,
     'Region must combine the canonical location name and broad map region');
 
@@ -430,6 +511,13 @@ async function verifyTimeline(page, port) {
   assert.deepEqual(await supportingDetails.evaluateAll(details => details.map(detail => detail.open)),
     [false, false, false, false, false],
     'supporting disclosures must start collapsed');
+
+  const termsSummary = supportingDetails.locator('summary[data-study-disclosure-toggle="terms"]');
+  await termsSummary.click();
+  assert.equal(await firstStudyDetail.locator('.location-study-term-grid').evaluate(grid =>
+    getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length), 2,
+  'desktop standalone Key Terms must render in two columns');
+  await termsSummary.click();
 
   const connectionsDisclosure = firstStudyDetail.locator('details[data-study-disclosure="connections"]');
   const connectionsSummary = connectionsDisclosure.locator('summary[data-study-disclosure-toggle="connections"]');
@@ -477,6 +565,8 @@ async function verifyTimeline(page, port) {
       note: 'Expanding markets increased demand for scalable currency and safer long-distance navigation.',
     },
   ], 'connection buttons must use only declared targets, titles, and notes');
+  await assertStudyControlAccessibility(firstStudyDetail, 'standalone desktop Hangzhou detail');
+  await connectionsSummary.focus();
   await connectionsSummary.press('Space');
   assert.equal(await connectionsSummary.evaluate(element => document.activeElement === element), true,
     'keyboard toggling a disclosure must keep focus on its summary');
@@ -1096,7 +1186,21 @@ async function verifyTimeline(page, port) {
   await page.locator('#eventPanel [data-location-study-open="1"]').click();
   const breakpointStudyView = page.locator('#eventPanel [data-location-study-view="1"]');
   const breakpointDetail = breakpointStudyView.locator('[data-study-detail]');
+  await assertProgressiveCoreVisible(breakpointDetail, '540px standalone Hangzhou detail');
+  assert.deepEqual(await breakpointDetail.locator('details[data-study-disclosure]').evaluateAll(details =>
+    details.map(detail => ({ key: detail.dataset.studyDisclosure, label: detail.querySelector('summary')?.textContent.trim(), open: detail.open }))), [
+    { key: 'terms', label: 'Key Terms (2)', open: false },
+    { key: 'evidence', label: 'Evidence (2)', open: false },
+    { key: 'connections', label: 'Connections (2)', open: false },
+    { key: 'people', label: 'People (1)', open: false },
+    { key: 'source', label: 'Source (1)', open: false },
+  ], '540px standalone detail must retain exact English disclosure counts and collapsed defaults');
+  assert.doesNotMatch(await breakpointDetail.innerText(), /[\u3400-\u9fff]/,
+    'the 540px standalone progressive detail must remain English-only');
+  await assertStudyControlAccessibility(breakpointDetail, '540px standalone Hangzhou detail');
   await breakpointDetail.locator('summary[data-study-disclosure-toggle="terms"]').click();
+  await breakpointDetail.locator('summary[data-study-disclosure-toggle="connections"]').click();
+  await assertStudyControlAccessibility(breakpointDetail, '540px standalone Hangzhou detail');
   const breakpointTermGrid = breakpointDetail.locator('.location-study-term-grid');
   const breakpointLayout = await breakpointTermGrid.evaluate(grid => {
     const view = grid.closest('[data-location-study-view]');
@@ -1106,6 +1210,8 @@ async function verifyTimeline(page, port) {
       view: { client: view.clientWidth, scroll: view.scrollWidth },
       detail: { client: detail.clientWidth, scroll: detail.scrollWidth },
       grid: { client: grid.clientWidth, scroll: grid.scrollWidth },
+      panel: { client: document.querySelector('#eventPanel').clientWidth, scroll: document.querySelector('#eventPanel').scrollWidth },
+      page: { client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth },
     };
   });
   assert.equal(breakpointLayout.columns.length, 1,
@@ -1114,6 +1220,8 @@ async function verifyTimeline(page, port) {
     studyView: breakpointLayout.view,
     detail: breakpointLayout.detail,
     termGrid: breakpointLayout.grid,
+    eventPanel: breakpointLayout.panel,
+    page: breakpointLayout.page,
   })) {
     assert.ok(dimensions.scroll <= dimensions.client + 1,
       `540px ${label} must not overflow horizontally: ${JSON.stringify(breakpointLayout)}`);
@@ -2453,6 +2561,7 @@ async function verifyHomeLearningShell(page, port) {
   assert.deepEqual(await trimmedTexts(homeProgressiveDetail.locator('[data-study-core-label]')),
     ['Region', 'Summary', 'Why It Matters', 'Use It on the Exam'],
     'the homepage Hangzhou detail must retain the canonical always-visible label order');
+  await assertProgressiveCoreVisible(homeProgressiveDetail, 'homepage desktop Hangzhou detail');
   assert.deepEqual(await trimmedTexts(homeProgressiveDetail.locator('[data-study-topic]')),
     ['Topic 1.1', 'Topic 1.7'],
     'the homepage Hangzhou detail must retain its exact APWH topic chips');
@@ -2472,6 +2581,7 @@ async function verifyHomeLearningShell(page, port) {
   ], 'the homepage Hangzhou detail must retain exact disclosure keys, order, counts, and collapsed defaults');
   assert.doesNotMatch(await homeStudyView.innerText(), /[\u3400-\u9fff]/,
     'the homepage progressive study view must remain English-only');
+  await assertStudyControlAccessibility(homeProgressiveDetail, 'homepage desktop Hangzhou detail');
   const homeTermsSummary = homeDisclosures.nth(0).locator('summary');
   const homeTermsPresentation = async () => homeTermsSummary.evaluate(summary => ({
     height: summary.getBoundingClientRect().height,
@@ -2494,7 +2604,32 @@ async function verifyHomeLearningShell(page, port) {
   const desktopTermColumns = await homeProgressiveDetail.locator('.location-study-term-grid')
     .evaluate(grid => getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length);
   assert.equal(desktopTermColumns, 2, 'desktop homepage Key Terms must render in two columns');
+  await homeTermsSummary.press('Space');
+  assert.equal(await homeDisclosures.nth(0).getAttribute('open'), null,
+    'Space must collapse the desktop homepage disclosure before the narrow initial-state check');
+  assert.equal((await homeTermsPresentation()).indicator, '+',
+    'Space collapse must restore the homepage plus indicator');
   await page.setViewportSize({ width: 540, height: 900 });
+  await assertProgressiveCoreVisible(homeProgressiveDetail, '540px homepage Hangzhou detail');
+  assert.deepEqual(await homeDisclosures.evaluateAll(details => details.map(detail => ({
+    key: detail.dataset.studyDisclosure,
+    label: detail.querySelector('summary')?.textContent.trim(),
+    open: detail.open,
+  }))), [
+    { key: 'terms', label: 'Key Terms (2)', open: false },
+    { key: 'evidence', label: 'Evidence (2)', open: false },
+    { key: 'connections', label: 'Connections (2)', open: false },
+    { key: 'people', label: 'People (1)', open: false },
+    { key: 'source', label: 'Source (1)', open: false },
+  ], '540px homepage detail must retain exact English disclosure counts and collapsed defaults');
+  assert.doesNotMatch(await homeProgressiveDetail.innerText(), /[\u3400-\u9fff]/,
+    'the 540px homepage progressive detail must remain English-only');
+  await assertStudyControlAccessibility(homeProgressiveDetail, '540px homepage Hangzhou detail');
+  await homeTermsSummary.press('Space');
+  assert.equal(await homeTermsSummary.evaluate(element => document.activeElement === element), true,
+    'Space activation must keep focus on the narrow homepage disclosure summary');
+  await homeDisclosures.nth(2).locator('summary').click();
+  await assertStudyControlAccessibility(homeProgressiveDetail, '540px homepage Hangzhou detail');
   const narrowTermLayout = await homeProgressiveDetail.locator('.location-study-term-grid').evaluate(grid => ({
     columns: getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length,
     gridClient: grid.clientWidth,
@@ -2511,8 +2646,7 @@ async function verifyHomeLearningShell(page, port) {
       && narrowTermLayout.pageScroll <= narrowTermLayout.pageClient + 1,
     `540px homepage progressive detail must not overflow: ${JSON.stringify(narrowTermLayout)}`);
   await page.setViewportSize({ width: 1440, height: 900 });
-  assert.equal(await homeTermsSummary.evaluate(element => document.activeElement === element), true,
-    'native homepage disclosure activation must keep focus on its summary');
+  await homeDisclosures.nth(2).locator('summary').click();
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   assert.ok(await frame.locator('body').evaluate(() => window.__mapFilter.getLocationStudyUiState()
     .openDisclosures.includes('apwh-u1-hangzhou-song-commercial-revolution:terms')),
@@ -2630,6 +2764,8 @@ async function verifyHomeLearningShell(page, port) {
     'native homepage disclosures must not replace the visible clone');
   assert.equal(await homeHydraulicConnections.locator('summary').evaluate(element => document.activeElement === element), true,
     'homepage Connections activation must retain summary focus');
+  await assertStudyControlAccessibility(homeHydraulicDetail, 'homepage Angkor connection detail');
+  await homeHydraulicConnections.locator('summary').focus();
   await page.waitForFunction(studyId => {
     const open = document.querySelector('#worldMapFrame').contentWindow.__mapFilter
       .getLocationStudyUiState().openDisclosures;
@@ -2709,7 +2845,7 @@ async function verifyHomeLearningShell(page, port) {
   }, `[data-study-connection="${legitimationStudyId}"]`);
   const homeHydraulicScrollTop = await page.locator('#home-events').evaluate(panel => panel.scrollTop);
   assert.ok(homeHydraulicScrollTop > 0, 'the homepage Angkor round trip must capture a nonzero visible scroll position');
-  await homeEffectConnection.click();
+  await homeEffectConnection.press('Enter');
   const homeConnectedView = page.locator('#home-events [data-location-study-view="7"]');
   assert.equal(await homeConnectedView.locator('[data-study-detail]').getAttribute('data-study-detail'),
     legitimationStudyId, 'homepage connection navigation must render the exact target record');
@@ -3155,6 +3291,11 @@ async function verifyHomeLearningShell(page, port) {
 
 export async function verifyBrowser() {
   await stat(PAGE_FILE);
+  // Canonical data currently exercises every disclosure. Keep a static guard on the
+  // renderer's otherwise-unreachable empty-optional-section omission contract.
+  assert.match(await readFile(PAGE_FILE, 'utf8'),
+    /function studyDisclosureHTML\([^)]*\)\s*{\s*if \(!count\) return '';/,
+    'the progressive renderer must omit a disclosure when its optional content count is zero');
   const playwright = await discoverPlaywright();
   const browserPath = await discoverChromium(playwright.chromium);
   const server = startServer();
