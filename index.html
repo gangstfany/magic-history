@@ -501,10 +501,16 @@ nav.topnav {
 .home-events .location-study-disclosure-body { min-width: 0; padding: 2px 2px 14px 33px; }
 .home-events .location-study-detail ul { padding-left: 20px; }
 .home-events .location-study-detail li + li { margin-top: 5px; }
-.home-events .location-study-term-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.home-events .location-study-term-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; container: study-terms / inline-size; }
+.home-events .location-study-term-grid > div { display: grid; grid-template-columns: minmax(105px, .42fr) minmax(0, 1fr); gap: 14px; align-items: start; }
 .home-events .location-study-term-grid > div, .home-events .location-study-people > div { min-width: 0; padding: 9px 10px; border: 1px solid #e2d4c4; border-radius: 7px; background: #fffdf8; }
 .home-events .location-study-detail dt { font-size: 12.5px; font-weight: 850; }
 .home-events .location-study-detail dd { margin: 3px 0 0; }
+.home-events .location-study-term-grid dt { min-width: 0; overflow-wrap: anywhere; }
+.home-events .location-study-term-grid dd { margin-top: 0; }
+@container study-terms (max-width: 220px) {
+  .home-events .location-study-term-grid > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
 .home-events .location-study-people { display: grid; gap: 8px; }
 .home-events .location-study-connections { display: grid; gap: 13px; min-width: 0; }
 .home-events .location-study-connection-group { display: grid; gap: 7px; min-width: 0; }
@@ -517,7 +523,6 @@ nav.topnav {
   .home-events .location-study-view { padding: 14px 14px 20px; }
   .home-events .location-study-toggle { grid-template-columns: minmax(0, 1fr); }
   .home-events .location-study-date { grid-row: auto; }
-  .home-events .location-study-term-grid { grid-template-columns: minmax(0, 1fr); }
   .home-events .location-study-disclosure-body { padding-left: 2px; }
 }
 /* 空态里的商路入口 */
