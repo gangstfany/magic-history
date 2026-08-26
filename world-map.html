@@ -5066,7 +5066,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   function studyDisclosureHTML(record, key, label, count, body) {
     if (!count) return '';
     const open = locationStudyState.openDisclosures.has(`${record.id}:${key}`);
-    return `<details class="location-study-disclosure" data-study-disclosure="${key}"`
+    return `<details class="location-study-disclosure" data-study-disclosure="${escapeTimelineText(key)}"`
       + ` data-study-id="${escapeTimelineText(record.id)}"${open ? ' open' : ''}>`
       + `<summary data-study-disclosure-toggle="${escapeTimelineText(key)}">`
       + `${escapeTimelineText(label)} (${count})</summary>`
@@ -5077,7 +5077,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const api = window.APWH_U1_LOCATION_STUDY;
     const connections = targetIds.map(targetId => {
       const target = api.getById(targetId);
-      if (!target) return '';
+      if (!target) {
+        throw new Error(`Invalid Unit 1 study connection for ${record.id}: unresolved target ${targetId}`);
+      }
       return `<button type="button" class="location-study-connection"`
         + ` data-study-connection="${escapeTimelineText(targetId)}"`
         + ` data-study-connection-from="${escapeTimelineText(record.id)}">`

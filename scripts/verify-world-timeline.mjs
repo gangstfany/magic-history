@@ -605,6 +605,36 @@ async function verifyTimeline(page, port) {
     'route controls must remain intact after navigating back to a trial location');
   await page.evaluate(() => window.__mapFilter.exitRoute());
 
+  await page.setViewportSize({ width: 540, height: 844 });
+  await page.evaluate(() => window.__mapFilter.setPeriod('u1'));
+  await page.evaluate(() => window.__mapFilter.openHit('1', 'asia'));
+  await page.locator('#eventPanel [data-location-study-open="1"]').click();
+  const breakpointStudyView = page.locator('#eventPanel [data-location-study-view="1"]');
+  const breakpointDetail = breakpointStudyView.locator('[data-study-detail]');
+  await breakpointDetail.locator('summary[data-study-disclosure-toggle="terms"]').click();
+  const breakpointTermGrid = breakpointDetail.locator('.location-study-term-grid');
+  const breakpointLayout = await breakpointTermGrid.evaluate(grid => {
+    const view = grid.closest('[data-location-study-view]');
+    const detail = grid.closest('[data-study-detail]');
+    return {
+      columns: getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean),
+      view: { client: view.clientWidth, scroll: view.scrollWidth },
+      detail: { client: detail.clientWidth, scroll: detail.scrollWidth },
+      grid: { client: grid.clientWidth, scroll: grid.scrollWidth },
+    };
+  });
+  assert.equal(breakpointLayout.columns.length, 1,
+    `540px Key Terms must use one grid column: ${JSON.stringify(breakpointLayout)}`);
+  for (const [label, dimensions] of Object.entries({
+    studyView: breakpointLayout.view,
+    detail: breakpointLayout.detail,
+    termGrid: breakpointLayout.grid,
+  })) {
+    assert.ok(dimensions.scroll <= dimensions.client + 1,
+      `540px ${label} must not overflow horizontally: ${JSON.stringify(breakpointLayout)}`);
+  }
+  await page.setViewportSize({ width: 900, height: 700 });
+
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => window.__mapFilter.setPeriod('u1'));
   await page.evaluate(() => window.__mapFilter.openHit('73', 'africa'));
