@@ -5370,6 +5370,15 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     return locationStudyState.expandedStudyId === source.id;
   }
 
+  function completeLocationStudyRestore(invokerTargetId) {
+    const pending = locationStudyState.pendingRestore;
+    const id = String(invokerTargetId || '');
+    if (!pending || !id || pending.invokerTargetId !== id) return false;
+    locationStudyRestoreGeneration++;
+    locationStudyState.pendingRestore = null;
+    return true;
+  }
+
   function backFromLocationStudy({ focusEntry = false } = {}) {
     const number = locationStudyState.locationNumber;
     if (!number || !ordinaryLocationStudyContext()
@@ -6111,8 +6120,14 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       openLocationStudy: number => openLocationStudy(number),
       toggleLocationStudy: studyId => toggleLocationStudy(studyId),
       backLocationStudy: () => backFromLocationStudy(),
-      openLocationStudyConnection: targetId => openLocationStudyConnection(targetId),
+      openLocationStudyConnection: (targetId, options) => {
+        if (options === undefined) return openLocationStudyConnection(targetId);
+        if (!options || typeof options !== 'object' || Array.isArray(options)
+            || !Number.isFinite(options.scrollTop) || options.scrollTop < 0) return false;
+        return openLocationStudyConnection(targetId, { scrollTop: options.scrollTop });
+      },
       backLocationStudyConnection: () => backLocationStudyConnection(),
+      completeLocationStudyRestore: invokerTargetId => completeLocationStudyRestore(invokerTargetId),
       setLocationStudyDisclosure: (studyId, key, open) => setLocationStudyDisclosure(studyId, key, open),
       getLocationStudyUiState: () => Object.freeze({
         studyId: locationStudyState.expandedStudyId,

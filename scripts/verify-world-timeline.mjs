@@ -2387,6 +2387,86 @@ async function verifyHomeLearningShell(page, port) {
   const homeStudyRows = homeStudyView.locator('[data-study-event]');
   assert.equal(await homeStudyRows.count(), 3,
     'the cloned homepage study view must expose all three Hangzhou study points');
+  const homeProgressiveDetail = homeStudyView.locator(
+    '[data-study-detail="apwh-u1-hangzhou-song-commercial-revolution"]');
+  assert.deepEqual(await trimmedTexts(homeProgressiveDetail.locator('[data-study-core-label]')),
+    ['Region', 'Summary', 'Why It Matters', 'Use It on the Exam'],
+    'the homepage Hangzhou detail must retain the canonical always-visible label order');
+  assert.deepEqual(await trimmedTexts(homeProgressiveDetail.locator('[data-study-topic]')),
+    ['Topic 1.1', 'Topic 1.7'],
+    'the homepage Hangzhou detail must retain its exact APWH topic chips');
+  assert.deepEqual(await trimmedTexts(homeProgressiveDetail.locator('[data-study-theme]')),
+    ['ECN', 'GOV'], 'the homepage Hangzhou detail must retain its exact APWH theme chips');
+  const homeDisclosures = homeProgressiveDetail.locator('details[data-study-disclosure]');
+  assert.deepEqual(await homeDisclosures.evaluateAll(details => details.map(detail => ({
+    key: detail.dataset.studyDisclosure,
+    label: detail.querySelector('summary')?.textContent.trim(),
+    open: detail.open,
+  }))), [
+    { key: 'terms', label: 'Key Terms (2)', open: false },
+    { key: 'evidence', label: 'Evidence (2)', open: false },
+    { key: 'connections', label: 'Connections (2)', open: false },
+    { key: 'people', label: 'People (1)', open: false },
+    { key: 'source', label: 'Source (1)', open: false },
+  ], 'the homepage Hangzhou detail must retain exact disclosure keys, order, counts, and collapsed defaults');
+  assert.doesNotMatch(await homeStudyView.innerText(), /[\u3400-\u9fff]/,
+    'the homepage progressive study view must remain English-only');
+  const homeTermsSummary = homeDisclosures.nth(0).locator('summary');
+  const homeTermsPresentation = async () => homeTermsSummary.evaluate(summary => ({
+    height: summary.getBoundingClientRect().height,
+    indicator: getComputedStyle(summary, '::before').content.replaceAll('"', ''),
+    outlineWidth: parseFloat(getComputedStyle(summary).outlineWidth),
+  }));
+  assert.equal((await homeTermsPresentation()).indicator, '+',
+    'a collapsed homepage disclosure must expose a plus indicator');
+  await homeTermsSummary.focus();
+  assert.ok((await homeTermsPresentation()).outlineWidth >= 2,
+    'a focused homepage disclosure summary must expose at least a 2px outline');
+  await homeTermsSummary.press('Enter');
+  assert.equal(await homeDisclosures.nth(0).getAttribute('open'), '',
+    'native keyboard disclosure activation must open the visible homepage detail');
+  assert.deepEqual({
+    indicator: (await homeTermsPresentation()).indicator,
+    targetAtLeast44: (await homeTermsPresentation()).height >= 44,
+  }, { indicator: '−', targetAtLeast44: true },
+  'an open homepage disclosure must expose a minus indicator on a 44px target');
+  const desktopTermColumns = await homeProgressiveDetail.locator('.location-study-term-grid')
+    .evaluate(grid => getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length);
+  assert.equal(desktopTermColumns, 2, 'desktop homepage Key Terms must render in two columns');
+  await page.setViewportSize({ width: 540, height: 900 });
+  const narrowTermLayout = await homeProgressiveDetail.locator('.location-study-term-grid').evaluate(grid => ({
+    columns: getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length,
+    gridClient: grid.clientWidth,
+    gridScroll: grid.scrollWidth,
+    panelClient: document.querySelector('#home-events').clientWidth,
+    panelScroll: document.querySelector('#home-events').scrollWidth,
+    pageClient: document.documentElement.clientWidth,
+    pageScroll: document.documentElement.scrollWidth,
+  }));
+  assert.equal(narrowTermLayout.columns, 1,
+    `540px homepage Key Terms must render in one column: ${JSON.stringify(narrowTermLayout)}`);
+  assert.ok(narrowTermLayout.gridScroll <= narrowTermLayout.gridClient + 1
+      && narrowTermLayout.panelScroll <= narrowTermLayout.panelClient + 1
+      && narrowTermLayout.pageScroll <= narrowTermLayout.pageClient + 1,
+    `540px homepage progressive detail must not overflow: ${JSON.stringify(narrowTermLayout)}`);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  assert.equal(await homeTermsSummary.evaluate(element => document.activeElement === element), true,
+    'native homepage disclosure activation must keep focus on its summary');
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.ok(await frame.locator('body').evaluate(() => window.__mapFilter.getLocationStudyUiState()
+    .openDisclosures.includes('apwh-u1-hangzhou-song-commercial-revolution:terms')),
+  'native homepage disclosure opening must update canonical iframe state');
+  await homeTermsSummary.click();
+  assert.equal(await homeDisclosures.nth(0).getAttribute('open'), null,
+    'native pointer disclosure activation must close the visible homepage detail');
+  assert.equal((await homeTermsPresentation()).indicator, '+',
+    'closing a homepage disclosure must restore its plus indicator');
+  assert.equal(await homeTermsSummary.evaluate(element => document.activeElement === element), true,
+    'pointer homepage disclosure activation must keep focus on its summary');
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await frame.locator('body').evaluate(() => window.__mapFilter.getLocationStudyUiState()
+    .openDisclosures.includes('apwh-u1-hangzhou-song-commercial-revolution:terms')), false,
+  'native homepage disclosure closing must update canonical iframe state');
   const rejectedHomeStudyActions = await frame.locator('body').evaluate(() => ({
     open: window.__mapFilter.openLocationStudy('73'),
     toggle: window.__mapFilter.toggleLocationStudy('not-a-study-point'),
@@ -2459,6 +2539,170 @@ async function verifyHomeLearningShell(page, port) {
   }));
   assert.deepEqual(restoredHomeLocation, originalHomeLocation,
     'Back from the clone must restore the exact ordinary panel identity');
+
+  // The visible clone owns native disclosure focus while the iframe remains the state authority.
+  const hydraulicStudyId = 'apwh-u1-angkor-khmer-hydraulic-state';
+  const legitimationStudyId = 'apwh-u1-angkor-hindu-buddhist-legitimation';
+  await page.locator('#hostSearch').fill('');
+  await page.waitForFunction(() => document.querySelector('#worldMapFrame').contentWindow.__mapFilter
+    .getState().query === '');
+  const homeAngkorTitle = await frame.locator('body').evaluate(() =>
+    window.getTimelineState().visibleEvents.find(event => event.key === 'world-event-7-0')?.titleEn);
+  assert.ok(homeAngkorTitle, 'the homepage Angkor fixture must resolve its Unit 1 Timeline title');
+  await page.locator('#hostSearch').fill(homeAngkorTitle);
+  const homeAngkorResult = page.locator('#home-events [data-event-key="world-event-7-0"]');
+  await homeAngkorResult.waitFor();
+  await homeAngkorResult.click();
+  await page.locator('#home-events [data-location-study-open="7"]').click();
+  const homeHydraulicRow = page.locator(`#home-events [data-study-event="${hydraulicStudyId}"]`);
+  await homeHydraulicRow.click();
+  let homeHydraulicDetail = page.locator(`#home-events [data-study-detail="${hydraulicStudyId}"]`);
+  const homeHydraulicTerms = homeHydraulicDetail.locator('details[data-study-disclosure="terms"]');
+  const homeHydraulicConnections = homeHydraulicDetail.locator('details[data-study-disclosure="connections"]');
+  await homeHydraulicDetail.evaluate(element => {
+    element.dataset.cloneIdentity = 'angkor-origin';
+  });
+  await homeHydraulicTerms.locator('summary').click();
+  await homeHydraulicConnections.locator('summary').focus();
+  await homeHydraulicConnections.locator('summary').press('Enter');
+  assert.equal(await homeHydraulicDetail.getAttribute('data-clone-identity'), 'angkor-origin',
+    'native homepage disclosures must not replace the visible clone');
+  assert.equal(await homeHydraulicConnections.locator('summary').evaluate(element => document.activeElement === element), true,
+    'homepage Connections activation must retain summary focus');
+  await page.waitForFunction(studyId => {
+    const open = document.querySelector('#worldMapFrame').contentWindow.__mapFilter
+      .getLocationStudyUiState().openDisclosures;
+    return open.includes(`${studyId}:terms`) && open.includes(`${studyId}:connections`);
+  }, hydraulicStudyId);
+
+  const homepageStudySnapshot = () => page.evaluate(() => {
+    const panel = document.querySelector('#home-events');
+    const state = document.querySelector('#worldMapFrame').contentWindow.__mapFilter.getLocationStudyUiState();
+    return {
+      state: {
+        studyId: state.studyId,
+        openDisclosures: [...state.openDisclosures],
+        connectionDepth: state.connectionDepth,
+        pendingRestore: state.pendingRestore,
+      },
+      html: panel.innerHTML,
+      scrollTop: panel.scrollTop,
+      open: [...panel.querySelectorAll('details[data-study-disclosure]')]
+        .map(detail => [detail.dataset.studyDisclosure, detail.open]),
+    };
+  });
+  const beforeInvalidHomeBridge = await homepageStudySnapshot();
+  const invalidHomeBridgeResults = await frame.locator('body').evaluate((ids) => {
+    const api = window.__mapFilter;
+    return {
+      badKey: api.setLocationStudyDisclosure(ids.hydraulic, 'not-a-disclosure', true),
+      badStudy: api.setLocationStudyDisclosure('not-a-study-point', 'terms', true),
+      missingTarget: api.openLocationStudyConnection('not-a-study-point', { scrollTop: 10 }),
+      selectorTarget: api.openLocationStudyConnection(`not-a-study'][data-study-event="x"]`, { scrollTop: 10 }),
+      unlinkedTarget: api.openLocationStudyConnection('apwh-u1-hangzhou-song-commercial-revolution', { scrollTop: 10 }),
+      negativeScroll: api.openLocationStudyConnection(ids.legitimation, { scrollTop: -1 }),
+      nanScroll: api.openLocationStudyConnection(ids.legitimation, { scrollTop: NaN }),
+      stringScroll: api.openLocationStudyConnection(ids.legitimation, { scrollTop: '10' }),
+      emptyBack: api.backLocationStudyConnection(),
+      mismatchedCompletion: api.completeLocationStudyRestore(ids.legitimation),
+    };
+  }, { hydraulic: hydraulicStudyId, legitimation: legitimationStudyId });
+  assert.deepEqual(invalidHomeBridgeResults, {
+    badKey: false, badStudy: false, missingTarget: false, selectorTarget: false,
+    unlinkedTarget: false, negativeScroll: false, nanScroll: false, stringScroll: false,
+    emptyBack: false, mismatchedCompletion: false,
+  }, 'the homepage bridge must reject invalid disclosures, targets, scroll options, empty Back, and mismatched completion');
+  assert.deepEqual(await homepageStudySnapshot(), beforeInvalidHomeBridge,
+    'invalid homepage bridge calls must preserve canonical state and exact visible clone markup, scroll, and disclosures');
+
+  const homeEffectConnection = homeHydraulicConnections.locator(
+    `[data-study-connection="${legitimationStudyId}"]`);
+  const homeConnectionPresentation = await homeEffectConnection.evaluate(button => {
+    const panel = document.querySelector('#home-events');
+    return {
+      height: button.getBoundingClientRect().height,
+      buttonClient: button.clientWidth,
+      buttonScroll: button.scrollWidth,
+      panelClient: panel.clientWidth,
+      panelScroll: panel.scrollWidth,
+      whiteSpace: getComputedStyle(button).whiteSpace,
+    };
+  });
+  assert.ok(homeConnectionPresentation.height >= 44,
+    `homepage connection controls must retain 44px targets: ${JSON.stringify(homeConnectionPresentation)}`);
+  assert.equal(homeConnectionPresentation.whiteSpace, 'normal',
+    `homepage connection copy must wrap normally: ${JSON.stringify(homeConnectionPresentation)}`);
+  assert.ok(homeConnectionPresentation.buttonScroll <= homeConnectionPresentation.buttonClient + 1
+      && homeConnectionPresentation.panelScroll <= homeConnectionPresentation.panelClient + 1,
+    `homepage connection controls must wrap without overflow: ${JSON.stringify(homeConnectionPresentation)}`);
+  await page.locator('#home-events').evaluate((panel, selector) => {
+    panel.style.maxHeight = '320px';
+    const button = panel.querySelector(selector);
+    const panelBox = panel.getBoundingClientRect();
+    const buttonBox = button.getBoundingClientRect();
+    panel.scrollTop = Math.max(1, panel.scrollTop + buttonBox.top - panelBox.top
+      - (panel.clientHeight - buttonBox.height) / 2);
+  }, `[data-study-connection="${legitimationStudyId}"]`);
+  const homeHydraulicScrollTop = await page.locator('#home-events').evaluate(panel => panel.scrollTop);
+  assert.ok(homeHydraulicScrollTop > 0, 'the homepage Angkor round trip must capture a nonzero visible scroll position');
+  await homeEffectConnection.click();
+  const homeConnectedView = page.locator('#home-events [data-location-study-view="7"]');
+  assert.equal(await homeConnectedView.locator('[data-study-detail]').getAttribute('data-study-detail'),
+    legitimationStudyId, 'homepage connection navigation must render the exact target record');
+  assert.equal((await homeConnectedView.locator('.location-study-detail-title').innerText()).trim(),
+    'Hindu and Buddhist Legitimation at Angkor', 'homepage connection target must retain its canonical title');
+  assert.equal(await homeConnectedView.locator('.location-study-title').evaluate(element => document.activeElement === element),
+    true, 'homepage connection navigation must focus the cloned target heading');
+  await homeConnectedView.locator('[data-study-connection-back]').click();
+  homeHydraulicDetail = page.locator(`#home-events [data-study-detail="${hydraulicStudyId}"]`);
+  await expectVisible(homeHydraulicDetail, 'homepage connection Back must restore the exact Angkor source record');
+  assert.equal(await homeHydraulicDetail.locator('details[data-study-disclosure="terms"]').getAttribute('open'), '',
+    'homepage connection Back must restore Key Terms open');
+  assert.equal(await homeHydraulicDetail.locator('details[data-study-disclosure="connections"]').getAttribute('open'), '',
+    'homepage connection Back must restore Connections open');
+  const restoredHomeHydraulicScroll = await page.locator('#home-events').evaluate(panel => panel.scrollTop);
+  assert.ok(Math.abs(restoredHomeHydraulicScroll - homeHydraulicScrollTop) <= 1,
+    `homepage connection Back must restore exact visible scroll: ${JSON.stringify({ homeHydraulicScrollTop, restoredHomeHydraulicScroll })}`);
+  assert.equal(await homeHydraulicDetail.locator(`[data-study-connection="${legitimationStudyId}"]`)
+    .evaluate(element => document.activeElement === element), true,
+  'homepage connection Back must focus the exact cloned invoking connection');
+  assert.deepEqual(await frame.locator('body').evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return { depth: state.connectionDepth, pendingRestore: state.pendingRestore };
+  }), { depth: 0, pendingRestore: null },
+  'homepage connection Back must acknowledge its restore and leave no stale canonical pending state');
+  await page.locator('#home-events').evaluate(panel => { panel.style.maxHeight = ''; });
+
+  // Cross-location connection Back must retain the outer source location return context.
+  await page.locator('#home-events [data-location-study-back="7"]').click();
+  await page.locator('#hostSearch').fill('');
+  await page.waitForFunction(() => document.querySelector('#worldMapFrame').contentWindow.__mapFilter
+    .getState().query === '');
+  const homeBaghdadTitle = await frame.locator('body').evaluate(() =>
+    window.getTimelineState().visibleEvents.find(event => event.key === 'world-event-3-0')?.titleEn);
+  assert.ok(homeBaghdadTitle, 'the homepage Baghdad fixture must resolve its Unit 1 Timeline title');
+  await page.locator('#hostSearch').fill(homeBaghdadTitle);
+  const homeBaghdadResult = page.locator('#home-events [data-event-key="world-event-3-0"]');
+  await homeBaghdadResult.waitFor();
+  await homeBaghdadResult.click();
+  await page.locator('#home-events [data-location-study-open="3"]').waitFor();
+  const baghdadOrdinary = await page.locator('#home-events').evaluate(panel => panel.innerHTML);
+  await page.locator('#home-events [data-location-study-open="3"]').click();
+  const merchantStudyId = 'apwh-u1-baghdad-merchant-ulema-network';
+  const delhiDevotionStudyId = 'apwh-u1-delhi-bhakti-sufi-devotion';
+  await page.locator(`#home-events [data-study-event="${merchantStudyId}"]`).click();
+  const merchantConnections = page.locator(`#home-events [data-study-detail="${merchantStudyId}"]`
+    + ' details[data-study-disclosure="connections"]');
+  await merchantConnections.locator('summary').click();
+  await merchantConnections.locator(`[data-study-connection="${delhiDevotionStudyId}"]`).click();
+  assert.equal(await page.locator('#home-events [data-location-study-view]').getAttribute('data-location-study-view'), '6',
+    'a homepage cross-location connection must render the target Delhi location');
+  await page.locator('#home-events [data-study-connection-back]').click();
+  assert.equal(await page.locator('#home-events [data-location-study-view]').getAttribute('data-location-study-view'), '3',
+    'homepage connection Back must return from Delhi to the original Baghdad study view');
+  await page.locator('#home-events [data-location-study-back="3"]').click();
+  assert.equal(await page.locator('#home-events').evaluate(panel => panel.innerHTML), baghdadOrdinary,
+    'outer homepage Back after a cross-location round trip must restore Baghdad ordinary content, not Delhi');
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.locator('#hostSearch').fill('');
   await page.locator('#hostPeriod').selectOption('');
