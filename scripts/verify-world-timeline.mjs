@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { runInNewContext } from 'node:vm';
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PAGE_FILE = join(PROJECT_ROOT, 'world-map.html');
@@ -264,6 +265,11 @@ async function assertProgressiveCoreVisible(detail, label) {
   }
 }
 
+async function studyDisclosureIndicators(detail) {
+  return detail.locator('summary[data-study-disclosure-toggle]').evaluateAll(summaries =>
+    summaries.map(summary => getComputedStyle(summary, '::before').content.replaceAll('"', '')));
+}
+
 async function assertStudyControlAccessibility(detail, label) {
   const page = detail.page();
   const focusWithKeyboard = async control => {
@@ -333,6 +339,36 @@ async function assertStudyControlAccessibility(detail, label) {
         && presentation.noteScrollWidth <= presentation.noteClientWidth + 1,
     `${label} connection ${index + 1} title, note, and button must not overflow: ${JSON.stringify(presentation)}`);
   }
+}
+
+function verifyStudyDisclosureRendererRuntime(source) {
+  const functionMarker = '  function studyDisclosureHTML(';
+  const nextFunctionMarker = '\n\n  function studyRelationshipGroupHTML(';
+  const functionStart = source.indexOf(functionMarker);
+  const functionEnd = functionStart >= 0
+    ? source.indexOf(nextFunctionMarker, functionStart) : -1;
+  assert.ok(functionStart >= 0 && functionEnd > functionStart,
+    'the shipped studyDisclosureHTML function must be extractable before the next named renderer');
+  const functionSource = source.slice(functionStart, functionEnd).trim();
+  const rendered = runInNewContext(`(() => {
+    const locationStudyState = { openDisclosures: new Set() };
+    const escapeTimelineText = value => String(value);
+    ${functionSource}
+    const record = { id: 'fixture-study' };
+    return {
+      empty: studyDisclosureHTML(record, 'terms', 'Key Terms', 0, '<p>unused</p>'),
+      populated: studyDisclosureHTML(record, 'terms', 'Key Terms', 1, '<p>Fixture body</p>'),
+    };
+  })()`);
+  assert.equal(rendered.empty, '',
+    'the actual shipped disclosure renderer must omit zero-count optional content');
+  assert.equal(rendered.populated,
+    '<details class="location-study-disclosure" data-study-disclosure="terms" data-study-id="fixture-study">'
+      + '<summary data-study-disclosure-toggle="terms">Key Terms (1)</summary>'
+      + '<div class="location-study-disclosure-body"><p>Fixture body</p></div></details>',
+  'the extracted renderer positive control must preserve key, label, count, and body');
+  assert.match(source, /studyDisclosureHTML\(record, 'terms', 'Key Terms', record\.keyTerms\.length/,
+    'the shipped progressive detail must call the tested helper for optional Key Terms');
 }
 
 async function buttonSurfaceMetrics(locator) {
@@ -1261,6 +1297,71 @@ async function verifyTimeline(page, port) {
   await narrowEntry.press(' ');
   const narrowStudyView = page.locator('#eventPanel [data-location-study-view="73"]');
   await expectVisible(narrowStudyView, 'at 390x844, Space must open the Timbuktu study view');
+  const narrowProgressiveDetail = narrowStudyView.locator(
+    '[data-study-detail="apwh-u1-timbuktu-mali-gold-salt-tax"]');
+  await assertProgressiveCoreVisible(narrowProgressiveDetail, '390px standalone Timbuktu detail');
+  assert.equal((await narrowProgressiveDetail.locator('.location-study-detail-title').innerText()).trim(),
+    'Mali, Gold, Salt, and Transit Taxation',
+    '390px standalone detail must retain its exact canonical English title');
+  assert.deepEqual(await trimmedTexts(narrowProgressiveDetail.locator('[data-study-core-label]')),
+    ['Region', 'Summary', 'Why It Matters', 'Use It on the Exam'],
+    '390px standalone detail must retain the exact always-visible English core labels');
+  const narrowProgressiveDisclosures = narrowProgressiveDetail.locator('details[data-study-disclosure]');
+  assert.deepEqual(await narrowProgressiveDisclosures.evaluateAll(details => details.map(detail => ({
+    key: detail.dataset.studyDisclosure,
+    label: detail.querySelector('summary')?.textContent.trim(),
+    open: detail.open,
+  }))), [
+    { key: 'terms', label: 'Key Terms (2)', open: false },
+    { key: 'evidence', label: 'Evidence (2)', open: false },
+    { key: 'connections', label: 'Connections (1)', open: false },
+    { key: 'people', label: 'People (1)', open: false },
+    { key: 'source', label: 'Source (1)', open: false },
+  ], '390px standalone detail must retain all five exact disclosure keys, counts, and collapsed defaults');
+  assert.doesNotMatch(await narrowProgressiveDetail.textContent(), /[\u3400-\u9fff]/,
+    'the complete 390px standalone progressive detail must remain English-only');
+  await assertStudyControlAccessibility(narrowProgressiveDetail, '390px standalone Timbuktu detail');
+  assert.deepEqual(await studyDisclosureIndicators(narrowProgressiveDetail),
+    ['+', '+', '+', '+', '+'],
+    'all five collapsed 390px standalone disclosures must expose plus indicators');
+  for (let index = 0; index < await narrowProgressiveDisclosures.count(); index++) {
+    await narrowProgressiveDisclosures.nth(index).locator('summary').click();
+  }
+  assert.deepEqual(await studyDisclosureIndicators(narrowProgressiveDetail),
+    ['−', '−', '−', '−', '−'],
+    'all five open 390px standalone disclosures must expose minus indicators');
+  assert.ok(await narrowProgressiveDetail.locator('button[data-study-connection]:visible').count() >= 1,
+    'the 390px standalone accessibility fixture must expose its declared connection');
+  await assertStudyControlAccessibility(narrowProgressiveDetail, '390px standalone Timbuktu detail');
+  const narrowProgressiveLayout = await narrowProgressiveDetail.evaluate(detail => {
+    const panel = document.querySelector('#eventPanel');
+    const termGrid = detail.querySelector('.location-study-term-grid');
+    return {
+      termColumns: getComputedStyle(termGrid).gridTemplateColumns.split(/\s+/).filter(Boolean).length,
+      detail: { client: detail.clientWidth, scroll: detail.scrollWidth },
+      panel: { client: panel.clientWidth, scroll: panel.scrollWidth },
+      page: { client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth },
+    };
+  });
+  assert.equal(narrowProgressiveLayout.termColumns, 1,
+    `390px standalone Key Terms must use one column: ${JSON.stringify(narrowProgressiveLayout)}`);
+  for (const [label, dimensions] of Object.entries({
+    detail: narrowProgressiveLayout.detail,
+    eventPanel: narrowProgressiveLayout.panel,
+    page: narrowProgressiveLayout.page,
+  })) {
+    assert.ok(dimensions.scroll <= dimensions.client + 1,
+      `390px standalone ${label} must not overflow with all disclosures visible: ${JSON.stringify(narrowProgressiveLayout)}`);
+  }
+  for (let index = 0; index < await narrowProgressiveDisclosures.count(); index++) {
+    await narrowProgressiveDisclosures.nth(index).locator('summary').click();
+  }
+  assert.deepEqual(await narrowProgressiveDisclosures.evaluateAll(details => details.map(detail => detail.open)),
+    [false, false, false, false, false],
+    'the 390px fixture must normalize all disclosures before later row-toggle checks');
+  assert.deepEqual(await studyDisclosureIndicators(narrowProgressiveDetail),
+    ['+', '+', '+', '+', '+'],
+    'the normalized 390px fixture must restore all five plus indicators');
   const narrowRows = narrowStudyView.locator('[data-study-event]');
   assert.equal(await narrowRows.count(), 3, 'at 390x844, all Timbuktu study points must remain available');
   const narrowControls = await narrowRows.evaluateAll(rows => rows.map(row => row.getAttribute('aria-controls')));
@@ -2901,7 +3002,7 @@ async function verifyHomeLearningShell(page, port) {
   }, `[data-study-connection="${legitimationStudyId}"]`);
   const homeHydraulicScrollTop = await page.locator('#home-events').evaluate(panel => panel.scrollTop);
   assert.ok(homeHydraulicScrollTop > 0, 'the homepage Angkor round trip must capture a nonzero visible scroll position');
-  await homeEffectConnection.press('Enter');
+  await homeEffectConnection.press('Space');
   const homeConnectedView = page.locator('#home-events [data-location-study-view="7"]');
   assert.equal(await homeConnectedView.locator('[data-study-detail]').getAttribute('data-study-detail'),
     legitimationStudyId, 'homepage connection navigation must render the exact target record');
@@ -3347,11 +3448,9 @@ async function verifyHomeLearningShell(page, port) {
 
 export async function verifyBrowser() {
   await stat(PAGE_FILE);
-  // Canonical data currently exercises every disclosure. Keep a static guard on the
-  // renderer's otherwise-unreachable empty-optional-section omission contract.
-  assert.match(await readFile(PAGE_FILE, 'utf8'),
-    /function studyDisclosureHTML\([^)]*\)\s*{\s*if \(!count\) return '';/,
-    'the progressive renderer must omit a disclosure when its optional content count is zero');
+  // Canonical data currently exercises every disclosure, so execute the actual shipped
+  // helper to cover the otherwise-unreachable empty-optional-section contract.
+  verifyStudyDisclosureRendererRuntime(await readFile(PAGE_FILE, 'utf8'));
   const playwright = await discoverPlaywright();
   const browserPath = await discoverChromium(playwright.chromium);
   const server = startServer();
