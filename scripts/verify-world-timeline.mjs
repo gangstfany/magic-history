@@ -571,6 +571,253 @@ async function verifyTimeline(page, port) {
     await view.locator(`[data-location-study-back="${fixture.number}"]`).click();
   }
 
+  const hydraulicStudyId = 'apwh-u1-angkor-khmer-hydraulic-state';
+  const legitimationStudyId = 'apwh-u1-angkor-hindu-buddhist-legitimation';
+  const openAngkorHydraulicStudy = async () => {
+    await page.evaluate(() => window.__mapFilter.setPeriod('u1'));
+    await page.evaluate(() => window.__mapFilter.openHit('7', 'asia'));
+    await page.locator('#eventPanel [data-location-study-open="7"]').click();
+    const hydraulicToggle = page.locator(`#eventPanel [data-study-event="${hydraulicStudyId}"]`);
+    await hydraulicToggle.click();
+    return page.locator(`#eventPanel [data-study-detail="${hydraulicStudyId}"]`);
+  };
+  const connectionUiSnapshot = () => page.evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return {
+      studyId: state.studyId,
+      openDisclosures: [...state.openDisclosures],
+      connectionDepth: state.connectionDepth,
+      pendingRestore: state.pendingRestore,
+      detailId: document.querySelector('#eventPanel [data-study-detail]')?.dataset.studyDetail || null,
+      panelHTML: document.querySelector('#eventPanel')?.innerHTML || '',
+      scrollTop: document.querySelector('#eventZone')?.scrollTop ?? null,
+    };
+  });
+
+  let hydraulicDetail = await openAngkorHydraulicStudy();
+  const hydraulicTerms = hydraulicDetail.locator('details[data-study-disclosure="terms"]');
+  const hydraulicConnections = hydraulicDetail.locator('details[data-study-disclosure="connections"]');
+  await hydraulicTerms.locator('summary').click();
+  await hydraulicConnections.locator('summary').click();
+  await page.waitForFunction(studyId => {
+    const open = window.__mapFilter.getLocationStudyUiState().openDisclosures;
+    return open.includes(`${studyId}:terms`) && open.includes(`${studyId}:connections`);
+  }, hydraulicStudyId);
+  const effectConnection = hydraulicConnections.locator(
+    `[data-study-connection="${legitimationStudyId}"][data-study-connection-from="${hydraulicStudyId}"]`
+  );
+  await expectVisible(effectConnection, 'the Angkor hydraulic detail must expose its declared effect connection');
+  await effectConnection.evaluate(button => {
+    const zone = document.querySelector('#eventZone');
+    zone.style.maxHeight = '360px';
+    zone.style.overflow = 'auto';
+    const zoneBox = zone.getBoundingClientRect();
+    const buttonBox = button.getBoundingClientRect();
+    zone.scrollTop = Math.max(1, zone.scrollTop + buttonBox.top - zoneBox.top
+      - (zone.clientHeight - buttonBox.height) / 2);
+  });
+  const hydraulicScrollTop = await page.locator('#eventZone').evaluate(zone => zone.scrollTop);
+  assert.ok(hydraulicScrollTop > 0, 'the Angkor connection fixture must record a nonzero panel scroll position');
+
+  const safeState = await page.evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return {
+      stateFrozen: Object.isFrozen(state),
+      disclosuresFrozen: Object.isFrozen(state.openDisclosures),
+    };
+  });
+  assert.deepEqual(safeState, { stateFrozen: true, disclosuresFrozen: true },
+    'the public study UI snapshot must not expose mutable internal state');
+
+  const invalidActions = [
+    ['a missing connection target', () => page.evaluate(() =>
+      window.__mapFilter.openLocationStudyConnection('not-a-study-point'))],
+    ['a selector-like connection target', () => page.evaluate(() =>
+      window.__mapFilter.openLocationStudyConnection(`not-a-study'][data-study-event="x"]`))],
+    ['a real but undeclared connection target', () => page.evaluate(() =>
+      window.__mapFilter.openLocationStudyConnection('apwh-u1-hangzhou-song-commercial-revolution'))],
+    ['a disclosure key outside the canonical set', () => page.evaluate(studyId =>
+      window.__mapFilter.setLocationStudyDisclosure(studyId, 'not-a-disclosure', true), hydraulicStudyId)],
+    ['a disclosure update for a different study point', () => page.evaluate(() =>
+      window.__mapFilter.setLocationStudyDisclosure('apwh-u1-hangzhou-song-commercial-revolution', 'terms', true))],
+    ['Back with an empty connection stack', () => page.evaluate(() =>
+      window.__mapFilter.backLocationStudyConnection())],
+  ];
+  for (const [label, act] of invalidActions) {
+    const beforeInvalid = await connectionUiSnapshot();
+    assert.equal(await act(), false, `${label} must be rejected`);
+    assert.deepEqual(await connectionUiSnapshot(), beforeInvalid,
+      `${label} must preserve exact detail, disclosures, depth, markup, and scroll`);
+  }
+
+  await effectConnection.focus();
+  await effectConnection.click();
+  const connectedView = page.locator('#eventPanel [data-location-study-view="7"]');
+  assert.equal((await connectedView.locator('[data-study-detail]').getAttribute('data-study-detail')),
+    legitimationStudyId, 'the declared Angkor effect must open its exact target study record');
+  assert.equal((await connectedView.locator('.location-study-detail-title').innerText()).trim(),
+    'Hindu and Buddhist Legitimation at Angkor', 'the target must render its exact canonical title');
+  assert.equal(await connectedView.locator('.location-study-title').evaluate(element => document.activeElement === element),
+    true, 'connection navigation must focus the target location-study heading');
+  assert.equal(await connectedView.locator('details[open]').count(), 0,
+    'a connection target must start with its progressive disclosures collapsed');
+  const connectionBack = connectedView.locator('[data-study-connection-back]');
+  assert.equal((await connectionBack.innerText()).trim(), "Back to Angkor's Hydraulic State",
+    'the primary connection return path must name its exact source record');
+  assert.equal(await connectedView.locator('[data-location-study-back="7"]').count(), 1,
+    'the outer Back to location events action may remain available on a connection target');
+  assert.equal((await page.evaluate(() => window.__mapFilter.getLocationStudyUiState().connectionDepth)), 1,
+    'following one declared connection must expose one safe stack-depth value');
+
+  await connectionBack.focus();
+  await connectionBack.press('Enter');
+  hydraulicDetail = page.locator(`#eventPanel [data-study-detail="${hydraulicStudyId}"]`);
+  await expectVisible(hydraulicDetail, 'keyboard Back must restore the exact Angkor source detail');
+  assert.equal(await hydraulicDetail.locator('details[data-study-disclosure="terms"]').getAttribute('open'), '',
+    'connection Back must restore the source Key Terms disclosure');
+  assert.equal(await hydraulicDetail.locator('details[data-study-disclosure="connections"]').getAttribute('open'), '',
+    'connection Back must restore the source Connections disclosure');
+  await page.waitForFunction(expected =>
+    Math.abs(document.querySelector('#eventZone').scrollTop - expected) <= 1, hydraulicScrollTop);
+  const restoredHydraulicScrollTop = await page.locator('#eventZone').evaluate(zone => zone.scrollTop);
+  assert.ok(Math.abs(restoredHydraulicScrollTop - hydraulicScrollTop) <= 1,
+    `connection Back must restore the source panel scroll within one pixel: expected ${hydraulicScrollTop}, got ${restoredHydraulicScrollTop}`);
+  const restoredEffectConnection = hydraulicDetail.locator(`[data-study-connection="${legitimationStudyId}"]`);
+  assert.equal(await restoredEffectConnection.evaluate(element => document.activeElement === element), true,
+    'connection Back must restore focus to the invoking connection button');
+  assert.equal((await page.evaluate(() => window.__mapFilter.getLocationStudyUiState().connectionDepth)), 0,
+    'returning across the connection must empty the exact-return stack');
+
+  const interruptedRestore = await page.evaluate(targetId => {
+    const opened = window.__mapFilter.openLocationStudyConnection(targetId);
+    const backed = window.__mapFilter.backLocationStudyConnection();
+    const reopened = window.__mapFilter.openLocationStudyConnection(targetId);
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return { opened, backed, reopened, studyId: state.studyId, depth: state.connectionDepth,
+      pendingRestore: state.pendingRestore };
+  }, legitimationStudyId);
+  assert.deepEqual(interruptedRestore, {
+    opened: true,
+    backed: true,
+    reopened: true,
+    studyId: legitimationStudyId,
+    depth: 1,
+    pendingRestore: null,
+  }, 'reopening a connection must cancel an older pending scroll restoration without corrupting its new frame');
+  await page.evaluate(() => new Promise(resolve =>
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve)))));
+  assert.equal((await page.evaluate(() => window.__mapFilter.getLocationStudyUiState().pendingRestore)), null,
+    'an interrupted restore callback must not leave stale pending state after later frames');
+  await page.locator('#eventPanel [data-study-connection-back]').click();
+
+  // A cross-location connection must not replace the original outer location return context.
+  await page.evaluate(() => window.__mapFilter.openHit('3', 'mideast'));
+  await page.locator('#eventPanel [data-location-study-open="3"]').click();
+  const baghdadMerchantId = 'apwh-u1-baghdad-merchant-ulema-network';
+  const delhiDevotionId = 'apwh-u1-delhi-bhakti-sufi-devotion';
+  await page.locator(`#eventPanel [data-study-event="${baghdadMerchantId}"]`).click();
+  const baghdadConnections = page.locator(
+    `#eventPanel [data-study-detail="${baghdadMerchantId}"] details[data-study-disclosure="connections"]`
+  );
+  await baghdadConnections.locator('summary').click();
+  await baghdadConnections.locator(`[data-study-connection="${delhiDevotionId}"]`).click();
+  const connectedDelhiView = page.locator('#eventPanel [data-location-study-view="6"]');
+  await expectVisible(connectedDelhiView,
+    'a declared cross-location connection must render the target location list');
+  await connectedDelhiView.locator('[data-study-event="apwh-u1-delhi-sultanate-state-building"]').click();
+  assert.equal(await connectedDelhiView.locator('[data-study-connection-back]').count(), 1,
+    'switching rows within the connected target location must retain its exact-return action');
+  await connectedDelhiView.locator('[data-study-connection-back]').click();
+  assert.equal(await page.locator('#eventPanel [data-study-detail]').getAttribute('data-study-detail'), baghdadMerchantId,
+    'connection Back must restore the exact source even after another target-location row was selected');
+  assert.equal((await page.evaluate(() => window.__mapFilter.getLocationStudyUiState().connectionDepth)), 0,
+    'the row-switch connection return must pop its exact frame');
+  await page.locator(`#eventPanel [data-study-detail="${baghdadMerchantId}"]`
+    + ` [data-study-connection="${delhiDevotionId}"]`).click();
+  await page.locator('#eventPanel [data-location-study-back="6"]').click();
+  assert.equal((await page.locator('#eventPanel .badge').innerText()).trim(), '3',
+    'outer Back from a connected target must restore the original location, not the target location');
+  await expectVisible(page.locator('#eventPanel [data-location-study-open="3"]'),
+    'outer Back from a connected target must restore the original ordinary study entry');
+  assert.deepEqual(await page.evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return { studyId: state.studyId, depth: state.connectionDepth, open: [...state.openDisclosures] };
+  }), { studyId: null, depth: 0, open: [] },
+  'outer Back must clear the full connection stack and progressive-disclosure state');
+
+  // Every existing replacement path must clear both the connected detail and its navigation stack.
+  hydraulicDetail = await openAngkorHydraulicStudy();
+  await hydraulicDetail.locator('details[data-study-disclosure="connections"] summary').click();
+  await hydraulicDetail.locator(`[data-study-connection="${legitimationStudyId}"]`).click();
+  await page.evaluate(() => window.__mapFilter.setPeriod('u2'));
+  assert.deepEqual(await page.evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return { studyId: state.studyId, depth: state.connectionDepth, open: [...state.openDisclosures] };
+  }), { studyId: null, depth: 0, open: [] }, 'a Unit change must clear connected study state');
+
+  hydraulicDetail = await openAngkorHydraulicStudy();
+  await hydraulicDetail.locator('details[data-study-disclosure="connections"] summary').click();
+  await hydraulicDetail.locator(`[data-study-connection="${legitimationStudyId}"]`).click();
+  await page.evaluate(() => window.__mapFilter.setQuery('Angkor'));
+  assert.deepEqual(await page.evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return { studyId: state.studyId, depth: state.connectionDepth };
+  }), { studyId: null, depth: 0 }, 'a query replacement must clear connected study state');
+  await page.evaluate(() => window.__mapFilter.setQuery(''));
+
+  hydraulicDetail = await openAngkorHydraulicStudy();
+  await hydraulicDetail.locator('details[data-study-disclosure="connections"] summary').click();
+  await hydraulicDetail.locator(`[data-study-connection="${legitimationStudyId}"]`).click();
+  await page.evaluate(() => window.__mapFilter.toggleCat('GOV'));
+  assert.deepEqual(await page.evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return { studyId: state.studyId, depth: state.connectionDepth };
+  }), { studyId: null, depth: 0 }, 'a category-filter replacement must clear connected study state');
+  await page.evaluate(() => window.__mapFilter.toggleCat('GOV'));
+
+  hydraulicDetail = await openAngkorHydraulicStudy();
+  await hydraulicDetail.locator('details[data-study-disclosure="connections"] summary').click();
+  await hydraulicDetail.locator(`[data-study-connection="${legitimationStudyId}"]`).click();
+  await page.evaluate(() => window.__mapFilter.reset());
+  assert.deepEqual(await page.evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return { studyId: state.studyId, depth: state.connectionDepth };
+  }), { studyId: null, depth: 0 }, 'filter reset must clear connected study state');
+
+  hydraulicDetail = await openAngkorHydraulicStudy();
+  await hydraulicDetail.locator('details[data-study-disclosure="connections"] summary').click();
+  await hydraulicDetail.locator(`[data-study-connection="${legitimationStudyId}"]`).click();
+  await page.locator('[data-learning-view="chain"]').click();
+  assert.deepEqual(await page.evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return { studyId: state.studyId, depth: state.connectionDepth };
+  }), { studyId: null, depth: 0 }, 'a learning-view change must clear connected study state');
+
+  await page.locator('[data-learning-view="map"]').click();
+  hydraulicDetail = await openAngkorHydraulicStudy();
+  await hydraulicDetail.locator('details[data-study-disclosure="connections"] summary').click();
+  await hydraulicDetail.locator(`[data-study-connection="${legitimationStudyId}"]`).click();
+  await page.evaluate(() => window.__mapFilter.enterRoute('mansa_musa_hajj'));
+  assert.deepEqual(await page.evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return { studyId: state.studyId, depth: state.connectionDepth };
+  }), { studyId: null, depth: 0 }, 'route entry must clear connected study state');
+  await page.evaluate(() => window.__mapFilter.exitRoute());
+  await page.evaluate(() => window.__mapFilter.setLearningView('map'));
+
+  hydraulicDetail = await openAngkorHydraulicStudy();
+  await hydraulicDetail.locator('details[data-study-disclosure="connections"] summary').click();
+  await hydraulicDetail.locator(`[data-study-connection="${legitimationStudyId}"]`).click();
+  await page.evaluate(() => window.__mapFilter.openHit('1', 'asia'));
+  assert.deepEqual(await page.evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return { studyId: state.studyId, depth: state.connectionDepth };
+  }), { studyId: null, depth: 0 }, 'opening a different location must clear connected study state');
+  await page.locator('#eventZone').evaluate(zone => {
+    zone.style.removeProperty('max-height');
+    zone.style.removeProperty('overflow');
+  });
+
   await page.evaluate(() => window.__mapFilter.setPeriod('u2'));
   await page.evaluate(() => window.__mapFilter.openHit('1', 'asia'));
   assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 0,

@@ -4856,6 +4856,16 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       openLocationStudyFromEntry(studyOpen, { focusHeading: true });
       return;
     }
+    const studyConnection = e.target.closest('[data-study-connection]');
+    if (studyConnection) {
+      openLocationStudyConnection(studyConnection.dataset.studyConnection, { focusHeading: true });
+      return;
+    }
+    const studyConnectionBack = e.target.closest('[data-study-connection-back]');
+    if (studyConnectionBack) {
+      backLocationStudyConnection({ focusInvoker: true });
+      return;
+    }
     const studyItem = e.target.closest('[data-study-event]');
     if (studyItem && locationStudyState.locationNumber) {
       toggleLocationStudy(studyItem.dataset.studyEvent, { focusToggle: true });
@@ -4950,6 +4960,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     connectionStack: [],
     pendingRestore: null,
   };
+  let locationStudyRestoreGeneration = 0;
+
+  function invalidateLocationStudyRestore() {
+    locationStudyRestoreGeneration++;
+    locationStudyState.pendingRestore = null;
+  }
 
   function clearLocationStudyState() {
     locationStudyState.locationNumber = null;
@@ -4957,7 +4973,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     locationStudyState.returnContext = null;
     locationStudyState.openDisclosures.clear();
     locationStudyState.connectionStack.length = 0;
-    locationStudyState.pendingRestore = null;
+    invalidateLocationStudyRestore();
   }
 
   const CAT_ICON = {};   // 分类不再用 emoji 标记,保留这个映射只为渲染代码不必改
@@ -5152,6 +5168,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const api = window.APWH_U1_LOCATION_STUDY;
     const locationName = api.locationName(locationNumber);
     const regionName = regionNames[pinRegion(locationNumber)];
+    const connectionFrame = locationStudyState.connectionStack.at(-1);
+    const connectionSource = connectionFrame && api.getById(connectionFrame.studyId);
+    const connectionBack = connectionSource
+      ? `<button type="button" class="rt-btn primary location-study-back" data-study-connection-back>`
+        + `Back to ${escapeTimelineText(connectionSource.title)}</button>`
+      : '';
     const rows = records.map(record => {
       const expanded = record.id === locationStudyState.expandedStudyId;
       const linkedMainEvent = timelineEventByKey.get(record.mainEventKey);
@@ -5169,6 +5191,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         + `</article>`;
     }).join('');
     eventPanel.innerHTML = `<div class="location-study-view" data-location-study-view="${escapeTimelineText(locationNumber)}">`
+      + connectionBack
       + `<button type="button" class="rt-btn ghost location-study-back" data-location-study-back="${escapeTimelineText(locationNumber)}">Back to location events</button>`
       + `<h2 class="location-study-title" tabindex="-1">${escapeTimelineText(locationName)} · Unit 1</h2>`
       + `<p class="location-study-context">${escapeTimelineText(regionName)} · ${escapeTimelineText(records.length)} study points · chronological order</p>`
@@ -5200,7 +5223,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       };
     } else {
       if (entry.dataset.locationStudyOrigin !== 'location' || String(activeNum) !== number) return false;
-      locationStudyState.returnContext = { kind: 'location' };
+      locationStudyState.returnContext = { kind: 'location', locationNumber: number };
     }
     renderLocationStudy(number, { focusHeading });
     return locationStudyState.locationNumber === number;
@@ -5221,6 +5244,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (!locationStudyRecords(locationNumber).some(record => record.id === id)) return false;
     const toggle = eventPanel.querySelector(`[data-study-event="${CSS.escape(id)}"]`);
     if (!toggle) return false;
+    invalidateLocationStudyRestore();
     locationStudyState.expandedStudyId = id;
     renderLocationStudy(locationNumber, { focusStudyId: focusToggle ? id : null });
     return locationStudyState.expandedStudyId === id;
@@ -5242,6 +5266,109 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     return true;
   }
 
+  function activeStudyRecord() {
+    const api = window.APWH_U1_LOCATION_STUDY;
+    if (!locationStudyState.expandedStudyId || !api || typeof api.getById !== 'function') return null;
+    try {
+      return api.getById(locationStudyState.expandedStudyId) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function isDirectStudyConnection(source, targetId) {
+    return !!source && ['causeStudyPointIds', 'effectStudyPointIds', 'relatedStudyPointIds']
+      .some(key => Array.isArray(source[key]) && source[key].includes(targetId));
+  }
+
+  function openLocationStudyConnection(targetId, {
+    scrollTop = eventZone.scrollTop,
+    focusHeading = false,
+  } = {}) {
+    if (!ordinaryLocationStudyContext() || getActivePeriod() !== 'u1'
+        || !Number.isFinite(scrollTop) || scrollTop < 0) return false;
+    const source = activeStudyRecord();
+    const sourceLocationNumber = locationStudyState.locationNumber;
+    if (!source || source.locationNumber !== sourceLocationNumber
+        || !locationStudyRecords(sourceLocationNumber).some(record => record.id === source.id)
+        || !eventPanel.querySelector(`[data-location-study-view="${CSS.escape(sourceLocationNumber)}"]`)
+        || !eventPanel.querySelector(`[data-study-detail="${CSS.escape(source.id)}"]`)) return false;
+    const id = String(targetId || '');
+    const api = window.APWH_U1_LOCATION_STUDY;
+    let target;
+    try {
+      target = api.getById(id);
+    } catch {
+      return false;
+    }
+    if (!target || !isDirectStudyConnection(source, id)
+        || !locationStudyRecords(target.locationNumber).some(record => record.id === id)) return false;
+    const disclosurePrefix = `${source.id}:`;
+    const openDisclosures = Object.freeze([...locationStudyState.openDisclosures]
+      .filter(stateKey => stateKey.startsWith(disclosurePrefix))
+      .map(stateKey => stateKey.slice(disclosurePrefix.length)));
+    const frame = Object.freeze({
+      locationNumber: sourceLocationNumber,
+      studyId: source.id,
+      openDisclosures,
+      scrollTop,
+      invokerTargetId: id,
+    });
+    invalidateLocationStudyRestore();
+    locationStudyState.connectionStack.push(frame);
+    locationStudyState.openDisclosures.clear();
+    locationStudyState.locationNumber = target.locationNumber;
+    locationStudyState.expandedStudyId = id;
+    renderLocationStudy(target.locationNumber, { focusHeading });
+    return locationStudyState.expandedStudyId === id
+      && !!eventPanel.querySelector(`[data-study-detail="${CSS.escape(id)}"]`);
+  }
+
+  function backLocationStudyConnection({ focusInvoker = false } = {}) {
+    if (!ordinaryLocationStudyContext() || getActivePeriod() !== 'u1') return false;
+    const frame = locationStudyState.connectionStack.at(-1);
+    const current = activeStudyRecord();
+    if (!frame || !current || current.locationNumber !== locationStudyState.locationNumber
+        || !locationStudyRecords(current.locationNumber).some(record => record.id === current.id)
+        || !eventPanel.querySelector(`[data-location-study-view="${CSS.escape(current.locationNumber)}"]`)
+        || !eventPanel.querySelector('[data-study-connection-back]')
+        || !Number.isFinite(frame.scrollTop) || frame.scrollTop < 0
+        || !Array.isArray(frame.openDisclosures)
+        || !frame.openDisclosures.every(key => STUDY_DISCLOSURE_KEYS.has(key))) return false;
+    const api = window.APWH_U1_LOCATION_STUDY;
+    const source = api.getById(frame.studyId);
+    const target = api.getById(frame.invokerTargetId);
+    if (!source || source.locationNumber !== frame.locationNumber
+        || !target || target.locationNumber !== current.locationNumber
+        || !isDirectStudyConnection(source, target.id)
+        || !locationStudyRecords(frame.locationNumber).some(record => record.id === source.id)) return false;
+    invalidateLocationStudyRestore();
+    locationStudyState.connectionStack.pop();
+    locationStudyState.openDisclosures.clear();
+    frame.openDisclosures.forEach(key => locationStudyState.openDisclosures.add(`${source.id}:${key}`));
+    locationStudyState.locationNumber = frame.locationNumber;
+    locationStudyState.expandedStudyId = source.id;
+    renderLocationStudy(frame.locationNumber);
+    locationStudyState.pendingRestore = Object.freeze({
+      scrollTop: frame.scrollTop,
+      invokerTargetId: frame.invokerTargetId,
+    });
+    const restoreGeneration = locationStudyRestoreGeneration;
+    if (focusInvoker) {
+      eventPanel.querySelector(`[data-study-connection="${CSS.escape(frame.invokerTargetId)}"]`)
+        ?.focus({ preventScroll: true });
+    }
+    eventZone.scrollTop = frame.scrollTop;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (locationStudyRestoreGeneration !== restoreGeneration
+          || locationStudyState.expandedStudyId !== source.id
+          || locationStudyState.pendingRestore?.invokerTargetId !== frame.invokerTargetId) return;
+      eventZone.scrollTop = frame.scrollTop;
+      locationStudyState.pendingRestore = null;
+    }));
+    return locationStudyState.expandedStudyId === source.id;
+  }
+
   function backFromLocationStudy({ focusEntry = false } = {}) {
     const number = locationStudyState.locationNumber;
     if (!number || !ordinaryLocationStudyContext()
@@ -5254,10 +5381,15 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       const anchor = preferredTimelineAnchor(timelineEvent, returnContext.anchor);
       renderTimelineDetail(timelineEvent, anchor);
     } else {
-      renderEventContent(number, pinBadgeColor(number));
+      const originNumber = returnContext?.kind === 'location'
+        ? String(returnContext.locationNumber || number) : number;
+      renderEventContent(originNumber, pinBadgeColor(originNumber));
     }
+    const originNumber = returnContext?.kind === 'timeline'
+      ? String(returnContext.anchor?.num || number)
+      : String(returnContext?.locationNumber || number);
     const entry = eventPanel.querySelector(
-      `[data-location-study-open="${CSS.escape(number)}"]`);
+      `[data-location-study-open="${CSS.escape(originNumber)}"]`);
     if (focusEntry) entry?.focus();
     return !!entry;
   }
@@ -5760,6 +5892,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     }
 
     function apply() {
+      clearLocationStudyState();
       if (clearBtn) clearBtn.hidden = !query;
       const ownsEventDetails = activeLearningView === 'map' && activeMapMode === 'events';
       let countText = '';
@@ -5964,6 +6097,16 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       openLocationStudy: number => openLocationStudy(number),
       toggleLocationStudy: studyId => toggleLocationStudy(studyId),
       backLocationStudy: () => backFromLocationStudy(),
+      openLocationStudyConnection: targetId => openLocationStudyConnection(targetId),
+      backLocationStudyConnection: () => backLocationStudyConnection(),
+      setLocationStudyDisclosure: (studyId, key, open) => setLocationStudyDisclosure(studyId, key, open),
+      getLocationStudyUiState: () => Object.freeze({
+        studyId: locationStudyState.expandedStudyId,
+        openDisclosures: Object.freeze([...locationStudyState.openDisclosures]),
+        connectionDepth: locationStudyState.connectionStack.length,
+        pendingRestore: locationStudyState.pendingRestore
+          && Object.freeze({ ...locationStudyState.pendingRestore }),
+      }),
       // 切科目回来时用:按当前筛选状态重算一遍,让面板和工具栏对齐
       refresh: () => apply(),
       // 商路模式:首页据此建入口、并把行程面板镜像过去
