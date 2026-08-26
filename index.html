@@ -965,9 +965,14 @@ nav.topnav {
     const studyState = api?.getLocationStudyUiState?.();
     const pendingRestore = studyState?.pendingRestore;
     const studyRestore = pendingRestore
+      && Number.isSafeInteger(pendingRestore.restoreToken) && pendingRestore.restoreToken > 0
       && Number.isFinite(pendingRestore.scrollTop) && pendingRestore.scrollTop >= 0
       && typeof pendingRestore.invokerTargetId === 'string' && pendingRestore.invokerTargetId
-      ? { scrollTop: pendingRestore.scrollTop, invokerTargetId: pendingRestore.invokerTargetId }
+      && typeof pendingRestore.studyId === 'string' && pendingRestore.studyId === studyState.studyId
+      && typeof pendingRestore.locationNumber === 'string' && pendingRestore.locationNumber
+      ? { restoreToken: pendingRestore.restoreToken, scrollTop: pendingRestore.scrollTop,
+          invokerTargetId: pendingRestore.invokerTargetId, studyId: pendingRestore.studyId,
+          locationNumber: pendingRestore.locationNumber }
       : null;
     const zone = doc.querySelector('#eventZone');
     const panel = doc.querySelector('.event-panel');
@@ -1046,9 +1051,12 @@ nav.topnav {
             const invoker = homeEvents.querySelector(
               `[data-study-connection="${CSS.escape(restore.invokerTargetId)}"]`);
             if (invoker) {
-              try { invoker.focus({ preventScroll: true }); } catch (err) { invoker.focus(); }
+              try { invoker.focus({ preventScroll: true }); }
+              catch (err) { try { invoker.focus(); } catch (focusErr) {} }
+              if (document.activeElement === invoker) {
+                win.__mapFilter.completeLocationStudyRestore?.(restore.restoreToken);
+              }
             }
-            win.__mapFilter.completeLocationStudyRestore?.(restore.invokerTargetId);
           }
         }
         return;

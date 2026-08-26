@@ -640,6 +640,10 @@ async function verifyTimeline(page, port) {
       window.__mapFilter.setLocationStudyDisclosure(studyId, 'not-a-disclosure', true), hydraulicStudyId)],
     ['a disclosure update for a different study point', () => page.evaluate(() =>
       window.__mapFilter.setLocationStudyDisclosure('apwh-u1-hangzhou-song-commercial-revolution', 'terms', true))],
+    ['a non-boolean disclosure string', () => page.evaluate(studyId =>
+      window.__mapFilter.setLocationStudyDisclosure(studyId, 'terms', 'true'), hydraulicStudyId)],
+    ['a non-boolean disclosure number', () => page.evaluate(studyId =>
+      window.__mapFilter.setLocationStudyDisclosure(studyId, 'terms', 1), hydraulicStudyId)],
     ['Back with an empty connection stack', () => page.evaluate(() =>
       window.__mapFilter.backLocationStudyConnection())],
   ];
@@ -709,6 +713,63 @@ async function verifyTimeline(page, port) {
   assert.equal((await page.evaluate(() => window.__mapFilter.getLocationStudyUiState().pendingRestore)), null,
     'an interrupted restore callback must not leave stale pending state after later frames');
   await page.locator('#eventPanel [data-study-connection-back]').click();
+
+  const restoreTokenSafety = await page.evaluate(targetId => {
+    const api = window.__mapFilter;
+    const snapshot = () => {
+      const pending = api.getLocationStudyUiState().pendingRestore;
+      return pending && { ...pending };
+    };
+    const firstOpened = api.openLocationStudyConnection(targetId);
+    const firstBacked = api.backLocationStudyConnection();
+    const firstPending = snapshot();
+    const wrongTokenResult = api.completeLocationStudyRestore(firstPending?.restoreToken + 1);
+    const afterWrongToken = snapshot();
+    const firstCompleted = api.completeLocationStudyRestore(firstPending?.restoreToken);
+    const secondOpened = api.openLocationStudyConnection(targetId);
+    const secondBacked = api.backLocationStudyConnection();
+    const secondPending = snapshot();
+    const staleTokenResult = api.completeLocationStudyRestore(firstPending?.restoreToken);
+    const afterStaleToken = snapshot();
+    const secondCompleted = api.completeLocationStudyRestore(secondPending?.restoreToken);
+    return {
+      firstOpened, firstBacked, firstPending, wrongTokenResult, afterWrongToken, firstCompleted,
+      secondOpened, secondBacked, secondPending, staleTokenResult, afterStaleToken, secondCompleted,
+      finalPending: snapshot(),
+    };
+  }, legitimationStudyId);
+  assert.deepEqual({
+    firstOpened: restoreTokenSafety.firstOpened,
+    firstBacked: restoreTokenSafety.firstBacked,
+    wrongTokenResult: restoreTokenSafety.wrongTokenResult,
+    firstCompleted: restoreTokenSafety.firstCompleted,
+    secondOpened: restoreTokenSafety.secondOpened,
+    secondBacked: restoreTokenSafety.secondBacked,
+    staleTokenResult: restoreTokenSafety.staleTokenResult,
+    secondCompleted: restoreTokenSafety.secondCompleted,
+    finalPending: restoreTokenSafety.finalPending,
+  }, {
+    firstOpened: true, firstBacked: true, wrongTokenResult: false, firstCompleted: true,
+    secondOpened: true, secondBacked: true, staleTokenResult: false, secondCompleted: true,
+    finalPending: null,
+  }, 'only the exact live restore token may acknowledge a pending restoration');
+  assert.ok(Number.isSafeInteger(restoreTokenSafety.firstPending?.restoreToken)
+      && restoreTokenSafety.firstPending.restoreToken > 0,
+    `a pending restore must expose a positive integer token: ${JSON.stringify(restoreTokenSafety)}`);
+  assert.deepEqual(restoreTokenSafety.afterWrongToken, restoreTokenSafety.firstPending,
+    'a wrong token during a live restore must preserve the exact pending snapshot');
+  assert.ok(restoreTokenSafety.secondPending.restoreToken > restoreTokenSafety.firstPending.restoreToken,
+    'repeated same-target restorations must receive unique monotonic tokens');
+  assert.deepEqual(restoreTokenSafety.afterStaleToken, restoreTokenSafety.secondPending,
+    'a stale token from an earlier same-target restore must not clear the later pending restore');
+  for (const pending of [restoreTokenSafety.firstPending, restoreTokenSafety.secondPending]) {
+    assert.equal(pending.studyId, hydraulicStudyId,
+      'pending restore snapshots must bind their exact restored study id');
+    assert.equal(pending.locationNumber, '7',
+      'pending restore snapshots must bind their exact restored location');
+    assert.equal(pending.invokerTargetId, legitimationStudyId,
+      'pending restore snapshots must retain the focus target separately from the completion token');
+  }
 
   const disclosureRace = await page.evaluate(targetId => {
     const opened = window.__mapFilter.openLocationStudyConnection(targetId);
@@ -2597,6 +2658,8 @@ async function verifyHomeLearningShell(page, port) {
     return {
       badKey: api.setLocationStudyDisclosure(ids.hydraulic, 'not-a-disclosure', true),
       badStudy: api.setLocationStudyDisclosure('not-a-study-point', 'terms', true),
+      stringOpen: api.setLocationStudyDisclosure(ids.hydraulic, 'terms', 'true'),
+      numberOpen: api.setLocationStudyDisclosure(ids.hydraulic, 'terms', 1),
       missingTarget: api.openLocationStudyConnection('not-a-study-point', { scrollTop: 10 }),
       selectorTarget: api.openLocationStudyConnection(`not-a-study'][data-study-event="x"]`, { scrollTop: 10 }),
       unlinkedTarget: api.openLocationStudyConnection('apwh-u1-hangzhou-song-commercial-revolution', { scrollTop: 10 }),
@@ -2604,11 +2667,12 @@ async function verifyHomeLearningShell(page, port) {
       nanScroll: api.openLocationStudyConnection(ids.legitimation, { scrollTop: NaN }),
       stringScroll: api.openLocationStudyConnection(ids.legitimation, { scrollTop: '10' }),
       emptyBack: api.backLocationStudyConnection(),
-      mismatchedCompletion: api.completeLocationStudyRestore(ids.legitimation),
+      mismatchedCompletion: api.completeLocationStudyRestore(-1),
     };
   }, { hydraulic: hydraulicStudyId, legitimation: legitimationStudyId });
   assert.deepEqual(invalidHomeBridgeResults, {
-    badKey: false, badStudy: false, missingTarget: false, selectorTarget: false,
+    badKey: false, badStudy: false, stringOpen: false, numberOpen: false,
+    missingTarget: false, selectorTarget: false,
     unlinkedTarget: false, negativeScroll: false, nanScroll: false, stringScroll: false,
     emptyBack: false, mismatchedCompletion: false,
   }, 'the homepage bridge must reject invalid disclosures, targets, scroll options, empty Back, and mismatched completion');
@@ -2653,7 +2717,42 @@ async function verifyHomeLearningShell(page, port) {
     'Hindu and Buddhist Legitimation at Angkor', 'homepage connection target must retain its canonical title');
   assert.equal(await homeConnectedView.locator('.location-study-title').evaluate(element => document.activeElement === element),
     true, 'homepage connection navigation must focus the cloned target heading');
-  await homeConnectedView.locator('[data-study-connection-back]').click();
+  const focusFailureRestore = await page.evaluate(targetId => {
+    const originalFocus = HTMLElement.prototype.focus;
+    HTMLElement.prototype.focus = function focus(options) {
+      if (this.matches?.(`[data-study-connection="${CSS.escape(targetId)}"]`)) return;
+      return originalFocus.call(this, options);
+    };
+    try {
+      document.querySelector('#home-events [data-study-connection-back]').click();
+      const state = document.querySelector('#worldMapFrame').contentWindow.__mapFilter
+        .getLocationStudyUiState();
+      const invoker = document.querySelector(
+        `#home-events [data-study-connection="${CSS.escape(targetId)}"]`);
+      return {
+        pendingRestore: state.pendingRestore && { ...state.pendingRestore },
+        invokerPresent: !!invoker,
+        invokerFocused: document.activeElement === invoker,
+      };
+    } finally {
+      HTMLElement.prototype.focus = originalFocus;
+    }
+  }, legitimationStudyId);
+  assert.equal(focusFailureRestore.invokerPresent, true,
+    'the focus-failure fixture must retain the cloned connection invoker');
+  assert.equal(focusFailureRestore.invokerFocused, false,
+    'the focus-failure fixture must prevent the cloned connection from receiving focus');
+  assert.ok(Number.isSafeInteger(focusFailureRestore.pendingRestore?.restoreToken),
+    `homepage Back must not acknowledge before invoker focus succeeds: ${JSON.stringify(focusFailureRestore)}`);
+  await page.evaluate(() => new Promise(resolve =>
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve)))));
+  assert.equal(await frame.locator('body').evaluate(() =>
+    window.__mapFilter.getLocationStudyUiState().pendingRestore), null,
+  'canonical double-rAF fallback must safely clear an unacknowledged homepage restore');
+
+  homeHydraulicDetail = page.locator(`#home-events [data-study-detail="${hydraulicStudyId}"]`);
+  await homeHydraulicDetail.locator(`[data-study-connection="${legitimationStudyId}"]`).click();
+  await page.locator('#home-events [data-study-connection-back]').click();
   homeHydraulicDetail = page.locator(`#home-events [data-study-detail="${hydraulicStudyId}"]`);
   await expectVisible(homeHydraulicDetail, 'homepage connection Back must restore the exact Angkor source record');
   assert.equal(await homeHydraulicDetail.locator('details[data-study-disclosure="terms"]').getAttribute('open'), '',

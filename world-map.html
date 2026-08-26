@@ -4961,6 +4961,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     pendingRestore: null,
   };
   let locationStudyRestoreGeneration = 0;
+  let locationStudyRestoreToken = 0;
 
   function invalidateLocationStudyRestore() {
     locationStudyRestoreGeneration++;
@@ -5350,9 +5351,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     locationStudyState.locationNumber = frame.locationNumber;
     locationStudyState.expandedStudyId = source.id;
     renderLocationStudy(frame.locationNumber);
+    const restoreToken = ++locationStudyRestoreToken;
     locationStudyState.pendingRestore = Object.freeze({
+      restoreToken,
       scrollTop: frame.scrollTop,
       invokerTargetId: frame.invokerTargetId,
+      studyId: source.id,
+      locationNumber: frame.locationNumber,
     });
     const restoreGeneration = locationStudyRestoreGeneration;
     if (focusInvoker) {
@@ -5363,19 +5368,21 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (locationStudyRestoreGeneration !== restoreGeneration
           || locationStudyState.expandedStudyId !== source.id
-          || locationStudyState.pendingRestore?.invokerTargetId !== frame.invokerTargetId) return;
+          || locationStudyState.locationNumber !== frame.locationNumber
+          || locationStudyState.pendingRestore?.restoreToken !== restoreToken) return;
       eventZone.scrollTop = frame.scrollTop;
       locationStudyState.pendingRestore = null;
     }));
     return locationStudyState.expandedStudyId === source.id;
   }
 
-  function completeLocationStudyRestore(invokerTargetId) {
+  function completeLocationStudyRestore(restoreToken) {
     const pending = locationStudyState.pendingRestore;
-    const id = String(invokerTargetId || '');
-    if (!pending || !id || pending.invokerTargetId !== id) return false;
-    locationStudyRestoreGeneration++;
-    locationStudyState.pendingRestore = null;
+    if (!pending || !Number.isSafeInteger(restoreToken)
+        || pending.restoreToken !== restoreToken
+        || locationStudyState.expandedStudyId !== pending.studyId
+        || locationStudyState.locationNumber !== pending.locationNumber) return false;
+    invalidateLocationStudyRestore();
     return true;
   }
 
@@ -6127,8 +6134,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         return openLocationStudyConnection(targetId, { scrollTop: options.scrollTop });
       },
       backLocationStudyConnection: () => backLocationStudyConnection(),
-      completeLocationStudyRestore: invokerTargetId => completeLocationStudyRestore(invokerTargetId),
-      setLocationStudyDisclosure: (studyId, key, open) => setLocationStudyDisclosure(studyId, key, open),
+      completeLocationStudyRestore: restoreToken => completeLocationStudyRestore(restoreToken),
+      setLocationStudyDisclosure: (studyId, key, open) => typeof open === 'boolean'
+        && setLocationStudyDisclosure(studyId, key, open),
       getLocationStudyUiState: () => Object.freeze({
         studyId: locationStudyState.expandedStudyId,
         openDisclosures: Object.freeze([...locationStudyState.openDisclosures]),
