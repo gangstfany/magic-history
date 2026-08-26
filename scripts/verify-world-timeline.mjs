@@ -180,6 +180,28 @@ async function embeddedWorldLayoutSnapshot(page) {
   });
 }
 
+async function keyTermLayout(locator) {
+  return locator.evaluate(grid => {
+    const row = grid.querySelector(':scope > div');
+    const term = row.querySelector('dt');
+    const definition = row.querySelector('dd');
+    const rowStyle = getComputedStyle(row);
+    const termBox = term.getBoundingClientRect();
+    const definitionBox = definition.getBoundingClientRect();
+    return {
+      rowCount: grid.children.length,
+      listColumns: getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length,
+      rowColumns: rowStyle.gridTemplateColumns.split(/\s+/).filter(Boolean).length,
+      termRight: termBox.right,
+      termBottom: termBox.bottom,
+      definitionLeft: definitionBox.left,
+      definitionTop: definitionBox.top,
+      listClient: grid.clientWidth,
+      listScroll: grid.scrollWidth,
+    };
+  });
+}
+
 async function waitForEmbeddedWorldLayout(page, {
   viewportWidth,
   mapZoneHeight,
@@ -550,9 +572,18 @@ async function verifyTimeline(page, port) {
 
   const termsSummary = supportingDetails.locator('summary[data-study-disclosure-toggle="terms"]');
   await termsSummary.click();
-  assert.equal(await firstStudyDetail.locator('.location-study-term-grid').evaluate(grid =>
-    getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length), 2,
-  'desktop standalone Key Terms must render in two columns');
+  const standaloneTermGrid = firstStudyDetail.locator('.location-study-term-grid');
+  const standaloneTermLayout = await keyTermLayout(standaloneTermGrid);
+  assert.equal(standaloneTermLayout.rowCount, 2,
+    `desktop standalone Key Terms must render one row for each of the two terms: ${JSON.stringify(standaloneTermLayout)}`);
+  assert.equal(standaloneTermLayout.listColumns, 1,
+    `desktop standalone Key Terms list must use one full-width column: ${JSON.stringify(standaloneTermLayout)}`);
+  assert.equal(standaloneTermLayout.rowColumns, 2,
+    `desktop standalone Key Terms rows must place term and definition in two columns: ${JSON.stringify(standaloneTermLayout)}`);
+  assert.ok(standaloneTermLayout.definitionLeft >= standaloneTermLayout.termRight,
+    `desktop standalone Key Terms definitions must begin after their terms: ${JSON.stringify(standaloneTermLayout)}`);
+  assert.ok(standaloneTermLayout.listScroll <= standaloneTermLayout.listClient + 1,
+    `desktop standalone Key Terms list must not overflow horizontally: ${JSON.stringify(standaloneTermLayout)}`);
   await termsSummary.click();
 
   const connectionsDisclosure = firstStudyDetail.locator('details[data-study-disclosure="connections"]');
@@ -2746,9 +2777,16 @@ async function verifyHomeLearningShell(page, port) {
     targetAtLeast44: (await homeTermsPresentation()).height >= 44,
   }, { indicator: '−', targetAtLeast44: true },
   'an open homepage disclosure must expose a minus indicator on a 44px target');
-  const desktopTermColumns = await homeProgressiveDetail.locator('.location-study-term-grid')
-    .evaluate(grid => getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length);
-  assert.equal(desktopTermColumns, 2, 'desktop homepage Key Terms must render in two columns');
+  const homeTermGrid = homeProgressiveDetail.locator('.location-study-term-grid');
+  const desktopTermLayout = await keyTermLayout(homeTermGrid);
+  assert.equal(desktopTermLayout.rowCount, 2,
+    `desktop homepage Key Terms must render one row for each of the two terms: ${JSON.stringify(desktopTermLayout)}`);
+  assert.equal(desktopTermLayout.listColumns, 1,
+    `desktop homepage Key Terms list must use one full-width column: ${JSON.stringify(desktopTermLayout)}`);
+  assert.equal(desktopTermLayout.rowColumns, 2,
+    `desktop homepage Key Terms rows must place term and definition in two columns: ${JSON.stringify(desktopTermLayout)}`);
+  assert.ok(desktopTermLayout.definitionLeft >= desktopTermLayout.termRight,
+    `desktop homepage Key Terms definitions must begin after their terms: ${JSON.stringify(desktopTermLayout)}`);
   await homeTermsSummary.press('Space');
   assert.equal(await homeDisclosures.nth(0).getAttribute('open'), null,
     'Space must collapse the desktop homepage disclosure before the narrow initial-state check');
@@ -2786,24 +2824,48 @@ async function verifyHomeLearningShell(page, port) {
   assert.equal(await homeNarrowConnectionIndicator(), '−',
     'the open 540px homepage Connections disclosure must expose a minus indicator');
   await assertStudyControlAccessibility(homeProgressiveDetail, '540px homepage Hangzhou detail');
-  const narrowTermLayout = await homeProgressiveDetail.locator('.location-study-term-grid').evaluate(grid => ({
-    columns: getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length,
-    gridClient: grid.clientWidth,
-    gridScroll: grid.scrollWidth,
-    detailClient: grid.closest('[data-study-detail]').clientWidth,
-    detailScroll: grid.closest('[data-study-detail]').scrollWidth,
-    panelClient: document.querySelector('#home-events').clientWidth,
-    panelScroll: document.querySelector('#home-events').scrollWidth,
-    pageClient: document.documentElement.clientWidth,
-    pageScroll: document.documentElement.scrollWidth,
-  }));
-  assert.equal(narrowTermLayout.columns, 1,
-    `540px homepage Key Terms must render in one column: ${JSON.stringify(narrowTermLayout)}`);
-  assert.ok(narrowTermLayout.gridScroll <= narrowTermLayout.gridClient + 1
-      && narrowTermLayout.detailScroll <= narrowTermLayout.detailClient + 1
-      && narrowTermLayout.panelScroll <= narrowTermLayout.panelClient + 1
-      && narrowTermLayout.pageScroll <= narrowTermLayout.pageClient + 1,
-    `540px homepage progressive detail must not overflow: ${JSON.stringify(narrowTermLayout)}`);
+  const narrowTermLayout = await keyTermLayout(homeTermGrid);
+  assert.equal(narrowTermLayout.listColumns, 1,
+    `540px homepage Key Terms list must use one full-width column: ${JSON.stringify(narrowTermLayout)}`);
+  assert.equal(narrowTermLayout.rowColumns, 2,
+    `540px homepage Key Terms rows must keep term and definition in two columns: ${JSON.stringify(narrowTermLayout)}`);
+  assert.ok(narrowTermLayout.definitionLeft >= narrowTermLayout.termRight,
+    `540px homepage Key Terms definitions must begin after their terms: ${JSON.stringify(narrowTermLayout)}`);
+  const narrowOverflow = await homeTermGrid.evaluate(grid => {
+    const detail = grid.closest('[data-study-detail]');
+    const panel = document.querySelector('#home-events');
+    return {
+      grid: { client: grid.clientWidth, scroll: grid.scrollWidth },
+      detail: { client: detail.clientWidth, scroll: detail.scrollWidth },
+      panel: { client: panel.clientWidth, scroll: panel.scrollWidth },
+      page: { client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth },
+    };
+  });
+  for (const [label, dimensions] of Object.entries(narrowOverflow)) {
+    assert.ok(dimensions.scroll <= dimensions.client + 1,
+      `540px homepage ${label} must not overflow horizontally: ${JSON.stringify(narrowOverflow)}`);
+  }
+  try {
+    await homeTermGrid.evaluate(grid => { grid.style.width = '260px'; });
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const wideComponentTermLayout = await keyTermLayout(homeTermGrid);
+    assert.equal(wideComponentTermLayout.rowColumns, 2,
+      `a 260px homepage Key Terms component must keep term and definition in two columns: ${JSON.stringify(wideComponentTermLayout)}`);
+    assert.ok(wideComponentTermLayout.definitionLeft >= wideComponentTermLayout.termRight,
+      `a 260px homepage Key Terms definition must begin after its term: ${JSON.stringify(wideComponentTermLayout)}`);
+
+    await homeTermGrid.evaluate(grid => { grid.style.width = '220px'; });
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const narrowComponentTermLayout = await keyTermLayout(homeTermGrid);
+    assert.equal(narrowComponentTermLayout.rowColumns, 1,
+      `a 220px homepage Key Terms component must stack term above definition: ${JSON.stringify(narrowComponentTermLayout)}`);
+    assert.ok(narrowComponentTermLayout.definitionTop >= narrowComponentTermLayout.termBottom,
+      `a 220px homepage Key Terms definition must stack below its term: ${JSON.stringify(narrowComponentTermLayout)}`);
+    assert.ok(narrowComponentTermLayout.listScroll <= narrowComponentTermLayout.listClient + 1,
+      `a 220px homepage Key Terms list must not overflow horizontally: ${JSON.stringify(narrowComponentTermLayout)}`);
+  } finally {
+    await homeTermGrid.evaluate(grid => { grid.style.width = ''; });
+  }
   await page.setViewportSize({ width: 1440, height: 900 });
   await homeDisclosures.nth(2).locator('summary').click();
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
