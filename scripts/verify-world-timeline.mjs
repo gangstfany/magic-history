@@ -710,6 +710,119 @@ async function verifyTimeline(page, port) {
     'an interrupted restore callback must not leave stale pending state after later frames');
   await page.locator('#eventPanel [data-study-connection-back]').click();
 
+  const disclosureRace = await page.evaluate(targetId => {
+    const opened = window.__mapFilter.openLocationStudyConnection(targetId);
+    const backed = window.__mapFilter.backLocationStudyConnection();
+    const detail = document.querySelector(
+      '[data-study-detail="apwh-u1-angkor-khmer-hydraulic-state"]'
+    );
+    const evidence = detail.querySelector('details[data-study-disclosure="evidence"]');
+    const zone = document.querySelector('#eventZone');
+    evidence.open = true;
+    evidence.dispatchEvent(new Event('toggle'));
+    const newerScrollTop = Math.max(1, zone.scrollTop - 90);
+    zone.scrollTop = newerScrollTop;
+    return { opened, backed, newerScrollTop };
+  }, legitimationStudyId);
+  assert.deepEqual({ opened: disclosureRace.opened, backed: disclosureRace.backed },
+    { opened: true, backed: true }, 'the disclosure race fixture must create a real pending restore');
+  await page.evaluate(() => new Promise(resolve =>
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve)))));
+  const disclosureRaceAfterFrames = await page.evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return {
+      pendingRestore: state.pendingRestore,
+      openDisclosures: [...state.openDisclosures],
+      scrollTop: document.querySelector('#eventZone').scrollTop,
+    };
+  });
+  assert.equal(disclosureRaceAfterFrames.pendingRestore, null,
+    'a disclosure interaction must cancel the older pending restore');
+  assert.ok(disclosureRaceAfterFrames.openDisclosures.includes(`${hydraulicStudyId}:evidence`),
+    'the disclosure interaction must remain canonical after pending restore cancellation');
+  assert.ok(Math.abs(disclosureRaceAfterFrames.scrollTop - disclosureRace.newerScrollTop) <= 1,
+    `the disclosure interaction scroll must win over the older restore: ${JSON.stringify({
+      expected: disclosureRace.newerScrollTop, actual: disclosureRaceAfterFrames.scrollTop,
+    })}`);
+
+  // A real two-edge chain must restore each frame independently in LIFO order.
+  const maliStudyId = 'apwh-u1-timbuktu-mali-gold-salt-tax';
+  const mansaStudyId = 'apwh-u1-timbuktu-mansa-musa-pilgrimage';
+  const learningStudyId = 'apwh-u1-timbuktu-islamic-learning-griots';
+  await page.evaluate(() => window.__mapFilter.openHit('73', 'africa'));
+  await page.locator('#eventPanel [data-location-study-open="73"]').click();
+  await page.locator(`#eventPanel [data-study-event="${maliStudyId}"]`).click();
+  let chainDetail = page.locator(`#eventPanel [data-study-detail="${maliStudyId}"]`);
+  await chainDetail.locator('details[data-study-disclosure="terms"] summary').click();
+  await chainDetail.locator('details[data-study-disclosure="connections"] summary').click();
+  await page.waitForFunction(studyId => {
+    const open = window.__mapFilter.getLocationStudyUiState().openDisclosures;
+    return open.includes(`${studyId}:terms`) && open.includes(`${studyId}:connections`);
+  }, maliStudyId);
+  let chainInvoker = chainDetail.locator(`[data-study-connection="${mansaStudyId}"]`);
+  await chainInvoker.evaluate(button => {
+    const zone = document.querySelector('#eventZone');
+    const zoneBox = zone.getBoundingClientRect();
+    const buttonBox = button.getBoundingClientRect();
+    zone.scrollTop = Math.max(1, zone.scrollTop + buttonBox.top - zoneBox.top
+      - (zone.clientHeight - buttonBox.height) / 2);
+  });
+  const maliScrollTop = await page.locator('#eventZone').evaluate(zone => zone.scrollTop);
+  assert.ok(maliScrollTop > 0, 'the first LIFO frame must capture nonzero scroll');
+  await chainInvoker.click();
+
+  chainDetail = page.locator(`#eventPanel [data-study-detail="${mansaStudyId}"]`);
+  await chainDetail.locator('details[data-study-disclosure="evidence"] summary').click();
+  await chainDetail.locator('details[data-study-disclosure="connections"] summary').click();
+  await page.waitForFunction(studyId => {
+    const open = window.__mapFilter.getLocationStudyUiState().openDisclosures;
+    return open.includes(`${studyId}:evidence`) && open.includes(`${studyId}:connections`);
+  }, mansaStudyId);
+  chainInvoker = chainDetail.locator(`[data-study-connection="${learningStudyId}"]`);
+  await chainInvoker.evaluate(button => {
+    const zone = document.querySelector('#eventZone');
+    const zoneBox = zone.getBoundingClientRect();
+    const buttonBox = button.getBoundingClientRect();
+    zone.scrollTop = Math.max(1, zone.scrollTop + buttonBox.top - zoneBox.top
+      - (zone.clientHeight - buttonBox.height) / 2);
+  });
+  const mansaScrollTop = await page.locator('#eventZone').evaluate(zone => zone.scrollTop);
+  assert.ok(mansaScrollTop > 0 && mansaScrollTop !== maliScrollTop,
+    'the second LIFO frame must capture its own distinct nonzero scroll');
+  await chainInvoker.click();
+  assert.equal((await page.evaluate(() => window.__mapFilter.getLocationStudyUiState().connectionDepth)), 2,
+    'two declared causal hops must create depth two');
+
+  await page.locator('#eventPanel [data-study-connection-back]').click();
+  chainDetail = page.locator(`#eventPanel [data-study-detail="${mansaStudyId}"]`);
+  await expectVisible(chainDetail, 'the first LIFO Back must restore Mansa Musa');
+  await page.waitForFunction(expected =>
+    Math.abs(document.querySelector('#eventZone').scrollTop - expected) <= 1, mansaScrollTop);
+  assert.equal(await chainDetail.locator('details[data-study-disclosure="evidence"]').getAttribute('open'), '',
+    'the first LIFO Back must restore Mansa Musa Evidence');
+  assert.equal(await chainDetail.locator('details[data-study-disclosure="connections"]').getAttribute('open'), '',
+    'the first LIFO Back must restore Mansa Musa Connections');
+  assert.equal(await chainDetail.locator(`[data-study-connection="${learningStudyId}"]`)
+    .evaluate(element => document.activeElement === element), true,
+  'the first LIFO Back must focus the exact second-hop invoker');
+  assert.equal((await page.evaluate(() => window.__mapFilter.getLocationStudyUiState().connectionDepth)), 1,
+    'the first LIFO Back must pop only the top frame');
+
+  await page.locator('#eventPanel [data-study-connection-back]').press('Enter');
+  chainDetail = page.locator(`#eventPanel [data-study-detail="${maliStudyId}"]`);
+  await expectVisible(chainDetail, 'the second LIFO Back must restore Mali gold and taxation');
+  await page.waitForFunction(expected =>
+    Math.abs(document.querySelector('#eventZone').scrollTop - expected) <= 1, maliScrollTop);
+  assert.equal(await chainDetail.locator('details[data-study-disclosure="terms"]').getAttribute('open'), '',
+    'the second LIFO Back must restore Mali Key Terms');
+  assert.equal(await chainDetail.locator('details[data-study-disclosure="connections"]').getAttribute('open'), '',
+    'the second LIFO Back must restore Mali Connections');
+  assert.equal(await chainDetail.locator(`[data-study-connection="${mansaStudyId}"]`)
+    .evaluate(element => document.activeElement === element), true,
+  'the second LIFO Back must focus the exact first-hop invoker');
+  assert.equal((await page.evaluate(() => window.__mapFilter.getLocationStudyUiState().connectionDepth)), 0,
+    'the second LIFO Back must empty the stack');
+
   // A cross-location connection must not replace the original outer location return context.
   await page.evaluate(() => window.__mapFilter.openHit('3', 'mideast'));
   await page.locator('#eventPanel [data-location-study-open="3"]').click();
@@ -745,6 +858,32 @@ async function verifyTimeline(page, port) {
   }), { studyId: null, depth: 0, open: [] },
   'outer Back must clear the full connection stack and progressive-disclosure state');
 
+  // Timeline-origin study navigation must retain the exact keyed Timeline outer origin.
+  const selectedBaghdadTimeline = await page.evaluate(() => window.__mapFilter.selectTimelineEvent(
+    'world-event-3-0', { num: '3', region: 'mideast' }));
+  assert.equal(selectedBaghdadTimeline, true, 'the Baghdad timeline-origin fixture must be selectable');
+  const baghdadTimelinePanelHTML = await page.locator('#eventPanel').innerHTML();
+  const baghdadTimelineEntry = page.locator('#eventPanel [data-location-study-open="3"]');
+  assert.equal(await baghdadTimelineEntry.getAttribute('data-location-study-origin'), 'timeline',
+    'the cross-location fixture must begin from a Timeline-origin study entry');
+  await baghdadTimelineEntry.click();
+  await page.locator(`#eventPanel [data-study-event="${baghdadMerchantId}"]`).click();
+  const timelineBaghdadConnections = page.locator(
+    `#eventPanel [data-study-detail="${baghdadMerchantId}"] details[data-study-disclosure="connections"]`
+  );
+  await timelineBaghdadConnections.locator('summary').click();
+  await timelineBaghdadConnections.locator(`[data-study-connection="${delhiDevotionId}"]`).click();
+  await page.locator('#eventPanel [data-location-study-back="6"]').click();
+  assert.equal(await page.locator('#eventPanel').innerHTML(), baghdadTimelinePanelHTML,
+    'outer Back from a cross-location connection must restore the exact original Timeline detail markup');
+  const restoredTimelineEntry = page.locator('#eventPanel [data-location-study-open="3"]');
+  assert.equal(await restoredTimelineEntry.getAttribute('data-location-study-origin'), 'timeline',
+    'the restored Baghdad study entry must retain Timeline-origin semantics');
+  assert.equal(await restoredTimelineEntry.getAttribute('data-location-study-event-key'), 'world-event-3-0',
+    'the restored Baghdad study entry must retain its exact keyed Timeline event');
+  assert.equal((await page.evaluate(() => window.getTimelineState().selectedEventKey)), 'world-event-3-0',
+    'cross-location study navigation must not replace the selected Timeline event');
+
   // Every existing replacement path must clear both the connected detail and its navigation stack.
   hydraulicDetail = await openAngkorHydraulicStudy();
   await hydraulicDetail.locator('details[data-study-disclosure="connections"] summary').click();
@@ -754,6 +893,44 @@ async function verifyTimeline(page, port) {
     const state = window.__mapFilter.getLocationStudyUiState();
     return { studyId: state.studyId, depth: state.connectionDepth, open: [...state.openDisclosures] };
   }), { studyId: null, depth: 0, open: [] }, 'a Unit change must clear connected study state');
+
+  hydraulicDetail = await openAngkorHydraulicStudy();
+  await hydraulicDetail.locator('details[data-study-disclosure="connections"] summary').click();
+  await hydraulicDetail.locator(`[data-study-connection="${legitimationStudyId}"]`).click();
+  await page.evaluate(() => window.__mapFilter.setPeriod(''));
+  assert.deepEqual(await page.evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return {
+      studyId: state.studyId,
+      depth: state.connectionDepth,
+      open: [...state.openDisclosures],
+      studyViews: document.querySelectorAll('#eventPanel [data-location-study-view]').length,
+      details: document.querySelectorAll('#eventPanel [data-study-detail]').length,
+      connectionBacks: document.querySelectorAll('#eventPanel [data-study-connection-back]').length,
+      panelHTML: document.querySelector('#eventPanel').innerHTML,
+      panelShown: document.querySelector('#eventPanel').classList.contains('show'),
+      emptyDisplay: document.querySelector('#eventEmpty').style.display,
+      fitContent: document.querySelector('#eventZone').classList.contains('fit-content'),
+      scrollTop: document.querySelector('#eventZone').scrollTop,
+    };
+  }), {
+    studyId: null,
+    depth: 0,
+    open: [],
+    studyViews: 0,
+    details: 0,
+    connectionBacks: 0,
+    panelHTML: '',
+    panelShown: false,
+    emptyDisplay: 'block',
+    fitContent: false,
+    scrollTop: 0,
+  },
+  'All Units must clear both connected state and every stale study control from the panel');
+  await page.evaluate(() => window.__mapFilter.setPeriod('u1'));
+  await page.evaluate(() => window.__mapFilter.openHit('7', 'asia'));
+  await expectVisible(page.locator('#eventPanel [data-location-study-open="7"]'),
+    'returning from All Units to Unit 1 must keep ordinary location-study entry working');
 
   hydraulicDetail = await openAngkorHydraulicStudy();
   await hydraulicDetail.locator('details[data-study-disclosure="connections"] summary').click();

@@ -5257,6 +5257,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (!locationNumber || id !== locationStudyState.expandedStudyId
         || !STUDY_DISCLOSURE_KEYS.has(disclosureKey)
         || !locationStudyRecords(locationNumber).some(record => record.id === id)) return false;
+    invalidateLocationStudyRestore();
     const stateKey = `${id}:${disclosureKey}`;
     if (open) locationStudyState.openDisclosures.add(stateKey);
     else locationStudyState.openDisclosures.delete(stateKey);
@@ -5891,16 +5892,28 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       eventZone.classList.remove('fit-content');
     }
 
+    function resetOrdinaryEventPanel() {
+      showingResults = false;
+      eventPanel.classList.remove('show');
+      eventPanel.innerHTML = '';
+      eventEmpty.style.display = 'block';
+      eventZone.classList.remove('fit-content');
+      eventZone.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
     function apply() {
+      const studyOwnedEventPanel = !!eventPanel.querySelector('[data-location-study-view]');
       clearLocationStudyState();
       if (clearBtn) clearBtn.hidden = !query;
       const ownsEventDetails = activeLearningView === 'map' && activeMapMode === 'events';
+      const resetStudyPanel = studyOwnedEventPanel && ownsEventDetails && !filterActive();
       let countText = '';
       let displayedHits = null;
       if (!filterActive()) {                     // 恢复常态:先全隐,再按当前地区显示
         pinGroups().forEach(g => g.classList.remove('revealed'));
         if (activeRegion) paintRegion(activeRegion, true);
         if (ownsEventDetails) clearResults();
+        if (resetStudyPanel) resetOrdinaryEventPanel();
       } else {
         // 筛选生效时,点开的地区是"再收窄一层",不是把筛选清掉 ——
         // 否则界面写着 Period 2、地图却亮着不属于 Period 2 的标点,两边对不上。
@@ -5929,6 +5942,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       timelineRegionScope = activeRegion;
       const activeUnit = PERIODS.find(period => period.id === activePeriod);
       renderTimeline(timelineMatches, activeUnit ? activeUnit.label : '全部 Units');
+      if (resetStudyPanel) resetOrdinaryEventPanel();
       // 搜索结果本身就是事件详情区里的可操作控件；Timeline 重建会同步 canonical
       // selection,随后把结果列表还原，确保用户能点到携带精确 event key 的那一条。
       if (ownsEventDetails && tokens.length) displayedHits?.length ? renderResults(displayedHits) : renderNoResults();
