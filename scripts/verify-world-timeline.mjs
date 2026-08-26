@@ -566,6 +566,18 @@ async function verifyTimeline(page, port) {
     },
   ], 'connection buttons must use only declared targets, titles, and notes');
   await assertStudyControlAccessibility(firstStudyDetail, 'standalone desktop Hangzhou detail');
+  const desktopStandaloneOverflow = await firstStudyDetail.evaluate(detail => {
+    const panel = document.querySelector('#eventPanel');
+    return {
+      detail: { client: detail.clientWidth, scroll: detail.scrollWidth },
+      panel: { client: panel.clientWidth, scroll: panel.scrollWidth },
+      page: { client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth },
+    };
+  });
+  for (const [label, dimensions] of Object.entries(desktopStandaloneOverflow)) {
+    assert.ok(dimensions.scroll <= dimensions.client + 1,
+      `desktop standalone ${label} must not overflow with Connections visible: ${JSON.stringify(desktopStandaloneOverflow)}`);
+  }
   await connectionsSummary.focus();
   await connectionsSummary.press('Space');
   assert.equal(await connectionsSummary.evaluate(element => document.activeElement === element), true,
@@ -1198,8 +1210,21 @@ async function verifyTimeline(page, port) {
   assert.doesNotMatch(await breakpointDetail.innerText(), /[\u3400-\u9fff]/,
     'the 540px standalone progressive detail must remain English-only');
   await assertStudyControlAccessibility(breakpointDetail, '540px standalone Hangzhou detail');
-  await breakpointDetail.locator('summary[data-study-disclosure-toggle="terms"]').click();
-  await breakpointDetail.locator('summary[data-study-disclosure-toggle="connections"]').click();
+  const breakpointTermsSummary = breakpointDetail.locator('summary[data-study-disclosure-toggle="terms"]');
+  const breakpointConnectionsSummary = breakpointDetail.locator(
+    'summary[data-study-disclosure-toggle="connections"]');
+  const breakpointIndicator = summary => summary.evaluate(element =>
+    getComputedStyle(element, '::before').content.replaceAll('"', ''));
+  assert.deepEqual(await Promise.all([
+    breakpointIndicator(breakpointTermsSummary),
+    breakpointIndicator(breakpointConnectionsSummary),
+  ]), ['+', '+'], '540px standalone disclosures must expose plus indicators before opening');
+  await breakpointTermsSummary.click();
+  await breakpointConnectionsSummary.click();
+  assert.deepEqual(await Promise.all([
+    breakpointIndicator(breakpointTermsSummary),
+    breakpointIndicator(breakpointConnectionsSummary),
+  ]), ['−', '−'], '540px standalone disclosures must expose minus indicators after opening');
   await assertStudyControlAccessibility(breakpointDetail, '540px standalone Hangzhou detail');
   const breakpointTermGrid = breakpointDetail.locator('.location-study-term-grid');
   const breakpointLayout = await breakpointTermGrid.evaluate(grid => {
@@ -2581,7 +2606,24 @@ async function verifyHomeLearningShell(page, port) {
   ], 'the homepage Hangzhou detail must retain exact disclosure keys, order, counts, and collapsed defaults');
   assert.doesNotMatch(await homeStudyView.innerText(), /[\u3400-\u9fff]/,
     'the homepage progressive study view must remain English-only');
+  const homeDesktopConnectionsSummary = homeDisclosures.nth(2).locator('summary');
+  await homeDesktopConnectionsSummary.click();
+  assert.ok(await homeProgressiveDetail.locator('button[data-study-connection]:visible').count() >= 1,
+    'desktop homepage accessibility fixture must expose at least one visible connection');
   await assertStudyControlAccessibility(homeProgressiveDetail, 'homepage desktop Hangzhou detail');
+  const desktopHomepageOverflow = await homeProgressiveDetail.evaluate(detail => {
+    const panel = document.querySelector('#home-events');
+    return {
+      detail: { client: detail.clientWidth, scroll: detail.scrollWidth },
+      panel: { client: panel.clientWidth, scroll: panel.scrollWidth },
+      page: { client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth },
+    };
+  });
+  for (const [label, dimensions] of Object.entries(desktopHomepageOverflow)) {
+    assert.ok(dimensions.scroll <= dimensions.client + 1,
+      `desktop homepage ${label} must not overflow with Connections visible: ${JSON.stringify(desktopHomepageOverflow)}`);
+  }
+  await homeDesktopConnectionsSummary.click();
   const homeTermsSummary = homeDisclosures.nth(0).locator('summary');
   const homeTermsPresentation = async () => homeTermsSummary.evaluate(summary => ({
     height: summary.getBoundingClientRect().height,
@@ -2625,15 +2667,28 @@ async function verifyHomeLearningShell(page, port) {
   assert.doesNotMatch(await homeProgressiveDetail.innerText(), /[\u3400-\u9fff]/,
     'the 540px homepage progressive detail must remain English-only');
   await assertStudyControlAccessibility(homeProgressiveDetail, '540px homepage Hangzhou detail');
+  assert.equal((await homeTermsPresentation()).indicator, '+',
+    'the collapsed 540px homepage Key Terms disclosure must expose a plus indicator');
   await homeTermsSummary.press('Space');
+  assert.equal((await homeTermsPresentation()).indicator, '−',
+    'the open 540px homepage Key Terms disclosure must expose a minus indicator');
   assert.equal(await homeTermsSummary.evaluate(element => document.activeElement === element), true,
     'Space activation must keep focus on the narrow homepage disclosure summary');
-  await homeDisclosures.nth(2).locator('summary').click();
+  const homeNarrowConnectionsSummary = homeDisclosures.nth(2).locator('summary');
+  const homeNarrowConnectionIndicator = () => homeNarrowConnectionsSummary.evaluate(summary =>
+    getComputedStyle(summary, '::before').content.replaceAll('"', ''));
+  assert.equal(await homeNarrowConnectionIndicator(), '+',
+    'the collapsed 540px homepage Connections disclosure must expose a plus indicator');
+  await homeNarrowConnectionsSummary.click();
+  assert.equal(await homeNarrowConnectionIndicator(), '−',
+    'the open 540px homepage Connections disclosure must expose a minus indicator');
   await assertStudyControlAccessibility(homeProgressiveDetail, '540px homepage Hangzhou detail');
   const narrowTermLayout = await homeProgressiveDetail.locator('.location-study-term-grid').evaluate(grid => ({
     columns: getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length,
     gridClient: grid.clientWidth,
     gridScroll: grid.scrollWidth,
+    detailClient: grid.closest('[data-study-detail]').clientWidth,
+    detailScroll: grid.closest('[data-study-detail]').scrollWidth,
     panelClient: document.querySelector('#home-events').clientWidth,
     panelScroll: document.querySelector('#home-events').scrollWidth,
     pageClient: document.documentElement.clientWidth,
@@ -2642,6 +2697,7 @@ async function verifyHomeLearningShell(page, port) {
   assert.equal(narrowTermLayout.columns, 1,
     `540px homepage Key Terms must render in one column: ${JSON.stringify(narrowTermLayout)}`);
   assert.ok(narrowTermLayout.gridScroll <= narrowTermLayout.gridClient + 1
+      && narrowTermLayout.detailScroll <= narrowTermLayout.detailClient + 1
       && narrowTermLayout.panelScroll <= narrowTermLayout.panelClient + 1
       && narrowTermLayout.pageScroll <= narrowTermLayout.pageClient + 1,
     `540px homepage progressive detail must not overflow: ${JSON.stringify(narrowTermLayout)}`);
