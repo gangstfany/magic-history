@@ -1338,6 +1338,7 @@ async function verifyTimeline(page, port) {
     const termGrid = detail.querySelector('.location-study-term-grid');
     return {
       termColumns: getComputedStyle(termGrid).gridTemplateColumns.split(/\s+/).filter(Boolean).length,
+      termGrid: { client: termGrid.clientWidth, scroll: termGrid.scrollWidth },
       detail: { client: detail.clientWidth, scroll: detail.scrollWidth },
       panel: { client: panel.clientWidth, scroll: panel.scrollWidth },
       page: { client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth },
@@ -1346,6 +1347,7 @@ async function verifyTimeline(page, port) {
   assert.equal(narrowProgressiveLayout.termColumns, 1,
     `390px standalone Key Terms must use one column: ${JSON.stringify(narrowProgressiveLayout)}`);
   for (const [label, dimensions] of Object.entries({
+    termGrid: narrowProgressiveLayout.termGrid,
     detail: narrowProgressiveLayout.detail,
     eventPanel: narrowProgressiveLayout.panel,
     page: narrowProgressiveLayout.page,
