@@ -270,13 +270,13 @@ function assertStackedKeyTermLayout(layout, label) {
 async function assertComponentAwareKeyTermLayout(page, locator, label) {
   const originalInlineWidth = await locator.evaluate(grid => grid.style.width);
   try {
-    await locator.evaluate(grid => { grid.style.width = '260px'; });
+    await locator.evaluate(grid => { grid.style.width = '320px'; });
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-    assertHorizontalKeyTermLayout(await keyTermLayout(locator), `260px ${label}`);
+    assertHorizontalKeyTermLayout(await keyTermLayout(locator), `320px ${label}`);
 
-    await locator.evaluate(grid => { grid.style.width = '220px'; });
+    await locator.evaluate(grid => { grid.style.width = '300px'; });
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-    assertStackedKeyTermLayout(await keyTermLayout(locator), `220px ${label}`);
+    assertStackedKeyTermLayout(await keyTermLayout(locator), `300px ${label}`);
   } finally {
     await locator.evaluate((grid, width) => { grid.style.width = width; }, originalInlineWidth);
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -286,6 +286,7 @@ async function assertComponentAwareKeyTermLayout(page, locator, label) {
 async function waitForEmbeddedWorldLayout(page, {
   viewportWidth,
   mapZoneHeight,
+  requireHostAdjacency = true,
   timeout = 2_000,
 }) {
   try {
@@ -319,16 +320,17 @@ async function waitForEmbeddedWorldLayout(page, {
           const near = (left, right) => Math.abs(left - right) <= 1;
           const synchronizedHeights = [frameBox.height, wrapBox.height, panelBox.height]
             .every(height => near(height, studyHeight));
-          const narrow = options.expectedViewportWidth <= 900;
+          const narrow = options.expectedViewportWidth <= 1050;
           const adjacent = narrow
             ? panelBox.y >= frameBox.bottom - 1
             : panelBox.x >= frameBox.right - 1;
           const splitFits = narrow
             ? near(splitBox.height, frameBox.height + panelBox.height)
             : near(splitBox.height, studyHeight);
+          const hostLayoutMatches = options.requireHostAdjacency ? adjacent && splitFits : true;
           matches = window.innerWidth === options.expectedViewportWidth
             && near(mapZone.getBoundingClientRect().height, options.expectedMapZoneHeight)
-            && synchronizedHeights && adjacent && splitFits;
+            && synchronizedHeights && hostLayoutMatches;
         }
         stableFrames = matches ? stableFrames + 1 : 0;
         if (stableFrames >= options.consecutiveFrames) {
@@ -343,6 +345,7 @@ async function waitForEmbeddedWorldLayout(page, {
     }), {
       expectedViewportWidth: viewportWidth,
       expectedMapZoneHeight: mapZoneHeight,
+      requireHostAdjacency,
       consecutiveFrames: 4,
       timeout,
     });
@@ -2685,23 +2688,65 @@ async function verifyHomeLearningShell(page, port) {
   await waitForEmbeddedWorldLayout(page, { viewportWidth: 1440, mapZoneHeight: 500 });
   const desktopWorkspace = await page.locator('.map-card[data-subject="world"]').evaluate(card => {
     const shell = card.closest('.card').getBoundingClientRect();
+    const frameStyle = getComputedStyle(card.closest('.frame'));
     const module = card.getBoundingClientRect();
     const canvas = card.querySelector('.home-map-wrap').getBoundingClientRect();
     const panel = card.querySelector('#home-events').getBoundingClientRect();
     const panelStyle = getComputedStyle(card.querySelector('#home-events'));
     return {
+      shellWidth: shell.width,
+      frameInlinePadding: parseFloat(frameStyle.paddingLeft) + parseFloat(frameStyle.paddingRight),
       moduleShare: module.width / shell.width,
+      panelWidth: panel.width,
+      canvasWiderThanPanel: canvas.width > panel.width,
       canvasShare: canvas.width / (canvas.width + panel.width),
       equalHeight: Math.abs(canvas.height - panel.height) <= 1,
       panelOverflowY: panelStyle.overflowY,
     };
   });
-  assert.ok(desktopWorkspace.moduleShare >= 0.94,
+  assert.ok(desktopWorkspace.shellWidth >= 1279 && desktopWorkspace.shellWidth <= 1281,
+    `desktop APWH shell must be 1280px wide: ${JSON.stringify(desktopWorkspace)}`);
+  assert.ok(desktopWorkspace.frameInlinePadding >= 40 && desktopWorkspace.frameInlinePadding <= 48,
+    `desktop APWH frame must use 40-48px total inline padding: ${JSON.stringify(desktopWorkspace)}`);
+  assert.ok(desktopWorkspace.moduleShare >= 0.96,
     `desktop APWH module must use the available Main width: ${JSON.stringify(desktopWorkspace)}`);
-  assert.ok(desktopWorkspace.canvasShare >= 0.64 && desktopWorkspace.canvasShare <= 0.74,
-    `desktop APWH workspace must reserve about 70/30 for map and context: ${JSON.stringify(desktopWorkspace)}`);
+  assert.ok(desktopWorkspace.panelWidth >= 380 && desktopWorkspace.panelWidth <= 430,
+    `desktop APWH contextual panel must be 380-430px wide: ${JSON.stringify(desktopWorkspace)}`);
+  assert.equal(desktopWorkspace.canvasWiderThanPanel, true,
+    'desktop APWH map canvas must be wider than the contextual panel');
+  assert.ok(desktopWorkspace.canvasShare >= 0.64 && desktopWorkspace.canvasShare <= 0.68,
+    `desktop APWH workspace must reserve about 66/34 for map and context: ${JSON.stringify(desktopWorkspace)}`);
   assert.equal(desktopWorkspace.equalHeight, true, 'desktop APWH map and contextual panel must share a bounded height');
   assert.equal(desktopWorkspace.panelOverflowY, 'auto', 'desktop APWH contextual panel must scroll independently');
+
+  for (const viewport of [{ width: 1051, height: 900 }, { width: 1050, height: 900 }]) {
+    await page.setViewportSize(viewport);
+    await waitForEmbeddedWorldLayout(page, {
+      viewportWidth: viewport.width,
+      mapZoneHeight: 500,
+      requireHostAdjacency: false,
+    });
+    const breakpointLayout = await page.locator('.map-card[data-subject="world"]').evaluate(card => {
+      const frame = card.querySelector('#worldMapFrame').getBoundingClientRect();
+      const panel = card.querySelector('#home-events').getBoundingClientRect();
+      return {
+        frame: { right: frame.right, bottom: frame.bottom },
+        panel: { x: panel.x, y: panel.y },
+        page: {
+          client: document.documentElement.clientWidth,
+          scroll: document.documentElement.scrollWidth,
+        },
+      };
+    });
+    const sideBySide = breakpointLayout.panel.x >= breakpointLayout.frame.right - 1;
+    const stacked = breakpointLayout.panel.y >= breakpointLayout.frame.bottom - 1;
+    assert.equal(viewport.width > 1050 ? sideBySide : stacked, true,
+      `${viewport.width}px APWH host must ${viewport.width > 1050 ? 'keep' : 'stack'} the map and contextual panel ${viewport.width > 1050 ? 'side by side' : 'vertically'}: ${JSON.stringify(breakpointLayout)}`);
+    assert.ok(breakpointLayout.page.scroll <= breakpointLayout.page.client + 1,
+      `${viewport.width}px APWH host must not overflow horizontally: ${JSON.stringify(breakpointLayout)}`);
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await waitForEmbeddedWorldLayout(page, { viewportWidth: 1440, mapZoneHeight: 500 });
 
   const themeToggle = page.locator('#hostThemeToggle');
   const themePanel = page.locator('#hostThemePanel');
@@ -3225,7 +3270,7 @@ async function verifyHomeLearningShell(page, port) {
       `${viewport.width}px host: Timeline Dock must fit within the visible iframe viewport: ${JSON.stringify(sourceLayout)}`);
     const iframeBox = await page.locator('#worldMapFrame').boundingBox();
     const panelBox = await page.locator('#home-events').boundingBox();
-    assert.ok(iframeBox && panelBox && (viewport.width > 900
+    assert.ok(iframeBox && panelBox && (viewport.width > 1050
       ? panelBox.x >= iframeBox.x + iframeBox.width - 1
       : panelBox.y >= iframeBox.y + iframeBox.height - 1),
     `${viewport.width}px host: contextual panel must follow the Map and Timeline region`);
