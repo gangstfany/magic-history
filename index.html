@@ -51,10 +51,10 @@ html, body {
 .frame {
   min-height: 100%;
   display: flex; align-items: center; justify-content: center;
-  padding: clamp(14px, 3vw, 40px);
+  padding: clamp(14px, 2vw, 24px);
 }
 .card {
-  width: 100%; max-width: 1100px;
+  width: 100%; max-width: 1280px;
   background: var(--card);
   border-radius: 22px;
   box-shadow: 0 30px 70px rgba(33,31,28,0.18), 0 2px 0 rgba(255,255,255,0.4) inset;
@@ -242,7 +242,8 @@ nav.topnav {
 .mth-count:empty { display: none; }
 .map-events-split { display: flex; align-items: stretch; height: min(540px, 62vh); }
 .map-card[data-subject="world"] .map-events-split {
-  display: grid; grid-template-columns: minmax(0, 2.15fr) minmax(330px, .85fr);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(380px, 34%, 430px);
 }
 .home-map-wrap { position: relative; flex: 0 0 66.67%; height: 100%; overflow: hidden; border-right: 1px solid var(--line); background: #efe7d6; }
 .map-card[data-subject="world"] .home-map-wrap { min-width: 0; }
@@ -508,7 +509,7 @@ nav.topnav {
 .home-events .location-study-detail dd { margin: 3px 0 0; }
 .home-events .location-study-term-grid dt { min-width: 0; overflow-wrap: anywhere; }
 .home-events .location-study-term-grid dd { margin-top: 0; }
-@container study-terms (max-width: 220px) {
+@container study-terms (max-width: 300px) {
   .home-events .location-study-term-grid > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
 }
 .home-events .location-study-people { display: grid; gap: 8px; }
@@ -544,6 +545,26 @@ nav.topnav {
 .home-events .search-none span { font-size: 12px; font-weight: 600; color: var(--ink-faint, #9b9382); }
 
 /* 窗口 < 900px:2:1 分栏会把事件栏压得太窄,自动改成上下叠——地图在上、事件在下,两块都固定高度,模块整体大小不随点击变 */
+/* At intermediate widths, preserve a readable APWH detail panel by stacking it below the map. */
+@media (min-width: 901px) and (max-width: 1050px) {
+  .map-card[data-subject="world"] .map-events-split {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    grid-template-columns: none;
+  }
+  .map-card[data-subject="world"] .home-map-wrap {
+    flex: none;
+    height: 300px;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .map-card[data-subject="world"] .home-events {
+    flex: none;
+    height: 46vh;
+    overflow-y: auto;
+  }
+}
 @media (max-width: 900px) {
   .map-events-split { flex-direction: column; height: auto; }
   .map-card[data-subject="world"] .map-events-split { display: flex; grid-template-columns: none; }
