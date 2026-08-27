@@ -2728,10 +2728,21 @@ async function verifyHomeLearningShell(page, port) {
     });
     const breakpointLayout = await page.locator('.map-card[data-subject="world"]').evaluate(card => {
       const frame = card.querySelector('#worldMapFrame').getBoundingClientRect();
+      const split = card.querySelector('.map-events-split').getBoundingClientRect();
       const panel = card.querySelector('#home-events').getBoundingClientRect();
       return {
-        frame: { right: frame.right, bottom: frame.bottom },
-        panel: { x: panel.x, y: panel.y },
+        frame: {
+          x: frame.x, y: frame.y, right: frame.right, bottom: frame.bottom,
+          width: frame.width, height: frame.height,
+        },
+        split: {
+          x: split.x, y: split.y, right: split.right, bottom: split.bottom,
+          width: split.width, height: split.height,
+        },
+        panel: {
+          x: panel.x, y: panel.y, right: panel.right, bottom: panel.bottom,
+          width: panel.width, height: panel.height,
+        },
         page: {
           client: document.documentElement.clientWidth,
           scroll: document.documentElement.scrollWidth,
@@ -2742,6 +2753,16 @@ async function verifyHomeLearningShell(page, port) {
     const stacked = breakpointLayout.panel.y >= breakpointLayout.frame.bottom - 1;
     assert.equal(viewport.width > 1050 ? sideBySide : stacked, true,
       `${viewport.width}px APWH host must ${viewport.width > 1050 ? 'keep' : 'stack'} the map and contextual panel ${viewport.width > 1050 ? 'side by side' : 'vertically'}: ${JSON.stringify(breakpointLayout)}`);
+    if (viewport.width > 1050) {
+      assert.ok(Math.abs(breakpointLayout.split.height - breakpointLayout.frame.height) <= 1,
+        `${viewport.width}px APWH side-by-side split must match the synchronized child height: ${JSON.stringify(breakpointLayout)}`);
+    } else {
+      assert.ok(Math.abs(breakpointLayout.split.height
+        - (breakpointLayout.frame.height + breakpointLayout.panel.height)) <= 1,
+      `${viewport.width}px APWH stacked split must contain the combined map and panel heights: ${JSON.stringify(breakpointLayout)}`);
+      assert.ok(breakpointLayout.panel.bottom <= breakpointLayout.split.bottom + 1,
+        `${viewport.width}px APWH stacked panel bottom must stay inside the split: ${JSON.stringify(breakpointLayout)}`);
+    }
     assert.ok(breakpointLayout.page.scroll <= breakpointLayout.page.client + 1,
       `${viewport.width}px APWH host must not overflow horizontally: ${JSON.stringify(breakpointLayout)}`);
   }
