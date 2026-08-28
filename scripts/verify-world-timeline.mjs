@@ -362,6 +362,21 @@ async function trimmedTexts(locator) {
   return (await locator.allTextContents()).map(text => text.trim());
 }
 
+async function waitForTwoAnimationFrames(page) {
+  await page.evaluate(() => new Promise(resolve =>
+    requestAnimationFrame(() => requestAnimationFrame(resolve))));
+}
+
+async function toggleNativeDisclosureWithEnter(page, summary, disclosure, label, expectedOpen) {
+  await summary.focus();
+  await summary.press('Enter');
+  await waitForTwoAnimationFrames(page);
+  assert.equal(await summary.evaluate(element => document.activeElement === element), true,
+    `${label} must retain focus after native Enter activation settles`);
+  assert.equal(await disclosure.getAttribute('open'), expectedOpen ? '' : null,
+    `${label} must ${expectedOpen ? 'open' : 'close'} through native Enter activation`);
+}
+
 async function standaloneLocationStudyStateSnapshot(page) {
   return page.evaluate(() => {
     const filter = window.__mapFilter.getState();
@@ -415,13 +430,17 @@ async function assertUnitStudyBookends(page, view, label, {
   }
   assert.deepEqual(await disclosures.evaluateAll(elements => elements.map(detail => detail.open)), [false, false],
     `${label} bookend disclosures must start collapsed`);
-  const bookendSkills = cards.locator('[data-study-exam-skill]');
-  assert.deepEqual(await trimmedTexts(bookendSkills),
-    ['Contextualization', 'Comparison', 'Comparison', 'CCOT'],
-    `${label} collapsed bookends must expose exact exam skill tags in order`);
-  for (let index = 0; index < await bookendSkills.count(); index++) {
-    assert.equal(await bookendSkills.nth(index).isVisible(), true,
-      `${label} collapsed bookend skill tag ${index + 1} must remain visible`);
+  for (const [index, expectedSkills] of [
+    ['Contextualization', 'Comparison'],
+    ['Comparison', 'CCOT'],
+  ].entries()) {
+    const cardSkills = cards.nth(index).locator('[data-study-exam-skill]');
+    assert.deepEqual(await trimmedTexts(cardSkills), expectedSkills,
+      `${label} collapsed ${index === 0 ? 'Context' : 'Synthesis'} bookend must expose its exact exam skill tags`);
+    for (let skillIndex = 0; skillIndex < await cardSkills.count(); skillIndex++) {
+      assert.equal(await cardSkills.nth(skillIndex).isVisible(), true,
+        `${label} collapsed ${index === 0 ? 'Context' : 'Synthesis'} skill tag ${skillIndex + 1} must remain visible`);
+    }
   }
 
   const studyDetailState = () => view.evaluate(element => ({
@@ -442,12 +461,8 @@ async function assertUnitStudyBookends(page, view, label, {
   }));
   assert.ok(contextPresentation.height >= 44,
     `${label} Context summary must retain a 44px target: ${JSON.stringify(contextPresentation)}`);
-  await contextSummary.focus();
-  await contextSummary.press('Enter');
-  assert.equal(await contextSummary.evaluate(element => document.activeElement === element), true,
-    `${label} Context summary must retain focus after Enter opens it`);
-  assert.equal(await contextDisclosure.getAttribute('open'), '',
-    `${label} Context summary must open through native Enter activation`);
+  await toggleNativeDisclosureWithEnter(page, contextSummary, contextDisclosure,
+    `${label} Context summary`, true);
   assert.deepEqual(await studyDetailState(), detailStateBefore,
     `${label} Context opening must preserve the expanded study event and detail count`);
   if (stateBefore) {
@@ -463,33 +478,53 @@ async function assertUnitStudyBookends(page, view, label, {
     assert.equal(await contextTakeaways.nth(index).isVisible(), true,
       `${label} open Context takeaway ${index + 1} must be visible`);
   }
-  await contextSummary.press('Enter');
-  assert.equal(await contextSummary.evaluate(element => document.activeElement === element), true,
-    `${label} Context summary must retain focus after Enter closes it`);
-  assert.equal(await contextDisclosure.getAttribute('open'), null,
-    `${label} Context summary must close through native Enter activation`);
+  await toggleNativeDisclosureWithEnter(page, contextSummary, contextDisclosure,
+    `${label} Context summary`, false);
   assert.deepEqual(await studyDetailState(), detailStateBefore,
-  `${label} Context open-close must preserve the expanded study event and detail count`);
+    `${label} Context open-close must preserve the expanded study event and detail count`);
   if (stateBefore) {
     assert.deepEqual(await stateSnapshot(), stateBefore,
       `${label} Context closing must preserve filters, Timeline selection, location, and the map transform`);
   }
 
   const originalInlineWidth = await view.evaluate(element => element.style.width);
+  const originalContextOpen = await contextDisclosure.evaluate(detail => detail.open);
+  const detailStateBeforeOverflow = await studyDetailState();
+  const stateBeforeOverflow = stateSnapshot && await stateSnapshot();
   try {
+    if (!originalContextOpen) {
+      await toggleNativeDisclosureWithEnter(page, contextSummary, contextDisclosure,
+        `${label} responsive Context summary`, true);
+    }
     for (const width of [380, 410, 430]) {
       await view.evaluate((element, nextWidth) => { element.style.width = `${nextWidth}px`; }, width);
-      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-      const dimensions = await view.evaluate(element => ({
+      await waitForTwoAnimationFrames(page);
+      const dimensions = await view.evaluate((element, requestedWidth) => ({
+        requestedWidth,
+        effectiveWidth: element.getBoundingClientRect().width,
         clientWidth: element.clientWidth,
         scrollWidth: element.scrollWidth,
-      }));
+      }), width);
+      assert.equal(await contextDisclosure.getAttribute('open'), '',
+        `${label} Context must remain expanded at ${width}px`);
+      assert.ok(Math.abs(dimensions.effectiveWidth - dimensions.requestedWidth) <= 1,
+        `${label} bookend view must measure near its requested ${width}px width: ${JSON.stringify(dimensions)}`);
       assert.ok(dimensions.scrollWidth <= dimensions.clientWidth + 1,
-        `${label} ${width}px bookend view must not overflow horizontally: ${JSON.stringify(dimensions)}`);
+        `${label} ${width}px expanded-Context bookend view must not overflow horizontally: ${JSON.stringify(dimensions)}`);
     }
   } finally {
     await view.evaluate((element, width) => { element.style.width = width; }, originalInlineWidth);
-    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await waitForTwoAnimationFrames(page);
+    if ((await contextDisclosure.evaluate(detail => detail.open)) !== originalContextOpen) {
+      await toggleNativeDisclosureWithEnter(page, contextSummary, contextDisclosure,
+        `${label} responsive Context summary`, originalContextOpen);
+    }
+  }
+  assert.deepEqual(await studyDetailState(), detailStateBeforeOverflow,
+    `${label} responsive Context checks must preserve the expanded study event and detail count`);
+  if (stateBeforeOverflow) {
+    assert.deepEqual(await stateSnapshot(), stateBeforeOverflow,
+      `${label} responsive Context checks must preserve filters, Timeline selection, location, and the map transform`);
   }
 }
 
