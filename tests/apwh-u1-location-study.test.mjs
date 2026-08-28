@@ -685,6 +685,12 @@ const unitCardValidationFailureCases = [
     replacement: "'',",
     expectedMessage: 'Invalid Unit 1 unit card context apwh-u1-context-global-tapestry: empty takeaway',
   },
+  {
+    label: 'two unit-card takeaways',
+    search: "        'West African rulers converted control of trade into revenue, military capacity, and prestige.',\n      ],",
+    replacement: '      ],',
+    expectedMessage: 'Invalid Unit 1 unit card context apwh-u1-context-global-tapestry: takeaways must contain exactly three items',
+  },
 ];
 
 for (const { label, search, replacement, expectedMessage } of unitCardValidationFailureCases) {

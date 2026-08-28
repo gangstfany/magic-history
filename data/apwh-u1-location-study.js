@@ -617,7 +617,7 @@
         }
       }
       validateExamSkills(card.examSkills, fail);
-      if (card.takeaways.length < 2 || card.takeaways.length > 3) fail('takeaway count must be 2–3');
+      if (card.takeaways.length !== 3) fail('takeaways must contain exactly three items');
       for (const takeaway of card.takeaways) {
         if (typeof takeaway !== 'string' || !takeaway.trim()) fail('empty takeaway');
         if (!/[A-Za-z]/.test(takeaway) || /[\u3400-\u9fff]/.test(takeaway)) {
