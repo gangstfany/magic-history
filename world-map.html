@@ -404,10 +404,31 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 .location-study-detail header, .location-study-detail section, .location-study-detail p, .location-study-detail ul, .location-study-detail dl { min-width: 0; margin: 0; }
 .location-study-detail-header { display: grid; gap: 7px; padding-bottom: 14px; border-bottom: 1px solid #decfbd; }
 .location-study-eyebrow { color: #9a472c; font-size: 11px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
-.location-study-topics, .location-study-themes { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.location-study-topics, .location-study-themes, .location-study-exam-skills { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .location-study-topic, .location-study-theme { display: inline-flex; align-items: center; min-height: 26px; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; line-height: 1.2; }
 .location-study-topic { border: 1px solid #d7b299; color: #874228; background: #fff4e7; }
 .location-study-theme { border: 1px solid color-mix(in srgb, var(--study-theme-color, #8b1a1a) 55%, #fff); color: #fff; background: var(--study-theme-color, #8b1a1a); }
+.location-study-exam-skills-block { display: grid; gap: 5px; min-width: 0; }
+.location-study-exam-skills-label { color: #176369; font-size: 11px; font-weight: 800; line-height: 1.2; }
+.location-study-exam-skill { display: inline-flex; align-items: center; min-height: 26px; padding: 3px 8px; border: 1px solid #91bec1; border-radius: 999px; color: #176369; background: #edf6f7; font-size: 11px; font-weight: 800; line-height: 1.2; }
+.location-study-unit-card { min-width: 0; border: 1px solid var(--line); border-left: 4px solid #28708a; border-radius: 11px; background: var(--surface); box-shadow: var(--shadow-sm); overflow: hidden; overflow-wrap: anywhere; }
+.location-study-unit-card[data-study-unit-card="synthesis"] { border-left-color: #b85e3c; }
+.location-study-unit-card details { min-width: 0; }
+.location-study-unit-card summary { position: relative; display: grid; gap: 5px; min-width: 0; min-height: 44px; padding: 12px 46px 13px 14px; color: var(--ink); cursor: pointer; list-style: none; }
+.location-study-unit-card summary::-webkit-details-marker { display: none; }
+.location-study-unit-card summary::after { content: "+"; position: absolute; top: 13px; right: 13px; display: inline-grid; place-items: center; width: 24px; height: 24px; border: 1px solid #28708a; border-radius: 50%; color: #176369; font-size: 17px; font-weight: 700; line-height: 1; }
+.location-study-unit-card[data-study-unit-card="synthesis"] summary::after { border-color: #b85e3c; color: #9a472c; }
+.location-study-unit-card details[open] summary::after { content: "−"; }
+.location-study-unit-card summary:focus-visible { position: relative; z-index: 1; outline: 3px solid #28708a; outline-offset: -3px; }
+.location-study-unit-role { min-width: 0; color: #176369; font-size: 11px; font-weight: 800; letter-spacing: .06em; line-height: 1.3; text-transform: uppercase; }
+.location-study-unit-card[data-study-unit-card="synthesis"] .location-study-unit-role { color: #9a472c; }
+.location-study-unit-title { min-width: 0; font-size: 15px; font-weight: 800; line-height: 1.35; }
+.location-study-unit-summary { min-width: 0; color: var(--ink-soft); font-size: 12.5px; font-weight: 500; line-height: 1.6; }
+.location-study-unit-body { display: grid; gap: 9px; min-width: 0; padding: 0 14px 15px; border-top: 1px solid var(--line); }
+.location-study-unit-body p, .location-study-unit-body ul { min-width: 0; margin: 0; color: var(--ink-soft); font-size: 12.5px; line-height: 1.6; }
+.location-study-unit-body p { padding-top: 12px; }
+.location-study-unit-body ul { padding-left: 20px; }
+.location-study-unit-body li + li { margin-top: 5px; }
 .location-study-detail-title { margin: 2px 0 0; color: #4b271c; font-size: 19px; line-height: 1.3; }
 .location-study-detail-date { color: #9a472c; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .location-study-core { display: grid; gap: 13px; min-width: 0; }
@@ -5114,6 +5135,28 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       + `<div class="location-study-connection-list">${connections}</div></section>`;
   }
 
+  function studyExamSkillsHTML(skills) {
+    const tags = skills.map(skill => `<span class="location-study-exam-skill" data-study-exam-skill>`
+      + `${escapeTimelineText(skill)}</span>`).join('');
+    return `<span class="location-study-exam-skills-block">`
+      + `<span class="location-study-exam-skills-label" data-study-exam-skills-label>Exam Skills</span>`
+      + `<span class="location-study-exam-skills">${tags}</span></span>`;
+  }
+
+  function studyUnitCardHTML(card) {
+    const role = card.kind === 'context' ? 'Unit 1 Context Card' : 'Unit 1 Synthesis Card';
+    const takeaways = card.takeaways.map(takeaway => `<li data-study-unit-takeaway>`
+      + `${escapeTimelineText(takeaway)}</li>`).join('');
+    return `<article class="location-study-unit-card" data-study-unit-card="${escapeTimelineText(card.kind)}">`
+      + `<details data-study-unit-disclosure="${escapeTimelineText(card.kind)}">`
+      + `<summary><span class="location-study-unit-role">${role}</span>`
+      + `<span class="location-study-unit-title">${escapeTimelineText(card.title)}</span>`
+      + `<span class="location-study-unit-summary">${escapeTimelineText(card.summary)}</span>`
+      + studyExamSkillsHTML(card.examSkills) + `</summary>`
+      + `<div class="location-study-unit-body"><p data-study-unit-prompt>${escapeTimelineText(card.prompt)}</p>`
+      + `<ul>${takeaways}</ul></div></details></article>`;
+  }
+
   function studyDetailHTML(record) {
     const people = record.keyPeople.map(person => `<div><dt>${escapeTimelineText(person.name)}</dt>`
       + `<dd>${escapeTimelineText(person.role)}</dd></div>`).join('');
@@ -5139,6 +5182,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       + `<div class="location-study-eyebrow">Unit 1 study point</div>`
       + `<div class="location-study-topics">${topics}</div>`
       + `<div class="location-study-themes">${themes}</div>`
+      + studyExamSkillsHTML(record.examSkills)
       + `<h3 class="location-study-detail-title">${escapeTimelineText(record.title)}</h3>`
       + `<div class="location-study-detail-date">${escapeTimelineText(record.dateLabel)}</div></header>`
       + `<div class="location-study-core">`
@@ -5172,6 +5216,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       locationStudyState.expandedStudyId = records[0].id;
     }
     const api = window.APWH_U1_LOCATION_STUDY;
+    const contextCard = api.getUnitCard('context');
+    const synthesisCard = api.getUnitCard('synthesis');
+    if (!contextCard || !synthesisCard) {
+      throw new Error('Invalid Unit 1 study bookends: missing context or synthesis card');
+    }
     const locationName = api.locationName(locationNumber);
     const regionName = regionNames[pinRegion(locationNumber)];
     const connectionFrame = locationStudyState.connectionStack.at(-1);
@@ -5201,7 +5250,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       + `<button type="button" class="rt-btn ghost location-study-back" data-location-study-back="${escapeTimelineText(locationNumber)}">Back to location events</button>`
       + `<h2 class="location-study-title" tabindex="-1">${escapeTimelineText(locationName)} · Unit 1</h2>`
       + `<p class="location-study-context">${escapeTimelineText(regionName)} · ${escapeTimelineText(records.length)} study points · chronological order</p>`
-      + `<div class="location-study-list">${rows}</div></div>`;
+      + `<div class="location-study-list">${studyUnitCardHTML(contextCard)}${rows}${studyUnitCardHTML(synthesisCard)}</div></div>`;
     eventEmpty.style.display = 'none';
     eventPanel.classList.add('show');
     eventZone.classList.remove('fit-content');

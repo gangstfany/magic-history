@@ -480,10 +480,31 @@ nav.topnav {
 .home-events .location-study-detail header, .home-events .location-study-detail section, .home-events .location-study-detail p, .home-events .location-study-detail ul, .home-events .location-study-detail dl { min-width: 0; margin: 0; }
 .home-events .location-study-detail-header { display: grid; gap: 7px; padding-bottom: 14px; border-bottom: 1px solid #decfbd; }
 .home-events .location-study-eyebrow { color: #9a472c; font-size: 11px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
-.home-events .location-study-topics, .home-events .location-study-themes { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.home-events .location-study-topics, .home-events .location-study-themes, .home-events .location-study-exam-skills { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .home-events .location-study-topic, .home-events .location-study-theme { display: inline-flex; align-items: center; min-height: 26px; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; line-height: 1.2; }
 .home-events .location-study-topic { border: 1px solid #d7b299; color: #874228; background: #fff4e7; }
 .home-events .location-study-theme { border: 1px solid color-mix(in srgb, var(--study-theme-color, #8b1a1a) 55%, #fff); color: #fff; background: var(--study-theme-color, #8b1a1a); }
+.home-events .location-study-exam-skills-block { display: grid; gap: 5px; min-width: 0; }
+.home-events .location-study-exam-skills-label { color: #176369; font-size: 11px; font-weight: 800; line-height: 1.2; }
+.home-events .location-study-exam-skill { display: inline-flex; align-items: center; min-height: 26px; padding: 3px 8px; border: 1px solid #91bec1; border-radius: 999px; color: #176369; background: #edf6f7; font-size: 11px; font-weight: 800; line-height: 1.2; }
+.home-events .location-study-unit-card { min-width: 0; border: 1px solid var(--line); border-left: 4px solid #28708a; border-radius: 11px; background: var(--card); box-shadow: 0 1px 2px rgba(33,31,28,0.06); overflow: hidden; overflow-wrap: anywhere; }
+.home-events .location-study-unit-card[data-study-unit-card="synthesis"] { border-left-color: #b85e3c; }
+.home-events .location-study-unit-card details { min-width: 0; }
+.home-events .location-study-unit-card summary { position: relative; display: grid; gap: 5px; min-width: 0; min-height: 44px; padding: 12px 46px 13px 14px; color: var(--ink); cursor: pointer; list-style: none; }
+.home-events .location-study-unit-card summary::-webkit-details-marker { display: none; }
+.home-events .location-study-unit-card summary::after { content: "+"; position: absolute; top: 13px; right: 13px; display: inline-grid; place-items: center; width: 24px; height: 24px; border: 1px solid #28708a; border-radius: 50%; color: #176369; font-size: 17px; font-weight: 700; line-height: 1; }
+.home-events .location-study-unit-card[data-study-unit-card="synthesis"] summary::after { border-color: #b85e3c; color: #9a472c; }
+.home-events .location-study-unit-card details[open] summary::after { content: "−"; }
+.home-events .location-study-unit-card summary:focus-visible { position: relative; z-index: 1; outline: 3px solid #28708a; outline-offset: -3px; }
+.home-events .location-study-unit-role { min-width: 0; color: #176369; font-size: 11px; font-weight: 800; letter-spacing: .06em; line-height: 1.3; text-transform: uppercase; }
+.home-events .location-study-unit-card[data-study-unit-card="synthesis"] .location-study-unit-role { color: #9a472c; }
+.home-events .location-study-unit-title { min-width: 0; font-size: 15px; font-weight: 800; line-height: 1.35; }
+.home-events .location-study-unit-summary { min-width: 0; color: var(--ink-soft); font-size: 12.5px; font-weight: 500; line-height: 1.6; }
+.home-events .location-study-unit-body { display: grid; gap: 9px; min-width: 0; padding: 0 14px 15px; border-top: 1px solid var(--line); }
+.home-events .location-study-unit-body p, .home-events .location-study-unit-body ul { min-width: 0; margin: 0; color: var(--ink-soft); font-size: 12.5px; line-height: 1.6; }
+.home-events .location-study-unit-body p { padding-top: 12px; }
+.home-events .location-study-unit-body ul { padding-left: 20px; }
+.home-events .location-study-unit-body li + li { margin-top: 5px; }
 .home-events .location-study-detail-title { margin: 2px 0 0; color: #4b271c; font-size: 19px; line-height: 1.3; }
 .home-events .location-study-detail-date { color: #9a472c; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .home-events .location-study-core { display: grid; gap: 13px; min-width: 0; }
@@ -938,6 +959,47 @@ nav.topnav {
   const reduceMotionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
   const prefersReducedMotion = () => reduceMotionMQ.matches;
   const homeEvents = document.getElementById('home-events');
+  const escapeHomeStudyText = value => String(value || '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[ch]);
+
+  function homeStudyExamSkillsHTML(skills) {
+    const tags = skills.map(skill => `<span class="location-study-exam-skill" data-study-exam-skill>`
+      + `${escapeHomeStudyText(skill)}</span>`).join('');
+    return `<span class="location-study-exam-skills-block">`
+      + `<span class="location-study-exam-skills-label" data-study-exam-skills-label>Exam Skills</span>`
+      + `<span class="location-study-exam-skills">${tags}</span></span>`;
+  }
+
+  function homeStudyUnitCardHTML(card) {
+    const role = card.kind === 'context' ? 'Unit 1 Context Card' : 'Unit 1 Synthesis Card';
+    const takeaways = card.takeaways.map(takeaway => `<li data-study-unit-takeaway>`
+      + `${escapeHomeStudyText(takeaway)}</li>`).join('');
+    return `<article class="location-study-unit-card" data-study-unit-card="${escapeHomeStudyText(card.kind)}">`
+      + `<details data-study-unit-disclosure="${escapeHomeStudyText(card.kind)}">`
+      + `<summary><span class="location-study-unit-role">${role}</span>`
+      + `<span class="location-study-unit-title">${escapeHomeStudyText(card.title)}</span>`
+      + `<span class="location-study-unit-summary">${escapeHomeStudyText(card.summary)}</span>`
+      + homeStudyExamSkillsHTML(card.examSkills) + `</summary>`
+      + `<div class="location-study-unit-body"><p data-study-unit-prompt>${escapeHomeStudyText(card.prompt)}</p>`
+      + `<ul>${takeaways}</ul></div></details></article>`;
+  }
+
+  function renderHomeStudyBookends() {
+    const list = homeEvents?.querySelector('[data-location-study-view] .location-study-list');
+    if (!list) return;
+    let api;
+    try { api = worldMapFrame.contentWindow.APWH_U1_LOCATION_STUDY; } catch (err) {}
+    const contextCard = api?.getUnitCard?.('context');
+    const synthesisCard = api?.getUnitCard?.('synthesis');
+    if (!contextCard || !synthesisCard) {
+      throw new Error('Invalid homepage Unit 1 study bookends: missing context or synthesis card');
+    }
+    list.querySelectorAll(':scope > [data-study-unit-card]').forEach(card => card.remove());
+    list.insertAdjacentHTML('afterbegin', homeStudyUnitCardHTML(contextCard));
+    list.insertAdjacentHTML('beforeend', homeStudyUnitCardHTML(synthesisCard));
+  }
+
   function resetHomeEvents() {
     if (!homeEvents) return;
     homeEvents.setAttribute('aria-label', '历史事件');
@@ -1016,6 +1078,7 @@ nav.topnav {
     const emptyHTML = !panelHTML && empty && getComputedStyle(empty).display !== 'none'
       ? `<div class="he-empty">${empty.innerHTML}</div>` : '';
     homeEvents.innerHTML = tabsHTML + panelHTML + emptyHTML;
+    renderHomeStudyBookends();
     if (homeEvents.innerHTML.trim()) {
       homeEvents.scrollTop = studyRestore ? studyRestore.scrollTop : 0;
       // 因果链的骨架比右栏高得多(Unit 2→3 有 10 环),每步都复位到顶会把"当前这一环"留在屏幕外。
