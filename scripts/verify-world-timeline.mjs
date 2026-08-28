@@ -366,13 +366,15 @@ async function standaloneLocationStudyStateSnapshot(page) {
   return page.evaluate(() => {
     const filter = window.__mapFilter.getState();
     const timeline = window.getTimelineState();
+    const studyView = document.querySelector('#eventPanel [data-location-study-view]');
     return {
       filter: { query: filter.query, period: filter.period, cats: [...filter.cats].sort() },
       timeline: {
         selectedEventKey: timeline.selectedEventKey,
         selectedAnchor: timeline.selectedAnchor,
       },
-      selectedLocation: document.querySelector('#eventPanel .event-head .badge')?.textContent.trim(),
+      selectedLocation: studyView?.dataset.locationStudyView
+        ?? document.querySelector('#eventPanel .event-head .badge')?.textContent.trim() ?? null,
       selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
         .map(group => group.querySelector('text')?.textContent.trim()).filter(Boolean).sort(),
       mapTransform: document.querySelector('#zoom-layer')?.getAttribute('transform'),
@@ -380,7 +382,10 @@ async function standaloneLocationStudyStateSnapshot(page) {
   });
 }
 
-async function assertUnitStudyBookends(page, view, label) {
+async function assertUnitStudyBookends(page, view, label, {
+  stateSnapshot = null,
+  expectedSelectedLocation = null,
+} = {}) {
   const cards = view.locator('[data-study-unit-card]');
   assert.equal(await cards.count(), 2, `${label} must render exactly two Unit 1 bookend cards`);
   assert.deepEqual(await cards.evaluateAll(elements => elements.map(card => card.dataset.studyUnitCard)),
@@ -388,18 +393,19 @@ async function assertUnitStudyBookends(page, view, label) {
 
   const list = view.locator('.location-study-list');
   assert.equal(await list.count(), 1, `${label} must render one location-study list for its semantic children`);
-  const semanticChildren = await list.evaluate(element => [...element.children]
-    .filter(child => child.matches('[data-study-unit-card], [data-study-event]'))
-    .map(child => child.matches('[data-study-unit-card]')
-      ? { type: 'unit-card', kind: child.dataset.studyUnitCard }
-      : { type: 'study-event', id: child.dataset.studyEvent }));
-  assert.deepEqual(semanticChildren[0], { type: 'unit-card', kind: 'context' },
+  const semanticChildren = await list.evaluate(element => [...element.children].map(child =>
+    child.dataset.studyUnitCard || child.querySelector('[data-study-event]')?.dataset.studyEvent || null));
+  assert.equal(semanticChildren.length, 5,
+    `${label} location-study list must contain exactly two bookends and three study-event children: ${JSON.stringify(semanticChildren)}`);
+  assert.ok(semanticChildren.every(Boolean),
+    `${label} location-study list must not contain unrelated direct children: ${JSON.stringify(semanticChildren)}`);
+  assert.equal(semanticChildren[0], 'context',
     `${label} location-study list must begin with the Context bookend`);
-  assert.deepEqual(semanticChildren.at(-1), { type: 'unit-card', kind: 'synthesis' },
+  assert.equal(semanticChildren.at(-1), 'synthesis',
     `${label} location-study list must end with the Synthesis bookend`);
-  assert.ok(semanticChildren.slice(1, -1).length > 0
-      && semanticChildren.slice(1, -1).every(child => child.type === 'study-event'),
-  `${label} location-study list must keep all study-event children between its bookends: ${JSON.stringify(semanticChildren)}`);
+  assert.deepEqual(semanticChildren.slice(1, -1), await view.locator('[data-study-event]').evaluateAll(
+    elements => elements.map(element => element.dataset.studyEvent)),
+  `${label} location-study list must keep the exact three study-event children between its bookends`);
 
   const disclosures = cards.locator('details[data-study-unit-disclosure]');
   assert.equal(await disclosures.count(), 2, `${label} bookend cards must each contain one native disclosure`);
@@ -409,14 +415,25 @@ async function assertUnitStudyBookends(page, view, label) {
   }
   assert.deepEqual(await disclosures.evaluateAll(elements => elements.map(detail => detail.open)), [false, false],
     `${label} bookend disclosures must start collapsed`);
-  assert.deepEqual(await trimmedTexts(cards.locator('[data-study-exam-skill]')),
+  const bookendSkills = cards.locator('[data-study-exam-skill]');
+  assert.deepEqual(await trimmedTexts(bookendSkills),
     ['Contextualization', 'Comparison', 'Comparison', 'CCOT'],
     `${label} collapsed bookends must expose exact exam skill tags in order`);
+  for (let index = 0; index < await bookendSkills.count(); index++) {
+    assert.equal(await bookendSkills.nth(index).isVisible(), true,
+      `${label} collapsed bookend skill tag ${index + 1} must remain visible`);
+  }
 
-  const detailStateBefore = await view.evaluate(element => ({
+  const studyDetailState = () => view.evaluate(element => ({
     detailCount: element.querySelectorAll('[data-study-detail]').length,
     expandedStudyEventId: element.querySelector('[data-study-event][aria-expanded="true"]')?.dataset.studyEvent || null,
   }));
+  const detailStateBefore = await studyDetailState();
+  const stateBefore = stateSnapshot && await stateSnapshot();
+  if (expectedSelectedLocation !== null) {
+    assert.equal(stateBefore?.selectedLocation, expectedSelectedLocation,
+      `${label} Context state snapshot must retain its concrete selected location identifier`);
+  }
   const contextDisclosure = disclosures.nth(0);
   const contextSummary = contextDisclosure.locator('summary');
   assert.equal(await contextSummary.count(), 1, `${label} Context bookend must use one native summary`);
@@ -431,6 +448,12 @@ async function assertUnitStudyBookends(page, view, label) {
     `${label} Context summary must retain focus after Enter opens it`);
   assert.equal(await contextDisclosure.getAttribute('open'), '',
     `${label} Context summary must open through native Enter activation`);
+  assert.deepEqual(await studyDetailState(), detailStateBefore,
+    `${label} Context opening must preserve the expanded study event and detail count`);
+  if (stateBefore) {
+    assert.deepEqual(await stateSnapshot(), stateBefore,
+      `${label} Context opening must preserve filters, Timeline selection, location, and the map transform`);
+  }
   const contextPrompt = contextDisclosure.locator('[data-study-unit-prompt]');
   const contextTakeaways = contextDisclosure.locator('[data-study-unit-takeaway]');
   assert.equal(await contextPrompt.count(), 1, `${label} open Context must reveal one prompt`);
@@ -445,11 +468,12 @@ async function assertUnitStudyBookends(page, view, label) {
     `${label} Context summary must retain focus after Enter closes it`);
   assert.equal(await contextDisclosure.getAttribute('open'), null,
     `${label} Context summary must close through native Enter activation`);
-  assert.deepEqual(await view.evaluate(element => ({
-    detailCount: element.querySelectorAll('[data-study-detail]').length,
-    expandedStudyEventId: element.querySelector('[data-study-event][aria-expanded="true"]')?.dataset.studyEvent || null,
-  })), detailStateBefore,
+  assert.deepEqual(await studyDetailState(), detailStateBefore,
   `${label} Context open-close must preserve the expanded study event and detail count`);
+  if (stateBefore) {
+    assert.deepEqual(await stateSnapshot(), stateBefore,
+      `${label} Context closing must preserve filters, Timeline selection, location, and the map transform`);
+  }
 
   const originalInlineWidth = await view.evaluate(element => element.style.width);
   try {
@@ -697,12 +721,17 @@ async function verifyTimeline(page, port) {
   assert.ok(studyHeadingFocus.width >= 2,
     'the programmatically focused study heading must have a substantial focus outline');
 
+  const standaloneStudyContext = hangzhouStudyView.locator('.location-study-context');
+  assert.equal(await standaloneStudyContext.count(), 1,
+    'standalone Hangzhou study view must expose one location-study context header');
+  assert.match((await standaloneStudyContext.innerText()).trim(), /\b3 study points\b/,
+    'standalone Hangzhou study context must display 3 study points');
   const studyRows = hangzhouStudyView.locator('[data-study-event]');
   assert.equal(await studyRows.count(), 3, 'Hangzhou must render three study points');
-  const standaloneBookendState = await standaloneLocationStudyStateSnapshot(page);
-  await assertUnitStudyBookends(page, hangzhouStudyView, 'standalone Hangzhou');
-  assert.deepEqual(await standaloneLocationStudyStateSnapshot(page), standaloneBookendState,
-    'standalone Hangzhou Context open-close must preserve filters, Timeline selection, location, and the map transform');
+  await assertUnitStudyBookends(page, hangzhouStudyView, 'standalone Hangzhou', {
+    stateSnapshot: () => standaloneLocationStudyStateSnapshot(page),
+    expectedSelectedLocation: '1',
+  });
   assert.deepEqual(await trimmedTexts(hangzhouStudyView.locator('[data-study-date]')),
     ['960–1279', '1000–1279', '1100–1279'],
     'Hangzhou study points must remain in chronological order');
@@ -2942,6 +2971,11 @@ async function verifyHomeLearningShell(page, port) {
     'the cloned homepage study view must retain its English heading');
   assert.equal(await homeStudyHeading.evaluate(element => document.activeElement === element), true,
     'opening study from the clone must focus the cloned heading');
+  const homeStudyContext = homeStudyView.locator('.location-study-context');
+  assert.equal(await homeStudyContext.count(), 1,
+    'homepage Hangzhou study view must expose one location-study context header');
+  assert.match((await homeStudyContext.innerText()).trim(), /\b3 study points\b/,
+    'homepage Hangzhou study context must display 3 study points');
   const homeStudyRows = homeStudyView.locator('[data-study-event]');
   assert.equal(await homeStudyRows.count(), 3,
     'the cloned homepage study view must expose all three Hangzhou study points');
