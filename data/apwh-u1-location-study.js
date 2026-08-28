@@ -11,6 +11,7 @@
 
   const VALID_TOPIC_CODES = new Set(['1.1', '1.2', '1.3', '1.5', '1.7']);
   const VALID_THEME_IDS = new Set(['GOV', 'ECN', 'CDI', 'SIO', 'TEC']);
+  const VALID_EXAM_SKILLS = new Set(['Causation', 'Comparison', 'CCOT', 'Contextualization']);
   const STUDY_CONTEXT = {
     'apwh-u1-hangzhou-song-commercial-revolution': [['1.1', '1.7'], ['ECN', 'GOV']],
     'apwh-u1-hangzhou-grand-canal-urban-market': [['1.1', '1.7'], ['ECN', 'GOV', 'TEC']],
@@ -126,6 +127,7 @@
     };
     return Object.freeze({
       ...record,
+      examSkills: Object.freeze(Array.isArray(record.examSkills) ? [...record.examSkills] : []),
       topicCodes: Object.freeze([...topicCodes]),
       themeIds: Object.freeze([...themeIds]),
       causeStudyPointIds: Object.freeze([...connections.causeStudyPointIds]),
@@ -139,6 +141,14 @@
     });
   }
 
+  function freezeUnitCard(card) {
+    return Object.freeze({
+      ...card,
+      examSkills: Object.freeze(Array.isArray(card.examSkills) ? [...card.examSkills] : []),
+      takeaways: Object.freeze(Array.isArray(card.takeaways) ? [...card.takeaways] : []),
+    });
+  }
+
   function compareRecords(a, b) {
     return a.startYear - b.startYear
       || a.endYear - b.endYear
@@ -148,6 +158,7 @@
   const STUDY_EVENTS = Object.freeze([
     freezeRecord({
       id: 'apwh-u1-hangzhou-song-commercial-revolution',
+      examSkills: ['Causation', 'CCOT'],
       locationNumber: '1',
       mainEventKey: 'world-event-1-0',
       title: 'Song Commercial Revolution',
@@ -170,6 +181,7 @@
     }),
     freezeRecord({
       id: 'apwh-u1-hangzhou-grand-canal-urban-market',
+      examSkills: ['Causation'],
       locationNumber: '1',
       mainEventKey: 'world-event-1-0',
       title: 'Grand Canal and the Hangzhou Market',
@@ -192,6 +204,7 @@
     }),
     freezeRecord({
       id: 'apwh-u1-hangzhou-paper-money-maritime-tools',
+      examSkills: ['Causation', 'Comparison'],
       locationNumber: '1',
       mainEventKey: 'world-event-1-0',
       title: 'Paper Money and Maritime Technology',
@@ -214,6 +227,7 @@
     }),
     freezeRecord({
       id: 'apwh-u1-angkor-khmer-hydraulic-state',
+      examSkills: ['Causation', 'Comparison'],
       locationNumber: '7',
       mainEventKey: 'world-event-7-0',
       title: "Angkor's Hydraulic State",
@@ -236,6 +250,7 @@
     }),
     freezeRecord({
       id: 'apwh-u1-angkor-hindu-buddhist-legitimation',
+      examSkills: ['Causation', 'Comparison'],
       locationNumber: '7',
       mainEventKey: 'world-event-7-0',
       title: 'Hindu and Buddhist Legitimation at Angkor',
@@ -258,6 +273,7 @@
     }),
     freezeRecord({
       id: 'apwh-u1-delhi-sultanate-state-building',
+      examSkills: ['Comparison', 'Causation'],
       locationNumber: '6',
       mainEventKey: 'world-event-6-0',
       title: 'Delhi Sultanate State Building',
@@ -280,6 +296,7 @@
     }),
     freezeRecord({
       id: 'apwh-u1-delhi-bhakti-sufi-devotion',
+      examSkills: ['Comparison', 'CCOT'],
       locationNumber: '6',
       mainEventKey: 'world-event-6-4',
       title: 'Bhakti and Sufi Devotional Traditions',
@@ -302,6 +319,7 @@
     }),
     freezeRecord({
       id: 'apwh-u1-baghdad-abbasid-knowledge-hub',
+      examSkills: ['Causation', 'CCOT'],
       locationNumber: '3',
       mainEventKey: 'world-event-3-0',
       title: 'Baghdad as an Abbasid Knowledge Hub',
@@ -324,6 +342,7 @@
     }),
     freezeRecord({
       id: 'apwh-u1-baghdad-merchant-ulema-network',
+      examSkills: ['Causation', 'Comparison'],
       locationNumber: '3',
       mainEventKey: 'world-event-3-0',
       title: 'Merchants, Ulama, and Islamic Trade',
@@ -346,6 +365,7 @@
     }),
     freezeRecord({
       id: 'apwh-u1-timbuktu-mali-gold-salt-tax',
+      examSkills: ['Causation'],
       locationNumber: '73',
       mainEventKey: 'world-event-73-0',
       title: 'Mali, Gold, Salt, and Transit Taxation',
@@ -368,6 +388,7 @@
     }),
     freezeRecord({
       id: 'apwh-u1-timbuktu-islamic-learning-griots',
+      examSkills: ['Comparison', 'CCOT'],
       locationNumber: '73',
       mainEventKey: 'world-event-73-2',
       title: 'Islamic Learning and Griot Memory',
@@ -390,6 +411,7 @@
     }),
     freezeRecord({
       id: 'apwh-u1-timbuktu-mansa-musa-pilgrimage',
+      examSkills: ['Causation', 'Contextualization'],
       locationNumber: '73',
       mainEventKey: 'world-event-73-3',
       title: "Mansa Musa's Pilgrimage",
@@ -412,10 +434,54 @@
     }),
   ]);
 
+  const UNIT_CARDS = Object.freeze({
+    context: freezeUnitCard({
+      id: 'apwh-u1-context-global-tapestry',
+      kind: 'context',
+      title: 'The World in c. 1200',
+      summary: 'By c. 1200, regional states across Afro-Eurasia used belief systems, taxation, trade, and specialized administration to organize diverse populations.',
+      examSkills: ['Contextualization', 'Comparison'],
+      prompt: 'As you study Unit 1, compare the material foundations of state power with the cultural ideas rulers used to legitimize authority.',
+      takeaways: [
+        'Song China connected centralized administration to commercial growth and infrastructure.',
+        'States in Dar al-Islam, South Asia, and Southeast Asia adapted shared religious traditions to local political needs.',
+        'West African rulers converted control of trade into revenue, military capacity, and prestige.',
+      ],
+    }),
+    synthesis: freezeUnitCard({
+      id: 'apwh-u1-synthesis-state-power',
+      kind: 'synthesis',
+      title: 'How States Built and Justified Power',
+      summary: 'Across Unit 1, rulers built power by organizing resources and people, then justified that power through religion, learning, and public display.',
+      examSkills: ['Comparison', 'CCOT'],
+      prompt: 'Build a defensible comparison using at least two regions: which mechanisms of state building were shared, and which depended on local conditions?',
+      takeaways: [
+        'Material systems such as taxes, canals, trade routes, and labor produced usable state capacity.',
+        'Belief systems and cultural patronage translated capacity into legitimacy among diverse populations.',
+        'Political continuity often depended on adapting institutions rather than preserving them unchanged.',
+      ],
+    }),
+  });
+
   const byId = new Map(STUDY_EVENTS.map(record => [record.id, record]));
 
   function describeRuleValue(value) {
     return value === '' ? '""' : String(value);
+  }
+
+  function validateExamSkills(examSkills, fail) {
+    if (examSkills.length < 1) fail('missing examSkills');
+    if (examSkills.length > 2) fail('too many examSkills');
+    const invalidSkillIndex = examSkills.findIndex(skill => !VALID_EXAM_SKILLS.has(skill));
+    if (invalidSkillIndex !== -1) {
+      fail(`invalid examSkill ${describeRuleValue(examSkills[invalidSkillIndex])}`);
+    }
+    const duplicateSkillIndex = examSkills.findIndex(
+      (skill, index) => examSkills.indexOf(skill) !== index,
+    );
+    if (duplicateSkillIndex !== -1) {
+      fail(`duplicate examSkill ${describeRuleValue(examSkills[duplicateSkillIndex])}`);
+    }
   }
 
   function validateStudyGraph() {
@@ -435,6 +501,7 @@
 
     for (const record of STUDY_EVENTS) {
       const fail = rule => { throw new Error(`Invalid Unit 1 study record ${record.id}: ${rule}`); };
+      validateExamSkills(record.examSkills, fail);
       if (!record.topicCodes.length) fail('missing topicCodes');
       const invalidTopicIndex = record.topicCodes.findIndex(code => !VALID_TOPIC_CODES.has(code));
       if (invalidTopicIndex !== -1) {
@@ -516,6 +583,52 @@
 
   validateStudyGraph();
 
+  function validateUnitCards() {
+    const expectedKinds = ['context', 'synthesis'];
+    const cardKeys = Object.keys(UNIT_CARDS).sort();
+    if (cardKeys.length !== expectedKinds.length
+      || cardKeys.some((key, index) => key !== expectedKinds[index])) {
+      throw new Error('Invalid Unit 1 unit cards: expected exactly context and synthesis keys');
+    }
+
+    const studyIds = new Set(STUDY_EVENTS.map(record => record.id));
+    const seenKinds = new Set();
+    const seenIds = new Set();
+    for (const [slot, card] of Object.entries(UNIT_CARDS)) {
+      const kind = typeof card.kind === 'string' ? card.kind : slot;
+      const id = typeof card.id === 'string' && card.id ? card.id : '(missing ID)';
+      const fail = rule => {
+        throw new Error(`Invalid Unit 1 unit card ${kind} ${id}: ${rule}`);
+      };
+      if (!expectedKinds.includes(card.kind)) fail(`invalid kind ${describeRuleValue(card.kind)}`);
+      if (seenKinds.has(card.kind)) fail(`duplicate kind ${card.kind}`);
+      seenKinds.add(card.kind);
+      if (card.kind !== slot) fail(`kind does not match ${slot} key`);
+      if (!/^apwh-u1-(context|synthesis)-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(card.id)) {
+        fail('invalid stable ID');
+      }
+      if (studyIds.has(card.id)) fail('ID collides with study record');
+      if (seenIds.has(card.id)) fail('duplicate card ID');
+      seenIds.add(card.id);
+      for (const field of ['title', 'summary', 'prompt']) {
+        if (typeof card[field] !== 'string' || !card[field].trim()) fail(`missing ${field}`);
+        if (!/[A-Za-z]/.test(card[field]) || /[\u3400-\u9fff]/.test(card[field])) {
+          fail(`non-English ${field}`);
+        }
+      }
+      validateExamSkills(card.examSkills, fail);
+      if (card.takeaways.length < 2 || card.takeaways.length > 3) fail('takeaway count must be 2–3');
+      for (const takeaway of card.takeaways) {
+        if (typeof takeaway !== 'string' || !takeaway.trim()) fail('empty takeaway');
+        if (!/[A-Za-z]/.test(takeaway) || /[\u3400-\u9fff]/.test(takeaway)) {
+          fail('non-English takeaway');
+        }
+      }
+    }
+  }
+
+  validateUnitCards();
+
   const byLocation = new Map(Object.keys(TRIAL_LOCATIONS).map(number => [number, Object.freeze([])]));
   for (const number of Object.keys(TRIAL_LOCATIONS)) {
     const records = STUDY_EVENTS
@@ -529,8 +642,10 @@
     locationName(number) { return TRIAL_LOCATIONS[String(number)] || null; },
     getByLocation(number) { return [...(byLocation.get(String(number)) || [])]; },
     getById(id) { return byId.get(String(id)) || null; },
+    getUnitCard(kind) { return UNIT_CARDS[String(kind)] || null; },
     compareRecords,
     records: STUDY_EVENTS,
+    unitCards: UNIT_CARDS,
   });
 
   Object.defineProperty(root, 'APWH_U1_LOCATION_STUDY', {

@@ -51,11 +51,56 @@ const expectedIds = [
 ];
 const recordKeys = [
   'causeStudyPointIds', 'connectionNotes', 'dateLabel', 'effectStudyPointIds', 'endYear',
-  'evidence', 'examConnection', 'id', 'keyPeople', 'keyTerms', 'locationNumber', 'mainEventKey',
+  'evidence', 'examConnection', 'examSkills', 'id', 'keyPeople', 'keyTerms', 'locationNumber', 'mainEventKey',
   'relatedStudyPointIds', 'significance', 'source', 'startYear', 'summary', 'themeIds', 'title',
   'topicCodes',
 ];
 const isNonEmptyString = value => typeof value === 'string' && value.trim().length > 0;
+const validExamSkills = new Set(['Causation', 'Comparison', 'CCOT', 'Contextualization']);
+
+const expectedExamSkills = new Map([
+  ['apwh-u1-hangzhou-song-commercial-revolution', ['Causation', 'CCOT']],
+  ['apwh-u1-hangzhou-grand-canal-urban-market', ['Causation']],
+  ['apwh-u1-hangzhou-paper-money-maritime-tools', ['Causation', 'Comparison']],
+  ['apwh-u1-angkor-khmer-hydraulic-state', ['Causation', 'Comparison']],
+  ['apwh-u1-angkor-hindu-buddhist-legitimation', ['Causation', 'Comparison']],
+  ['apwh-u1-delhi-sultanate-state-building', ['Comparison', 'Causation']],
+  ['apwh-u1-delhi-bhakti-sufi-devotion', ['Comparison', 'CCOT']],
+  ['apwh-u1-baghdad-abbasid-knowledge-hub', ['Causation', 'CCOT']],
+  ['apwh-u1-baghdad-merchant-ulema-network', ['Causation', 'Comparison']],
+  ['apwh-u1-timbuktu-mali-gold-salt-tax', ['Causation']],
+  ['apwh-u1-timbuktu-islamic-learning-griots', ['Comparison', 'CCOT']],
+  ['apwh-u1-timbuktu-mansa-musa-pilgrimage', ['Causation', 'Contextualization']],
+]);
+
+const expectedUnitCards = {
+  context: {
+    id: 'apwh-u1-context-global-tapestry',
+    kind: 'context',
+    title: 'The World in c. 1200',
+    summary: 'By c. 1200, regional states across Afro-Eurasia used belief systems, taxation, trade, and specialized administration to organize diverse populations.',
+    examSkills: ['Contextualization', 'Comparison'],
+    prompt: 'As you study Unit 1, compare the material foundations of state power with the cultural ideas rulers used to legitimize authority.',
+    takeaways: [
+      'Song China connected centralized administration to commercial growth and infrastructure.',
+      'States in Dar al-Islam, South Asia, and Southeast Asia adapted shared religious traditions to local political needs.',
+      'West African rulers converted control of trade into revenue, military capacity, and prestige.',
+    ],
+  },
+  synthesis: {
+    id: 'apwh-u1-synthesis-state-power',
+    kind: 'synthesis',
+    title: 'How States Built and Justified Power',
+    summary: 'Across Unit 1, rulers built power by organizing resources and people, then justified that power through religion, learning, and public display.',
+    examSkills: ['Comparison', 'CCOT'],
+    prompt: 'Build a defensible comparison using at least two regions: which mechanisms of state building were shared, and which depended on local conditions?',
+    takeaways: [
+      'Material systems such as taxes, canals, trade routes, and labor produced usable state capacity.',
+      'Belief systems and cultural patronage translated capacity into legitimacy among diverse populations.',
+      'Political continuity often depended on adapting institutions rather than preserving them unchanged.',
+    ],
+  },
+};
 
 const expectedMetadata = new Map([
   ['apwh-u1-hangzhou-song-commercial-revolution', [['1.1', '1.7'], ['ECN', 'GOV']]],
@@ -100,6 +145,7 @@ test('publishes the Unit 1 location-study API', () => {
   assert.ok(api);
   assert.equal(typeof api.getByLocation, 'function');
   assert.equal(typeof api.getById, 'function');
+  assert.equal(typeof api.getUnitCard, 'function');
   assert.equal(typeof api.compareRecords, 'function');
   assert.deepEqual([...api.locationNumbers], trialPins);
 });
@@ -141,6 +187,12 @@ test('ships the exact twelve complete English study points', () => {
       for (const field of ['title', 'summary', 'significance', 'examConnection']) {
         assert.ok(isNonEmptyString(record[field]), `${record.id} ${field}`);
       }
+      assert.ok(record.examSkills.length >= 1 && record.examSkills.length <= 2,
+        `${record.id} exam skill count`);
+      assert.ok(record.examSkills.every(skill => validExamSkills.has(skill)),
+        `${record.id} exam skill vocabulary`);
+      assert.equal(new Set(record.examSkills).size, record.examSkills.length,
+        `${record.id} duplicate exam skill`);
       assert.match(record.title, /[A-Za-z]/);
       assert.match(record.summary, /[A-Za-z]/);
       assert.ok(record.significance.length >= 60, `${record.id} significance`);
@@ -162,6 +214,41 @@ test('ships the exact twelve complete English study points', () => {
       assert.doesNotMatch(record.source.locator, /varies by edition|TBD|placeholder/i);
     }
   }
+});
+
+test('assigns the exact historical-thinking skills to each study point', () => {
+  assert.equal(expectedExamSkills.size, api.records.length);
+  for (const record of api.records) {
+    assert.deepEqual(record.examSkills, expectedExamSkills.get(record.id), `${record.id} exam skills`);
+  }
+});
+
+test('publishes exact, map-independent Unit 1 bookend cards', () => {
+  assert.deepEqual(api.unitCards, expectedUnitCards);
+  assert.equal(api.getUnitCard('context'), api.unitCards.context);
+  assert.equal(api.getUnitCard('synthesis'), api.unitCards.synthesis);
+  assert.equal(api.getUnitCard('missing-card'), null);
+  assert.equal(api.getUnitCard(null), null);
+  assert.equal(api.records.length, 12);
+  for (const card of Object.values(api.unitCards)) {
+    assert.ok(!api.records.includes(card), `${card.kind} not a study record`);
+    assert.ok(!trialPins.some(number => api.getByLocation(number).includes(card)),
+      `${card.kind} not map bound`);
+  }
+});
+
+test('deeply freezes historical-thinking skills and Unit 1 bookend cards', () => {
+  for (const record of api.records) {
+    assert.ok(Object.isFrozen(record.examSkills), `${record.id} exam skills frozen`);
+  }
+  assert.ok(Object.isFrozen(api.unitCards));
+  for (const card of Object.values(api.unitCards)) {
+    assert.ok(Object.isFrozen(card), `${card.kind} frozen`);
+    assert.ok(Object.isFrozen(card.examSkills), `${card.kind} skills frozen`);
+    assert.ok(Object.isFrozen(card.takeaways), `${card.kind} takeaways frozen`);
+  }
+  assert.throws(() => api.unitCards.context.takeaways.push('Injected.'), TypeError);
+  assert.throws(() => api.unitCards.context.examSkills.push('Causation'), TypeError);
 });
 
 test('keeps every nested trial-data string English-only', () => {
@@ -336,6 +423,7 @@ const songId = 'apwh-u1-hangzhou-song-commercial-revolution';
 const canalId = 'apwh-u1-hangzhou-grand-canal-urban-market';
 const paperId = 'apwh-u1-hangzhou-paper-money-maritime-tools';
 const songContext = `    '${songId}': [['1.1', '1.7'], ['ECN', 'GOV']],`;
+const songRecordStart = `      id: '${songId}',\n      examSkills: ['Causation', 'CCOT'],\n      locationNumber: '1',`;
 const validationFailureCases = [
   {
     label: 'missing topic array values',
@@ -516,6 +604,86 @@ const validationFailureCases = [
 for (const { label, malformedSource, expectedMessage } of validationFailureCases) {
   test(`reports ${label} with the offending record and rule`, () => {
     assertDataModuleError(label, malformedSource, expectedMessage);
+  });
+}
+
+const examSkillValidationFailureCases = [
+  {
+    label: 'missing exam skills',
+    malformedSource: replaceDataSource(
+      'missing exam skills', songRecordStart,
+      `      id: '${songId}',\n      locationNumber: '1',`,
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: missing examSkills`,
+  },
+  {
+    label: 'invalid exam skill',
+    malformedSource: replaceDataSource(
+      'invalid exam skill', songRecordStart,
+      `      id: '${songId}',\n      examSkills: ['Argumentation'],\n      locationNumber: '1',`,
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: invalid examSkill Argumentation`,
+  },
+  {
+    label: 'duplicate exam skill',
+    malformedSource: replaceDataSource(
+      'duplicate exam skill', songRecordStart,
+      `      id: '${songId}',\n      examSkills: ['Causation', 'Causation'],\n      locationNumber: '1',`,
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: duplicate examSkill Causation`,
+  },
+  {
+    label: 'too many exam skills',
+    malformedSource: replaceDataSource(
+      'too many exam skills', songRecordStart,
+      `      id: '${songId}',\n      examSkills: ['Causation', 'Comparison', 'CCOT'],\n      locationNumber: '1',`,
+    ),
+    expectedMessage: `Invalid Unit 1 study record ${songId}: too many examSkills`,
+  },
+];
+
+for (const { label, malformedSource, expectedMessage } of examSkillValidationFailureCases) {
+  test(`reports ${label} with the offending study record`, () => {
+    assertDataModuleError(label, malformedSource, expectedMessage);
+  });
+}
+
+const unitCardValidationFailureCases = [
+  {
+    label: 'duplicate unit-card kind',
+    search: "kind: 'synthesis',\n      title: 'How States Built and Justified Power',",
+    replacement: "kind: 'context',\n      title: 'How States Built and Justified Power',",
+    expectedMessage: 'Invalid Unit 1 unit card context apwh-u1-synthesis-state-power: duplicate kind context',
+  },
+  {
+    label: 'duplicate unit-card ID',
+    search: "id: 'apwh-u1-synthesis-state-power',\n      kind: 'synthesis',",
+    replacement: "id: 'apwh-u1-context-global-tapestry',\n      kind: 'synthesis',",
+    expectedMessage: 'Invalid Unit 1 unit card synthesis apwh-u1-context-global-tapestry: duplicate card ID',
+  },
+  {
+    label: 'missing unit-card title',
+    search: "title: 'The World in c. 1200',",
+    replacement: "title: '',",
+    expectedMessage: 'Invalid Unit 1 unit card context apwh-u1-context-global-tapestry: missing title',
+  },
+  {
+    label: 'invalid unit-card exam skill',
+    search: "examSkills: ['Contextualization', 'Comparison'],",
+    replacement: "examSkills: ['Argumentation'],",
+    expectedMessage: 'Invalid Unit 1 unit card context apwh-u1-context-global-tapestry: invalid examSkill Argumentation',
+  },
+  {
+    label: 'empty unit-card takeaway',
+    search: "'Song China connected centralized administration to commercial growth and infrastructure.',",
+    replacement: "'',",
+    expectedMessage: 'Invalid Unit 1 unit card context apwh-u1-context-global-tapestry: empty takeaway',
+  },
+];
+
+for (const { label, search, replacement, expectedMessage } of unitCardValidationFailureCases) {
+  test(`reports ${label} with its kind and ID`, () => {
+    assertDataModuleError(label, replaceDataSource(label, search, replacement), expectedMessage);
   });
 }
 
