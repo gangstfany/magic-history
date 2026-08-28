@@ -642,7 +642,10 @@
     locationName(number) { return TRIAL_LOCATIONS[String(number)] || null; },
     getByLocation(number) { return [...(byLocation.get(String(number)) || [])]; },
     getById(id) { return byId.get(String(id)) || null; },
-    getUnitCard(kind) { return UNIT_CARDS[String(kind)] || null; },
+    getUnitCard(kind) {
+      const key = String(kind);
+      return Object.prototype.hasOwnProperty.call(UNIT_CARDS, key) ? UNIT_CARDS[key] : null;
+    },
     compareRecords,
     records: STUDY_EVENTS,
     unitCards: UNIT_CARDS,

@@ -237,6 +237,12 @@ test('publishes exact, map-independent Unit 1 bookend cards', () => {
   }
 });
 
+test('returns null for unknown Unit 1 bookend-card keys, including inherited names', () => {
+  for (const kind of ['missing', 'toString', 'constructor', '__proto__']) {
+    assert.equal(api.getUnitCard(kind), null, `${kind} is not a Unit 1 bookend-card kind`);
+  }
+});
+
 test('deeply freezes historical-thinking skills and Unit 1 bookend cards', () => {
   for (const record of api.records) {
     assert.ok(Object.isFrozen(record.examSkills), `${record.id} exam skills frozen`);
