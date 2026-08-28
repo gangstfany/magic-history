@@ -362,6 +362,113 @@ async function trimmedTexts(locator) {
   return (await locator.allTextContents()).map(text => text.trim());
 }
 
+async function standaloneLocationStudyStateSnapshot(page) {
+  return page.evaluate(() => {
+    const filter = window.__mapFilter.getState();
+    const timeline = window.getTimelineState();
+    return {
+      filter: { query: filter.query, period: filter.period, cats: [...filter.cats].sort() },
+      timeline: {
+        selectedEventKey: timeline.selectedEventKey,
+        selectedAnchor: timeline.selectedAnchor,
+      },
+      selectedLocation: document.querySelector('#eventPanel .event-head .badge')?.textContent.trim(),
+      selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+        .map(group => group.querySelector('text')?.textContent.trim()).filter(Boolean).sort(),
+      mapTransform: document.querySelector('#zoom-layer')?.getAttribute('transform'),
+    };
+  });
+}
+
+async function assertUnitStudyBookends(page, view, label) {
+  const cards = view.locator('[data-study-unit-card]');
+  assert.equal(await cards.count(), 2, `${label} must render exactly two Unit 1 bookend cards`);
+  assert.deepEqual(await cards.evaluateAll(elements => elements.map(card => card.dataset.studyUnitCard)),
+    ['context', 'synthesis'], `${label} bookend cards must use context then synthesis kinds`);
+
+  const list = view.locator('.location-study-list');
+  assert.equal(await list.count(), 1, `${label} must render one location-study list for its semantic children`);
+  const semanticChildren = await list.evaluate(element => [...element.children]
+    .filter(child => child.matches('[data-study-unit-card], [data-study-event]'))
+    .map(child => child.matches('[data-study-unit-card]')
+      ? { type: 'unit-card', kind: child.dataset.studyUnitCard }
+      : { type: 'study-event', id: child.dataset.studyEvent }));
+  assert.deepEqual(semanticChildren[0], { type: 'unit-card', kind: 'context' },
+    `${label} location-study list must begin with the Context bookend`);
+  assert.deepEqual(semanticChildren.at(-1), { type: 'unit-card', kind: 'synthesis' },
+    `${label} location-study list must end with the Synthesis bookend`);
+  assert.ok(semanticChildren.slice(1, -1).length > 0
+      && semanticChildren.slice(1, -1).every(child => child.type === 'study-event'),
+  `${label} location-study list must keep all study-event children between its bookends: ${JSON.stringify(semanticChildren)}`);
+
+  const disclosures = cards.locator('details[data-study-unit-disclosure]');
+  assert.equal(await disclosures.count(), 2, `${label} bookend cards must each contain one native disclosure`);
+  for (let index = 0; index < await cards.count(); index++) {
+    assert.equal(await cards.nth(index).locator('details[data-study-unit-disclosure]').count(), 1,
+      `${label} bookend card ${index + 1} must contain one native disclosure`);
+  }
+  assert.deepEqual(await disclosures.evaluateAll(elements => elements.map(detail => detail.open)), [false, false],
+    `${label} bookend disclosures must start collapsed`);
+  assert.deepEqual(await trimmedTexts(cards.locator('[data-study-exam-skill]')),
+    ['Contextualization', 'Comparison', 'Comparison', 'CCOT'],
+    `${label} collapsed bookends must expose exact exam skill tags in order`);
+
+  const detailStateBefore = await view.evaluate(element => ({
+    detailCount: element.querySelectorAll('[data-study-detail]').length,
+    expandedStudyEventId: element.querySelector('[data-study-event][aria-expanded="true"]')?.dataset.studyEvent || null,
+  }));
+  const contextDisclosure = disclosures.nth(0);
+  const contextSummary = contextDisclosure.locator('summary');
+  assert.equal(await contextSummary.count(), 1, `${label} Context bookend must use one native summary`);
+  const contextPresentation = await contextSummary.evaluate(element => ({
+    height: element.getBoundingClientRect().height,
+  }));
+  assert.ok(contextPresentation.height >= 44,
+    `${label} Context summary must retain a 44px target: ${JSON.stringify(contextPresentation)}`);
+  await contextSummary.focus();
+  await contextSummary.press('Enter');
+  assert.equal(await contextSummary.evaluate(element => document.activeElement === element), true,
+    `${label} Context summary must retain focus after Enter opens it`);
+  assert.equal(await contextDisclosure.getAttribute('open'), '',
+    `${label} Context summary must open through native Enter activation`);
+  const contextPrompt = contextDisclosure.locator('[data-study-unit-prompt]');
+  const contextTakeaways = contextDisclosure.locator('[data-study-unit-takeaway]');
+  assert.equal(await contextPrompt.count(), 1, `${label} open Context must reveal one prompt`);
+  assert.equal(await contextPrompt.isVisible(), true, `${label} open Context prompt must be visible`);
+  assert.equal(await contextTakeaways.count(), 3, `${label} open Context must reveal three takeaways`);
+  for (let index = 0; index < await contextTakeaways.count(); index++) {
+    assert.equal(await contextTakeaways.nth(index).isVisible(), true,
+      `${label} open Context takeaway ${index + 1} must be visible`);
+  }
+  await contextSummary.press('Enter');
+  assert.equal(await contextSummary.evaluate(element => document.activeElement === element), true,
+    `${label} Context summary must retain focus after Enter closes it`);
+  assert.equal(await contextDisclosure.getAttribute('open'), null,
+    `${label} Context summary must close through native Enter activation`);
+  assert.deepEqual(await view.evaluate(element => ({
+    detailCount: element.querySelectorAll('[data-study-detail]').length,
+    expandedStudyEventId: element.querySelector('[data-study-event][aria-expanded="true"]')?.dataset.studyEvent || null,
+  })), detailStateBefore,
+  `${label} Context open-close must preserve the expanded study event and detail count`);
+
+  const originalInlineWidth = await view.evaluate(element => element.style.width);
+  try {
+    for (const width of [380, 410, 430]) {
+      await view.evaluate((element, nextWidth) => { element.style.width = `${nextWidth}px`; }, width);
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      const dimensions = await view.evaluate(element => ({
+        clientWidth: element.clientWidth,
+        scrollWidth: element.scrollWidth,
+      }));
+      assert.ok(dimensions.scrollWidth <= dimensions.clientWidth + 1,
+        `${label} ${width}px bookend view must not overflow horizontally: ${JSON.stringify(dimensions)}`);
+    }
+  } finally {
+    await view.evaluate((element, width) => { element.style.width = width; }, originalInlineWidth);
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  }
+}
+
 async function assertProgressiveCoreVisible(detail, label) {
   const coreSections = detail.locator('[data-study-core-label]');
   assert.equal(await coreSections.count(), 4, `${label} must render all four always-visible core sections`);
@@ -571,21 +678,7 @@ async function verifyTimeline(page, port) {
     label: 'the initial Map camera transform',
   });
 
-  const beforeStudy = await page.evaluate(() => {
-    const filter = window.__mapFilter.getState();
-    const timeline = window.getTimelineState();
-    return {
-      filter: { query: filter.query, period: filter.period, cats: [...filter.cats].sort() },
-      timeline: {
-        selectedEventKey: timeline.selectedEventKey,
-        selectedAnchor: timeline.selectedAnchor,
-      },
-      selectedLocation: document.querySelector('#eventPanel .event-head .badge')?.textContent.trim(),
-      selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
-        .map(group => group.querySelector('text')?.textContent.trim()).filter(Boolean).sort(),
-      mapTransform: document.querySelector('#zoom-layer')?.getAttribute('transform'),
-    };
-  });
+  const beforeStudy = await standaloneLocationStudyStateSnapshot(page);
 
   await hangzhouStudyEntry.click();
   const hangzhouStudyView = page.locator('#eventPanel [data-location-study-view="1"]');
@@ -606,6 +699,10 @@ async function verifyTimeline(page, port) {
 
   const studyRows = hangzhouStudyView.locator('[data-study-event]');
   assert.equal(await studyRows.count(), 3, 'Hangzhou must render three study points');
+  const standaloneBookendState = await standaloneLocationStudyStateSnapshot(page);
+  await assertUnitStudyBookends(page, hangzhouStudyView, 'standalone Hangzhou');
+  assert.deepEqual(await standaloneLocationStudyStateSnapshot(page), standaloneBookendState,
+    'standalone Hangzhou Context open-close must preserve filters, Timeline selection, location, and the map transform');
   assert.deepEqual(await trimmedTexts(hangzhouStudyView.locator('[data-study-date]')),
     ['960–1279', '1000–1279', '1100–1279'],
     'Hangzhou study points must remain in chronological order');
@@ -632,6 +729,12 @@ async function verifyTimeline(page, port) {
   assert.deepEqual(await trimmedTexts(firstStudyDetail.locator('[data-study-theme]')),
     ['ECN', 'GOV'],
     'expanded detail must show the approved existing map theme IDs');
+  assert.equal(await firstStudyDetail.locator('[data-study-exam-skills-label]').count(), 1,
+    'standalone Hangzhou detail must expose one Exam Skills label');
+  assert.equal((await firstStudyDetail.locator('[data-study-exam-skills-label]').innerText()).trim(), 'Exam Skills',
+    'standalone Hangzhou detail must label its skill tags exactly');
+  assert.deepEqual(await trimmedTexts(firstStudyDetail.locator('[data-study-exam-skill]')),
+    ['Causation', 'CCOT'], 'standalone Hangzhou detail must expose its exact exam skill tags');
   assert.deepEqual(await trimmedTexts(firstStudyDetail.locator('[data-study-core-label]')),
     ['Region', 'Summary', 'Why It Matters', 'Use It on the Exam'],
     'expanded detail must keep the four core sections visible in the approved order');
@@ -771,21 +874,7 @@ async function verifyTimeline(page, port) {
   assert.deepEqual(timelineDetailAfterStudy, timelineDetailBeforeStudy,
     'Back must restore the exact canonical Timeline event detail that opened the study view');
 
-  const afterStudy = await page.evaluate(() => {
-    const filter = window.__mapFilter.getState();
-    const timeline = window.getTimelineState();
-    return {
-      filter: { query: filter.query, period: filter.period, cats: [...filter.cats].sort() },
-      timeline: {
-        selectedEventKey: timeline.selectedEventKey,
-        selectedAnchor: timeline.selectedAnchor,
-      },
-      selectedLocation: document.querySelector('#eventPanel .event-head .badge')?.textContent.trim(),
-      selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
-        .map(group => group.querySelector('text')?.textContent.trim()).filter(Boolean).sort(),
-      mapTransform: document.querySelector('#zoom-layer')?.getAttribute('transform'),
-    };
-  });
+  const afterStudy = await standaloneLocationStudyStateSnapshot(page);
   assert.deepEqual(afterStudy, beforeStudy,
     'study-view round trips must preserve filters, Timeline selection, location, and the map transform');
 
@@ -840,6 +929,8 @@ async function verifyTimeline(page, port) {
   });
 
   let hydraulicDetail = await openAngkorHydraulicStudy();
+  assert.deepEqual(await trimmedTexts(hydraulicDetail.locator('[data-study-exam-skill]')),
+    ['Causation', 'Comparison'], 'standalone Angkor Hydraulic State must expose its exact exam skill tags');
   const hydraulicTerms = hydraulicDetail.locator('details[data-study-disclosure="terms"]');
   const hydraulicConnections = hydraulicDetail.locator('details[data-study-disclosure="connections"]');
   await hydraulicTerms.locator('summary').click();
@@ -2854,6 +2945,7 @@ async function verifyHomeLearningShell(page, port) {
   const homeStudyRows = homeStudyView.locator('[data-study-event]');
   assert.equal(await homeStudyRows.count(), 3,
     'the cloned homepage study view must expose all three Hangzhou study points');
+  await assertUnitStudyBookends(page, homeStudyView, 'homepage Hangzhou');
   const homeProgressiveDetail = homeStudyView.locator(
     '[data-study-detail="apwh-u1-hangzhou-song-commercial-revolution"]');
   assert.deepEqual(await trimmedTexts(homeProgressiveDetail.locator('[data-study-core-label]')),
@@ -2865,6 +2957,12 @@ async function verifyHomeLearningShell(page, port) {
     'the homepage Hangzhou detail must retain its exact APWH topic chips');
   assert.deepEqual(await trimmedTexts(homeProgressiveDetail.locator('[data-study-theme]')),
     ['ECN', 'GOV'], 'the homepage Hangzhou detail must retain its exact APWH theme chips');
+  assert.equal(await homeProgressiveDetail.locator('[data-study-exam-skills-label]').count(), 1,
+    'homepage Hangzhou detail must expose one Exam Skills label');
+  assert.equal((await homeProgressiveDetail.locator('[data-study-exam-skills-label]').innerText()).trim(), 'Exam Skills',
+    'homepage Hangzhou detail must label its skill tags exactly');
+  assert.deepEqual(await trimmedTexts(homeProgressiveDetail.locator('[data-study-exam-skill]')),
+    ['Causation', 'CCOT'], 'homepage Hangzhou detail must expose its exact exam skill tags');
   const homeDisclosures = homeProgressiveDetail.locator('details[data-study-disclosure]');
   assert.deepEqual(await homeDisclosures.evaluateAll(details => details.map(detail => ({
     key: detail.dataset.studyDisclosure,
@@ -3080,6 +3178,8 @@ async function verifyHomeLearningShell(page, port) {
   const homeHydraulicRow = page.locator(`#home-events [data-study-event="${hydraulicStudyId}"]`);
   await homeHydraulicRow.click();
   let homeHydraulicDetail = page.locator(`#home-events [data-study-detail="${hydraulicStudyId}"]`);
+  assert.deepEqual(await trimmedTexts(homeHydraulicDetail.locator('[data-study-exam-skill]')),
+    ['Causation', 'Comparison'], 'homepage Angkor Hydraulic State must expose its exact exam skill tags');
   const homeHydraulicTerms = homeHydraulicDetail.locator('details[data-study-disclosure="terms"]');
   const homeHydraulicConnections = homeHydraulicDetail.locator('details[data-study-disclosure="connections"]');
   await homeHydraulicDetail.evaluate(element => {
