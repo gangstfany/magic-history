@@ -438,6 +438,7 @@
     context: freezeUnitCard({
       id: 'apwh-u1-context-global-tapestry',
       kind: 'context',
+      role: 'Unit 1 Context Card',
       title: 'The World in c. 1200',
       summary: 'By c. 1200, regional states across Afro-Eurasia used belief systems, taxation, trade, and specialized administration to organize diverse populations.',
       examSkills: ['Contextualization', 'Comparison'],
@@ -451,6 +452,7 @@
     synthesis: freezeUnitCard({
       id: 'apwh-u1-synthesis-state-power',
       kind: 'synthesis',
+      role: 'Unit 1 Synthesis Card',
       title: 'How States Built and Justified Power',
       summary: 'Across Unit 1, rulers built power by organizing resources and people, then justified that power through religion, learning, and public display.',
       examSkills: ['Comparison', 'CCOT'],
@@ -610,7 +612,7 @@
       if (studyIds.has(card.id)) fail('ID collides with study record');
       if (seenIds.has(card.id)) fail('duplicate card ID');
       seenIds.add(card.id);
-      for (const field of ['title', 'summary', 'prompt']) {
+      for (const field of ['role', 'title', 'summary', 'prompt']) {
         if (typeof card[field] !== 'string' || !card[field].trim()) fail(`missing ${field}`);
         if (!/[A-Za-z]/.test(card[field]) || /[\u3400-\u9fff]/.test(card[field])) {
           fail(`non-English ${field}`);
@@ -638,6 +640,8 @@
   }
 
   const api = Object.freeze({
+    unitId: 'u1',
+    unitNumber: 1,
     locationNumbers: Object.freeze(Object.keys(TRIAL_LOCATIONS)),
     locationName(number) { return TRIAL_LOCATIONS[String(number)] || null; },
     getByLocation(number) { return [...(byLocation.get(String(number)) || [])]; },

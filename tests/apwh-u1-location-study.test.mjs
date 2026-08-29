@@ -77,6 +77,7 @@ const expectedUnitCards = {
   context: {
     id: 'apwh-u1-context-global-tapestry',
     kind: 'context',
+    role: 'Unit 1 Context Card',
     title: 'The World in c. 1200',
     summary: 'By c. 1200, regional states across Afro-Eurasia used belief systems, taxation, trade, and specialized administration to organize diverse populations.',
     examSkills: ['Contextualization', 'Comparison'],
@@ -90,6 +91,7 @@ const expectedUnitCards = {
   synthesis: {
     id: 'apwh-u1-synthesis-state-power',
     kind: 'synthesis',
+    role: 'Unit 1 Synthesis Card',
     title: 'How States Built and Justified Power',
     summary: 'Across Unit 1, rulers built power by organizing resources and people, then justified that power through religion, learning, and public display.',
     examSkills: ['Comparison', 'CCOT'],
@@ -143,6 +145,8 @@ const expectedRelatedPairs = new Map([
 
 test('publishes the Unit 1 location-study API', () => {
   assert.ok(api);
+  assert.equal(api.unitId, 'u1');
+  assert.equal(api.unitNumber, 1);
   assert.equal(typeof api.getByLocation, 'function');
   assert.equal(typeof api.getById, 'function');
   assert.equal(typeof api.getUnitCard, 'function');
@@ -231,6 +235,7 @@ test('publishes exact, map-independent Unit 1 bookend cards', () => {
   assert.equal(api.getUnitCard(null), null);
   assert.equal(api.records.length, 12);
   for (const card of Object.values(api.unitCards)) {
+    assert.match(card.role, /^Unit 1 (Context|Synthesis) Card$/);
     assert.ok(!api.records.includes(card), `${card.kind} not a study record`);
     assert.ok(!trialPins.some(number => api.getByLocation(number).includes(card)),
       `${card.kind} not map bound`);
@@ -656,9 +661,15 @@ for (const { label, malformedSource, expectedMessage } of examSkillValidationFai
 
 const unitCardValidationFailureCases = [
   {
+    label: 'missing unit-card role',
+    search: "role: 'Unit 1 Context Card',",
+    replacement: "role: '',",
+    expectedMessage: 'Invalid Unit 1 unit card context apwh-u1-context-global-tapestry: missing role',
+  },
+  {
     label: 'duplicate unit-card kind',
-    search: "kind: 'synthesis',\n      title: 'How States Built and Justified Power',",
-    replacement: "kind: 'context',\n      title: 'How States Built and Justified Power',",
+    search: "kind: 'synthesis',\n      role: 'Unit 1 Synthesis Card',\n      title: 'How States Built and Justified Power',",
+    replacement: "kind: 'context',\n      role: 'Unit 1 Synthesis Card',\n      title: 'How States Built and Justified Power',",
     expectedMessage: 'Invalid Unit 1 unit card context apwh-u1-synthesis-state-power: duplicate kind context',
   },
   {
