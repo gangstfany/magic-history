@@ -422,6 +422,42 @@ async function assertUnitStudyBookends(page, view, label, {
     elements => elements.map(element => element.dataset.studyEvent)),
   `${label} location-study list must keep the exact three study-event children between its bookends`);
 
+  const bookendContent = [
+    {
+      name: 'Context',
+      role: 'Unit 1 Context Card',
+      title: 'The World in c. 1200',
+      summary: 'By c. 1200, regional states across Afro-Eurasia used belief systems, taxation, trade, and specialized administration to organize diverse populations.',
+      prompt: 'As you study Unit 1, compare the material foundations of state power with the cultural ideas rulers used to legitimize authority.',
+      takeaways: [
+        'Song China connected centralized administration to commercial growth and infrastructure.',
+        'States in Dar al-Islam, South Asia, and Southeast Asia adapted shared religious traditions to local political needs.',
+        'West African rulers converted control of trade into revenue, military capacity, and prestige.',
+      ],
+    },
+    {
+      name: 'Synthesis',
+      role: 'Unit 1 Synthesis Card',
+      title: 'How States Built and Justified Power',
+      summary: 'Across Unit 1, rulers built power by organizing resources and people, then justified that power through religion, learning, and public display.',
+      prompt: 'Build a defensible comparison using at least two regions: which mechanisms of state building were shared, and which depended on local conditions?',
+      takeaways: [
+        'Material systems such as taxes, canals, trade routes, and labor produced usable state capacity.',
+        'Belief systems and cultural patronage translated capacity into legitimacy among diverse populations.',
+        'Political continuity often depended on adapting institutions rather than preserving them unchanged.',
+      ],
+    },
+  ];
+  for (const [index, content] of bookendContent.entries()) {
+    const card = cards.nth(index);
+    assert.deepEqual(await trimmedTexts(card.locator('.location-study-unit-role')), [content.role],
+      `${label} ${content.name} bookend must render its exact role`);
+    assert.deepEqual(await trimmedTexts(card.locator('.location-study-unit-title')), [content.title],
+      `${label} ${content.name} bookend must render its exact title`);
+    assert.deepEqual(await trimmedTexts(card.locator('.location-study-unit-summary')), [content.summary],
+      `${label} ${content.name} bookend must render its exact summary`);
+  }
+
   const disclosures = cards.locator('details[data-study-unit-disclosure]');
   assert.equal(await disclosures.count(), 2, `${label} bookend cards must each contain one native disclosure`);
   for (let index = 0; index < await cards.count(); index++) {
@@ -449,6 +485,27 @@ async function assertUnitStudyBookends(page, view, label, {
   }));
   const detailStateBefore = await studyDetailState();
   const stateBefore = stateSnapshot && await stateSnapshot();
+  const assertStudyStateUnchanged = async (stage, detailState, canonicalState) => {
+    assert.deepEqual(await studyDetailState(), detailState,
+      `${label} ${stage} must preserve the expanded study event and detail count`);
+    if (canonicalState) {
+      assert.deepEqual(await stateSnapshot(), canonicalState,
+        `${label} ${stage} must preserve filters, Timeline selection, location, and the map transform`);
+    }
+  };
+  const assertOpenBookendContent = async (content, disclosure) => {
+    const prompt = disclosure.locator('[data-study-unit-prompt]');
+    const takeaways = disclosure.locator('[data-study-unit-takeaway]');
+    assert.deepEqual(await trimmedTexts(prompt), [content.prompt],
+      `${label} open ${content.name} must reveal its exact prompt`);
+    assert.equal(await prompt.isVisible(), true, `${label} open ${content.name} prompt must be visible`);
+    assert.deepEqual(await trimmedTexts(takeaways), content.takeaways,
+      `${label} open ${content.name} must reveal its exact takeaways`);
+    for (let index = 0; index < await takeaways.count(); index++) {
+      assert.equal(await takeaways.nth(index).isVisible(), true,
+        `${label} open ${content.name} takeaway ${index + 1} must be visible`);
+    }
+  };
   if (expectedSelectedLocation !== null) {
     assert.equal(stateBefore?.selectedLocation, expectedSelectedLocation,
       `${label} Context state snapshot must retain its concrete selected location identifier`);
@@ -463,29 +520,24 @@ async function assertUnitStudyBookends(page, view, label, {
     `${label} Context summary must retain a 44px target: ${JSON.stringify(contextPresentation)}`);
   await toggleNativeDisclosureWithEnter(page, contextSummary, contextDisclosure,
     `${label} Context summary`, true);
-  assert.deepEqual(await studyDetailState(), detailStateBefore,
-    `${label} Context opening must preserve the expanded study event and detail count`);
-  if (stateBefore) {
-    assert.deepEqual(await stateSnapshot(), stateBefore,
-      `${label} Context opening must preserve filters, Timeline selection, location, and the map transform`);
-  }
-  const contextPrompt = contextDisclosure.locator('[data-study-unit-prompt]');
-  const contextTakeaways = contextDisclosure.locator('[data-study-unit-takeaway]');
-  assert.equal(await contextPrompt.count(), 1, `${label} open Context must reveal one prompt`);
-  assert.equal(await contextPrompt.isVisible(), true, `${label} open Context prompt must be visible`);
-  assert.equal(await contextTakeaways.count(), 3, `${label} open Context must reveal three takeaways`);
-  for (let index = 0; index < await contextTakeaways.count(); index++) {
-    assert.equal(await contextTakeaways.nth(index).isVisible(), true,
-      `${label} open Context takeaway ${index + 1} must be visible`);
-  }
+  await assertStudyStateUnchanged('Context opening', detailStateBefore, stateBefore);
+  await assertOpenBookendContent(bookendContent[0], contextDisclosure);
   await toggleNativeDisclosureWithEnter(page, contextSummary, contextDisclosure,
     `${label} Context summary`, false);
-  assert.deepEqual(await studyDetailState(), detailStateBefore,
-    `${label} Context open-close must preserve the expanded study event and detail count`);
-  if (stateBefore) {
-    assert.deepEqual(await stateSnapshot(), stateBefore,
-      `${label} Context closing must preserve filters, Timeline selection, location, and the map transform`);
-  }
+  await assertStudyStateUnchanged('Context closing', detailStateBefore, stateBefore);
+
+  const synthesisDisclosure = disclosures.nth(1);
+  const synthesisSummary = synthesisDisclosure.locator('summary');
+  assert.equal(await synthesisSummary.count(), 1, `${label} Synthesis bookend must use one native summary`);
+  const detailStateBeforeSynthesis = await studyDetailState();
+  const stateBeforeSynthesis = stateSnapshot && await stateSnapshot();
+  await toggleNativeDisclosureWithEnter(page, synthesisSummary, synthesisDisclosure,
+    `${label} Synthesis summary`, true);
+  await assertStudyStateUnchanged('Synthesis opening', detailStateBeforeSynthesis, stateBeforeSynthesis);
+  await assertOpenBookendContent(bookendContent[1], synthesisDisclosure);
+  await toggleNativeDisclosureWithEnter(page, synthesisSummary, synthesisDisclosure,
+    `${label} Synthesis summary`, false);
+  await assertStudyStateUnchanged('Synthesis closing', detailStateBeforeSynthesis, stateBeforeSynthesis);
 
   const originalInlineWidth = await view.evaluate(element => element.style.width);
   const originalContextOpen = await contextDisclosure.evaluate(detail => detail.open);
