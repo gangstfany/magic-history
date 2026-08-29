@@ -13,6 +13,20 @@ const replaceDataSource = (label, search, replacement) => {
   assert.notEqual(malformedSource, dataModuleSource, `${label} fixture mutation`);
   return malformedSource;
 };
+const replaceDataSources = (label, replacements) => {
+  let malformedSource = dataModuleSource;
+  for (const [search, replacement] of replacements) {
+    const nextSource = malformedSource.replace(search, replacement);
+    assert.notEqual(nextSource, malformedSource, `${label} fixture mutation for ${search}`);
+    malformedSource = nextSource;
+  }
+  return malformedSource;
+};
+const replaceAllDataSource = (label, search, replacement) => {
+  const malformedSource = dataModuleSource.replaceAll(search, replacement);
+  assert.notEqual(malformedSource, dataModuleSource, `${label} fixture mutation`);
+  return malformedSource;
+};
 const assertDataModuleError = (label, malformedSource, expectedMessage) => {
   assert.throws(() => runInNewContext(malformedSource, {}), error => {
     assert.equal(error.message, expectedMessage, `${label} diagnostic`);
@@ -211,6 +225,8 @@ const mutationCases = [
   ['missing source ID', "source: { id: 'amsco-apwh-u2', locator:", "source: { id: '', locator:", 'apwh-u2-karakorum-mongol-unification-conquest', 'missing source id'],
   ['missing source locator', "locator: 'AMSCO AP World History, Unit 2, Topics 2.2 and 2.7'", "locator: ''", 'apwh-u2-karakorum-mongol-unification-conquest', 'missing source locator'],
   ['non-English nested learner content', "'A 1206 kurultai recognized Temujin", "'中文 A 1206 kurultai recognized Temujin", 'apwh-u2-karakorum-mongol-unification-conquest', 'non-English nested learner content'],
+  ['numeric-only evidence', "'A 1206 kurultai recognized Temujin as Genghis Khan after he defeated rival Mongol groups.'", "'12345.'", 'apwh-u2-karakorum-mongol-unification-conquest', 'non-English nested learner content'],
+  ['extra source field', "source: { id: 'amsco-apwh-u2', locator: 'AMSCO AP World History, Unit 2, Topics 2.2 and 2.7' }", "source: { id: 'amsco-apwh-u2', locator: 'AMSCO AP World History, Unit 2, Topics 2.2 and 2.7', edition: 'extra' }", 'apwh-u2-karakorum-mongol-unification-conquest', 'source must contain exactly id and locator fields'],
 ];
 for (const [label, search, replacement, id, rule] of mutationCases) {
   test(`rejects ${label}`, () => assertDataModuleError(label,
@@ -228,10 +244,51 @@ test('rejects a duplicate raw record ID', () => {
 });
 
 test('rejects a fourth record at one location', () => {
-  const search = '  ];\n\n  function freezeUnitCard(card) {';
-  const replacement = "  ];\n  RAW_RECORDS.push({ ...RAW_RECORDS[0], id: 'apwh-u2-karakorum-fourth-record' });\n\n  function freezeUnitCard(card) {";
-  assertDataModuleError('fourth record', replaceDataSource('fourth record', search, replacement),
-    'Invalid Unit 2 study record apwh-u2-karakorum-fourth-record: expected exactly 18 records');
+  const malformed = replaceDataSources('four at 8 and two at 10', [
+    ["'apwh-u2-nanjing-treasure-fleet-technology-scale', '10', 1,", "'apwh-u2-nanjing-treasure-fleet-technology-scale', '8', 1,"],
+    ["id: 'apwh-u2-nanjing-treasure-fleet-technology-scale', locationNumber: '10',", "id: 'apwh-u2-nanjing-treasure-fleet-technology-scale', locationNumber: '8',"],
+  ]);
+  assertDataModuleError('four at 8 and two at 10', malformed,
+    'Invalid Unit 2 study record apwh-u2-nanjing-treasure-fleet-technology-scale: location 8 must contain exactly three records');
+});
+
+test('rejects malformed and non-Unit-2 stable study IDs independently of the manifest', () => {
+  for (const [replacement, rule] of [
+    ['apwh-u1-karakorum-mongol-unification-conquest', 'invalid stable ID apwh-u1-karakorum-mongol-unification-conquest'],
+    ['apwh-u2-Karakorum bad id', 'invalid stable ID apwh-u2-Karakorum bad id'],
+  ]) {
+    const malformed = replaceAllDataSource(
+      rule,
+      'apwh-u2-karakorum-mongol-unification-conquest',
+      replacement,
+    );
+    assertDataModuleError(rule, malformed,
+      `Invalid Unit 2 study record ${replacement}: ${rule}`);
+  }
+});
+
+test('rejects malformed date labels and invalid date ranges independently of the manifest', () => {
+  const id = 'apwh-u2-karakorum-mongol-unification-conquest';
+  const cases = [
+    ['malformed date label', [["'1206–1227', 1206, 1227", "'1206/1227', 1206, 1227"], ["dateLabel: '1206–1227'", "dateLabel: '1206/1227'"]], 'invalid dateLabel 1206/1227'],
+    ['non-integer start year', [["'1206–1227', 1206, 1227", "'1206–1227', '1206', 1227"], ['startYear: 1206', "startYear: '1206'"]], 'startYear must be an integer'],
+    ['non-integer end year', [["'1206–1227', 1206, 1227", "'1206–1227', 1206, '1227'"], ['endYear: 1227', "endYear: '1227'"]], 'endYear must be an integer'],
+    ['reversed date range', [["'1206–1227', 1206, 1227", "'1206–1227', 1228, 1227"], ['startYear: 1206', 'startYear: 1228']], 'startYear 1228 exceeds endYear 1227'],
+  ];
+  for (const [label, replacements, rule] of cases) {
+    assertDataModuleError(label, replaceDataSources(label, replacements),
+      `Invalid Unit 2 study record ${id}: ${rule}`);
+  }
+});
+
+test('rejects empty and non-English location names', () => {
+  for (const [replacement, rule] of [
+    ["'8': ''", 'missing English location name'],
+    ["'8': '12345'", 'missing English location name'],
+  ]) {
+    assertDataModuleError(rule, replaceDataSource(rule, "'8': 'Karakorum'", replacement),
+      `Invalid Unit 2 study location 8: ${rule}`);
+  }
 });
 
 test('rejects a duplicate sequence at one location', () => {
@@ -276,6 +333,12 @@ const cardCases = [
   ['two takeaways', "        'Merchant communities and shared legal or religious practices made exchange with strangers more predictable.',\n      ],", '      ],', 'context', 'apwh-u2-context-networks-ready-to-expand', 'takeaways must contain exactly three items'],
   ['duplicate kind', "kind: 'synthesis', role: 'Unit 2 Synthesis Card'", "kind: 'context', role: 'Unit 2 Synthesis Card'", 'context', 'apwh-u2-synthesis-network-expansion-consequences', 'duplicate kind context'],
   ['duplicate ID', "id: 'apwh-u2-synthesis-network-expansion-consequences', kind: 'synthesis'", "id: 'apwh-u2-context-networks-ready-to-expand', kind: 'synthesis'", 'synthesis', 'apwh-u2-context-networks-ready-to-expand', 'duplicate card ID'],
+  ['non-array exam skills', "examSkills: ['Contextualization', 'Causation']", "examSkills: 'Causation'", 'context', 'apwh-u2-context-networks-ready-to-expand', 'examSkills must be an array'],
+  ['empty exam skills', "examSkills: ['Contextualization', 'Causation']", 'examSkills: []', 'context', 'apwh-u2-context-networks-ready-to-expand', 'missing examSkills'],
+  ['invalid exam skill item type', "examSkills: ['Contextualization', 'Causation']", "examSkills: [123, 'Causation']", 'context', 'apwh-u2-context-networks-ready-to-expand', 'invalid examSkill 123'],
+  ['empty exam skill item', "examSkills: ['Contextualization', 'Causation']", "examSkills: ['', 'Causation']", 'context', 'apwh-u2-context-networks-ready-to-expand', 'invalid examSkill ""'],
+  ['duplicate exam skills', "examSkills: ['Contextualization', 'Causation']", "examSkills: ['Causation', 'Causation']", 'context', 'apwh-u2-context-networks-ready-to-expand', 'duplicate examSkill Causation'],
+  ['oversized exam skills', "examSkills: ['Contextualization', 'Causation']", "examSkills: ['Contextualization', 'Causation', 'Comparison']", 'context', 'apwh-u2-context-networks-ready-to-expand', 'too many examSkills'],
 ];
 for (const [label, search, replacement, kind, id, rule] of cardCases) {
   test(`rejects card ${label}`, () => assertDataModuleError(label, replaceDataSource(label, search, replacement),

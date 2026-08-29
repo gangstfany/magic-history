@@ -320,7 +320,7 @@
   }
 
   const UNIT_CARD_LIST = [
-    freezeUnitCard({
+    {
       id: 'apwh-u2-context-networks-ready-to-expand', kind: 'context', role: 'Unit 2 Context Card',
       title: 'Networks Ready to Expand',
       summary: 'By c. 1200, expanding states, commercial cities, and accumulated transport technologies had created the demand and infrastructure for long-distance exchange.',
@@ -331,8 +331,8 @@
         'Caravan routes and monsoon seas already linked regions, but distance, insecurity, and payment remained expensive.',
         'Merchant communities and shared legal or religious practices made exchange with strangers more predictable.',
       ],
-    }),
-    freezeUnitCard({
+    },
+    {
       id: 'apwh-u2-synthesis-network-expansion-consequences', kind: 'synthesis', role: 'Unit 2 Synthesis Card',
       title: 'Why Networks Expanded—and What They Carried',
       summary: 'From 1200 to 1450, lower transport, payment, and protection costs expanded exchange, while the same networks moved beliefs, technologies, crops, and pathogens.',
@@ -343,10 +343,14 @@
         'Monsoon knowledge, larger ships, and port states increased the volume and predictability of maritime exchange.',
         'Greater connectivity produced cultural synthesis and economic growth, but also disease transmission and environmental strain.',
       ],
-    }),
+    },
   ];
 
   function describeRuleValue(value) { return value === '' ? '""' : String(value); }
+  function isEnglishString(value) {
+    return typeof value === 'string' && value.trim().length > 0
+      && /[A-Za-z]/.test(value) && !/[㐀-鿿]/.test(value);
+  }
   const failRecord = (record, rule) => {
     throw new Error(`Invalid Unit 2 study record ${record?.id || '(missing ID)'}: ${rule}`);
   };
@@ -367,10 +371,18 @@
     if (Object.keys(LOCATIONS).join(',') !== expectedLocationNumbers.join(',')) {
       throw new Error('Invalid Unit 2 study locations: expected exactly 2,8,9,10,84,85');
     }
+    for (const [number, name] of Object.entries(LOCATIONS)) {
+      if (!isEnglishString(name)) {
+        throw new Error(`Invalid Unit 2 study location ${number}: missing English location name`);
+      }
+    }
     if (RAW_RECORDS.length > 18) failRecord(RAW_RECORDS[18], 'expected exactly 18 records');
     if (RAW_RECORDS.length < 18) failRecord({ id: '(missing record)' }, 'expected exactly 18 records');
     const ids = new Set();
     for (const record of RAW_RECORDS) {
+      if (!/^apwh-u2-(karakorum|samarkand|malacca|kilwa|cairo|nanjing)-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(record.id)) {
+        failRecord(record, `invalid stable ID ${describeRuleValue(record.id)}`);
+      }
       if (ids.has(record.id)) failRecord(record, 'duplicate record ID');
       ids.add(record.id);
       const context = STUDY_CONTEXT[record.id];
@@ -380,9 +392,17 @@
       if (!VALID_MAIN_EVENTS.has(record.mainEventKey) || record.mainEventKey !== context.mainEventKey) failRecord(record, `invalid mainEventKey ${record.mainEventKey}`);
       for (const field of ['title', 'summary', 'significance', 'examConnection']) {
         if (typeof record[field] !== 'string' || !record[field].trim()) failRecord(record, `missing ${field}`);
-        if (/[㐀-鿿]/.test(record[field]) || !/[A-Za-z]/.test(record[field])) failRecord(record, `non-English ${field}`);
+        if (!isEnglishString(record[field])) failRecord(record, `non-English ${field}`);
       }
       if (typeof record.dateLabel !== 'string' || !record.dateLabel.trim()) failRecord(record, 'missing dateLabel');
+      if (!/^(?:c\. )?\d{3,4}(?:–(?:c\. )?\d{3,4})?$/.test(record.dateLabel)) {
+        failRecord(record, `invalid dateLabel ${describeRuleValue(record.dateLabel)}`);
+      }
+      if (!Number.isInteger(record.startYear)) failRecord(record, 'startYear must be an integer');
+      if (!Number.isInteger(record.endYear)) failRecord(record, 'endYear must be an integer');
+      if (record.startYear > record.endYear) {
+        failRecord(record, `startYear ${record.startYear} exceeds endYear ${record.endYear}`);
+      }
       if (record.title !== context.title || record.dateLabel !== context.dateLabel
         || record.startYear !== context.startYear || record.endYear !== context.endYear) {
         failRecord(record, 'manifest metadata mismatch');
@@ -392,12 +412,18 @@
       if (!Array.isArray(record.keyPeople) || record.keyPeople.length < 1) failRecord(record, 'missing keyPeople');
       if (!Array.isArray(record.keyTerms) || record.keyTerms.length < 2) failRecord(record, 'missing keyTerms');
       if (!Array.isArray(record.evidence) || record.evidence.length < 2) failRecord(record, 'missing evidence');
-      if (!record.source || !record.source.id) failRecord(record, 'missing source id');
+      if (!record.source || typeof record.source !== 'object' || Array.isArray(record.source)) {
+        failRecord(record, 'invalid source structure');
+      }
+      if (!record.source.id) failRecord(record, 'missing source id');
       if (!record.source.locator) failRecord(record, 'missing source locator');
+      if (Object.keys(record.source).sort().join(',') !== 'id,locator') {
+        failRecord(record, 'source must contain exactly id and locator fields');
+      }
       if (record.source.id !== 'amsco-apwh-u2') failRecord(record, `invalid source id ${record.source.id}`);
       const nested = [...record.keyPeople.flatMap(Object.values), ...record.keyTerms.flatMap(Object.values), ...record.evidence, record.source.id, record.source.locator];
       if (nested.some(value => typeof value !== 'string' || !value.trim())) failRecord(record, 'missing nested learner content');
-      if (nested.some(value => /[㐀-鿿]/.test(value))) failRecord(record, 'non-English nested learner content');
+      if (nested.some(value => !isEnglishString(value))) failRecord(record, 'non-English nested learner content');
       validateValues(record, context.topicCodes, VALID_TOPIC_CODES, 'topicCodes', 'topicCode');
       validateValues(record, context.themeIds, VALID_THEME_IDS, 'themeIds', 'themeId');
       validateValues(record, context.examSkills, VALID_EXAM_SKILLS, 'examSkills', 'examSkill');
@@ -495,15 +521,24 @@
       if (!/^apwh-u2-(context|synthesis)-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(card.id)) failCard(card, 'invalid stable ID');
       for (const field of ['role', 'title', 'summary', 'prompt']) {
         if (typeof card[field] !== 'string' || !card[field].trim()) failCard(card, `missing ${field}`);
-        if (!/[A-Za-z]/.test(card[field]) || /[㐀-鿿]/.test(card[field])) failCard(card, `non-English ${field}`);
+        if (!isEnglishString(card[field])) failCard(card, `non-English ${field}`);
       }
+      if (!Array.isArray(card.examSkills)) failCard(card, 'examSkills must be an array');
       if (card.examSkills.length < 1) failCard(card, 'missing examSkills');
       if (card.examSkills.length > 2) failCard(card, 'too many examSkills');
-      for (const skill of card.examSkills) if (!VALID_EXAM_SKILLS.has(skill)) failCard(card, `invalid examSkill ${skill}`);
+      for (const skill of card.examSkills) {
+        if (typeof skill !== 'string' || !skill.trim() || !VALID_EXAM_SKILLS.has(skill)) {
+          failCard(card, `invalid examSkill ${describeRuleValue(skill)}`);
+        }
+        if (card.examSkills.indexOf(skill) !== card.examSkills.lastIndexOf(skill)) {
+          failCard(card, `duplicate examSkill ${skill}`);
+        }
+      }
+      if (!Array.isArray(card.takeaways)) failCard(card, 'takeaways must be an array');
       if (card.takeaways.length !== 3) failCard(card, 'takeaways must contain exactly three items');
       for (const takeaway of card.takeaways) {
-        if (!takeaway.trim()) failCard(card, 'empty takeaway');
-        if (!/[A-Za-z]/.test(takeaway) || /[㐀-鿿]/.test(takeaway)) failCard(card, 'non-English takeaway');
+        if (typeof takeaway !== 'string' || !takeaway.trim()) failCard(card, 'empty takeaway');
+        if (!isEnglishString(takeaway)) failCard(card, 'non-English takeaway');
       }
     }
     if (UNIT_CARD_LIST.length !== 2 || !seenKinds.has('context') || !seenKinds.has('synthesis')) {
@@ -512,7 +547,9 @@
   }
 
   validateUnitCards();
-  const UNIT_CARDS = Object.freeze(Object.fromEntries(UNIT_CARD_LIST.map(card => [card.kind, card])));
+  const UNIT_CARDS = Object.freeze(Object.fromEntries(
+    UNIT_CARD_LIST.map(card => [card.kind, freezeUnitCard(card)]),
+  ));
 
   function compareRecords(a, b) {
     return a.startYear - b.startYear
