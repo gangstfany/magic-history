@@ -281,6 +281,47 @@ test('rejects malformed date labels and invalid date ranges independently of the
   }
 });
 
+test('rejects date labels whose years disagree with the numeric range', () => {
+  const id = 'apwh-u2-karakorum-mongol-unification-conquest';
+  for (const [label, replacements, rule] of [
+    [
+      'single-year label mismatch',
+      [["'1206–1227', 1206, 1227", "'9999', 1206, 1227"], ["dateLabel: '1206–1227'", "dateLabel: '9999'"]],
+      'dateLabel years 9999–9999 do not match startYear 1206 and endYear 1227',
+    ],
+    [
+      'range end-year mismatch',
+      [["'1206–1227', 1206, 1227", "'1206–1228', 1206, 1227"], ["dateLabel: '1206–1227'", "dateLabel: '1206–1228'"]],
+      'dateLabel years 1206–1228 do not match startYear 1206 and endYear 1227',
+    ],
+  ]) {
+    assertDataModuleError(label, replaceDataSources(label, replacements),
+      `Invalid Unit 2 study record ${id}: ${rule}`);
+  }
+});
+
+test('rejects malicious keyPeople and keyTerms entry shapes descriptively', () => {
+  const id = 'apwh-u2-karakorum-mongol-unification-conquest';
+  const insertionPoint = '  ];\n\n  function freezeUnitCard(card) {';
+  const cases = [
+    ['keyPeople missing field', "RAW_RECORDS[0].keyPeople = [{ role: 'English text' }];", 'keyPeople entry must contain exactly name and role fields'],
+    ['keyPeople extra field', "RAW_RECORDS[0].keyPeople = [{ name: 'English name', role: 'English role', extra: 'English text' }];", 'keyPeople entry must contain exactly name and role fields'],
+    ['keyPeople wrong shape', "RAW_RECORDS[0].keyPeople = [{ foo: 'English text' }];", 'keyPeople entry must contain exactly name and role fields'],
+    ['keyPeople null', 'RAW_RECORDS[0].keyPeople = [null];', 'invalid keyPeople entry'],
+    ['keyPeople non-object', 'RAW_RECORDS[0].keyPeople = [123];', 'invalid keyPeople entry'],
+    ['keyTerms missing field', "RAW_RECORDS[0].keyTerms = [{ explanation: 'English text' }, { term: 'second', explanation: 'English text' }];", 'keyTerms entry must contain exactly term and explanation fields'],
+    ['keyTerms extra field', "RAW_RECORDS[0].keyTerms = [{ term: 'term', explanation: 'English text', extra: 'English text' }, { term: 'second', explanation: 'English text' }];", 'keyTerms entry must contain exactly term and explanation fields'],
+    ['keyTerms wrong shape', "RAW_RECORDS[0].keyTerms = [{ foo: 'English text' }, { term: 'second', explanation: 'English text' }];", 'keyTerms entry must contain exactly term and explanation fields'],
+    ['keyTerms null', "RAW_RECORDS[0].keyTerms = [null, { term: 'second', explanation: 'English text' }];", 'invalid keyTerms entry'],
+    ['keyTerms non-object', "RAW_RECORDS[0].keyTerms = [123, { term: 'second', explanation: 'English text' }];", 'invalid keyTerms entry'],
+  ];
+  for (const [label, injection, rule] of cases) {
+    const replacement = `  ];\n  ${injection}\n\n  function freezeUnitCard(card) {`;
+    assertDataModuleError(label, replaceDataSource(label, insertionPoint, replacement),
+      `Invalid Unit 2 study record ${id}: ${rule}`);
+  }
+});
+
 test('rejects empty and non-English location names', () => {
   for (const [replacement, rule] of [
     ["'8': ''", 'missing English location name'],

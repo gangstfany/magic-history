@@ -403,6 +403,13 @@
       if (record.startYear > record.endYear) {
         failRecord(record, `startYear ${record.startYear} exceeds endYear ${record.endYear}`);
       }
+      const labelYears = [...record.dateLabel.matchAll(/\d{3,4}/g)].map(match => Number(match[0]));
+      const labelStartYear = labelYears[0];
+      const labelEndYear = labelYears.at(-1);
+      if (labelStartYear !== record.startYear || labelEndYear !== record.endYear) {
+        failRecord(record,
+          `dateLabel years ${labelStartYear}–${labelEndYear} do not match startYear ${record.startYear} and endYear ${record.endYear}`);
+      }
       if (record.title !== context.title || record.dateLabel !== context.dateLabel
         || record.startYear !== context.startYear || record.endYear !== context.endYear) {
         failRecord(record, 'manifest metadata mismatch');
@@ -412,6 +419,24 @@
       if (!Array.isArray(record.keyPeople) || record.keyPeople.length < 1) failRecord(record, 'missing keyPeople');
       if (!Array.isArray(record.keyTerms) || record.keyTerms.length < 2) failRecord(record, 'missing keyTerms');
       if (!Array.isArray(record.evidence) || record.evidence.length < 2) failRecord(record, 'missing evidence');
+      for (const person of record.keyPeople) {
+        if (!person || typeof person !== 'object' || Array.isArray(person)
+          || Object.getPrototypeOf(person) !== Object.prototype) {
+          failRecord(record, 'invalid keyPeople entry');
+        }
+        if (Object.keys(person).sort().join(',') !== 'name,role') {
+          failRecord(record, 'keyPeople entry must contain exactly name and role fields');
+        }
+      }
+      for (const term of record.keyTerms) {
+        if (!term || typeof term !== 'object' || Array.isArray(term)
+          || Object.getPrototypeOf(term) !== Object.prototype) {
+          failRecord(record, 'invalid keyTerms entry');
+        }
+        if (Object.keys(term).sort().join(',') !== 'explanation,term') {
+          failRecord(record, 'keyTerms entry must contain exactly term and explanation fields');
+        }
+      }
       if (!record.source || typeof record.source !== 'object' || Array.isArray(record.source)) {
         failRecord(record, 'invalid source structure');
       }
@@ -421,7 +446,13 @@
         failRecord(record, 'source must contain exactly id and locator fields');
       }
       if (record.source.id !== 'amsco-apwh-u2') failRecord(record, `invalid source id ${record.source.id}`);
-      const nested = [...record.keyPeople.flatMap(Object.values), ...record.keyTerms.flatMap(Object.values), ...record.evidence, record.source.id, record.source.locator];
+      const nested = [
+        ...record.keyPeople.flatMap(person => [person.name, person.role]),
+        ...record.keyTerms.flatMap(term => [term.term, term.explanation]),
+        ...record.evidence,
+        record.source.id,
+        record.source.locator,
+      ];
       if (nested.some(value => typeof value !== 'string' || !value.trim())) failRecord(record, 'missing nested learner content');
       if (nested.some(value => !isEnglishString(value))) failRecord(record, 'non-English nested learner content');
       validateValues(record, context.topicCodes, VALID_TOPIC_CODES, 'topicCodes', 'topicCode');
