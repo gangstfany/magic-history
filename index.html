@@ -962,6 +962,10 @@ nav.topnav {
   const escapeHomeStudyText = value => String(value || '').replace(/[&<>"']/g, ch => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[ch]);
+  const HOME_STUDY_GLOBAL_BY_UNIT = Object.freeze({
+    u1: 'APWH_U1_LOCATION_STUDY',
+    u2: 'APWH_U2_LOCATION_STUDY',
+  });
 
   function homeStudyExamSkillsHTML(skills) {
     const tags = skills.map(skill => `<span class="location-study-exam-skill" data-study-exam-skill>`
@@ -972,12 +976,11 @@ nav.topnav {
   }
 
   function homeStudyUnitCardHTML(card) {
-    const role = card.kind === 'context' ? 'Unit 1 Context Card' : 'Unit 1 Synthesis Card';
     const takeaways = card.takeaways.map(takeaway => `<li data-study-unit-takeaway>`
       + `${escapeHomeStudyText(takeaway)}</li>`).join('');
     return `<article class="location-study-unit-card" data-study-unit-card="${escapeHomeStudyText(card.kind)}">`
       + `<details data-study-unit-disclosure="${escapeHomeStudyText(card.kind)}">`
-      + `<summary><span class="location-study-unit-role">${role}</span>`
+      + `<summary><span class="location-study-unit-role">${escapeHomeStudyText(card.role)}</span>`
       + `<span class="location-study-unit-title">${escapeHomeStudyText(card.title)}</span>`
       + `<span class="location-study-unit-summary">${escapeHomeStudyText(card.summary)}</span>`
       + homeStudyExamSkillsHTML(card.examSkills) + `</summary>`
@@ -986,14 +989,20 @@ nav.topnav {
   }
 
   function renderHomeStudyBookends() {
-    const list = homeEvents?.querySelector('[data-location-study-view] .location-study-list');
-    if (!list) return;
+    const view = homeEvents?.querySelector('[data-location-study-view]');
+    const list = view?.querySelector('.location-study-list');
+    if (!view || !list) return;
+    const unitId = String(view.dataset.locationStudyUnit || '');
+    const globalName = HOME_STUDY_GLOBAL_BY_UNIT[unitId];
     let api;
-    try { api = worldMapFrame.contentWindow.APWH_U1_LOCATION_STUDY; } catch (err) {}
-    const contextCard = api?.getUnitCard?.('context');
-    const synthesisCard = api?.getUnitCard?.('synthesis');
+    try { api = globalName && worldMapFrame.contentWindow[globalName]; } catch {}
+    if (!api || api.unitId !== unitId) {
+      throw new Error(`Invalid homepage ${unitId || 'unknown Unit'} study API`);
+    }
+    const contextCard = api.getUnitCard('context');
+    const synthesisCard = api.getUnitCard('synthesis');
     if (!contextCard || !synthesisCard) {
-      throw new Error('Invalid homepage Unit 1 study bookends: missing context or synthesis card');
+      throw new Error(`Invalid homepage Unit ${api.unitNumber} study bookends: missing context or synthesis card`);
     }
     list.querySelectorAll(':scope > [data-study-unit-card]').forEach(card => card.remove());
     list.insertAdjacentHTML('afterbegin', homeStudyUnitCardHTML(contextCard));
@@ -1280,6 +1289,7 @@ nav.topnav {
   // 但输入框/清除键是首页的静态元素,监听只能绑一次,不然重载几次就叠几层。
   let hostApi = null;             // 当前这一份地图 API,重载后会被换掉
   let hostStaticBound = false;    // 静态元素的监听是否已绑
+  let hostSearchTimer = null;
   const hostThemeToggle = document.getElementById('hostThemeToggle');
   const hostThemePanel = document.getElementById('hostThemePanel');
   const hostThemeActive = document.getElementById('hostThemeActive');
@@ -1345,17 +1355,32 @@ nav.topnav {
 
     if (!hostStaticBound) {
       hostStaticBound = true;
-      let t;
       searchInput.addEventListener('input', () => {
-        clearBtn.hidden = !searchInput.value.trim();
-        clearTimeout(t); t = setTimeout(() => hostApi && hostApi.setQuery(searchInput.value.trim()), 120);
+        const query = searchInput.value.trim();
+        clearBtn.hidden = !query;
+        clearTimeout(hostSearchTimer);
+        hostSearchTimer = null;
+        if (!query) {
+          if (hostApi) hostApi.setQuery('');
+          return;
+        }
+        hostSearchTimer = setTimeout(() => hostApi && hostApi.setQuery(query), 120);
       });
       clearBtn.addEventListener('click', () => {
+        clearTimeout(hostSearchTimer);
+        hostSearchTimer = null;
         searchInput.value = ''; clearBtn.hidden = true;
         if (hostApi) hostApi.setQuery('');
         searchInput.focus();
       });
-      periodSel.addEventListener('change', () => hostApi && hostApi.setPeriod(periodSel.value));
+      periodSel.addEventListener('change', () => {
+        clearTimeout(hostSearchTimer);
+        hostSearchTimer = null;
+        if (!hostApi) return;
+        const nextPeriod = periodSel.value;
+        hostApi.setQuery(searchInput.value.trim());
+        hostApi.setPeriod(nextPeriod);
+      });
     }
     // 地图重载后原来的筛选状态已经没了,这边的控件一起复位,免得界面显示"Period 2"但地图是全量
     searchInput.value = ''; clearBtn.hidden = true; countBox.textContent = '';
@@ -1364,6 +1389,8 @@ nav.topnav {
     // 同时把两个下拉回同步到地图的真实状态 —— 状态若被程序改动(如 reset),控件不会显示成过期值。
     // 搜索框不在此列:它的值是用户正在敲的原文,而状态里存的是规范化后的小写版本,回写会把人家的输入改掉。
     api.onCountChange(text => {
+      clearTimeout(hostSearchTimer);
+      hostSearchTimer = null;
       countBox.textContent = text || '';
       const st = api.getState();
       if (periodSel.value !== st.period) periodSel.value = st.period;

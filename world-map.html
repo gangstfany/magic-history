@@ -2287,6 +2287,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 </div>
 
 <script src="data/apwh-u1-location-study.js"></script>
+<script src="data/apwh-u2-location-study.js"></script>
 <script>
 (function () {
   const svg = document.querySelector('.worldmap');
@@ -2347,6 +2348,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const prefersReducedMotion = () => reduceMotionMQ.matches;
 
   let fitAnimId = null;
+  function stopFitAnimation() {
+    if (!fitAnimId) return;
+    cancelAnimationFrame(fitAnimId);
+    fitAnimId = null;
+  }
   function animateTransform(targetZoom, targetPanX, targetPanY, ms) {
     if (fitAnimId) cancelAnimationFrame(fitAnimId);
     // 减少动态效果:直接落到目标位置,该框住的还是框住,只是不做推近的过程
@@ -4978,7 +4984,24 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (chip) enterRouteMode(chip.dataset.routeGo);
   });
   let activeNum = null;
+  const LOCATION_STUDY_GLOBAL_BY_UNIT = Object.freeze({
+    u1: 'APWH_U1_LOCATION_STUDY',
+    u2: 'APWH_U2_LOCATION_STUDY',
+  });
+
+  function locationStudyApiForUnit(unitId) {
+    const globalName = LOCATION_STUDY_GLOBAL_BY_UNIT[String(unitId || '')];
+    if (!globalName || !Object.prototype.hasOwnProperty.call(window, globalName)) return null;
+    const api = window[globalName];
+    return api && api.unitId === unitId && Number.isInteger(api.unitNumber) ? api : null;
+  }
+
+  function activeLocationStudyApi() {
+    return locationStudyApiForUnit(getActivePeriod());
+  }
+
   const locationStudyState = {
+    unitId: null,
     locationNumber: null,
     expandedStudyId: null,
     returnContext: null,
@@ -4995,6 +5018,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function clearLocationStudyState() {
+    locationStudyState.unitId = null;
     locationStudyState.locationNumber = null;
     locationStudyState.expandedStudyId = null;
     locationStudyState.returnContext = null;
@@ -5011,8 +5035,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
   function locationStudyRecords(num) {
     if (!ordinaryLocationStudyContext()) return [];
-    if (getActivePeriod() !== 'u1') return [];
-    const api = window.APWH_U1_LOCATION_STUDY;
+    const api = activeLocationStudyApi();
     if (!api || typeof api.getByLocation !== 'function') return [];
     let records;
     try {
@@ -5024,7 +5047,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const locationNumber = String(num);
     return records.filter(record => {
       if (!record || record.locationNumber !== locationNumber || !record.mainEventKey) return false;
-      return timelineEventByKey.get(record.mainEventKey)?.unit === 'u1';
+      return timelineEventByKey.get(record.mainEventKey)?.unit === api.unitId;
     });
   }
 
@@ -5093,15 +5116,14 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   });
   const STUDY_DISCLOSURE_KEYS = new Set(['terms', 'evidence', 'connections', 'people', 'source']);
 
-  function studyRegionLabel(record) {
-    const api = window.APWH_U1_LOCATION_STUDY;
+  function studyRegionLabel(record, api) {
     const locationName = api.locationName(record.locationNumber);
     const regionName = regionNames[pinRegion(record.locationNumber)];
     const missing = [];
     if (!locationName) missing.push('canonical location name');
     if (!regionName) missing.push('broad map region');
     if (missing.length) {
-      throw new Error(`Invalid Unit 1 study location metadata for ${record.id}: missing ${missing.join(' and ')}`);
+      throw new Error(`Invalid Unit ${api.unitNumber} study location metadata for ${record.id}: missing ${missing.join(' and ')}`);
     }
     return `${locationName} · ${regionName}`;
   }
@@ -5116,12 +5138,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       + `<div class="location-study-disclosure-body">${body}</div></details>`;
   }
 
-  function studyRelationshipGroupHTML(record, label, targetIds) {
-    const api = window.APWH_U1_LOCATION_STUDY;
+  function studyRelationshipGroupHTML(record, api, label, targetIds) {
     const connections = targetIds.map(targetId => {
       const target = api.getById(targetId);
       if (!target) {
-        throw new Error(`Invalid Unit 1 study connection for ${record.id}: unresolved target ${targetId}`);
+        throw new Error(`Invalid Unit ${api.unitNumber} study connection for ${record.id}: unresolved target ${targetId}`);
       }
       return `<button type="button" class="location-study-connection"`
         + ` data-study-connection="${escapeTimelineText(targetId)}"`
@@ -5144,12 +5165,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function studyUnitCardHTML(card) {
-    const role = card.kind === 'context' ? 'Unit 1 Context Card' : 'Unit 1 Synthesis Card';
     const takeaways = card.takeaways.map(takeaway => `<li data-study-unit-takeaway>`
       + `${escapeTimelineText(takeaway)}</li>`).join('');
     return `<article class="location-study-unit-card" data-study-unit-card="${escapeTimelineText(card.kind)}">`
       + `<details data-study-unit-disclosure="${escapeTimelineText(card.kind)}">`
-      + `<summary><span class="location-study-unit-role">${role}</span>`
+      + `<summary><span class="location-study-unit-role">${escapeTimelineText(card.role)}</span>`
       + `<span class="location-study-unit-title">${escapeTimelineText(card.title)}</span>`
       + `<span class="location-study-unit-summary">${escapeTimelineText(card.summary)}</span>`
       + studyExamSkillsHTML(card.examSkills) + `</summary>`
@@ -5157,7 +5177,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       + `<ul>${takeaways}</ul></div></details></article>`;
   }
 
-  function studyDetailHTML(record) {
+  function studyDetailHTML(record, api) {
     const people = record.keyPeople.map(person => `<div><dt>${escapeTimelineText(person.name)}</dt>`
       + `<dd>${escapeTimelineText(person.role)}</dd></div>`).join('');
     const terms = record.keyTerms.map(item => `<div><dt>${escapeTimelineText(item.term)}</dt>`
@@ -5165,9 +5185,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const evidence = record.evidence.map(item => `<li>${escapeTimelineText(item)}</li>`).join('');
     const connectionCount = record.causeStudyPointIds.length + record.effectStudyPointIds.length
       + record.relatedStudyPointIds.length;
-    const connections = studyRelationshipGroupHTML(record, 'Cause', record.causeStudyPointIds)
-      + studyRelationshipGroupHTML(record, 'Effect', record.effectStudyPointIds)
-      + studyRelationshipGroupHTML(record, 'Related Event', record.relatedStudyPointIds);
+    const connections = studyRelationshipGroupHTML(record, api, 'Cause', record.causeStudyPointIds)
+      + studyRelationshipGroupHTML(record, api, 'Effect', record.effectStudyPointIds)
+      + studyRelationshipGroupHTML(record, api, 'Related Event', record.relatedStudyPointIds);
     const sourceCount = record.source.id && record.source.locator ? 1 : 0;
     const topics = record.topicCodes.map(code => `<span class="location-study-topic" data-study-topic>`
       + `Topic ${escapeTimelineText(code)}</span>`).join('');
@@ -5179,14 +5199,14 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     }).join('');
     return `<div class="location-study-detail" data-study-detail="${escapeTimelineText(record.id)}">`
       + `<header class="location-study-detail-header">`
-      + `<div class="location-study-eyebrow">Unit 1 study point</div>`
+      + `<div class="location-study-eyebrow">Unit ${escapeTimelineText(api.unitNumber)} study point</div>`
       + `<div class="location-study-topics">${topics}</div>`
       + `<div class="location-study-themes">${themes}</div>`
       + studyExamSkillsHTML(record.examSkills)
       + `<h3 class="location-study-detail-title">${escapeTimelineText(record.title)}</h3>`
       + `<div class="location-study-detail-date">${escapeTimelineText(record.dateLabel)}</div></header>`
       + `<div class="location-study-core">`
-      + `<section><h3 data-study-core-label>Region</h3><p class="location-study-region" data-study-region>${escapeTimelineText(studyRegionLabel(record))}</p></section>`
+      + `<section><h3 data-study-core-label>Region</h3><p class="location-study-region" data-study-region>${escapeTimelineText(studyRegionLabel(record, api))}</p></section>`
       + `<section><h3 data-study-core-label>Summary</h3><p>${escapeTimelineText(record.summary)}</p></section>`
       + `<section><h3 data-study-core-label>Why It Matters</h3><p>${escapeTimelineText(record.significance)}</p></section>`
       + `<section class="location-study-exam"><h3 data-study-core-label>Use It on the Exam</h3><p>${escapeTimelineText(record.examConnection)}</p></section>`
@@ -5211,15 +5231,20 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       renderEventContent(locationNumber, pinBadgeColor(locationNumber));
       return;
     }
+    const api = activeLocationStudyApi();
+    if (!api) {
+      renderEventContent(locationNumber, pinBadgeColor(locationNumber));
+      return;
+    }
+    locationStudyState.unitId = api.unitId;
     locationStudyState.locationNumber = locationNumber;
     if (!records.some(record => record.id === locationStudyState.expandedStudyId)) {
       locationStudyState.expandedStudyId = records[0].id;
     }
-    const api = window.APWH_U1_LOCATION_STUDY;
     const contextCard = api.getUnitCard('context');
     const synthesisCard = api.getUnitCard('synthesis');
     if (!contextCard || !synthesisCard) {
-      throw new Error('Invalid Unit 1 study bookends: missing context or synthesis card');
+      throw new Error(`Invalid Unit ${api.unitNumber} study bookends: missing context or synthesis card`);
     }
     const locationName = api.locationName(locationNumber);
     const regionName = regionNames[pinRegion(locationNumber)];
@@ -5242,13 +5267,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         + `<span class="location-study-summary">${escapeTimelineText(record.summary)}</span>`
         + `<span class="location-study-main" data-study-main-event>`
         + `Linked main event: ${escapeTimelineText(linkedMainEvent.titleEn)}</span></button>`
-        + (expanded ? `<div id="${escapeTimelineText(detailId)}">${studyDetailHTML(record)}</div>` : '')
+        + (expanded ? `<div id="${escapeTimelineText(detailId)}">${studyDetailHTML(record, api)}</div>` : '')
         + `</article>`;
     }).join('');
-    eventPanel.innerHTML = `<div class="location-study-view" data-location-study-view="${escapeTimelineText(locationNumber)}">`
+    eventPanel.innerHTML = `<div class="location-study-view" data-location-study-view="${escapeTimelineText(locationNumber)}" data-location-study-unit="${escapeTimelineText(api.unitId)}">`
       + connectionBack
       + `<button type="button" class="rt-btn ghost location-study-back" data-location-study-back="${escapeTimelineText(locationNumber)}">Back to location events</button>`
-      + `<h2 class="location-study-title" tabindex="-1">${escapeTimelineText(locationName)} · Unit 1</h2>`
+      + `<h2 class="location-study-title" tabindex="-1">${escapeTimelineText(locationName)} · Unit ${escapeTimelineText(api.unitNumber)}</h2>`
       + `<p class="location-study-context">${escapeTimelineText(regionName)} · ${escapeTimelineText(records.length)} study points · chronological order</p>`
       + `<div class="location-study-list">${studyUnitCardHTML(contextCard)}${rows}${studyUnitCardHTML(synthesisCard)}</div></div>`;
     eventEmpty.style.display = 'none';
@@ -5262,6 +5287,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 
   function openLocationStudyFromEntry(entry, { focusHeading = false } = {}) {
     if (!ordinaryLocationStudyContext() || !entry || !eventPanel.contains(entry)) return false;
+    const api = activeLocationStudyApi();
+    if (!api) return false;
     const number = String(entry.dataset.locationStudyOpen || '');
     if (!number || !locationStudyRecords(number).length) return false;
     if (entry.dataset.locationStudyOrigin === 'timeline') {
@@ -5270,7 +5297,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         num: entry.dataset.locationStudyAnchorNum,
         region: entry.dataset.locationStudyAnchorRegion,
       });
-      if (!timelineEvent || timelineEvent.unit !== 'u1' || String(anchor?.num) !== number) return false;
+      if (!timelineEvent || timelineEvent.unit !== api.unitId || String(anchor?.num) !== number) return false;
       locationStudyState.returnContext = {
         kind: 'timeline',
         eventKey: timelineEvent.key,
@@ -5280,8 +5307,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       if (entry.dataset.locationStudyOrigin !== 'location' || String(activeNum) !== number) return false;
       locationStudyState.returnContext = { kind: 'location', locationNumber: number };
     }
+    stopFitAnimation();
     renderLocationStudy(number, { focusHeading });
-    return locationStudyState.locationNumber === number;
+    return locationStudyState.unitId === api.unitId && locationStudyState.locationNumber === number;
   }
 
   function openLocationStudy(number, { focusHeading = false } = {}) {
@@ -5293,8 +5321,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function toggleLocationStudy(studyId, { focusToggle = false } = {}) {
+    const api = activeLocationStudyApi();
     const locationNumber = locationStudyState.locationNumber;
-    if (!locationNumber || !ordinaryLocationStudyContext()) return false;
+    if (!api || locationStudyState.unitId !== api.unitId
+        || !locationNumber || !ordinaryLocationStudyContext()) return false;
     const id = String(studyId || '');
     if (!locationStudyRecords(locationNumber).some(record => record.id === id)) return false;
     const toggle = eventPanel.querySelector(`[data-study-event="${CSS.escape(id)}"]`);
@@ -5306,10 +5336,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function setLocationStudyDisclosure(studyId, key, open) {
+    const api = activeLocationStudyApi();
     const locationNumber = locationStudyState.locationNumber;
     const id = String(studyId || '');
     const disclosureKey = String(key || '');
-    if (!locationNumber || id !== locationStudyState.expandedStudyId
+    if (!api || locationStudyState.unitId !== api.unitId
+        || !locationNumber || id !== locationStudyState.expandedStudyId
         || !STUDY_DISCLOSURE_KEYS.has(disclosureKey)
         || !locationStudyRecords(locationNumber).some(record => record.id === id)) return false;
     invalidateLocationStudyRestore();
@@ -5323,8 +5355,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function activeStudyRecord() {
-    const api = window.APWH_U1_LOCATION_STUDY;
-    if (!locationStudyState.expandedStudyId || !api || typeof api.getById !== 'function') return null;
+    const api = activeLocationStudyApi();
+    if (!api || locationStudyState.unitId !== api.unitId
+        || !locationStudyState.expandedStudyId || typeof api.getById !== 'function') return null;
     try {
       return api.getById(locationStudyState.expandedStudyId) || null;
     } catch {
@@ -5341,7 +5374,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     scrollTop = eventZone.scrollTop,
     focusHeading = false,
   } = {}) {
-    if (!ordinaryLocationStudyContext() || getActivePeriod() !== 'u1'
+    const api = activeLocationStudyApi();
+    if (!ordinaryLocationStudyContext() || !api || locationStudyState.unitId !== api.unitId
         || !Number.isFinite(scrollTop) || scrollTop < 0) return false;
     const source = activeStudyRecord();
     const sourceLocationNumber = locationStudyState.locationNumber;
@@ -5350,7 +5384,6 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         || !eventPanel.querySelector(`[data-location-study-view="${CSS.escape(sourceLocationNumber)}"]`)
         || !eventPanel.querySelector(`[data-study-detail="${CSS.escape(source.id)}"]`)) return false;
     const id = String(targetId || '');
-    const api = window.APWH_U1_LOCATION_STUDY;
     let target;
     try {
       target = api.getById(id);
@@ -5381,7 +5414,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function backLocationStudyConnection({ focusInvoker = false } = {}) {
-    if (!ordinaryLocationStudyContext() || getActivePeriod() !== 'u1') return false;
+    const api = activeLocationStudyApi();
+    if (!ordinaryLocationStudyContext() || !api || locationStudyState.unitId !== api.unitId) return false;
     const frame = locationStudyState.connectionStack.at(-1);
     const current = activeStudyRecord();
     if (!frame || !current || current.locationNumber !== locationStudyState.locationNumber
@@ -5391,7 +5425,6 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         || !Number.isFinite(frame.scrollTop) || frame.scrollTop < 0
         || !Array.isArray(frame.openDisclosures)
         || !frame.openDisclosures.every(key => STUDY_DISCLOSURE_KEYS.has(key))) return false;
-    const api = window.APWH_U1_LOCATION_STUDY;
     const source = api.getById(frame.studyId);
     const target = api.getById(frame.invokerTargetId);
     if (!source || source.locationNumber !== frame.locationNumber
@@ -5431,8 +5464,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function completeLocationStudyRestore(restoreToken) {
+    const api = activeLocationStudyApi();
     const pending = locationStudyState.pendingRestore;
-    if (!pending || !Number.isSafeInteger(restoreToken)
+    if (!api || locationStudyState.unitId !== api.unitId
+        || !pending || !Number.isSafeInteger(restoreToken)
         || pending.restoreToken !== restoreToken
         || locationStudyState.expandedStudyId !== pending.studyId
         || locationStudyState.locationNumber !== pending.locationNumber) return false;
@@ -5441,8 +5476,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function backFromLocationStudy({ focusEntry = false } = {}) {
+    const api = activeLocationStudyApi();
     const number = locationStudyState.locationNumber;
-    if (!number || !ordinaryLocationStudyContext()
+    if (!api || locationStudyState.unitId !== api.unitId
+        || !number || !ordinaryLocationStudyContext()
         || !eventPanel.querySelector(`[data-location-study-back="${CSS.escape(number)}"]`)) return false;
     const returnContext = locationStudyState.returnContext;
     clearLocationStudyState();
@@ -6037,8 +6074,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       }
       spotlightPin(num);
     }
-    function openEventInMap(num, region, eventKey) {
+    function openEventInMap(num, region, eventKey, { selectEventUnit = false } = {}) {
       showLearningView('map');
+      const exactEvent = eventKey && timelineEventByKey.get(String(eventKey));
+      if (selectEventUnit && exactEvent && exactEvent.unit !== activePeriod) setPeriod(exactEvent.unit);
       openHit(num, region, eventKey);
     }
     eventPanel.addEventListener('click', e => {
@@ -6174,7 +6213,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       getActiveCats: () => new Set(activeCats),
       getState: () => ({ query, cats: new Set(activeCats), period: activePeriod }),
       setQuery, toggleCat, setPeriod, reset, openHit, getTimelineState,
-      openEventInMap,
+      openEventInMap: (num, region, eventKey) => openEventInMap(
+        num, region, eventKey, { selectEventUnit: true }),
       selectTimelineEvent: (key, preferredAnchor) => selectTimelineEvent(key, {
         reveal: true, moveMap: true, preferredAnchor
       }),
@@ -6192,6 +6232,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       setLocationStudyDisclosure: (studyId, key, open) => typeof open === 'boolean'
         && setLocationStudyDisclosure(studyId, key, open),
       getLocationStudyUiState: () => Object.freeze({
+        unitId: locationStudyState.unitId,
         studyId: locationStudyState.expandedStudyId,
         openDisclosures: Object.freeze([...locationStudyState.openDisclosures]),
         connectionDepth: locationStudyState.connectionStack.length,
