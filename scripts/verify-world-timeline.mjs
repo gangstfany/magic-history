@@ -669,7 +669,7 @@ async function assertUnit2StudyViewBasics(view, fixture, label) {
   `${label} must render its three canonical study IDs in exact order`);
   assert.equal(await view.locator('[data-study-detail]').count(), 1,
     `${label} must start with exactly one expanded detail`);
-  assert.equal((await view.locator('.location-study-eyebrow').first().innerText()).trim(),
+  assert.equal((await view.locator('.location-study-eyebrow').first().textContent()).trim(),
     'Unit 2 study point', `${label} must expose the Unit 2 study-point eyebrow`);
   assert.doesNotMatch(await view.innerText(), /[\u3400-\u9fff]/,
     `${label} must render English-only learner copy`);
