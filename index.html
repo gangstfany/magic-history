@@ -1317,6 +1317,8 @@ nav.topnav {
     try { api = worldMapFrame.contentWindow.__mapFilter; } catch (err) { return; }
     if (!host || !api) return;                 // 地图还没暴露 API(还在加载),等下次 load
     if (api === hostApi) return;               // 同一份,已经接好了
+    clearTimeout(hostSearchTimer);
+    hostSearchTimer = null;
     hostApi = api;
 
     const searchInput = document.getElementById('hostSearch');
@@ -1389,8 +1391,6 @@ nav.topnav {
     // 同时把两个下拉回同步到地图的真实状态 —— 状态若被程序改动(如 reset),控件不会显示成过期值。
     // 搜索框不在此列:它的值是用户正在敲的原文,而状态里存的是规范化后的小写版本,回写会把人家的输入改掉。
     api.onCountChange(text => {
-      clearTimeout(hostSearchTimer);
-      hostSearchTimer = null;
       countBox.textContent = text || '';
       const st = api.getState();
       if (periodSel.value !== st.period) periodSel.value = st.period;
