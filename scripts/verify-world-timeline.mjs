@@ -700,17 +700,24 @@ async function assertUnit2LongDetailResponsive(page, view, label) {
     assert.equal(await disclosure.getAttribute('open'), '', `${label} must keep ${name} open`);
   }
 
-  const originalInlineWidth = await view.evaluate(element => element.style.width);
+  const originalInlineWidths = await view.evaluate(element => {
+    const panel = element.closest('#eventPanel, #home-events');
+    return { view: element.style.width, panel: panel.style.width };
+  });
   try {
     for (const width of [380, 410, 430]) {
-      await view.evaluate((element, nextWidth) => { element.style.width = `${nextWidth}px`; }, width);
+      await view.evaluate((element, nextWidth) => {
+        const panel = element.closest('#eventPanel, #home-events');
+        panel.style.width = `${nextWidth}px`;
+        element.style.width = '100%';
+      }, width);
       await waitForTwoAnimationFrames(page);
       const dimensions = await view.evaluate((element, requestedWidth) => {
         const panel = element.closest('#eventPanel, #home-events');
         const size = node => ({ client: node.clientWidth, scroll: node.scrollWidth });
         return {
           requestedWidth,
-          effectiveWidth: element.getBoundingClientRect().width,
+          effectiveWidth: panel.getBoundingClientRect().width,
           view: size(element),
           panel: size(panel),
           evidence: [...element.querySelectorAll('details[data-study-disclosure="evidence"] li')].map(size),
@@ -738,7 +745,11 @@ async function assertUnit2LongDetailResponsive(page, view, label) {
       }
     }
   } finally {
-    await view.evaluate((element, width) => { element.style.width = width; }, originalInlineWidth);
+    await view.evaluate((element, widths) => {
+      const panel = element.closest('#eventPanel, #home-events');
+      element.style.width = widths.view;
+      panel.style.width = widths.panel;
+    }, originalInlineWidths);
     await waitForTwoAnimationFrames(page);
   }
 }
@@ -832,7 +843,7 @@ async function openHomepageUnit2Study(page, frame, fixture) {
   await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
     ?.__mapFilter?.getState().period === 'u2');
   await page.locator('#hostSearch').fill('');
-  const title = await frame.locator('body').evaluate(mainEventKey =>
+  const title = await frame.locator('body').evaluate((body, mainEventKey) =>
     window.getTimelineState().visibleEvents.find(event => event.key === mainEventKey)?.titleEn,
   fixture.mainEventKey);
   assert.ok(title, `${fixture.location} homepage fixture must resolve its exact Unit 2 Timeline title`);
@@ -842,6 +853,7 @@ async function openHomepageUnit2Study(page, frame, fixture) {
   await expectVisible(result, `${fixture.location} homepage must expose its exact keyed Unit 2 result`);
   await result.click();
   const entry = page.locator(`#home-events [data-location-study-open="${fixture.number}"]`);
+  await entry.waitFor();
   await expectVisible(entry, `${fixture.location} homepage event panel must expose its Unit 2 study entry`);
   assert.equal((await entry.innerText()).trim(), 'View all 3 study points');
   await entry.click();
