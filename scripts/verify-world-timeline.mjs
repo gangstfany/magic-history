@@ -811,6 +811,8 @@ async function verifyStandaloneUnit2StudyContract(page) {
   assert.equal(await view.locator('details[data-study-disclosure][open]').count(), 0,
     'u1 → u2 must not leak the formerly open Samarkand disclosure');
 
+  await page.setViewportSize({ width: 1920, height: 900 });
+  await waitForTwoAnimationFrames(page);
   const cairo = UNIT_2_STUDY_VIEWS.find(fixture => fixture.location === 'Cairo');
   view = await openStandaloneUnit2Study(page, cairo);
   await view.locator(`[data-study-event="${cairo.ids[2]}"]`).click();
