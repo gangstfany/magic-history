@@ -3369,6 +3369,36 @@ async function verifyHomeLearningShell(page, port) {
   assert.ok(Math.abs(canvasHeightAfterTheme - canvasHeightBeforeTheme) <= 2,
     'opening and closing theme filters must not permanently reduce the map canvas');
 
+  await themeToggle.click();
+  const debounceFixture = await frame.locator('body').evaluate(() =>
+    window.getTimelineState().visibleEvents.find(event => event.titleEn.length > 6)?.titleEn);
+  assert.ok(debounceFixture, 'host-search debounce fixture must provide a searchable event title');
+  await page.locator('#hostSearch').fill(debounceFixture);
+  await page.locator('#hostCats [data-cat]').first().click();
+  await page.waitForTimeout(160);
+  assert.equal(await frame.locator('body').evaluate(() => window.__mapFilter.getState().query), debounceFixture,
+    'a theme update during the search debounce must not cancel the pending host query');
+  await page.locator('#hostSearch').fill('');
+  await page.locator('#hostCats [data-cat]').first().click();
+  await themeToggle.click();
+
+  await page.locator('#hostSearch').fill(debounceFixture);
+  await page.evaluate(() => {
+    const frameElement = document.querySelector('#worldMapFrame');
+    window.__hostApiBeforeDebounceReload = frameElement.contentWindow.__mapFilter;
+    frameElement.contentWindow.location.reload();
+  });
+  await page.waitForFunction(() => {
+    const nextApi = document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter;
+    return nextApi && nextApi !== window.__hostApiBeforeDebounceReload;
+  });
+  await page.waitForTimeout(160);
+  assert.equal(await page.locator('#hostSearch').inputValue(), '',
+    'reloading the iframe during a pending search must reset the host input');
+  assert.equal(await frame.locator('body').evaluate(() => window.__mapFilter.getState().query), '',
+    'a pending query from the old iframe must not replay into the rebound API');
+  await page.evaluate(() => { delete window.__hostApiBeforeDebounceReload; });
+
   // The shipped experience is index.html, where the contextual panel is cloned out of the
   // iframe. Prove that the clone remains a real control surface for the Unit 1 study layer.
   await page.locator('.map-card-head [data-learning-view="map"]').click();
