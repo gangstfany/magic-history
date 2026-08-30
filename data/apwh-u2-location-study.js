@@ -44,6 +44,8 @@
     ['apwh-u2-nanjing-ming-maritime-retrenchment', '10', 3, 'Ming Maritime Retrenchment', '1433–1450', 1433, 1450, 'world-event-10-3', ['2.3', '2.7'], ['GOV', 'ECN'], ['CCOT', 'Causation']],
   ];
 
+  validateManifestRows(STUDY_MANIFEST);
+
   const STUDY_CONTEXT = Object.freeze(Object.fromEntries(STUDY_MANIFEST.map(([
     id, locationNumber, sequence, title, dateLabel, startYear, endYear,
     mainEventKey, topicCodes, themeIds, examSkills,
@@ -347,16 +349,49 @@
   ];
 
   function describeRuleValue(value) { return value === '' ? '""' : String(value); }
-  function isEnglishString(value) {
+  function hasEnglishTextWithoutCjk(value) {
     return typeof value === 'string' && value.trim().length > 0
       && /[A-Za-z]/.test(value) && !/[㐀-鿿]/.test(value);
   }
-  const failRecord = (record, rule) => {
+  function isPlainObject(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
+      && Object.getPrototypeOf(value) === Object.prototype;
+  }
+  function failRecord(record, rule) {
     throw new Error(`Invalid Unit 2 study record ${record?.id || '(missing ID)'}: ${rule}`);
-  };
-  const failCard = (card, rule) => {
+  }
+  function failCard(card, rule) {
     throw new Error(`Invalid Unit 2 unit card ${card?.kind || '(missing kind)'} ${card?.id || '(missing ID)'}: ${rule}`);
-  };
+  }
+
+  function validateManifestRows(rows) {
+    for (const row of rows) {
+      const id = Array.isArray(row) ? row[0] : null;
+      const record = { id };
+      if (!Array.isArray(row) || row.length !== 11) {
+        failRecord(record, 'manifest row must be an eleven-field array');
+      }
+      const [manifestId, locationNumber, sequence, title, dateLabel, startYear, endYear,
+        mainEventKey, topicCodes, themeIds, examSkills] = row;
+      if (typeof manifestId !== 'string' || !manifestId.trim()) {
+        failRecord(record, 'manifest ID must be a nonempty string');
+      }
+      if (typeof locationNumber !== 'string' || !locationNumber.trim()) {
+        failRecord(record, 'manifest locationNumber must be a nonempty string');
+      }
+      if (!Number.isInteger(sequence)) failRecord(record, 'manifest sequence must be an integer');
+      if (typeof title !== 'string' || !title.trim()) failRecord(record, 'manifest title must be a nonempty string');
+      if (typeof dateLabel !== 'string' || !dateLabel.trim()) failRecord(record, 'manifest dateLabel must be a nonempty string');
+      if (!Number.isInteger(startYear)) failRecord(record, 'startYear must be an integer');
+      if (!Number.isInteger(endYear)) failRecord(record, 'endYear must be an integer');
+      if (typeof mainEventKey !== 'string' || !mainEventKey.trim()) {
+        failRecord(record, 'manifest mainEventKey must be a nonempty string');
+      }
+      if (!Array.isArray(topicCodes)) failRecord(record, 'topicCodes must be an array');
+      if (!Array.isArray(themeIds)) failRecord(record, 'themeIds must be an array');
+      if (!Array.isArray(examSkills)) failRecord(record, 'examSkills must be an array');
+    }
+  }
 
   function validateValues(record, values, validValues, field, singular) {
     if (!Array.isArray(values) || !values.length) failRecord(record, `missing ${field}`);
@@ -372,7 +407,7 @@
       throw new Error('Invalid Unit 2 study locations: expected exactly 2,8,9,10,84,85');
     }
     for (const [number, name] of Object.entries(LOCATIONS)) {
-      if (!isEnglishString(name)) {
+      if (!hasEnglishTextWithoutCjk(name)) {
         throw new Error(`Invalid Unit 2 study location ${number}: missing English location name`);
       }
     }
@@ -380,6 +415,9 @@
     if (RAW_RECORDS.length < 18) failRecord({ id: '(missing record)' }, 'expected exactly 18 records');
     const ids = new Set();
     for (const record of RAW_RECORDS) {
+      if (!isPlainObject(record)) {
+        failRecord(record, 'record must be a non-null plain object');
+      }
       if (!/^apwh-u2-(karakorum|samarkand|malacca|kilwa|cairo|nanjing)-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(record.id)) {
         failRecord(record, `invalid stable ID ${describeRuleValue(record.id)}`);
       }
@@ -392,7 +430,7 @@
       if (!VALID_MAIN_EVENTS.has(record.mainEventKey) || record.mainEventKey !== context.mainEventKey) failRecord(record, `invalid mainEventKey ${record.mainEventKey}`);
       for (const field of ['title', 'summary', 'significance', 'examConnection']) {
         if (typeof record[field] !== 'string' || !record[field].trim()) failRecord(record, `missing ${field}`);
-        if (!isEnglishString(record[field])) failRecord(record, `non-English ${field}`);
+        if (!hasEnglishTextWithoutCjk(record[field])) failRecord(record, `non-English ${field}`);
       }
       if (typeof record.dateLabel !== 'string' || !record.dateLabel.trim()) failRecord(record, 'missing dateLabel');
       if (!/^(?:c\. )?\d{3,4}(?:–(?:c\. )?\d{3,4})?$/.test(record.dateLabel)) {
@@ -454,7 +492,7 @@
         record.source.locator,
       ];
       if (nested.some(value => typeof value !== 'string' || !value.trim())) failRecord(record, 'missing nested learner content');
-      if (nested.some(value => !isEnglishString(value))) failRecord(record, 'non-English nested learner content');
+      if (nested.some(value => !hasEnglishTextWithoutCjk(value))) failRecord(record, 'non-English nested learner content');
       validateValues(record, context.topicCodes, VALID_TOPIC_CODES, 'topicCodes', 'topicCode');
       validateValues(record, context.themeIds, VALID_THEME_IDS, 'themeIds', 'themeId');
       validateValues(record, context.examSkills, VALID_EXAM_SKILLS, 'examSkills', 'examSkill');
@@ -544,6 +582,9 @@
     const seenKinds = new Set();
     const seenIds = new Set();
     for (const card of UNIT_CARD_LIST) {
+      if (!isPlainObject(card)) {
+        failCard(card, 'card must be a non-null plain object');
+      }
       if (!['context', 'synthesis'].includes(card.kind)) failCard(card, `invalid kind ${describeRuleValue(card.kind)}`);
       if (seenKinds.has(card.kind)) failCard(card, `duplicate kind ${card.kind}`);
       seenKinds.add(card.kind);
@@ -552,7 +593,7 @@
       if (!/^apwh-u2-(context|synthesis)-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(card.id)) failCard(card, 'invalid stable ID');
       for (const field of ['role', 'title', 'summary', 'prompt']) {
         if (typeof card[field] !== 'string' || !card[field].trim()) failCard(card, `missing ${field}`);
-        if (!isEnglishString(card[field])) failCard(card, `non-English ${field}`);
+        if (!hasEnglishTextWithoutCjk(card[field])) failCard(card, `non-English ${field}`);
       }
       if (!Array.isArray(card.examSkills)) failCard(card, 'examSkills must be an array');
       if (card.examSkills.length < 1) failCard(card, 'missing examSkills');
@@ -569,7 +610,7 @@
       if (card.takeaways.length !== 3) failCard(card, 'takeaways must contain exactly three items');
       for (const takeaway of card.takeaways) {
         if (typeof takeaway !== 'string' || !takeaway.trim()) failCard(card, 'empty takeaway');
-        if (!isEnglishString(takeaway)) failCard(card, 'non-English takeaway');
+        if (!hasEnglishTextWithoutCjk(takeaway)) failCard(card, 'non-English takeaway');
       }
     }
     if (UNIT_CARD_LIST.length !== 2 || !seenKinds.has('context') || !seenKinds.has('synthesis')) {
