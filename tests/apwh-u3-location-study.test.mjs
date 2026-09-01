@@ -94,29 +94,378 @@ const expectedUnitCards = {
   },
 };
 
-const expectedCausalEdges = new Set([
-  'apwh-u3-ottoman-cannon-conquest-constantinople->apwh-u3-ottoman-devshirme-janissary-system',
-  'apwh-u3-ottoman-devshirme-janissary-system->apwh-u3-ottoman-sunni-millet-imperial-architecture',
-  'apwh-u3-safavid-ismail-qizilbash-conquest->apwh-u3-safavid-shah-abbas-ghulams-centralization',
-  'apwh-u3-safavid-shah-abbas-ghulams-centralization->apwh-u3-safavid-twelver-shiism-ottoman-rivalry',
-  'apwh-u3-mughal-babur-gunpowder-panipat->apwh-u3-mughal-akbar-mansabdars-zamindars',
-  'apwh-u3-mughal-akbar-mansabdars-zamindars->apwh-u3-mughal-akbar-tolerance-aurangzeb-orthodoxy',
-  'apwh-u3-russia-ivan-cossacks-siberian-expansion->apwh-u3-russia-peter-table-ranks',
-  'apwh-u3-russia-peter-table-ranks->apwh-u3-russia-orthodox-tsardom-boyars-new-capital',
-  'apwh-u3-ming-qing-restoration-expansion->apwh-u3-ming-qing-civil-service-continuity',
-  'apwh-u3-ming-qing-civil-service-continuity->apwh-u3-ming-qing-manchu-confucian-ethnic-hierarchy',
-  'apwh-u3-tokugawa-firearms-unification-japan->apwh-u3-tokugawa-sankin-kotai-daimyo-control',
-  'apwh-u3-tokugawa-sankin-kotai-daimyo-control->apwh-u3-tokugawa-confucian-sakoku-hierarchy',
+const expectedCausalEdges = new Map([
+  ['apwh-u3-ottoman-cannon-conquest-constantinople->apwh-u3-ottoman-devshirme-janissary-system', 'Rapid Ottoman conquest created a multiethnic governing problem that devshirme-trained soldiers and officials helped the sultan administer.'],
+  ['apwh-u3-ottoman-devshirme-janissary-system->apwh-u3-ottoman-sunni-millet-imperial-architecture', 'A centrally loyal service elite supported taxation and order, while Sunni institutions, millets, and imperial architecture defined how diverse subjects fit within Ottoman rule.'],
+  ['apwh-u3-safavid-ismail-qizilbash-conquest->apwh-u3-safavid-shah-abbas-ghulams-centralization', 'Ismail I won territory through Qizilbash support, but dependence on tribal warriors later encouraged Shah Abbas to build ghulam forces and a more centralized state.'],
+  ['apwh-u3-safavid-shah-abbas-ghulams-centralization->apwh-u3-safavid-twelver-shiism-ottoman-rivalry', 'Centralized military and administrative power helped Safavid shahs enforce Twelver Shi\'ism, a policy that unified the dynasty while sharpening conflict with Sunni subjects and neighbors.'],
+  ['apwh-u3-mughal-babur-gunpowder-panipat->apwh-u3-mughal-akbar-mansabdars-zamindars', 'Babur\'s battlefield victory created a large and diverse realm that Akbar stabilized by ranking imperial servants and working through local revenue intermediaries.'],
+  ['apwh-u3-mughal-akbar-mansabdars-zamindars->apwh-u3-mughal-akbar-tolerance-aurangzeb-orthodoxy', 'Akbar\'s inclusive appointments and revenue system made cooperation with Hindu elites practical, while Aurangzeb\'s different religious policies strained that administrative settlement.'],
+  ['apwh-u3-russia-ivan-cossacks-siberian-expansion->apwh-u3-russia-peter-table-ranks', 'Expansion across a vast frontier increased the Russian state\'s need for dependable soldiers and officials, which Peter tied more closely to state service through rank and reform.'],
+  ['apwh-u3-russia-peter-table-ranks->apwh-u3-russia-orthodox-tsardom-boyars-new-capital', 'Compulsory state service weakened independent boyar power and supported Peter\'s effort to present an Orthodox tsardom from a new, Western-facing imperial capital.'],
+  ['apwh-u3-ming-qing-restoration-expansion->apwh-u3-ming-qing-civil-service-continuity', 'Ming restoration and Qing conquest both produced large territorial states whose rulers relied on the civil-service tradition to turn military control into routine administration.'],
+  ['apwh-u3-ming-qing-civil-service-continuity->apwh-u3-ming-qing-manchu-confucian-ethnic-hierarchy', 'Retaining Confucian officials helped Qing rulers claim Chinese dynastic legitimacy even as banner privileges and ethnic distinctions preserved a separate Manchu ruling identity.'],
+  ['apwh-u3-tokugawa-firearms-unification-japan->apwh-u3-tokugawa-sankin-kotai-daimyo-control', 'Military unification ended prolonged warfare in Japan, but the shogunate then had to restrain daimyo through alternate attendance, hostages, and costly obligations.'],
+  ['apwh-u3-tokugawa-sankin-kotai-daimyo-control->apwh-u3-tokugawa-confucian-sakoku-hierarchy', 'Control of daimyo secured the shogunate, while Neo-Confucian status rules and foreign restrictions extended that ordering logic across Tokugawa society.'],
 ]);
 
-const expectedRelatedPairs = new Set([
-  'apwh-u3-ottoman-cannon-conquest-constantinople|apwh-u3-safavid-ismail-qizilbash-conquest',
-  'apwh-u3-ottoman-devshirme-janissary-system|apwh-u3-tokugawa-sankin-kotai-daimyo-control',
-  'apwh-u3-mughal-akbar-tolerance-aurangzeb-orthodoxy|apwh-u3-safavid-twelver-shiism-ottoman-rivalry',
-  'apwh-u3-ming-qing-restoration-expansion|apwh-u3-russia-ivan-cossacks-siberian-expansion',
-  'apwh-u3-ming-qing-civil-service-continuity|apwh-u3-mughal-akbar-mansabdars-zamindars',
-  'apwh-u3-ming-qing-manchu-confucian-ethnic-hierarchy|apwh-u3-tokugawa-confucian-sakoku-hierarchy',
+const expectedRelatedPairs = new Map([
+  ['apwh-u3-ottoman-cannon-conquest-constantinople|apwh-u3-safavid-ismail-qizilbash-conquest', 'Ottoman artillery and Safavid Qizilbash mobilization both exploited regional political openings, but their different military strengths became visible in their direct rivalry.'],
+  ['apwh-u3-ottoman-devshirme-janissary-system|apwh-u3-tokugawa-sankin-kotai-daimyo-control', 'Ottoman devshirme and Tokugawa alternate attendance used different forms of controlled service to reduce the independence of military elites.'],
+  ['apwh-u3-mughal-akbar-tolerance-aurangzeb-orthodoxy|apwh-u3-safavid-twelver-shiism-ottoman-rivalry', 'Safavid enforcement of Shi\'ism and changing Mughal tolerance policies show how religious choices could either recruit diverse elites or intensify resistance.'],
+  ['apwh-u3-ming-qing-restoration-expansion|apwh-u3-russia-ivan-cossacks-siberian-expansion', 'Russia and Qing China incorporated vast Inner Asian frontiers through military campaigns, local intermediaries, tribute, and settlement rather than overseas conquest.'],
+  ['apwh-u3-ming-qing-civil-service-continuity|apwh-u3-mughal-akbar-mansabdars-zamindars', 'Ming-Qing examinations and Mughal ranked service both connected local elites to imperial administration, although they recruited and rewarded officials differently.'],
+  ['apwh-u3-ming-qing-manchu-confucian-ethnic-hierarchy|apwh-u3-tokugawa-confucian-sakoku-hierarchy', 'Qing and Tokugawa rulers both used Confucian hierarchy to stabilize rule while preserving privileged identities for Manchu bannermen or samurai.'],
 ]);
+
+const expectedRecordContent = [
+  {
+    id: 'apwh-u3-ottoman-cannon-conquest-constantinople',
+    title: 'Cannon Conquest of Constantinople',
+    summary: 'Mehmed II used massive cannon and a coordinated land-and-sea siege to capture Constantinople for the Ottoman Empire in 1453.',
+    significance: 'The victory removed the Byzantine capital, secured the Bosporus, and showed how gunpowder artillery could help an ambitious dynasty break fortified political centers.',
+    keyPeople: [
+      { name: 'Mehmed II', role: 'The Ottoman sultan who organized the 1453 siege and made conquered Constantinople an imperial capital.' },
+    ],
+    keyTerms: [
+      { term: 'bombard', explanation: 'A very large early cannon designed to fire heavy stone shot against fortifications.' },
+      { term: 'Bosporus', explanation: 'The strait at Constantinople linking the Black Sea with the Mediterranean through the Sea of Marmara.' },
+    ],
+    evidence: [
+      'Ottoman cannon repeatedly struck the land walls during the fifty-three-day siege of 1453.',
+      'After taking the city, Mehmed II made it an Ottoman capital controlling movement through the Bosporus.',
+    ],
+    examConnection: 'Use the siege to explain how gunpowder changed the balance between mobile rulers and fortified cities, while also identifying Byzantine weakness and Ottoman organization as conditions.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-ottoman-devshirme-janissary-system',
+    title: 'Devshirme and the Janissary System',
+    summary: 'Ottoman officials recruited Christian boys through devshirme, converted and educated them, and directed the most capable into military or administrative service.',
+    significance: 'Because these servants owed position and training to the sultan, they gave the central government a disciplined counterweight to hereditary nobles and provincial power holders.',
+    keyPeople: [
+      { name: 'Ottoman recruiting officials', role: 'Selected boys from conquered Christian communities and assigned them to education, palace service, administration, or the Janissaries.' },
+    ],
+    keyTerms: [
+      { term: 'devshirme', explanation: 'The Ottoman levy that recruited boys from Christian communities for conversion, education, and state service.' },
+      { term: 'Janissaries', explanation: 'Elite infantry trained through the devshirme system and paid to serve the Ottoman sultan.' },
+    ],
+    evidence: [
+      'The levy drew especially from Balkan Christian communities during the fifteenth and sixteenth centuries.',
+      'Some recruits became Janissaries, while others served as scribes, tax officials, administrators, or diplomats.',
+    ],
+    examConnection: 'Use devshirme to explain the mechanism of Ottoman centralization: controlled recruitment and training produced officials whose careers depended more on the ruler than on local kinship.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-ottoman-sunni-millet-imperial-architecture',
+    title: 'Sunni Rule, the Millet System, and Imperial Architecture',
+    summary: 'Ottoman sultans claimed Sunni authority, governed recognized religious communities through millets, and used converted landmarks and new mosques to display imperial power.',
+    significance: 'This combination made diversity administratively useful and projected legitimacy, yet Sunni leadership and frontier competition also sharpened rivalry with the Shi\'a Safavid state.',
+    keyPeople: [
+      { name: 'Suleiman I', role: 'Expanded Ottoman power while sponsoring law, mosques, fortifications, and an image of the sultan as a defender of Sunni order.' },
+    ],
+    keyTerms: [
+      { term: 'millet', explanation: 'A recognized religious community allowed to manage selected legal, educational, and charitable affairs under Ottoman authority.' },
+      { term: 'imperial architecture', explanation: 'Monumental buildings commissioned to make a ruler\'s wealth, faith, and political authority visible.' },
+    ],
+    evidence: [
+      'Ottoman rulers converted Hagia Sophia into a mosque and built major imperial complexes such as the Suleymaniye Mosque.',
+      'Millet arrangements allowed Orthodox Christian, Armenian, and Jewish leaders to supervise parts of communal life while paying taxes to the empire.',
+    ],
+    examConnection: 'Compare Ottoman accommodation through millets with Safavid religious enforcement, then explain how each policy addressed legitimacy and produced different patterns of cohesion or conflict.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-safavid-ismail-qizilbash-conquest',
+    title: 'Ismail I and Qizilbash Conquest',
+    summary: 'Ismail I used the militant loyalty of Qizilbash followers to conquer Persia and establish himself as shah in 1501.',
+    significance: 'Qizilbash mobilization let a young ruler exploit post-Timurid political fragmentation, but defeat by Ottoman firearms at Chaldiran exposed the limits of cavalry-centered conquest.',
+    keyPeople: [
+      { name: 'Ismail I', role: 'The Safavid founder who led Qizilbash forces, conquered Persia, and proclaimed himself shah in 1501.' },
+    ],
+    keyTerms: [
+      { term: 'Qizilbash', explanation: 'Turkic tribal warriors whose militant religious loyalty supplied the early Safavid state with its main fighting force.' },
+      { term: 'Battle of Chaldiran', explanation: 'The 1514 Ottoman victory in which artillery and firearms helped defeat Safavid cavalry.' },
+    ],
+    evidence: [
+      'Qizilbash forces helped Ismail seize Tabriz and claim the title of shah in 1501.',
+      'At Chaldiran in 1514, Ottoman cannon and Janissary firearms defeated Safavid forces that relied heavily on mounted warriors.',
+    ],
+    examConnection: 'Use Ismail to connect political opportunity and charismatic military support to state formation, then use Chaldiran to qualify any claim that all gunpowder empires adopted firearms equally.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-safavid-shah-abbas-ghulams-centralization',
+    title: 'Shah Abbas, Ghulams, and Centralization',
+    summary: 'Shah Abbas I reduced dependence on Qizilbash chiefs by expanding ghulam service, strengthening firearm units, and drawing administrators from Persian society.',
+    significance: 'The reforms gave the shah a more centrally loyal military and bureaucracy, allowing Safavid rulers to collect revenue and govern without surrendering as much power to tribal commanders.',
+    keyPeople: [
+      { name: 'Shah Abbas I', role: 'The Safavid ruler who reorganized the army, expanded ghulam service, imported weapons, and strengthened central authority.' },
+    ],
+    keyTerms: [
+      { term: 'ghulam', explanation: 'A military or court servant, often recruited from converted Caucasian populations, whose career depended on the Safavid shah.' },
+      { term: 'men of the pen', explanation: 'Persian civil administrators who staffed the bureaucracy and balanced the influence of tribal military elites.' },
+    ],
+    evidence: [
+      'Abbas recruited Georgian, Armenian, and Circassian ghulams to serve in forces loyal to the crown.',
+      'He imported firearms and used European assistance to train artillery and musket units during his reign from 1588 to 1629.',
+    ],
+    examConnection: 'Compare Safavid ghulams with Ottoman Janissaries by naming the shared centralizing problem and the different recruitment systems used to create loyal military households.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-safavid-twelver-shiism-ottoman-rivalry',
+    title: "Twelver Shi'ism and Ottoman Rivalry",
+    summary: 'Safavid shahs made Twelver Shi\'ism a defining state religion and pressured a largely Sunni population to adopt it.',
+    significance: 'A shared religious identity distinguished Safavid Iran and supported dynastic authority, but coercion intensified internal resistance and made rivalry with the Sunni Ottomans more durable.',
+    keyPeople: [
+      { name: 'Ismail I', role: 'Declared Twelver Shi\'ism the state faith and used conversion policy to distinguish Safavid rule from Sunni rivals.' },
+    ],
+    keyTerms: [
+      { term: 'Twelver Shi\'ism', explanation: 'The Shi\'a tradition recognizing a line of twelve imams and awaiting the return of the hidden twelfth imam.' },
+      { term: 'Sunni-Shi\'a rivalry', explanation: 'A political and religious division that reinforced conflict between the Ottoman and Safavid empires.' },
+    ],
+    evidence: [
+      'Safavid authorities required Sunni subjects to convert and used taxation and state patronage to encourage Shi\'a practice.',
+      'Ottoman-Safavid wars contested frontier territory and trade, while a Sunni Afghan revolt led to the seizure of Isfahan in 1722.',
+    ],
+    examConnection: 'Use Safavid religious policy to show both sides of legitimation: a ruler can create a stronger shared identity while also producing resistance among subjects excluded by that identity.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-mughal-babur-gunpowder-panipat',
+    title: 'Babur, Gunpowder, and Panipat',
+    summary: 'Babur combined field artillery, matchlock troops, and mobile cavalry to defeat the larger Delhi Sultanate army at Panipat in 1526.',
+    significance: 'The battle founded Mughal rule in northern India and demonstrates how tactical coordination and an opponent\'s political weakness could make gunpowder decisive.',
+    keyPeople: [
+      { name: 'Babur', role: 'The Central Asian conqueror who defeated Ibrahim Lodi at Panipat and founded the Mughal Empire in India.' },
+    ],
+    keyTerms: [
+      { term: 'field artillery', explanation: 'Mobile cannon positioned for use during a battle rather than only against walls.' },
+      { term: 'Battle of Panipat', explanation: 'The 1526 battle in which Babur defeated Ibrahim Lodi and established a Mughal foothold in northern India.' },
+    ],
+    evidence: [
+      'Babur placed cannon and matchlock troops behind a defensive line of carts at the first Battle of Panipat.',
+      'His smaller force defeated Ibrahim Lodi\'s larger army, including its war elephants, on April 21, 1526.',
+    ],
+    examConnection: 'Use Panipat to explain that military technology mattered through deployment and organization, not as an automatic advantage detached from leadership or an opponent\'s weakness.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-mughal-akbar-mansabdars-zamindars',
+    title: "Akbar's Mansabdars and Zamindars",
+    summary: 'Akbar ranked imperial servants through the mansabdar system and used zamindars to collect revenue and connect local elites to Mughal government.',
+    significance: 'These institutions converted conquest into taxes and service across a diverse empire, although revenue rights could later let local officials accumulate wealth and armed independence.',
+    keyPeople: [
+      { name: 'Akbar', role: 'The Mughal emperor who expanded ranked imperial service, incorporated Hindu elites, and reorganized revenue administration.' },
+    ],
+    keyTerms: [
+      { term: 'mansabdar', explanation: 'A ranked Mughal official expected to provide military or civil service according to an assigned status.' },
+      { term: 'zamindar', explanation: 'A local revenue intermediary who collected taxes and connected rural producers to the Mughal state.' },
+    ],
+    evidence: [
+      'Mansab ranks helped determine an official\'s status, pay, and obligation to supply cavalry for imperial service.',
+      'Zamindars collected a share of agricultural production, and Akbar appointed both Muslim and Hindu elites to government roles.',
+    ],
+    examConnection: 'Compare mansabdars and zamindars with another empire\'s service elite by explaining how each institution converted local influence into revenue or military capacity for the center.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-mughal-akbar-tolerance-aurangzeb-orthodoxy',
+    title: "From Akbar's Tolerance to Aurangzeb's Orthodoxy",
+    summary: 'Akbar recruited Hindu elites and reduced religious burdens, while Aurangzeb later promoted stricter Islamic policies and restored the jizya.',
+    significance: 'The shift shows how religious policy altered cooperation in a Hindu-majority empire: inclusion strengthened alliances, while orthodoxy and long wars contributed to resistance and fiscal strain.',
+    keyPeople: [
+      { name: 'Akbar', role: 'Practiced broad religious tolerance and recruited Hindu officials to strengthen cooperation within the Mughal Empire.' },
+      { name: 'Aurangzeb', role: 'Expanded Mughal territory while enforcing stricter Islamic policies that increased conflict with Hindu and Sikh communities.' },
+    ],
+    keyTerms: [
+      { term: 'jizya', explanation: 'A tax historically imposed on non-Muslim subjects in many Islamic states, abolished by Akbar and restored by Aurangzeb.' },
+      { term: 'Din-i Ilahi', explanation: 'Akbar\'s limited court-centered effort to draw selected ideas from multiple religions into an ethical fellowship.' },
+    ],
+    evidence: [
+      'Akbar abolished the jizya, funded multiple religious communities, married Hindu women, and appointed Hindu zamindars.',
+      'Aurangzeb restored the jizya and pursued policies and wars that provoked resistance among Marathas, Sikhs, and other subjects.',
+    ],
+    examConnection: 'Use the Akbar-Aurangzeb contrast for continuity and change by tracing how a change in religious legitimation affected elite cooperation, rebellion, and the cost of imperial rule.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-russia-ivan-cossacks-siberian-expansion',
+    title: 'Ivan IV, Cossacks, and Siberian Expansion',
+    summary: 'From Moscow, Ivan IV conquered Volga khanates and licensed Cossacks and merchant families to push Russian power across Siberia toward the Pacific.',
+    significance: 'This Moscow-centered expansion created the continental state that Peter later redirected from St. Petersburg, a city founded only in 1703, long after Ivan\'s reign.',
+    keyPeople: [
+      { name: 'Ivan IV', role: 'The Moscow-based tsar who conquered Kazan and Astrakhan and encouraged eastward Russian expansion.' },
+      { name: 'Yermak Timofeyevich', role: 'A Cossack leader whose campaign against the Siberian Khanate opened further Russian movement eastward.' },
+    ],
+    keyTerms: [
+      { term: 'Cossacks', explanation: 'Frontier warrior communities whose mobility and military service supported Russian expansion.' },
+      { term: 'fur tribute', explanation: 'Payments in valuable pelts demanded from Indigenous Siberian communities and used to finance further expansion.' },
+    ],
+    evidence: [
+      'Ivan IV captured Kazan in 1552 and Astrakhan in 1556, extending Moscow\'s control along the Volga.',
+      'Cossack and merchant expeditions crossed Siberia, and Russian parties reached the Pacific coast by 1639.',
+    ],
+    examConnection: 'Use Russia to compare continental frontier expansion with gunpowder conquest, while keeping the chronology clear: Ivan expanded from Moscow before St. Petersburg existed.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-russia-peter-table-ranks',
+    title: 'Peter the Great and the Table of Ranks',
+    summary: 'Peter the Great reorganized Russia\'s military and government and used the Table of Ranks to tie elite advancement to service for the state.',
+    significance: 'Service-based rank weakened the assumption that old boyar ancestry alone determined status and expanded the tsar\'s control over officers and civil administrators.',
+    keyPeople: [
+      { name: 'Peter the Great', role: 'The Russian tsar who pursued military, administrative, and cultural reforms to strengthen centralized state power.' },
+    ],
+    keyTerms: [
+      { term: 'Table of Ranks', explanation: 'Peter\'s hierarchy of military, civil, and court offices that linked noble status and promotion to state service.' },
+      { term: 'service nobility', explanation: 'Elites whose privileges and advancement depended on performing military or administrative duties for the ruler.' },
+    ],
+    evidence: [
+      'Peter reorganized the army, expanded state industries, and required nobles to prepare for government or military service.',
+      'The 1722 Table of Ranks arranged offices into grades through which service and promotion could confer status.',
+    ],
+    examConnection: 'Use the Table of Ranks as evidence of centralization by explaining how a formal promotion system redirected noble ambition into institutions controlled by the tsar.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-russia-orthodox-tsardom-boyars-new-capital',
+    title: 'Orthodox Tsardom, Boyar Control, and a New Capital',
+    summary: 'Russian rulers joined Orthodox tsarist claims with coercion of boyars, while Peter founded St. Petersburg as a Western-facing capital and center of court service.',
+    significance: 'Religious title, compulsory service, and capital relocation made imperial authority visible, but they also imposed heavy labor, tax, and cultural demands on Russian society.',
+    keyPeople: [
+      { name: 'Peter the Great', role: 'Founded St. Petersburg, moved the court toward the Baltic, and compelled nobles to serve within his reformed state.' },
+    ],
+    keyTerms: [
+      { term: 'tsar', explanation: 'The Russian imperial title derived from Caesar and associated with autocratic and Orthodox authority.' },
+      { term: 'boyars', explanation: 'Russia\'s hereditary high nobles, whose independent political power Ivan IV and Peter the Great worked to limit.' },
+    ],
+    evidence: [
+      'Ivan IV was crowned tsar in 1547 and confiscated land from boyars who resisted his authority.',
+      'Peter founded St. Petersburg in 1703 on Baltic territory and later moved the capital there, requiring nobles to maintain a presence near his court.',
+    ],
+    examConnection: 'Use St. Petersburg as legitimation evidence only with chronology: connect Peter\'s new capital to Westernization and boyar control rather than to Ivan IV\'s earlier conquests.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-ming-qing-restoration-expansion',
+    title: 'From Ming Restoration to Qing Expansion',
+    summary: 'The Ming restored Chinese rule after the Yuan in 1368, while the Manchu Qing conquered the Ming realm and later expanded into Taiwan, Mongolia, Tibet, and Xinjiang.',
+    significance: 'The sequence combines dynastic change with territorial growth: Ming restoration rebuilt a Chinese state, whereas Qing campaigns created a larger multiethnic Inner Asian empire.',
+    keyPeople: [
+      { name: 'Zhu Yuanzhang', role: 'Overthrew Yuan rule and founded the Ming dynasty as the Hongwu Emperor in 1368.' },
+      { name: 'Qianlong Emperor', role: 'Directed eighteenth-century Qing campaigns that incorporated Xinjiang and extended influence across Inner Asia.' },
+    ],
+    keyTerms: [
+      { term: 'Ming restoration', explanation: 'The reestablishment of Chinese dynastic rule and institutions after the fall of the Mongol-led Yuan dynasty.' },
+      { term: 'frontier incorporation', explanation: 'The process of bringing borderlands under imperial control through war, alliances, garrisons, tribute, or administration.' },
+    ],
+    evidence: [
+      'Zhu Yuanzhang defeated the Yuan and established the Ming dynasty in 1368.',
+      'Kangxi campaigned in Taiwan and Mongolia, while Qianlong\'s forces conquered Xinjiang in the 1750s and intervened in Tibet.',
+    ],
+    examConnection: 'Use this case for continuity and change by separating Ming restoration from Qing expansion, then compare Qing frontier incorporation with Russian movement across Siberia.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-ming-qing-civil-service-continuity',
+    title: 'Civil-Service Continuity under Ming and Qing',
+    summary: 'Ming rulers restored schools, examinations, and scholar-official government after Yuan rule, and Qing emperors retained those institutions to administer China.',
+    significance: 'Civil-service continuity supplied trained officials and linked both dynasties to Confucian political expectations, even though Manchu rulers also preserved separate conquest institutions.',
+    keyPeople: [
+      { name: 'scholar-gentry', role: 'Educated elites who prepared for examinations, staffed government offices, and connected imperial policy with local society.' },
+    ],
+    keyTerms: [
+      { term: 'civil-service examination', explanation: 'A competitive test centered on Confucian learning that selected candidates for imperial office.' },
+      { term: 'scholar-gentry', explanation: 'The educated landholding class from which many Chinese civil officials and local leaders were drawn.' },
+    ],
+    evidence: [
+      'The Ming restored examination schools and rebuilt a Confucian bureaucracy weakened under the Yuan.',
+      'Qing emperors continued the examination system and employed Chinese scholar-officials across the civil administration.',
+    ],
+    examConnection: 'Use the examination system as continuity evidence while qualifying the claim: Qing rulers kept Chinese civil administration alongside Manchu banners and ethnic privileges.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-ming-qing-manchu-confucian-ethnic-hierarchy',
+    title: 'Manchu Rule, Confucian Legitimacy, and Ethnic Hierarchy',
+    summary: 'Qing rulers performed Confucian emperorship and preserved Chinese institutions while maintaining Manchu banners, marriage boundaries, and visible signs of conquest.',
+    significance: 'This dual strategy made Manchu rulers legible as Chinese emperors without dissolving the privileged identity that supported their military and political dominance.',
+    keyPeople: [
+      { name: 'Kangxi Emperor', role: 'A Qing ruler who patronized Confucian learning and governed through Chinese institutions while preserving Manchu imperial power.' },
+    ],
+    keyTerms: [
+      { term: 'banner system', explanation: 'The Manchu military and social organization that grouped households into hereditary units with privileged service roles.' },
+      { term: 'queue', explanation: 'The hairstyle Qing authorities required male subjects to adopt as a visible sign of submission to Manchu rule.' },
+    ],
+    evidence: [
+      'Qing emperors sponsored Confucian scholarship, performed Chinese imperial rituals, and continued civil-service examinations.',
+      'Manchu bannermen held protected status, and the queue order made political obedience visible among conquered male subjects.',
+    ],
+    examConnection: 'Explain Qing legitimacy as a both-and strategy: Confucian continuity recruited Chinese elites, while ethnic hierarchy preserved the ruling group produced by conquest.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-tokugawa-firearms-unification-japan',
+    title: 'Firearms and the Unification of Japan',
+    summary: 'In Japan, Oda Nobunaga and Toyotomi Hideyoshi used firearms, castle warfare, alliances, and disarmament to defeat rivals before Tokugawa victory completed unification.',
+    significance: 'Unification ended the prolonged competition of the warring-states era and created the territorial and military foundation for a shogunate centered at Edo.',
+    keyPeople: [
+      { name: 'Oda Nobunaga', role: 'A Japanese unifier who armed troops with imported muskets and defeated rival daimyo during the late sixteenth century.' },
+      { name: 'Toyotomi Hideyoshi', role: 'Continued unification and ordered a sword hunt that separated armed warriors from cultivators.' },
+    ],
+    keyTerms: [
+      { term: 'arquebus', explanation: 'An early matchlock firearm introduced to Japan through Portuguese contact and adopted by competing armies.' },
+      { term: 'sword hunt', explanation: 'Hideyoshi\'s confiscation of weapons from peasants to reduce revolt and reinforce status separation.' },
+    ],
+    evidence: [
+      'Nobunaga equipped forces with Portuguese-style matchlocks and used organized firearm volleys against rival armies.',
+      'Hideyoshi\'s 1588 sword hunt ordered peasants to surrender weapons, while Tokugawa Ieyasu won supremacy at Sekigahara in 1600.',
+    ],
+    examConnection: 'Use Japan to show that firearms aided unification through tactical adoption, then connect disarmament to the governance problem created after military victory.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-tokugawa-sankin-kotai-daimyo-control',
+    title: 'Sankin-kotai and Daimyo Control',
+    summary: 'The Tokugawa shogunate required daimyo to alternate residence between their domains and Edo while their families remained near the shogun.',
+    significance: 'Alternate attendance limited rebellion by keeping lords under observation and forcing them to spend resources on travel and duplicate households instead of independent armies.',
+    keyPeople: [
+      { name: 'Tokugawa Iemitsu', role: 'The shogun whose government formalized alternate-attendance obligations for daimyo in the 1630s.' },
+    ],
+    keyTerms: [
+      { term: 'sankin-kotai', explanation: 'The alternate-attendance system requiring daimyo to divide their time between Edo and their domains.' },
+      { term: 'daimyo', explanation: 'A Japanese domain lord who retained local authority but remained subordinate to the Tokugawa shogunate.' },
+    ],
+    evidence: [
+      'A 1635 regulation formalized regular daimyo residence at Edo and recurring travel to their domains.',
+      'Daimyo maintained two residences, while wives and heirs commonly remained in Edo as guarantees of loyalty.',
+    ],
+    examConnection: 'Compare sankin-kotai with another ruler\'s control of nobles by explaining how surveillance, hostages, and required spending reduced the resources available for rebellion.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4' },
+  },
+  {
+    id: 'apwh-u3-tokugawa-confucian-sakoku-hierarchy',
+    title: 'Neo-Confucian Order, Sakoku, and Social Hierarchy',
+    summary: 'Tokugawa rulers promoted a Neo-Confucian status order and restricted most foreign contact while permitting tightly supervised exchange through selected ports.',
+    significance: 'Hierarchy and maritime restriction supported domestic stability and shogunal authority, but they fixed inherited status distinctions and narrowed channels for external exchange.',
+    keyPeople: [
+      { name: 'Tokugawa shoguns', role: 'Enforced social distinctions, suppressed Christianity, and regulated foreign merchants to protect the political order.' },
+    ],
+    keyTerms: [
+      { term: 'sakoku', explanation: 'The Tokugawa system of restricted foreign relations, controlled travel, and tightly limited overseas trade.' },
+      { term: 'Neo-Confucian hierarchy', explanation: 'A social ordering that emphasized duty and ranked samurai, peasants, artisans, and merchants in an idealized status system.' },
+    ],
+    evidence: [
+      'Tokugawa policies fixed samurai as a privileged warrior status and organized other occupations within an official hierarchy.',
+      'In the 1630s the shogunate expelled most Europeans, suppressed Christianity, and confined Dutch trade to a controlled site at Nagasaki.',
+    ],
+    examConnection: 'Use Tokugawa policy for comparison and continuity by separating restricted diplomacy from total isolation and linking hierarchy to the shogunate\'s need for political order.',
+    source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4' },
+  },
+];
 
 const expectedLedgerRows = [
   ['apwh-u3-ottoman-cannon-conquest-constantinople', 'Topics 3.1 and 3.4', 'world-event-18-3', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', 'Mehmed II, the 1453 siege, large cannon, the fall of Constantinople, and Ottoman control of the Bosporus'],
@@ -151,6 +500,16 @@ test('publishes the exact Unit 3 empire-by-lens manifest', () => {
     [...record.topicCodes], [...record.themeIds], [...record.examSkills],
   ]), expectedManifest);
   for (const record of api.records) assert.deepEqual(Object.keys(record).sort(), recordKeys);
+});
+
+test('locks the complete learner copy and source metadata for all eighteen Unit 3 records', () => {
+  const contentKeys = [
+    'id', 'title', 'summary', 'significance', 'keyPeople', 'keyTerms',
+    'evidence', 'examConnection', 'source',
+  ];
+  assert.deepEqual(api.records.map(record => Object.fromEntries(
+    contentKeys.map(key => [key, record[key]]),
+  )), expectedRecordContent);
 });
 
 test('publishes one exact Expansion, Administration, and Legitimation & Conflict sequence per empire', () => {
@@ -229,8 +588,8 @@ test('keeps chronology and map geography explicit in the learner copy', () => {
 });
 
 test('publishes exact causal chains and related comparison pairs with reciprocal English notes', () => {
-  const causal = new Set();
-  const related = new Set();
+  const causal = new Map();
+  const related = new Map();
   const categoryReciprocals = {
     causeStudyPointIds: 'effectStudyPointIds',
     effectStudyPointIds: 'causeStudyPointIds',
@@ -249,8 +608,12 @@ test('publishes exact causal chains and related comparison pairs with reciprocal
         assert.ok(target[reciprocal].includes(record.id), `${record.id} nonreciprocal ${targetId}`);
         assert.match(record.connectionNotes[targetId], /[A-Za-z]/);
         assert.equal(target.connectionNotes[record.id], record.connectionNotes[targetId]);
-        if (category === 'effectStudyPointIds') causal.add(`${record.id}->${targetId}`);
-        if (category === 'relatedStudyPointIds') related.add([record.id, targetId].sort().join('|'));
+        if (category === 'effectStudyPointIds') {
+          causal.set(`${record.id}->${targetId}`, record.connectionNotes[targetId]);
+        }
+        if (category === 'relatedStudyPointIds') {
+          related.set([record.id, targetId].sort().join('|'), record.connectionNotes[targetId]);
+        }
       }
     }
     assert.ok(seen.size >= 1, `${record.id} must have a connection`);
@@ -266,6 +629,12 @@ test('locks all five English source-ledger columns for exactly eighteen Unit 3 r
   assert.equal(rows.length, 18);
   assert.ok(rows.every(row => row.length === 5 && row.every(cell => /[A-Za-z0-9]/.test(cell))));
   assert.deepEqual(rows, expectedLedgerRows);
+  const ledgerById = new Map(rows.map(row => [row[0], row]));
+  for (const [index, content] of expectedRecordContent.entries()) {
+    const ledgerRow = ledgerById.get(content.id);
+    assert.equal(ledgerRow[2], expectedManifest[index][9], `${content.id} ledger main event`);
+    assert.equal(ledgerRow[3], content.source.locator, `${content.id} ledger source locator`);
+  }
 });
 
 test('returns defensive lookup arrays, stable identities, map names, and a locked global', () => {
