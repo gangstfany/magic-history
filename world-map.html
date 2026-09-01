@@ -5136,6 +5136,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     return empire && lens ? `${empire} · ${lens}` : `Unit ${api.unitNumber} study point`;
   }
 
+  function locationStudyOrderLabel(records) {
+    return records.length > 0 && records.every(record =>
+      String(record?.empire || '').trim() && String(record?.lens || '').trim())
+      ? 'comparative lens order' : 'chronological order';
+  }
+
   function studyDisclosureHTML(record, key, label, count, body) {
     if (!count) return '';
     const open = locationStudyState.openDisclosures.has(`${record.id}:${key}`);
@@ -5282,7 +5288,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       + connectionBack
       + `<button type="button" class="rt-btn ghost location-study-back" data-location-study-back="${escapeTimelineText(locationNumber)}">Back to location events</button>`
       + `<h2 class="location-study-title" tabindex="-1">${escapeTimelineText(locationName)} · Unit ${escapeTimelineText(api.unitNumber)}</h2>`
-      + `<p class="location-study-context">${escapeTimelineText(regionName)} · ${escapeTimelineText(records.length)} study points · chronological order</p>`
+      + `<p class="location-study-context">${escapeTimelineText(regionName)} · ${escapeTimelineText(records.length)} study points · ${escapeTimelineText(locationStudyOrderLabel(records))}</p>`
       + `<div class="location-study-list">${studyUnitCardHTML(contextCard)}${rows}${studyUnitCardHTML(synthesisCard)}</div></div>`;
     eventEmpty.style.display = 'none';
     eventPanel.classList.add('show');

@@ -140,32 +140,32 @@ const UNIT_3_BOOKEND_CONTENT = Object.freeze([
 ]);
 
 const UNIT_3_STUDY_VIEWS = Object.freeze([
-  Object.freeze({ number: '18', region: 'mideast', location: 'Istanbul', mainEventKey: 'world-event-18-3', empire: 'Ottoman', ids: Object.freeze([
+  Object.freeze({ number: '18', region: 'mideast', regionLabel: 'Middle East and Central Asia', location: 'Istanbul', mainEventKey: 'world-event-18-3', empire: 'Ottoman', ids: Object.freeze([
     'apwh-u3-ottoman-cannon-conquest-constantinople',
     'apwh-u3-ottoman-devshirme-janissary-system',
     'apwh-u3-ottoman-sunni-millet-imperial-architecture',
   ]) }),
-  Object.freeze({ number: '19', region: 'mideast', location: 'Isfahan', mainEventKey: 'world-event-19-0', empire: 'Safavid', ids: Object.freeze([
+  Object.freeze({ number: '19', region: 'mideast', regionLabel: 'Middle East and Central Asia', location: 'Isfahan', mainEventKey: 'world-event-19-0', empire: 'Safavid', ids: Object.freeze([
     'apwh-u3-safavid-ismail-qizilbash-conquest',
     'apwh-u3-safavid-shah-abbas-ghulams-centralization',
     'apwh-u3-safavid-twelver-shiism-ottoman-rivalry',
   ]) }),
-  Object.freeze({ number: '6', region: 'asia', location: 'Delhi', mainEventKey: 'world-event-6-1', empire: 'Mughal', ids: Object.freeze([
+  Object.freeze({ number: '6', region: 'asia', regionLabel: 'Asia', location: 'Delhi', mainEventKey: 'world-event-6-1', empire: 'Mughal', ids: Object.freeze([
     'apwh-u3-mughal-babur-gunpowder-panipat',
     'apwh-u3-mughal-akbar-mansabdars-zamindars',
     'apwh-u3-mughal-akbar-tolerance-aurangzeb-orthodoxy',
   ]) }),
-  Object.freeze({ number: '25', region: 'europe', location: 'St. Petersburg', mainEventKey: 'world-event-25-0', empire: 'Russia', ids: Object.freeze([
+  Object.freeze({ number: '25', region: 'europe', regionLabel: 'Europe', location: 'St. Petersburg', mainEventKey: 'world-event-25-0', empire: 'Russia', ids: Object.freeze([
     'apwh-u3-russia-ivan-cossacks-siberian-expansion',
     'apwh-u3-russia-peter-table-ranks',
     'apwh-u3-russia-orthodox-tsardom-boyars-new-capital',
   ]) }),
-  Object.freeze({ number: '5', region: 'asia', location: 'Beijing', mainEventKey: 'world-event-5-0', empire: 'Ming/Qing', ids: Object.freeze([
+  Object.freeze({ number: '5', region: 'asia', regionLabel: 'Asia', location: 'Beijing', mainEventKey: 'world-event-5-0', empire: 'Ming/Qing', ids: Object.freeze([
     'apwh-u3-ming-qing-restoration-expansion',
     'apwh-u3-ming-qing-civil-service-continuity',
     'apwh-u3-ming-qing-manchu-confucian-ethnic-hierarchy',
   ]) }),
-  Object.freeze({ number: '14', region: 'asia', location: 'Edo/Tokyo', mainEventKey: 'world-event-14-0', empire: 'Tokugawa', ids: Object.freeze([
+  Object.freeze({ number: '14', region: 'asia', regionLabel: 'Asia', location: 'Edo/Tokyo', mainEventKey: 'world-event-14-0', empire: 'Tokugawa', ids: Object.freeze([
     'apwh-u3-tokugawa-firearms-unification-japan',
     'apwh-u3-tokugawa-sankin-kotai-daimyo-control',
     'apwh-u3-tokugawa-confucian-sakoku-hierarchy',
@@ -740,6 +740,9 @@ async function assertUnit2StudyViewBasics(view, fixture, label) {
 }
 
 async function assertKarakorumMetadata(view, label) {
+  assert.equal((await view.locator('.location-study-context').innerText()).trim(),
+    'Middle East and Central Asia · 3 study points · chronological order',
+    `${label} must preserve the chronological Unit 2 order label`);
   const detail = view.locator(
     '[data-study-detail="apwh-u2-karakorum-mongol-unification-conquest"]');
   await expectVisible(detail, `${label} must expose the first Karakorum detail`);
@@ -1060,8 +1063,9 @@ async function openHomepageUnit3Study(page, frame, fixture) {
 async function assertUnit3StudyViewBasics(view, fixture, label) {
   assert.equal((await view.locator('.location-study-title').innerText()).trim(),
     `${fixture.location} · Unit 3`, `${label} must render its exact Unit 3 heading`);
-  assert.match((await view.locator('.location-study-context').innerText()).trim(), /\b3 study points\b/,
-    `${label} header must declare exactly three study points`);
+  assert.equal((await view.locator('.location-study-context').innerText()).trim(),
+    `${fixture.regionLabel} · 3 study points · comparative lens order`,
+    `${label} header must declare its exact comparative lens order`);
   assert.deepEqual(await view.locator('[data-study-event]').evaluateAll(nodes =>
     nodes.map(node => node.dataset.studyEvent)), fixture.ids,
   `${label} must render its three canonical Unit 3 study IDs in exact order`);
@@ -1398,6 +1402,108 @@ async function assertHomepageUnit3Switching(page, frame) {
     'homepage Unit 4 must leave no focus reference inside a removed study view');
 }
 
+async function assertHomepageUnit3CrossLocationConnection(page, frame) {
+  const istanbul = UNIT_3_STUDY_VIEWS.find(fixture => fixture.location === 'Istanbul');
+  const sourceId = istanbul.ids[0];
+  const targetId = 'apwh-u3-safavid-ismail-qizilbash-conquest';
+  let view = await openHomepageUnit3Study(page, frame, istanbul);
+  await view.locator(`[data-study-event="${sourceId}"]`).click();
+  let sourceDetail = view.locator(`[data-study-detail="${sourceId}"]`);
+  const connections = sourceDetail.locator('details[data-study-disclosure="connections"]');
+  const connectionsSummary = connections.locator('summary');
+  await connectionsSummary.focus();
+  await connectionsSummary.press('Enter');
+  assert.equal(await connections.getAttribute('open'), '',
+    'homepage Unit 3 source must open Connections through native keyboard activation');
+  assert.equal(await connectionsSummary.evaluate(element => document.activeElement === element), true,
+    'homepage Unit 3 Connections summary must retain focus after keyboard activation');
+  await page.waitForFunction(studyId => document.querySelector('#worldMapFrame').contentWindow
+    .__mapFilter.getLocationStudyUiState().openDisclosures.includes(`${studyId}:connections`), sourceId);
+
+  const connection = connections.locator(`[data-study-connection="${targetId}"]`);
+  await expectVisible(connection, 'homepage Ottoman expansion must expose the Safavid expansion connection');
+  const originalMaxHeight = await page.locator('#home-events').evaluate(panel => panel.style.maxHeight);
+  await page.locator('#home-events').evaluate((panel, selector) => {
+    panel.style.maxHeight = '320px';
+    const button = panel.querySelector(selector);
+    const panelBox = panel.getBoundingClientRect();
+    const buttonBox = button.getBoundingClientRect();
+    panel.scrollTop = Math.max(1, panel.scrollTop + buttonBox.top - panelBox.top
+      - (panel.clientHeight - buttonBox.height) / 2);
+  }, `[data-study-connection="${targetId}"]`);
+  const sourceScrollTop = await page.locator('#home-events').evaluate(panel => panel.scrollTop);
+  assert.ok(sourceScrollTop > 0,
+    'homepage Unit 3 connection fixture must capture a nonzero cloned-panel scroll position');
+
+  await connection.click();
+  view = page.locator('#home-events [data-location-study-view="19"][data-location-study-unit="u3"]');
+  await expectVisible(view, 'homepage Unit 3 connection must render the Isfahan cloned view');
+  const canonicalTarget = await frame.locator('body').evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    const view = document.querySelector('#eventPanel [data-location-study-view]');
+    return {
+      unitId: state.unitId,
+      studyId: state.studyId,
+      locationNumber: view?.dataset.locationStudyView || null,
+      viewUnit: view?.dataset.locationStudyUnit || null,
+      detailId: view?.querySelector('[data-study-detail]')?.dataset.studyDetail || null,
+      detailCount: view?.querySelectorAll('[data-study-detail]').length || 0,
+    };
+  });
+  assert.deepEqual(canonicalTarget, {
+    unitId: 'u3', studyId: targetId, locationNumber: '19', viewUnit: 'u3',
+    detailId: targetId, detailCount: 1,
+  }, 'homepage Unit 3 connection must synchronize the exact canonical Isfahan target state');
+  assert.equal((await view.locator('.location-study-title').innerText()).trim(), 'Isfahan · Unit 3');
+  assert.equal(await view.locator('[data-study-detail]').getAttribute('data-study-detail'), targetId,
+    'homepage Unit 3 connection must expand the exact Safavid target');
+  assert.equal(await view.locator('[data-study-detail]').count(), 1,
+    'homepage Unit 3 connection target must preserve one-at-a-time expansion');
+  assert.equal((await view.locator('.location-study-eyebrow').textContent()).trim(), 'Safavid · Expansion');
+  assert.equal(await view.locator('.location-study-title').evaluate(element => document.activeElement === element),
+    true, 'homepage Unit 3 connection must focus the cloned Isfahan heading');
+
+  const connectionBack = view.locator('[data-study-connection-back]');
+  await connectionBack.focus();
+  await connectionBack.press('Enter');
+  view = page.locator('#home-events [data-location-study-view="18"][data-location-study-unit="u3"]');
+  await expectVisible(view, 'homepage Unit 3 keyboard Back must restore the Istanbul cloned view');
+  sourceDetail = view.locator(`[data-study-detail="${sourceId}"]`);
+  await expectVisible(sourceDetail, 'homepage Unit 3 keyboard Back must restore the exact Ottoman source');
+  assert.equal(await view.locator('[data-study-detail]').count(), 1,
+    'homepage Unit 3 keyboard Back must preserve one-at-a-time expansion');
+  assert.equal(await sourceDetail.locator('details[data-study-disclosure="connections"]').getAttribute('open'), '',
+    'homepage Unit 3 keyboard Back must restore the Connections disclosure');
+  await page.waitForFunction(expected =>
+    Math.abs(document.querySelector('#home-events').scrollTop - expected) <= 1, sourceScrollTop);
+  assert.ok(Math.abs(await page.locator('#home-events').evaluate(panel => panel.scrollTop) - sourceScrollTop) <= 1,
+    'homepage Unit 3 keyboard Back must restore the cloned-panel scroll position');
+  assert.equal(await sourceDetail.locator(`[data-study-connection="${targetId}"]`)
+    .evaluate(element => document.activeElement === element), true,
+  'homepage Unit 3 keyboard Back must focus the invoking connection');
+  const canonicalSource = await frame.locator('body').evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    const view = document.querySelector('#eventPanel [data-location-study-view]');
+    return {
+      unitId: state.unitId,
+      studyId: state.studyId,
+      locationNumber: view?.dataset.locationStudyView || null,
+      viewUnit: view?.dataset.locationStudyUnit || null,
+      detailId: view?.querySelector('[data-study-detail]')?.dataset.studyDetail || null,
+      detailCount: view?.querySelectorAll('[data-study-detail]').length || 0,
+      connectionsOpen: view?.querySelector(
+        'details[data-study-disclosure="connections"]')?.open || false,
+    };
+  });
+  assert.deepEqual(canonicalSource, {
+    unitId: 'u3', studyId: sourceId, locationNumber: '18', viewUnit: 'u3',
+    detailId: sourceId, detailCount: 1, connectionsOpen: true,
+  }, 'homepage Unit 3 keyboard Back must restore the exact canonical Istanbul source state');
+  await page.locator('#home-events').evaluate((panel, maxHeight) => {
+    panel.style.maxHeight = maxHeight;
+  }, originalMaxHeight);
+}
+
 async function verifyHomepageUnit3StudyContract(page, frame) {
   await page.setViewportSize({ width: 1440, height: 900 });
   const allIds = new Set();
@@ -1413,6 +1519,7 @@ async function verifyHomepageUnit3StudyContract(page, frame) {
       `${label} must preserve exact standalone/homepage content and state parity`);
   }
   assert.equal(allIds.size, 18, 'Unit 3 homepage views must expose eighteen unique study IDs');
+  await assertHomepageUnit3CrossLocationConnection(page, frame);
   await assertHomepageUnit3Switching(page, frame);
 
   const delhi = UNIT_3_STUDY_VIEWS.find(fixture => fixture.location === 'Delhi');
@@ -1652,8 +1759,9 @@ async function verifyTimeline(page, port) {
   const standaloneStudyContext = hangzhouStudyView.locator('.location-study-context');
   assert.equal(await standaloneStudyContext.count(), 1,
     'standalone Hangzhou study view must expose one location-study context header');
-  assert.match((await standaloneStudyContext.innerText()).trim(), /\b3 study points\b/,
-    'standalone Hangzhou study context must display 3 study points');
+  assert.equal((await standaloneStudyContext.innerText()).trim(),
+    'Asia · 3 study points · chronological order',
+    'standalone Hangzhou study context must preserve the chronological Unit 1 order label');
   const studyRows = hangzhouStudyView.locator('[data-study-event]');
   assert.equal(await studyRows.count(), 3, 'Hangzhou must render three study points');
   await assertUnitStudyBookends(page, hangzhouStudyView, 'standalone Hangzhou', {
