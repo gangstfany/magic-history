@@ -24,6 +24,14 @@
     'world-event-5-0', 'world-event-6-1', 'world-event-14-0',
     'world-event-18-3', 'world-event-19-0', 'world-event-25-0',
   ]);
+  const CANONICAL_LOCATION_BINDINGS = Object.freeze({
+    '5': Object.freeze({ empire: 'Ming/Qing', mainEventKey: 'world-event-5-0' }),
+    '6': Object.freeze({ empire: 'Mughal', mainEventKey: 'world-event-6-1' }),
+    '14': Object.freeze({ empire: 'Tokugawa', mainEventKey: 'world-event-14-0' }),
+    '18': Object.freeze({ empire: 'Ottoman', mainEventKey: 'world-event-18-3' }),
+    '19': Object.freeze({ empire: 'Safavid', mainEventKey: 'world-event-19-0' }),
+    '25': Object.freeze({ empire: 'Russia', mainEventKey: 'world-event-25-0' }),
+  });
 
   const STUDY_MANIFEST = [
     ['apwh-u3-ottoman-cannon-conquest-constantinople', '18', 'Ottoman', 'Expansion', 1, 'Cannon Conquest of Constantinople', '1453', 1453, 1453, 'world-event-18-3', ['3.1', '3.4'], ['TEC', 'GOV'], ['Causation', 'Contextualization']],
@@ -492,9 +500,9 @@
 
   function describeRuleValue(value) { return value === '' ? '""' : String(value); }
   function hasEnglishText(value) {
-    return typeof value === 'string' && value.trim().length > 0
-      && /[A-Za-z]/.test(value)
-      && !/[\u0400-\u052f\u0600-\u06ff\u0750-\u077f\u3400-\u9fff]/.test(value);
+    if (typeof value !== 'string' || !value.trim()) return false;
+    const letters = value.match(/\p{Letter}/gu) || [];
+    return letters.length > 0 && letters.every(letter => /\p{Script=Latin}/u.test(letter));
   }
   function isPlainObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -535,6 +543,8 @@
       seenIds.add(manifestId);
       if (!Object.prototype.hasOwnProperty.call(LOCATIONS, locationNumber)) failRecord(record, `invalid locationNumber ${locationNumber}`);
       if (!VALID_EMPIRES.has(empire)) failRecord(record, `invalid empire ${empire}`);
+      const canonicalBinding = CANONICAL_LOCATION_BINDINGS[locationNumber];
+      if (empire !== canonicalBinding.empire) failRecord(record, `invalid empire ${empire} for location ${locationNumber}`);
       if (!VALID_LENSES.has(lens)) failRecord(record, `invalid lens ${lens}`);
       if (!Number.isInteger(sequence)) failRecord(record, 'manifest sequence must be an integer');
       if (![1, 2, 3].includes(sequence)) failRecord(record, `invalid sequence ${sequence}`);
@@ -544,6 +554,9 @@
       if (!Number.isInteger(endYear)) failRecord(record, 'endYear must be an integer');
       if (typeof mainEventKey !== 'string' || !mainEventKey.trim()) failRecord(record, 'manifest mainEventKey must be a nonempty string');
       if (!VALID_MAIN_EVENTS.has(mainEventKey)) failRecord(record, `invalid mainEventKey ${mainEventKey}`);
+      if (mainEventKey !== canonicalBinding.mainEventKey) {
+        failRecord(record, `invalid mainEventKey ${mainEventKey} for location ${locationNumber}`);
+      }
       validateValues(record, topicCodes, VALID_TOPIC_CODES, 'topicCodes', 'topicCode');
       validateValues(record, themeIds, VALID_THEME_IDS, 'themeIds', 'themeId');
       validateValues(record, examSkills, VALID_EXAM_SKILLS, 'examSkills', 'examSkill');
@@ -567,6 +580,13 @@
         failRecord({ id: locationRows[0][0] }, `duplicate sequence ${duplicate} at location ${locationNumber}`);
       }
       if ([...sequences].sort().join(',') !== '1,2,3') failRecord({ id: locationRows[0][0] }, `location ${locationNumber} must use sequences 1,2,3`);
+    }
+    const empireLocations = new Map([...VALID_EMPIRES].map(empire => [empire, new Set()]));
+    for (const row of rows) empireLocations.get(row[2])?.add(row[1]);
+    for (const [empire, locations] of empireLocations) {
+      if (locations.size !== 1) {
+        throw new Error(`Invalid Unit 3 study empire ${empire}: expected exactly one location`);
+      }
     }
   }
 
@@ -600,9 +620,18 @@
       if (!context) failRecord(record, 'not present in manifest');
       if (!Object.prototype.hasOwnProperty.call(LOCATIONS, record.locationNumber)
         || record.locationNumber !== context.locationNumber) failRecord(record, `invalid locationNumber ${record.locationNumber}`);
-      if (!VALID_EMPIRES.has(record.empire) || record.empire !== context.empire) failRecord(record, `invalid empire ${record.empire}`);
+      if (!VALID_EMPIRES.has(record.empire)) failRecord(record, `invalid empire ${record.empire}`);
+      const canonicalBinding = CANONICAL_LOCATION_BINDINGS[record.locationNumber];
+      if (record.empire !== canonicalBinding.empire) {
+        failRecord(record, `invalid empire ${record.empire} for location ${record.locationNumber}`);
+      }
+      if (record.empire !== context.empire) failRecord(record, `invalid empire ${record.empire}`);
       if (!VALID_LENSES.has(record.lens) || record.lens !== context.lens) failRecord(record, `invalid lens ${record.lens}`);
-      if (!VALID_MAIN_EVENTS.has(record.mainEventKey) || record.mainEventKey !== context.mainEventKey) failRecord(record, `invalid mainEventKey ${record.mainEventKey}`);
+      if (!VALID_MAIN_EVENTS.has(record.mainEventKey)) failRecord(record, `invalid mainEventKey ${record.mainEventKey}`);
+      if (record.mainEventKey !== canonicalBinding.mainEventKey) {
+        failRecord(record, `invalid mainEventKey ${record.mainEventKey} for location ${record.locationNumber}`);
+      }
+      if (record.mainEventKey !== context.mainEventKey) failRecord(record, `invalid mainEventKey ${record.mainEventKey}`);
       for (const field of ['title', 'summary', 'significance', 'examConnection']) {
         if (typeof record[field] !== 'string' || !record[field].trim()) failRecord(record, `missing ${field}`);
         if (!hasEnglishText(record[field])) failRecord(record, `non-English ${field}`);

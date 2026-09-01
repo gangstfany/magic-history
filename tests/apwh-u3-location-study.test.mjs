@@ -710,6 +710,13 @@ const mutateRawRecord = (label, statement) => replaceDataSource(
   /(\n\s*function freezeUnitCard\(card\)\s*\{)/,
   `\n  ${statement}$1`,
 );
+const mutateCoherentLocationBinding = (label, manifestStatement, rawStatement) => replaceDataSources(
+  label,
+  [
+    [/(\n\s*validateManifestRows\(STUDY_MANIFEST\);)/, `\n  ${manifestStatement}$1`],
+    [/(\n\s*function freezeUnitCard\(card\)\s*\{)/, `\n  ${rawStatement}$1`],
+  ],
+);
 const mutateUnitCards = (label, statement) => replaceDataSource(
   label,
   /(\n\s*function describeRuleValue\(value\)\s*\{)/,
@@ -764,6 +771,43 @@ test('rejects raw location, empire, lens, and main-event mutations independently
   }
 });
 
+const rawCanonicalBindingCases = [
+  ['empire', "RAW_RECORDS[0].empire = 'Safavid';", 'invalid empire Safavid for location 18'],
+  ['main event', "RAW_RECORDS[0].mainEventKey = 'world-event-19-0';", 'invalid mainEventKey world-event-19-0 for location 18'],
+];
+for (const [binding, statement, rule] of rawCanonicalBindingCases) {
+  test(`rejects a valid-but-wrong raw ${binding} binding independently of the manifest`, () => {
+    const label = `raw canonical ${binding}`;
+    assertDataModuleError(label, mutateRawRecord(label, statement),
+      `Invalid Unit 3 study record ${firstId}: ${rule}`);
+  });
+}
+
+const coherentBindingCases = [
+  [
+    'empire',
+    "for (const index of [0, 1, 2]) STUDY_MANIFEST[index][2] = 'Safavid';",
+    "for (const record of RAW_RECORDS.filter(item => item.locationNumber === '18')) record.empire = 'Safavid';",
+    'invalid empire Safavid for location 18',
+  ],
+  [
+    'main event',
+    "for (const index of [0, 1, 2]) STUDY_MANIFEST[index][9] = 'world-event-19-0';",
+    "for (const record of RAW_RECORDS.filter(item => item.locationNumber === '18')) record.mainEventKey = 'world-event-19-0';",
+    'invalid mainEventKey world-event-19-0 for location 18',
+  ],
+];
+for (const [binding, manifestStatement, rawStatement, rule] of coherentBindingCases) {
+  test(`rejects a coherent valid-but-wrong ${binding} substitution for a location`, () => {
+    const label = `coherent wrong ${binding}`;
+    assertDataModuleError(
+      label,
+      mutateCoherentLocationBinding(label, manifestStatement, rawStatement),
+      `Invalid Unit 3 study record ${firstId}: ${rule}`,
+    );
+  });
+}
+
 test('rejects malformed date labels, ranges, and label-year disagreement', () => {
   const cases = [
     ['malformed date', "RAW_RECORDS[0].dateLabel = '1453/1453';", 'invalid dateLabel 1453/1453'],
@@ -796,6 +840,43 @@ test('rejects non-English scripts, numeric-only text, and structurally malformed
       `Invalid Unit 3 study record ${firstId}: ${rule}`);
   }
 });
+
+const mixedScriptCases = [
+  [
+    'Hiragana in an ordinary record field',
+    () => mutateRawRecord('Hiragana summary', "RAW_RECORDS[0].summary = `English かな ${RAW_RECORDS[0].summary}`;"),
+    `Invalid Unit 3 study record ${firstId}: non-English summary`,
+  ],
+  [
+    'Katakana in an ordinary record field',
+    () => mutateRawRecord('Katakana significance', "RAW_RECORDS[0].significance = `English カタカナ ${RAW_RECORDS[0].significance}`;"),
+    `Invalid Unit 3 study record ${firstId}: non-English significance`,
+  ],
+  [
+    'Hangul in nested learner content',
+    () => mutateRawRecord('Hangul evidence', "RAW_RECORDS[0].evidence[0] = `English 한국어 ${RAW_RECORDS[0].evidence[0]}`;"),
+    `Invalid Unit 3 study record ${firstId}: non-English nested learner content`,
+  ],
+  [
+    'Hebrew in a unit card',
+    () => mutateUnitCards('Hebrew card prompt', "UNIT_CARD_LIST[0].prompt = `English שלום ${UNIT_CARD_LIST[0].prompt}`;"),
+    'Invalid Unit 3 unit card context apwh-u3-context-conditions-land-empire-building: non-English prompt',
+  ],
+  [
+    'Greek in a reciprocal connection note',
+    () => replaceDataSource(
+      'Greek reciprocal connection note',
+      /cause\.connectionNotes\[effectId\]\s*=\s*note;\s*effect\.connectionNotes\[causeId\]\s*=\s*note;/,
+      "cause.connectionNotes[effectId] = 'English Ελληνικά note.'; effect.connectionNotes[causeId] = 'English Ελληνικά note.';",
+    ),
+    `Invalid Unit 3 study record ${firstId}: non-English connection note for apwh-u3-ottoman-devshirme-janissary-system`,
+  ],
+];
+for (const [label, makeSource, message] of mixedScriptCases) {
+  test(`rejects ${label}`, () => {
+    assertDataModuleError(label, makeSource(), message);
+  });
+}
 
 test('rejects missing, invalid, and extra source metadata', () => {
   const cases = [
