@@ -8,18 +8,20 @@ await import('../data/apwh-u3-location-study.js');
 const api = globalThis.APWH_U3_LOCATION_STUDY;
 const dataModuleSource = readFileSync(new URL('../data/apwh-u3-location-study.js', import.meta.url), 'utf8');
 const ledgerSource = readFileSync(new URL('../docs/data-sources/apwh-u3-location-study-source-ledger.md', import.meta.url), 'utf8');
+const prohibitedNonEnglishScripts = /[\u0400-\u052f\u0600-\u06ff\u0750-\u077f\u3400-\u9fff]/;
 
-const replaceDataSource = (label, search, replacement) => {
-  const malformedSource = dataModuleSource.replace(search, replacement);
-  assert.notEqual(malformedSource, dataModuleSource, `${label} fixture mutation`);
+const replaceSource = (label, source, search, replacement) => {
+  const malformedSource = source.replace(search, replacement);
+  assert.notEqual(malformedSource, source, `${label} fixture mutation`);
   return malformedSource;
 };
+const replaceDataSource = (label, search, replacement) => replaceSource(
+  label, dataModuleSource, search, replacement,
+);
 const replaceDataSources = (label, replacements) => {
   let malformedSource = dataModuleSource;
   for (const [search, replacement] of replacements) {
-    const nextSource = malformedSource.replace(search, replacement);
-    assert.notEqual(nextSource, malformedSource, `${label} fixture mutation for ${search}`);
-    malformedSource = nextSource;
+    malformedSource = replaceSource(`${label} for ${search}`, malformedSource, search, replacement);
   }
   return malformedSource;
 };
@@ -122,14 +124,14 @@ const expectedRecordContent = [
   {
     id: 'apwh-u3-ottoman-cannon-conquest-constantinople',
     title: 'Cannon Conquest of Constantinople',
-    summary: 'Mehmed II used massive cannon and a coordinated land-and-sea siege to capture Constantinople for the Ottoman Empire in 1453.',
+    summary: 'Mehmed II used massive cannon and a coordinated land-and-sea siege to make the Ottoman state a leading gunpowder empire by capturing Constantinople in 1453.',
     significance: 'The victory removed the Byzantine capital, secured the Bosporus, and showed how gunpowder artillery could help an ambitious dynasty break fortified political centers.',
     keyPeople: [
       { name: 'Mehmed II', role: 'The Ottoman sultan who organized the 1453 siege and made conquered Constantinople an imperial capital.' },
     ],
     keyTerms: [
-      { term: 'bombard', explanation: 'A very large early cannon designed to fire heavy stone shot against fortifications.' },
-      { term: 'Bosporus', explanation: 'The strait at Constantinople linking the Black Sea with the Mediterranean through the Sea of Marmara.' },
+      { term: 'gunpowder empire', explanation: 'A large land-based state whose rulers used firearms and artillery to conquer and hold territory.' },
+      { term: 'Bosporus Strait', explanation: 'The strategic waterway at Constantinople linking the Black Sea with the Mediterranean through the Sea of Marmara.' },
     ],
     evidence: [
       'Ottoman cannon repeatedly struck the land walls during the fifty-three-day siege of 1453.',
@@ -166,8 +168,8 @@ const expectedRecordContent = [
       { name: 'Suleiman I', role: 'Expanded Ottoman power while sponsoring law, mosques, fortifications, and an image of the sultan as a defender of Sunni order.' },
     ],
     keyTerms: [
-      { term: 'millet', explanation: 'A recognized religious community allowed to manage selected legal, educational, and charitable affairs under Ottoman authority.' },
-      { term: 'imperial architecture', explanation: 'Monumental buildings commissioned to make a ruler\'s wealth, faith, and political authority visible.' },
+      { term: 'millet system', explanation: 'The Ottoman arrangement that let recognized religious communities manage selected legal, educational, and charitable affairs under imperial authority.' },
+      { term: 'imperial mosque', explanation: 'A monumental mosque commissioned to make a sultan\'s wealth, Sunni faith, and political authority visible.' },
     ],
     evidence: [
       'Ottoman rulers converted Hagia Sophia into a mosque and built major imperial complexes such as the Suleymaniye Mosque.',
@@ -205,11 +207,11 @@ const expectedRecordContent = [
     ],
     keyTerms: [
       { term: 'ghulam', explanation: 'A military or court servant, often recruited from converted Caucasian populations, whose career depended on the Safavid shah.' },
-      { term: 'men of the pen', explanation: 'Persian civil administrators who staffed the bureaucracy and balanced the influence of tribal military elites.' },
+      { term: 'Isfahan', explanation: 'The Safavid capital developed by Shah Abbas into an administrative, commercial, and monumental center of imperial rule.' },
     ],
     evidence: [
       'Abbas recruited Georgian, Armenian, and Circassian ghulams to serve in forces loyal to the crown.',
-      'He imported firearms and used European assistance to train artillery and musket units during his reign from 1588 to 1629.',
+      'He made Isfahan his capital and imported firearms with European assistance to train artillery and musket units.',
     ],
     examConnection: 'Compare Safavid ghulams with Ottoman Janissaries by naming the shared centralizing problem and the different recruitment systems used to create loyal military households.',
     source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4' },
@@ -224,7 +226,7 @@ const expectedRecordContent = [
     ],
     keyTerms: [
       { term: 'Twelver Shi\'ism', explanation: 'The Shi\'a tradition recognizing a line of twelve imams and awaiting the return of the hidden twelfth imam.' },
-      { term: 'Sunni-Shi\'a rivalry', explanation: 'A political and religious division that reinforced conflict between the Ottoman and Safavid empires.' },
+      { term: 'sectarian rivalry', explanation: 'Political conflict intensified by rulers defining communities through competing Sunni and Shi\'a religious identities.' },
     ],
     evidence: [
       'Safavid authorities required Sunni subjects to convert and used taxation and state patronage to encourage Shi\'a practice.',
@@ -242,8 +244,8 @@ const expectedRecordContent = [
       { name: 'Babur', role: 'The Central Asian conqueror who defeated Ibrahim Lodi at Panipat and founded the Mughal Empire in India.' },
     ],
     keyTerms: [
-      { term: 'field artillery', explanation: 'Mobile cannon positioned for use during a battle rather than only against walls.' },
       { term: 'Battle of Panipat', explanation: 'The 1526 battle in which Babur defeated Ibrahim Lodi and established a Mughal foothold in northern India.' },
+      { term: 'field artillery', explanation: 'Mobile cannon positioned for use during a battle rather than only against walls.' },
     ],
     evidence: [
       'Babur placed cannon and matchlock troops behind a defensive line of carts at the first Battle of Panipat.',
@@ -282,7 +284,7 @@ const expectedRecordContent = [
     ],
     keyTerms: [
       { term: 'jizya', explanation: 'A tax historically imposed on non-Muslim subjects in many Islamic states, abolished by Akbar and restored by Aurangzeb.' },
-      { term: 'Din-i Ilahi', explanation: 'Akbar\'s limited court-centered effort to draw selected ideas from multiple religions into an ethical fellowship.' },
+      { term: 'religious tolerance', explanation: 'A policy of permitting multiple faiths to practice and participate in public life without uniform religious coercion.' },
     ],
     evidence: [
       'Akbar abolished the jizya, funded multiple religious communities, married Hindu women, and appointed Hindu zamindars.',
@@ -302,11 +304,11 @@ const expectedRecordContent = [
     ],
     keyTerms: [
       { term: 'Cossacks', explanation: 'Frontier warrior communities whose mobility and military service supported Russian expansion.' },
-      { term: 'fur tribute', explanation: 'Payments in valuable pelts demanded from Indigenous Siberian communities and used to finance further expansion.' },
+      { term: 'yasak', explanation: 'A fur tribute demanded by Russian authorities from Indigenous Siberian communities and used to finance frontier rule.' },
     ],
     evidence: [
       'Ivan IV captured Kazan in 1552 and Astrakhan in 1556, extending Moscow\'s control along the Volga.',
-      'Cossack and merchant expeditions crossed Siberia, and Russian parties reached the Pacific coast by 1639.',
+      'Cossack and merchant expeditions collected yasak across Siberia, and Russian parties reached the Pacific coast by 1639.',
     ],
     examConnection: 'Use Russia to compare continental frontier expansion with gunpowder conquest, while keeping the chronology clear: Ivan expanded from Moscow before St. Petersburg existed.',
     source: { id: 'amsco-apwh-u3', locator: 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4' },
@@ -340,7 +342,7 @@ const expectedRecordContent = [
     ],
     keyTerms: [
       { term: 'tsar', explanation: 'The Russian imperial title derived from Caesar and associated with autocratic and Orthodox authority.' },
-      { term: 'boyars', explanation: 'Russia\'s hereditary high nobles, whose independent political power Ivan IV and Peter the Great worked to limit.' },
+      { term: 'St. Petersburg', explanation: 'The Baltic city Peter founded in 1703 and developed as a Western-facing capital and center for court service.' },
     ],
     evidence: [
       'Ivan IV was crowned tsar in 1547 and confiscated land from boyars who resisted his authority.',
@@ -359,8 +361,8 @@ const expectedRecordContent = [
       { name: 'Qianlong Emperor', role: 'Directed eighteenth-century Qing campaigns that incorporated Xinjiang and extended influence across Inner Asia.' },
     ],
     keyTerms: [
-      { term: 'Ming restoration', explanation: 'The reestablishment of Chinese dynastic rule and institutions after the fall of the Mongol-led Yuan dynasty.' },
-      { term: 'frontier incorporation', explanation: 'The process of bringing borderlands under imperial control through war, alliances, garrisons, tribute, or administration.' },
+      { term: 'dynastic restoration', explanation: 'The reestablishment of Chinese dynastic rule and institutions after the fall of the Mongol-led Yuan dynasty.' },
+      { term: 'frontier expansion', explanation: 'The extension of imperial control into borderlands through war, alliances, garrisons, tribute, or administration.' },
     ],
     evidence: [
       'Zhu Yuanzhang defeated the Yuan and established the Ming dynasty in 1368.',
@@ -379,7 +381,7 @@ const expectedRecordContent = [
     ],
     keyTerms: [
       { term: 'civil-service examination', explanation: 'A competitive test centered on Confucian learning that selected candidates for imperial office.' },
-      { term: 'scholar-gentry', explanation: 'The educated landholding class from which many Chinese civil officials and local leaders were drawn.' },
+      { term: 'Confucian classics', explanation: 'Canonical texts studied by examination candidates and used to define the moral and political learning expected of officials.' },
     ],
     evidence: [
       'The Ming restored examination schools and rebuilt a Confucian bureaucracy weakened under the Yuan.',
@@ -418,7 +420,7 @@ const expectedRecordContent = [
     ],
     keyTerms: [
       { term: 'arquebus', explanation: 'An early matchlock firearm introduced to Japan through Portuguese contact and adopted by competing armies.' },
-      { term: 'sword hunt', explanation: 'Hideyoshi\'s confiscation of weapons from peasants to reduce revolt and reinforce status separation.' },
+      { term: 'Battle of Sekigahara', explanation: 'Tokugawa Ieyasu\'s decisive 1600 victory over rival coalitions, which completed the military foundation for Tokugawa rule.' },
     ],
     evidence: [
       'Nobunaga equipped forces with Portuguese-style matchlocks and used organized firearm volleys against rival armies.',
@@ -467,25 +469,46 @@ const expectedRecordContent = [
   },
 ];
 
+const expectedTermPairs = [
+  ['gunpowder empire', 'Bosporus Strait'],
+  ['devshirme', 'Janissaries'],
+  ['millet system', 'imperial mosque'],
+  ['Qizilbash', 'Battle of Chaldiran'],
+  ['ghulam', 'Isfahan'],
+  ["Twelver Shi'ism", 'sectarian rivalry'],
+  ['Battle of Panipat', 'field artillery'],
+  ['mansabdar', 'zamindar'],
+  ['jizya', 'religious tolerance'],
+  ['Cossacks', 'yasak'],
+  ['Table of Ranks', 'service nobility'],
+  ['tsar', 'St. Petersburg'],
+  ['dynastic restoration', 'frontier expansion'],
+  ['civil-service examination', 'Confucian classics'],
+  ['banner system', 'queue'],
+  ['arquebus', 'Battle of Sekigahara'],
+  ['sankin-kotai', 'daimyo'],
+  ['sakoku', 'Neo-Confucian hierarchy'],
+];
+
 const expectedLedgerRows = [
-  ['apwh-u3-ottoman-cannon-conquest-constantinople', 'Topics 3.1 and 3.4', 'world-event-18-3', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', 'Mehmed II, the 1453 siege, large cannon, the fall of Constantinople, and Ottoman control of the Bosporus'],
-  ['apwh-u3-ottoman-devshirme-janissary-system', 'Topics 3.2 and 3.4', 'world-event-18-3', 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4', 'Devshirme recruitment, Christian boys, Janissary training, salaried service, and loyalty to the sultan'],
-  ['apwh-u3-ottoman-sunni-millet-imperial-architecture', 'Topics 3.3 and 3.4', 'world-event-18-3', 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4', 'Sunni legitimacy, the millet system, Hagia Sophia, imperial mosques, and Ottoman-Safavid conflict'],
-  ['apwh-u3-safavid-ismail-qizilbash-conquest', 'Topics 3.1 and 3.4', 'world-event-19-0', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', 'Ismail I, Qizilbash military support, the conquest of Persia, the shah title, and the Battle of Chaldiran'],
-  ['apwh-u3-safavid-shah-abbas-ghulams-centralization', 'Topics 3.2 and 3.4', 'world-event-19-0', 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4', 'Shah Abbas I, ghulam forces, imported firearms, European military training, and centralization against Qizilbash power'],
-  ['apwh-u3-safavid-twelver-shiism-ottoman-rivalry', 'Topics 3.3 and 3.4', 'world-event-19-0', 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4', "Twelver Shi'ism, coerced conversion, Sunni-Shi'a rivalry, Ottoman border wars, and the 1722 Afghan seizure of Isfahan"],
-  ['apwh-u3-mughal-babur-gunpowder-panipat', 'Topics 3.1 and 3.4', 'world-event-6-1', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', 'Babur, field artillery, matchlock troops, the 1526 Battle of Panipat, and the foundation of Mughal rule'],
-  ['apwh-u3-mughal-akbar-mansabdars-zamindars', 'Topics 3.2 and 3.4', 'world-event-6-1', 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4', 'Akbar, mansabdar ranking, zamindar tax collection, Hindu participation, and the conversion of conquest into revenue'],
-  ['apwh-u3-mughal-akbar-tolerance-aurangzeb-orthodoxy', 'Topics 3.3 and 3.4', 'world-event-6-1', 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4', "Akbar's religious tolerance, abolition of the jizya, Din-i Ilahi, Aurangzeb's orthodoxy, and Hindu and Sikh resistance"],
-  ['apwh-u3-russia-ivan-cossacks-siberian-expansion', 'Topics 3.1 and 3.4', 'world-event-25-0', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', 'Ivan IV, Moscow, Cossack forces, the conquest of Siberian khanates, fur tribute, and the 1639 Pacific advance'],
-  ['apwh-u3-russia-peter-table-ranks', 'Topics 3.2 and 3.4', 'world-event-25-0', 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4', 'Peter the Great, the Table of Ranks, state service, control of boyars, military reform, and centralized administration'],
-  ['apwh-u3-russia-orthodox-tsardom-boyars-new-capital', 'Topics 3.3 and 3.4', 'world-event-25-0', 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4', 'Orthodox tsardom, coercion of boyars, Westernization, the 1703 founding of St. Petersburg, and capital relocation'],
-  ['apwh-u3-ming-qing-restoration-expansion', 'Topics 3.1 and 3.4', 'world-event-5-0', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', 'Ming restoration after Yuan rule, Manchu conquest, Qing consolidation, Kangxi and Qianlong campaigns, and expansion into Inner Asia'],
-  ['apwh-u3-ming-qing-civil-service-continuity', 'Topics 3.2 and 3.4', 'world-event-5-0', 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4', 'Restoration of civil-service examinations, scholar-gentry administration, Confucian education, bureaucratic continuity, and agrarian taxation'],
-  ['apwh-u3-ming-qing-manchu-confucian-ethnic-hierarchy', 'Topics 3.3 and 3.4', 'world-event-5-0', 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4', 'Manchu adoption of Confucian legitimacy, preservation of ethnic identity, queue requirements, banner privilege, and hierarchy under Qing rule'],
-  ['apwh-u3-tokugawa-firearms-unification-japan', 'Topics 3.1 and 3.4', 'world-event-14-0', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', 'Portuguese muskets, Oda Nobunaga, Toyotomi Hideyoshi, disarmament of peasants, and the military unification of Japan'],
-  ['apwh-u3-tokugawa-sankin-kotai-daimyo-control', 'Topics 3.2 and 3.4', 'world-event-14-0', 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4', 'Sankin-kotai, alternate attendance, daimyo families as hostages, domain expenses, and shogunal control from Edo'],
-  ['apwh-u3-tokugawa-confucian-sakoku-hierarchy', 'Topics 3.3 and 3.4', 'world-event-14-0', 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4', 'Neo-Confucian hierarchy, samurai status, sakoku restrictions, Nagasaki trade, and the suppression of Christianity'],
+  ['apwh-u3-ottoman-cannon-conquest-constantinople', 'Topics 3.1 and 3.4', 'world-event-18-3', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', 'Mehmed II; gunpowder empire and Bosporus Strait; massive cannon, the fifty-three-day 1453 siege, Constantinople as capital, and rapid conquest creating an Ottoman administration problem'],
+  ['apwh-u3-ottoman-devshirme-janissary-system', 'Topics 3.2 and 3.4', 'world-event-18-3', 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4', 'Ottoman recruiting officials; devshirme and Janissaries; recruitment of Christian boys, military and civil training, salaried loyalty to the sultan, and controlled service answering the governance problem created by conquest'],
+  ['apwh-u3-ottoman-sunni-millet-imperial-architecture', 'Topics 3.3 and 3.4', 'world-event-18-3', 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4', 'Suleiman I; millet system and imperial mosque; Hagia Sophia, the Suleymaniye Mosque, communal self-government, Sunni legitimacy, and centralized service shaping diversity and Ottoman-Safavid conflict'],
+  ['apwh-u3-safavid-ismail-qizilbash-conquest', 'Topics 3.1 and 3.4', 'world-event-19-0', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', 'Ismail I; Qizilbash and Battle of Chaldiran; the 1501 seizure of Tabriz, the shah title, the 1514 defeat by Ottoman firearms, and dependence on tribal warriors prompting later centralization'],
+  ['apwh-u3-safavid-shah-abbas-ghulams-centralization', 'Topics 3.2 and 3.4', 'world-event-19-0', 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4', 'Shah Abbas I; ghulam and Isfahan; Caucasian recruitment, firearm and artillery training, the imperial capital, reduced Qizilbash power, and centralization enabling stronger religious enforcement'],
+  ['apwh-u3-safavid-twelver-shiism-ottoman-rivalry', 'Topics 3.3 and 3.4', 'world-event-19-0', 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4', "Ismail I; Twelver Shi'ism and sectarian rivalry; coerced Sunni conversion, Ottoman border and trade conflict, the 1722 Afghan seizure of Isfahan, and centralized religious policy producing identity and resistance"],
+  ['apwh-u3-mughal-babur-gunpowder-panipat', 'Topics 3.1 and 3.4', 'world-event-6-1', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', "Babur; Battle of Panipat and field artillery; cart defenses, cannon, matchlocks, Ibrahim Lodi's larger army and war elephants, the 1526 Mughal victory, and conquest creating a diverse realm requiring administration"],
+  ['apwh-u3-mughal-akbar-mansabdars-zamindars', 'Topics 3.2 and 3.4', 'world-event-6-1', 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4', 'Akbar; mansabdar and zamindar; ranked pay and cavalry obligations, agricultural tax collection, Hindu appointments, conquest converted into revenue, and inclusive administration supporting religious cooperation'],
+  ['apwh-u3-mughal-akbar-tolerance-aurangzeb-orthodoxy', 'Topics 3.3 and 3.4', 'world-event-6-1', 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4', "Akbar and Aurangzeb; jizya and religious tolerance; abolition and restoration of the tax, Hindu appointments, support for multiple faiths, Maratha and Sikh resistance, and changing legitimation straining Akbar's administrative settlement"],
+  ['apwh-u3-russia-ivan-cossacks-siberian-expansion', 'Topics 3.1 and 3.4', 'world-event-25-0', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', 'Ivan IV and Yermak Timofeyevich; Cossacks and yasak; Moscow, Kazan, Astrakhan, Siberian fur tribute, the 1639 Pacific advance, and vast frontier growth increasing the need for dependable state servants'],
+  ['apwh-u3-russia-peter-table-ranks', 'Topics 3.2 and 3.4', 'world-event-25-0', 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4', 'Peter the Great; Table of Ranks and service nobility; army and state-industry reform, the 1722 hierarchy of offices, promotion through service, weakened hereditary boyar independence, and administration supporting a new capital'],
+  ['apwh-u3-russia-orthodox-tsardom-boyars-new-capital', 'Topics 3.3 and 3.4', 'world-event-25-0', 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4', "Peter the Great; tsar and St. Petersburg; Ivan IV's 1547 coronation and boyar confiscations, Peter's 1703 Baltic foundation and later capital move, Orthodox autocracy, Westernization, and compulsory service reinforcing court control"],
+  ['apwh-u3-ming-qing-restoration-expansion', 'Topics 3.1 and 3.4', 'world-event-5-0', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', "Zhu Yuanzhang and Qianlong Emperor; dynastic restoration and frontier expansion; the 1368 fall of Yuan rule, Manchu conquest, Kangxi campaigns, Qianlong's Xinjiang conquest and Tibetan intervention, and territorial growth requiring civil administration"],
+  ['apwh-u3-ming-qing-civil-service-continuity', 'Topics 3.2 and 3.4', 'world-event-5-0', 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4', 'Scholar-gentry; civil-service examination and Confucian classics; Ming restoration of schools and bureaucracy, Qing retention of Chinese officials, administrative continuity, and examination government supporting Qing Confucian legitimacy'],
+  ['apwh-u3-ming-qing-manchu-confucian-ethnic-hierarchy', 'Topics 3.3 and 3.4', 'world-event-5-0', 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4', 'Kangxi Emperor; banner system and queue; Confucian scholarship, Chinese imperial ritual, civil-service continuity, bannerman privilege, visible submission, and administration enabling combined Confucian legitimacy and Manchu hierarchy'],
+  ['apwh-u3-tokugawa-firearms-unification-japan', 'Topics 3.1 and 3.4', 'world-event-14-0', 'AMSCO AP World History, Unit 3, Topics 3.1 and 3.4', "Oda Nobunaga, Toyotomi Hideyoshi, and Tokugawa Ieyasu; arquebus and Battle of Sekigahara; firearm volleys, the 1588 sword hunt, Ieyasu's decisive 1600 victory, Japan's unification, and victory creating the daimyo-control problem"],
+  ['apwh-u3-tokugawa-sankin-kotai-daimyo-control', 'Topics 3.2 and 3.4', 'world-event-14-0', 'AMSCO AP World History, Unit 3, Topics 3.2 and 3.4', 'Tokugawa Iemitsu; sankin-kotai and daimyo; the 1635 alternate-attendance rule, Edo residences, family hostages, travel and household expense, reduced military independence, and elite control supporting wider social ordering'],
+  ['apwh-u3-tokugawa-confucian-sakoku-hierarchy', 'Topics 3.3 and 3.4', 'world-event-14-0', 'AMSCO AP World History, Unit 3, Topics 3.3 and 3.4', 'Tokugawa shoguns; sakoku and Neo-Confucian hierarchy; samurai privilege, occupational ranks, 1630s expulsions, Christian suppression, controlled Dutch trade at Nagasaki, and daimyo control extending into social and foreign policy'],
 ];
 
 test('publishes the exact Unit 3 empire-by-lens manifest', () => {
@@ -510,6 +533,7 @@ test('locks the complete learner copy and source metadata for all eighteen Unit 
   assert.deepEqual(api.records.map(record => Object.fromEntries(
     contentKeys.map(key => [key, record[key]]),
   )), expectedRecordContent);
+  assert.deepEqual(api.records.map(record => record.keyTerms.map(entry => entry.term)), expectedTermPairs);
 });
 
 test('publishes one exact Expansion, Administration, and Legitimation & Conflict sequence per empire', () => {
@@ -538,7 +562,7 @@ test('publishes exact immutable Unit 3 cards outside map records', () => {
 
 test('ships complete rich English learner records with exact skills and deep immutability', () => {
   for (const [index, record] of api.records.entries()) {
-    assert.doesNotMatch(JSON.stringify(record), /[\u3400-\u9fff]/);
+    assert.doesNotMatch(JSON.stringify(record), prohibitedNonEnglishScripts);
     assert.match(record.summary, /[A-Za-z]/);
     assert.ok(record.significance.length >= 60, `${record.id} significance`);
     assert.ok(record.examConnection.length >= 60, `${record.id} examConnection`);
@@ -607,6 +631,7 @@ test('publishes exact causal chains and related comparison pairs with reciprocal
         assert.ok(target, `${record.id} unresolved ${targetId}`);
         assert.ok(target[reciprocal].includes(record.id), `${record.id} nonreciprocal ${targetId}`);
         assert.match(record.connectionNotes[targetId], /[A-Za-z]/);
+        assert.doesNotMatch(record.connectionNotes[targetId], prohibitedNonEnglishScripts);
         assert.equal(target.connectionNotes[record.id], record.connectionNotes[targetId]);
         if (category === 'effectStudyPointIds') {
           causal.set(`${record.id}->${targetId}`, record.connectionNotes[targetId]);
@@ -624,7 +649,7 @@ test('publishes exact causal chains and related comparison pairs with reciprocal
 });
 
 test('locks all five English source-ledger columns for exactly eighteen Unit 3 records', () => {
-  assert.doesNotMatch(ledgerSource, /[\u3400-\u9fff]/);
+  assert.doesNotMatch(ledgerSource, prohibitedNonEnglishScripts);
   const rows = parseLedgerRows(ledgerSource);
   assert.equal(rows.length, 18);
   assert.ok(rows.every(row => row.length === 5 && row.every(cell => /[A-Za-z0-9]/.test(cell))));
@@ -663,32 +688,32 @@ test('refuses to overwrite an existing Unit 3 browser global', () => {
   );
 });
 
-test('comparator uses start, end, sequence, and id tie breakers', () => {
+test('comparator uses sequence, start, end, and id tie breakers', () => {
   const records = [
-    { id: 'z', startYear: 1450, endYear: 1600, sequence: 2 },
-    { id: 'a', startYear: 1450, endYear: 1600, sequence: 2 },
-    { id: 'sequence', startYear: 1450, endYear: 1600, sequence: 1 },
-    { id: 'end', startYear: 1450, endYear: 1500, sequence: 3 },
-    { id: 'early', startYear: 1368, endYear: 1750, sequence: 3 },
+    { id: 'z', sequence: 2, startYear: 1450, endYear: 1600 },
+    { id: 'a', sequence: 2, startYear: 1450, endYear: 1600 },
+    { id: 'end', sequence: 2, startYear: 1450, endYear: 1500 },
+    { id: 'start', sequence: 2, startYear: 1368, endYear: 1750 },
+    { id: 'sequence', sequence: 1, startYear: 2000, endYear: 2000 },
   ];
   assert.deepEqual([...records].sort(api.compareRecords).map(record => record.id),
-    ['early', 'end', 'sequence', 'a', 'z']);
+    ['sequence', 'start', 'end', 'a', 'z']);
 });
 
 const mutateManifest = (label, statement) => replaceDataSource(
   label,
-  '  ];\n\n  validateManifestRows(STUDY_MANIFEST);',
-  `  ];\n  ${statement}\n\n  validateManifestRows(STUDY_MANIFEST);`,
+  /(\n\s*validateManifestRows\(STUDY_MANIFEST\);)/,
+  `\n  ${statement}$1`,
 );
 const mutateRawRecord = (label, statement) => replaceDataSource(
   label,
-  '  ];\n\n  function freezeUnitCard(card) {',
-  `  ];\n  ${statement}\n\n  function freezeUnitCard(card) {`,
+  /(\n\s*function freezeUnitCard\(card\)\s*\{)/,
+  `\n  ${statement}$1`,
 );
 const mutateUnitCards = (label, statement) => replaceDataSource(
   label,
-  '  ];\n\n  function describeRuleValue(value) {',
-  `  ];\n  ${statement}\n\n  function describeRuleValue(value) {`,
+  /(\n\s*function describeRuleValue\(value\)\s*\{)/,
+  `\n  ${statement}$1`,
 );
 
 const firstId = 'apwh-u3-ottoman-cannon-conquest-constantinople';
@@ -697,9 +722,14 @@ const invalidManifestCases = [
   ['invalid sequence', 'STUDY_MANIFEST[0][4] = 4;', 'invalid sequence 4'],
   ['missing topic', 'STUDY_MANIFEST[0][10] = [];', 'missing topicCodes'],
   ['invalid topic', "STUDY_MANIFEST[0][10] = ['9.9', '3.4'];", 'invalid topicCode 9.9'],
+  ['duplicate topic', "STUDY_MANIFEST[0][10] = ['3.1', '3.1'];", 'duplicate topicCode 3.1'],
   ['missing theme', 'STUDY_MANIFEST[0][11] = [];', 'missing themeIds'],
   ['invalid theme', "STUDY_MANIFEST[0][11] = ['BAD'];", 'invalid themeId BAD'],
+  ['duplicate theme', "STUDY_MANIFEST[0][11] = ['TEC', 'TEC'];", 'duplicate themeId TEC'],
+  ['missing skill', 'STUDY_MANIFEST[0][12] = [];', 'missing examSkills'],
   ['invalid skill', "STUDY_MANIFEST[0][12] = ['Causation', 'Argumentation'];", 'invalid examSkill Argumentation'],
+  ['duplicate skill', "STUDY_MANIFEST[0][12] = ['Causation', 'Causation'];", 'duplicate examSkill Causation'],
+  ['oversized skills', "STUDY_MANIFEST[0][12] = ['Causation', 'Contextualization', 'Comparison'];", 'too many examSkills'],
 ];
 for (const [label, statement, rule] of invalidManifestCases) {
   test(`rejects ${label} with a descriptive Unit 3 diagnostic`, () => {
@@ -747,9 +777,11 @@ test('rejects malformed date labels, ranges, and label-year disagreement', () =>
   }
 });
 
-test('rejects Chinese, numeric-only, and structurally malformed learner copy', () => {
+test('rejects non-English scripts, numeric-only text, and structurally malformed learner copy', () => {
   const cases = [
     ['Chinese copy', "RAW_RECORDS[0].summary = `中文 ${RAW_RECORDS[0].summary}`;", 'non-English summary'],
+    ['Cyrillic copy', "RAW_RECORDS[0].summary = `Москва ${RAW_RECORDS[0].summary}`;", 'non-English summary'],
+    ['Arabic copy', "RAW_RECORDS[0].summary = `الدولة ${RAW_RECORDS[0].summary}`;", 'non-English summary'],
     ['numeric evidence', "RAW_RECORDS[0].evidence[0] = '12345.';", 'non-English nested learner content'],
     ['missing actor', 'RAW_RECORDS[0].keyPeople = [];', 'missing keyPeople'],
     ['missing terms', 'RAW_RECORDS[0].keyTerms = [];', 'missing keyTerms'],
@@ -790,11 +822,12 @@ test('rejects record count drift and duplicate raw record IDs', () => {
 
 test('rejects duplicate lenses and sequences within an empire location', () => {
   const duplicateLensManifest = mutateManifest('duplicate lens manifest', "STUDY_MANIFEST[1][3] = 'Expansion';");
-  const duplicateLensSource = duplicateLensManifest.replace(
-    '  ];\n\n  function freezeUnitCard(card) {',
-    "  ];\n  RAW_RECORDS[1].lens = 'Expansion';\n\n  function freezeUnitCard(card) {",
+  const duplicateLensSource = replaceSource(
+    'duplicate lens raw',
+    duplicateLensManifest,
+    /(\n\s*function freezeUnitCard\(card\)\s*\{)/,
+    "\n  RAW_RECORDS[1].lens = 'Expansion';$1",
   );
-  assert.notEqual(duplicateLensSource, duplicateLensManifest, 'duplicate lens raw fixture mutation');
   assertDataModuleError('duplicate lens', duplicateLensSource,
     `Invalid Unit 3 study record ${firstId}: duplicate lens Expansion at location 18`);
   assertDataModuleError('duplicate sequence', mutateManifest(
@@ -818,6 +851,10 @@ test('rejects malformed Unit 3 cards', () => {
     ['two takeaways', 'UNIT_CARD_LIST[0].takeaways.pop();', 'context', 'apwh-u3-context-conditions-land-empire-building', 'takeaways must contain exactly three items'],
     ['duplicate kind', "UNIT_CARD_LIST[1].kind = 'context';", 'context', 'apwh-u3-synthesis-expansion-limits-land-power', 'duplicate kind context'],
     ['duplicate ID', 'UNIT_CARD_LIST[1].id = UNIT_CARD_LIST[0].id;', 'synthesis', 'apwh-u3-context-conditions-land-empire-building', 'duplicate card ID'],
+    ['missing exam skills', 'UNIT_CARD_LIST[0].examSkills = [];', 'context', 'apwh-u3-context-conditions-land-empire-building', 'missing examSkills'],
+    ['invalid exam skill item', "UNIT_CARD_LIST[0].examSkills = [123, 'Causation'];", 'context', 'apwh-u3-context-conditions-land-empire-building', 'invalid examSkill 123'],
+    ['duplicate exam skill', "UNIT_CARD_LIST[0].examSkills = ['Causation', 'Causation'];", 'context', 'apwh-u3-context-conditions-land-empire-building', 'duplicate examSkill Causation'],
+    ['oversized exam skills', "UNIT_CARD_LIST[0].examSkills = ['Contextualization', 'Causation', 'Comparison'];", 'context', 'apwh-u3-context-conditions-land-empire-building', 'too many examSkills'],
     ['Chinese prompt', "UNIT_CARD_LIST[0].prompt = `中文 ${UNIT_CARD_LIST[0].prompt}`;", 'context', 'apwh-u3-context-conditions-land-empire-building', 'non-English prompt'],
   ];
   for (const [label, statement, kind, id, rule] of cases) {
@@ -835,8 +872,8 @@ test('rejects null and non-object raw records and unit cards before dereferencin
 
 const mutateConnections = (label, statement) => replaceDataSource(
   label,
-  '  // Raw learner content follows. Manifest metadata and graph fields are injected after validation.',
-  `  ${statement}\n\n  // Raw learner content follows. Manifest metadata and graph fields are injected after validation.`,
+  /(\n\s*const RAW_RECORDS\s*=\s*\[)/,
+  `\n  ${statement}$1`,
 );
 
 test('rejects missing graph endpoints immediately', () => {
@@ -881,49 +918,49 @@ test('rejects causal and related self-connections', () => {
 const graphMutationCases = [
   [
     'duplicate connection',
-    'cause.effectStudyPointIds.push(effectId);',
+    /cause\.effectStudyPointIds\.push\(\s*effectId\s*\);/,
     'cause.effectStudyPointIds.push(effectId, effectId);',
     `Invalid Unit 3 study record ${firstId}: duplicate connection in effectStudyPointIds to apwh-u3-ottoman-devshirme-janissary-system`,
   ],
   [
     'cross-category connection',
-    'effect.causeStudyPointIds.push(causeId);',
+    /effect\.causeStudyPointIds\.push\(\s*causeId\s*\);/,
     'effect.causeStudyPointIds.push(causeId);\n    cause.relatedStudyPointIds.push(effectId);\n    effect.relatedStudyPointIds.push(causeId);',
     `Invalid Unit 3 study record ${firstId}: cross-category connection apwh-u3-ottoman-devshirme-janissary-system in effectStudyPointIds and relatedStudyPointIds`,
   ],
   [
     'nonreciprocal category',
-    'effect.causeStudyPointIds.push(causeId);',
+    /effect\.causeStudyPointIds\.push\(\s*causeId\s*\);/,
     '// omit reverse fixture',
     `Invalid Unit 3 study record ${firstId}: nonreciprocal effectStudyPointIds connection to apwh-u3-ottoman-devshirme-janissary-system`,
   ],
   [
     'missing reciprocal notes',
-    'cause.connectionNotes[effectId] = note;\n    effect.connectionNotes[causeId] = note;',
+    /cause\.connectionNotes\[effectId\]\s*=\s*note;\s*effect\.connectionNotes\[causeId\]\s*=\s*note;/,
     '// omit notes fixture',
     `Invalid Unit 3 study record ${firstId}: missing connection note for apwh-u3-ottoman-devshirme-janissary-system`,
   ],
   [
     'non-English note',
-    'cause.connectionNotes[effectId] = note;',
+    /cause\.connectionNotes\[effectId\]\s*=\s*note;/,
     "cause.connectionNotes[effectId] = '12345.';",
     `Invalid Unit 3 study record ${firstId}: non-English connection note for apwh-u3-ottoman-devshirme-janissary-system`,
   ],
   [
     'mismatched reciprocal note',
-    'effect.connectionNotes[causeId] = note;',
+    /effect\.connectionNotes\[causeId\]\s*=\s*note;/,
     'effect.connectionNotes[causeId] = `${note} Different.`;',
     `Invalid Unit 3 study record ${firstId}: nonreciprocal connection note for apwh-u3-ottoman-devshirme-janissary-system`,
   ],
   [
     'extra note',
-    'connectionNotes: Object.freeze({ ...connections.connectionNotes }),',
+    /connectionNotes:\s*Object\.freeze\(\{\s*\.\.\.connections\.connectionNotes\s*\}\),/,
     "connectionNotes: Object.freeze({ ...connections.connectionNotes, 'apwh-u3-extra': 'Extra note.' }),",
     `Invalid Unit 3 study record ${firstId}: extra connection note key apwh-u3-extra`,
   ],
   [
     'unresolved link',
-    'effectStudyPointIds: Object.freeze([...connections.effectStudyPointIds]),',
+    /effectStudyPointIds:\s*Object\.freeze\(\[\s*\.\.\.connections\.effectStudyPointIds\s*\]\),/,
     "effectStudyPointIds: Object.freeze([...connections.effectStudyPointIds, 'apwh-u3-missing-link']),",
     `Invalid Unit 3 study record ${firstId}: unresolved connection apwh-u3-missing-link`,
   ],
