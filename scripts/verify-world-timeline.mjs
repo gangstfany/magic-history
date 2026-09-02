@@ -3480,31 +3480,51 @@ async function verifyLearningShell(page, port) {
       : null;
   }, pin);
 
+  const assertStaleSelection = async (name, stalePin, expectedEventKey) => {
+    const state = await readChainSelection();
+    assert.equal(state.selectedEventKey, expectedEventKey,
+      `${name} fixture must begin with the intended stale Timeline event`);
+    assert.equal(state.selectedAnchor?.num, stalePin,
+      `${name} fixture must begin with stale anchor ${stalePin}`);
+    assert.deepEqual(state.selectedMapPins, [stalePin],
+      `${name} fixture must begin with only stale map pin ${stalePin} selected`);
+  };
+
   const fallbackCases = [];
 
-  await page.evaluate(() => {
-    window.__mapFilter.enterRoute('u1_main');
-    window.__mapFilter.routeStep(6);
-    window.__mapFilter.routeStep(7);
-  });
+  await page.evaluate(() => window.__mapFilter.enterRoute('u1_main'));
+  await page.locator('#eventPanel [data-route-step="6"]').click();
+  await assertStaleSelection('u1_main final ring', '85', 'world-event-85-2');
+  await page.locator('#eventPanel [data-route-step="7"]').click();
   fallbackCases.push({ name: 'u1_main final ring', expectedPin: '8', stalePin: '85', ...(await readChainSelection()) });
 
-  assert.ok(await seedVisibleTimelinePin('7'), 'the syncretism fallback fixture requires a visible Angkor Timeline event');
+  // Re-run one anchor-only transition through the rendered Next button so its
+  // delegated event path is covered independently of direct stop activation.
+  await page.locator('#eventPanel [data-route-step="6"]').click();
+  await assertStaleSelection('u1_main final ring via Next', '85', 'world-event-85-2');
+  await page.locator('#eventPanel [data-route-action="next"]').click();
+  fallbackCases.push({ name: 'u1_main final ring via Next', expectedPin: '8', stalePin: '85', ...(await readChainSelection()) });
+
   await page.evaluate(() => window.__mapFilter.enterRoute('u1_sub_syncretism'));
+  const syncretismSeed = await seedVisibleTimelinePin('7');
+  assert.equal(syncretismSeed?.selected, true,
+    'the syncretism fallback fixture must successfully select a visible Angkor Timeline event');
+  await assertStaleSelection('u1_sub_syncretism first ring', '7', syncretismSeed.key);
+  await page.locator('#eventPanel [data-route-step="0"]').click();
   fallbackCases.push({ name: 'u1_sub_syncretism first ring', expectedPin: '2', stalePin: '7', ...(await readChainSelection()) });
 
-  await page.evaluate(() => {
-    window.__mapFilter.enterRoute('u1_sub_labor');
-    window.__mapFilter.routeStep(2);
-    window.__mapFilter.routeStep(3);
-  });
+  await page.evaluate(() => window.__mapFilter.enterRoute('u1_sub_labor'));
+  await page.locator('#eventPanel [data-route-step="2"]').click();
+  await assertStaleSelection('u1_sub_labor final ring', '49', 'world-event-49-0');
+  await page.locator('#eventPanel [data-route-step="3"]').click();
   fallbackCases.push({ name: 'u1_sub_labor final ring', expectedPin: '84', stalePin: '49', ...(await readChainSelection()) });
 
-  assert.ok(await seedVisibleTimelinePin('47'), 'the gender fallback fixture requires a visible Mississippi Timeline event');
-  await page.evaluate(() => {
-    window.__mapFilter.enterRoute('u1_sub_gender');
-    window.__mapFilter.routeStep(1);
-  });
+  await page.evaluate(() => window.__mapFilter.enterRoute('u1_sub_gender'));
+  const genderSeed = await seedVisibleTimelinePin('47');
+  assert.equal(genderSeed?.selected, true,
+    'the gender fallback fixture must successfully select a visible Mississippi Timeline event');
+  await assertStaleSelection('u1_sub_gender second ring', '47', genderSeed.key);
+  await page.locator('#eventPanel [data-route-step="1"]').click();
   fallbackCases.push({ name: 'u1_sub_gender second ring', expectedPin: '84', stalePin: '47', ...(await readChainSelection()) });
 
   assert.deepEqual(fallbackCases.map(({ name, expectedPin, selectedEventKey, selectedAnchor, selectedMapPins }) => ({
