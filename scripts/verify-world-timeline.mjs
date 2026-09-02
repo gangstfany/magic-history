@@ -3432,6 +3432,95 @@ async function verifyLearningShell(page, port) {
       `Unit 1 chain step ${stepIndex + 1} must highlight its linked map pin`);
   }
 
+  const readChainSelection = async () => page.evaluate(() => ({
+    learning: window.__mapFilter.getLearningState(),
+    selectedEventKey: window.getTimelineState().selectedEventKey,
+    selectedAnchor: window.getTimelineState().selectedAnchor,
+    selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+      .map(group => group.querySelector('text')?.textContent.trim()),
+  }));
+
+  // A chain stop with an exact Timeline source must keep that source/card as the
+  // preferred selection. Previous/next use the same public UI path as direct stop
+  // activation, so cover both directions before exercising anchor-only fallbacks.
+  await page.evaluate(() => window.__mapFilter.enterRoute('u1_main'));
+  await page.locator('#eventPanel [data-route-step="1"]').click();
+  const exactTimelineSelection = await readChainSelection();
+  assert.equal(exactTimelineSelection.selectedEventKey, 'world-event-1-0',
+    'a chain stop with an exact sourceId must select that exact Timeline event');
+  assert.deepEqual(exactTimelineSelection.selectedAnchor, { num: '1', region: 'asia' },
+    'the exact Song Timeline event must use its Hangzhou anchor');
+  assert.ok(exactTimelineSelection.selectedMapPins.includes('1'),
+    'the exact Song Timeline event must highlight Hangzhou on the map');
+
+  await page.locator('#eventPanel [data-route-action="prev"]').click();
+  const previousChainSelection = await readChainSelection();
+  assert.equal(previousChainSelection.learning.chainStep, 0,
+    'Previous must move the Unit 1 main chain to its preceding ring');
+  assert.deepEqual(previousChainSelection.selectedAnchor, { num: '7', region: 'asia' },
+    'Previous must synchronize the preceding Angkor anchor');
+  assert.ok(previousChainSelection.selectedMapPins.includes('7'),
+    'Previous must highlight the preceding Angkor pin');
+
+  await page.locator('#eventPanel [data-route-action="next"]').click();
+  const nextChainSelection = await readChainSelection();
+  assert.equal(nextChainSelection.learning.chainStep, 1,
+    'Next must return the Unit 1 main chain to the Song ring');
+  assert.equal(nextChainSelection.selectedEventKey, 'world-event-1-0',
+    'Next must restore the exact Song Timeline event rather than an anchor-only fallback');
+  assert.ok(nextChainSelection.selectedMapPins.includes('1'),
+    'Next must restore the Hangzhou map pin');
+
+  const seedVisibleTimelinePin = async (pin) => page.evaluate((targetPin) => {
+    const event = window.getTimelineState().visibleEvents.find(item =>
+      item.visibleAnchors.some(anchor => anchor.num === String(targetPin)));
+    const anchor = event?.visibleAnchors.find(item => item.num === String(targetPin));
+    return event && anchor
+      ? { key: event.key, selected: window.selectTimelineEvent(event.key, anchor) }
+      : null;
+  }, pin);
+
+  const fallbackCases = [];
+
+  await page.evaluate(() => {
+    window.__mapFilter.enterRoute('u1_main');
+    window.__mapFilter.routeStep(6);
+    window.__mapFilter.routeStep(7);
+  });
+  fallbackCases.push({ name: 'u1_main final ring', expectedPin: '8', stalePin: '85', ...(await readChainSelection()) });
+
+  assert.ok(await seedVisibleTimelinePin('7'), 'the syncretism fallback fixture requires a visible Angkor Timeline event');
+  await page.evaluate(() => window.__mapFilter.enterRoute('u1_sub_syncretism'));
+  fallbackCases.push({ name: 'u1_sub_syncretism first ring', expectedPin: '2', stalePin: '7', ...(await readChainSelection()) });
+
+  await page.evaluate(() => {
+    window.__mapFilter.enterRoute('u1_sub_labor');
+    window.__mapFilter.routeStep(2);
+    window.__mapFilter.routeStep(3);
+  });
+  fallbackCases.push({ name: 'u1_sub_labor final ring', expectedPin: '84', stalePin: '49', ...(await readChainSelection()) });
+
+  assert.ok(await seedVisibleTimelinePin('47'), 'the gender fallback fixture requires a visible Mississippi Timeline event');
+  await page.evaluate(() => {
+    window.__mapFilter.enterRoute('u1_sub_gender');
+    window.__mapFilter.routeStep(1);
+  });
+  fallbackCases.push({ name: 'u1_sub_gender second ring', expectedPin: '84', stalePin: '47', ...(await readChainSelection()) });
+
+  assert.deepEqual(fallbackCases.map(({ name, expectedPin, selectedEventKey, selectedAnchor, selectedMapPins }) => ({
+    name,
+    expectedPin,
+    selectedEventKey,
+    selectedAnchor: selectedAnchor?.num ?? null,
+    selectedMapPins,
+  })), fallbackCases.map(({ name, expectedPin }) => ({
+    name,
+    expectedPin,
+    selectedEventKey: null,
+    selectedAnchor: expectedPin,
+    selectedMapPins: [expectedPin],
+  })), 'a chain stop without a Timeline card must clear the stale card and select its map anchor');
+
   const chainTimelineTarget = page.locator('.world-timeline-card[data-event-key]').last();
   await chainTimelineTarget.click();
   await expectVisible(page.locator('#eventPanel .rt-stops-chain'),
