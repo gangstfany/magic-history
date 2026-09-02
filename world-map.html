@@ -4037,7 +4037,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     moveVehicle(v, from, to, 850);
   }
 
-  function goToStop(i, syncChainAnchor = false) {
+  function goToStop(i) {
     if (!routeMode) return;
     const { route } = routeMode;
     routeMode.i = Math.max(0, Math.min(i, route.stops.length - 1));
@@ -4057,7 +4057,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       const selected = declared
         ? selectTimelineBySourceId(declared, num) || selectTimelineByPin(num, true)
         : selectTimelineByPin(num, true);
-      if (!selected && syncChainAnchor) selectChainMapAnchor(num);
+      if (!selected) selectChainMapAnchor(num);
     } else {
       renderEventContent(num, pinBadgeColor(num));
       eventPanel.insertAdjacentHTML('afterbegin', itineraryHTML());
@@ -4841,7 +4841,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (typeof setPeriodFilter === 'function') setPeriodFilter(chain.entryUnit);
     if (routeMode?.route?.id !== chain.id) enterRouteMode(chain.id);
     if (routeMode?.route?.id === chain.id) {
-      goToStop(boundary === 'last' ? chain.stops.length - 1 : 0, true);
+      goToStop(boundary === 'last' ? chain.stops.length - 1 : 0);
     }
     syncLearningTabs();
     syncMapModeTabs();

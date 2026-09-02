@@ -3735,8 +3735,21 @@ async function verifyLearningShell(page, port) {
       .map(group => ({ pin: group.querySelector('text')?.textContent.trim(), region: group.dataset.region }))
       .sort((a, b) => `${a.pin}:${a.region}`.localeCompare(`${b.pin}:${b.region}`)),
   }));
-  assert.deepEqual(contextAfterChain, contextBeforeRoute,
-    'Routes → Chain must exactly restore Unit, query, categories, Timeline selection, and selected map pins');
+  const currentUnitChain = await page.evaluate(() => {
+    const state = window.__mapFilter.getLearningState();
+    return window.__mapFilter.getChains().find(chain => chain.id === state.chainId);
+  });
+  assert.deepEqual(contextAfterChain.filter, contextBeforeRoute.filter,
+    'Routes → Chain must exactly restore Unit, query, and categories');
+  assert.deepEqual(contextAfterChain.timeline.visibleEventKeys, contextBeforeRoute.timeline.visibleEventKeys,
+    'Routes → Chain must preserve the restored Timeline result set');
+  assert.equal(contextAfterChain.timeline.selectedEventKey, null,
+    'a Chain stop without a visible Timeline card must clear the stale Timeline selection');
+  const currentChainFirstPin = String(currentUnitChain.stopPins[0]);
+  assert.equal(contextAfterChain.timeline.selectedAnchor?.num, currentChainFirstPin,
+    'Routes → Chain must select the current chain stop map anchor');
+  assert.deepEqual(contextAfterChain.selectedMapPins.map(item => item.pin), [currentChainFirstPin],
+    'Routes → Chain must leave only the current chain stop selected on the map');
   assert.equal(await page.evaluate(() => window.__mapFilter.inRoute()), false,
     'Routes → Chain must leave route mode');
   assert.equal(await page.locator('.route-line.on, .route-vehicle.on').count(), 0,
