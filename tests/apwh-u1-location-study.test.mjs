@@ -81,6 +81,29 @@ const expectedNewLocationLabels = new Map([
   ['50', 'Inca Empire · Cusco'],
   ['23', 'Medieval Europe · London'],
 ]);
+const expectedSourceLocators = new Map([
+  ['apwh-u1-hangzhou-song-commercial-revolution', 'AMSCO AP World History, Unit 1, Topic 1.1'],
+  ['apwh-u1-hangzhou-grand-canal-urban-market', 'AMSCO AP World History, Unit 1, Topic 1.1'],
+  ['apwh-u1-hangzhou-paper-money-maritime-tools', 'AMSCO AP World History, Unit 1, Topic 1.1'],
+  ['apwh-u1-angkor-khmer-hydraulic-state', 'AMSCO AP World History, Unit 1, Topic 1.3'],
+  ['apwh-u1-angkor-hindu-buddhist-legitimation', 'AMSCO AP World History, Unit 1, Topic 1.3'],
+  ['apwh-u1-delhi-sultanate-state-building', 'AMSCO AP World History, Unit 1, Topic 1.3'],
+  ['apwh-u1-delhi-bhakti-sufi-devotion', 'AMSCO AP World History, Unit 1, Topic 1.3'],
+  ['apwh-u1-baghdad-abbasid-knowledge-hub', 'AMSCO AP World History, Unit 1, Topic 1.2'],
+  ['apwh-u1-baghdad-merchant-ulema-network', 'AMSCO AP World History, Unit 1, Topic 1.2'],
+  ['apwh-u1-timbuktu-mali-gold-salt-tax', 'AMSCO AP World History, Unit 1, Topic 1.5; Topic 2.2 trade mechanism context'],
+  ['apwh-u1-timbuktu-mansa-musa-pilgrimage', 'AMSCO AP World History, Unit 1, Topic 1.5'],
+  ['apwh-u1-timbuktu-islamic-learning-griots', 'AMSCO AP World History, Unit 1, Topic 1.5'],
+  ['apwh-u1-tenochtitlan-chinampas-urban-state', 'AMSCO AP World History, Unit 1, Topic 1.4'],
+  ['apwh-u1-tenochtitlan-religion-warfare-legitimacy', 'AMSCO AP World History, Unit 1, Topic 1.4'],
+  ['apwh-u1-tenochtitlan-triple-alliance-tribute', 'AMSCO AP World History, Unit 1, Topic 1.4'],
+  ['apwh-u1-cusco-ayllu-mita-labor', 'AMSCO AP World History, Unit 1, Topic 1.4'],
+  ['apwh-u1-cusco-pachacuti-tawantinsuyu', 'AMSCO AP World History, Unit 1, Topic 1.4'],
+  ['apwh-u1-cusco-roads-quipu-administration', 'AMSCO AP World History, Unit 1, Topic 1.4'],
+  ['apwh-u1-london-manorial-feudal-order', 'AMSCO AP World History, Unit 1, Topic 1.6'],
+  ['apwh-u1-london-towns-guilds-commerce', 'AMSCO AP World History, Unit 1, Topic 1.6'],
+  ['apwh-u1-london-magna-carta-monarchy', 'AMSCO AP World History, Unit 1, Topic 1.6'],
+]);
 const recordKeys = [
   'causeStudyPointIds', 'connectionNotes', 'dateLabel', 'effectStudyPointIds', 'endYear',
   'evidence', 'examConnection', 'examSkills', 'id', 'keyPeople', 'keyTerms', 'locationNumber', 'mainEventKey',
@@ -242,6 +265,7 @@ test('returns a defensive chronological array', () => {
 
 test('ships the exact twenty-one complete English study points', () => {
   assert.deepEqual(new Set(api.records.map(record => record.id)), new Set(expectedIds));
+  assert.equal(expectedSourceLocators.size, api.records.length);
   assert.doesNotMatch(JSON.stringify(api.records), /[\u3400-\u9fff]/);
 
   for (const number of trialPins) {
@@ -279,6 +303,8 @@ test('ships the exact twenty-one complete English study points', () => {
       assert.ok(isNonEmptyString(record.source.id), `${record.id} source id`);
       assert.ok(isNonEmptyString(record.source.locator), `${record.id} source locator`);
       assert.equal(record.source.id, 'amsco-apwh-u1');
+      assert.equal(record.source.locator, expectedSourceLocators.get(record.id),
+        `${record.id} exact source locator`);
       assert.match(record.source.locator,
         /^AMSCO AP World History, Unit 1, Topic 1\.[1-6](?:; Topic 2\.2 trade mechanism context)?$/);
       assert.doesNotMatch(record.source.locator, /varies by edition|TBD|placeholder/i);
@@ -287,13 +313,19 @@ test('ships the exact twenty-one complete English study points', () => {
 });
 
 test('publishes the exact nine new Unit 1 records', () => {
-  assert.deepEqual(api.records
-    .filter(record => expectedNewLocationLabels.has(record.locationNumber))
-    .map(record => [
+  const expectedByLocation = new Map([
+    ['49', expectedNewRecords.slice(0, 3)],
+    ['50', expectedNewRecords.slice(3, 6)],
+    ['23', expectedNewRecords.slice(6, 9)],
+  ]);
+  for (const [pin, expected] of expectedByLocation) {
+    const actual = api.getByLocation(pin).map(record => [
       record.id, record.locationNumber, record.title, record.dateLabel,
       record.startYear, record.endYear, record.mainEventKey,
       [...record.topicCodes], [...record.themeIds], [...record.examSkills],
-    ]), expectedNewRecords);
+    ]);
+    assert.deepEqual(actual, expected, `${pin} chronological records`);
+  }
 });
 
 test('uses civilization-first labels for the new learner locations', () => {
@@ -401,8 +433,11 @@ test('assigns the exact APWH topics and map themes', () => {
 
 test('source ledger covers every Unit 1 study ID exactly once', () => {
   for (const id of expectedIds) {
-    assert.equal(ledgerSource.split('\n')
-      .filter(line => line.startsWith(`| \`${id}\` |`)).length, 1, id);
+    const rows = ledgerSource.split('\n')
+      .filter(line => line.startsWith(`| \`${id}\` |`));
+    assert.equal(rows.length, 1, id);
+    assert.equal(rows[0].split('|').map(cell => cell.trim())[4], expectedSourceLocators.get(id),
+      `${id} ledger source locator`);
   }
   assert.equal((ledgerSource.match(/\| `apwh-u1-/g) || []).length, 21);
   assert.doesNotMatch(ledgerSource, /Timbuktu.*Topic 1\.4|Hangzhou.*Topics 1\.1 and 1\.2/i);
