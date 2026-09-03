@@ -631,7 +631,7 @@
       dateLabel: '1200–1450',
       startYear: 1200,
       endYear: 1450,
-      summary: 'London serves as a representative regional map anchor for medieval European manors, which organized rural production, and feudal relationships among landholding nobles.',
+      summary: 'London serves as a regional anchor for a Europe in which manors organized rural production and feudal ties distributed political and military obligations.',
       significance: 'These overlapping local institutions shaped political fragmentation and agricultural life even as monarchies, towns, and commerce gradually expanded.',
       keyPeople: [{ name: 'manorial lords and peasants', role: 'Negotiated rents, labor services, protection, and access to land within local agricultural communities.' }],
       keyTerms: [
