@@ -10,6 +10,10 @@ const dataModuleSource = readFileSync(
   new URL('../data/apwh-u1-location-study.js', import.meta.url),
   'utf8',
 );
+const ledgerSource = readFileSync(
+  new URL('../docs/data-sources/apwh-u1-location-study-source-ledger.md', import.meta.url),
+  'utf8',
+);
 const replaceDataSource = (label, search, replacement) => {
   const malformedSource = dataModuleSource.replace(search, replacement);
   assert.notEqual(malformedSource, dataModuleSource, `${label} fixture mutation`);
@@ -24,13 +28,16 @@ const assertDataModuleError = (label, malformedSource, expectedMessage) => {
     },
   );
 };
-const trialPins = ['1', '3', '6', '7', '73'];
+const trialPins = ['1', '3', '6', '7', '23', '49', '50', '73'];
 const validMainEvents = new Set([
   'world-event-1-0',
   'world-event-3-0',
   'world-event-6-0',
   'world-event-6-4',
   'world-event-7-0',
+  'world-event-23-0',
+  'world-event-49-0',
+  'world-event-50-0',
   'world-event-73-0',
   'world-event-73-2',
   'world-event-73-3',
@@ -48,7 +55,32 @@ const expectedIds = [
   'apwh-u1-timbuktu-mali-gold-salt-tax',
   'apwh-u1-timbuktu-mansa-musa-pilgrimage',
   'apwh-u1-timbuktu-islamic-learning-griots',
+  'apwh-u1-tenochtitlan-chinampas-urban-state',
+  'apwh-u1-tenochtitlan-religion-warfare-legitimacy',
+  'apwh-u1-tenochtitlan-triple-alliance-tribute',
+  'apwh-u1-cusco-ayllu-mita-labor',
+  'apwh-u1-cusco-pachacuti-tawantinsuyu',
+  'apwh-u1-cusco-roads-quipu-administration',
+  'apwh-u1-london-manorial-feudal-order',
+  'apwh-u1-london-towns-guilds-commerce',
+  'apwh-u1-london-magna-carta-monarchy',
 ];
+const expectedNewRecords = [
+  ['apwh-u1-tenochtitlan-chinampas-urban-state', '49', 'Chinampas and Urban State Capacity', '1325–1450', 1325, 1450, 'world-event-49-0', ['1.4', '1.7'], ['ENV', 'ECN', 'GOV'], ['Causation', 'Comparison']],
+  ['apwh-u1-tenochtitlan-religion-warfare-legitimacy', '49', 'Religion, Warfare, and Mexica Legitimacy', '1325–1450', 1325, 1450, 'world-event-49-0', ['1.4', '1.7'], ['CDI', 'GOV'], ['Comparison', 'Contextualization']],
+  ['apwh-u1-tenochtitlan-triple-alliance-tribute', '49', 'Triple Alliance and Tribute Empire', '1428–1450', 1428, 1450, 'world-event-49-0', ['1.4', '1.7'], ['GOV', 'ECN'], ['Causation', 'Comparison']],
+  ['apwh-u1-cusco-ayllu-mita-labor', '50', "Ayllu, Mit'a, and State Labor", '1438–1450', 1438, 1450, 'world-event-50-0', ['1.4', '1.7'], ['SIO', 'GOV', 'ECN'], ['Causation', 'Comparison']],
+  ['apwh-u1-cusco-pachacuti-tawantinsuyu', '50', 'Pachacuti and Tawantinsuyu', '1438–1450', 1438, 1450, 'world-event-50-0', ['1.4', '1.7'], ['GOV', 'ENV'], ['Causation', 'Contextualization']],
+  ['apwh-u1-cusco-roads-quipu-administration', '50', 'Roads, Quipu, and Imperial Administration', '1438–1450', 1438, 1450, 'world-event-50-0', ['1.4', '1.7'], ['GOV', 'TEC'], ['Causation', 'Comparison']],
+  ['apwh-u1-london-manorial-feudal-order', '23', 'Manorial Agriculture and Feudal Order', '1200–1450', 1200, 1450, 'world-event-23-0', ['1.6', '1.7'], ['SIO', 'ECN'], ['CCOT', 'Contextualization']],
+  ['apwh-u1-london-towns-guilds-commerce', '23', 'Towns, Guilds, and Commercial Growth', '1200–1450', 1200, 1450, 'world-event-23-0', ['1.6', '1.7'], ['ECN', 'SIO'], ['Causation', 'CCOT']],
+  ['apwh-u1-london-magna-carta-monarchy', '23', 'Magna Carta and Negotiated Monarchy', '1215', 1215, 1215, 'world-event-23-0', ['1.6', '1.7'], ['GOV'], ['Comparison', 'Contextualization']],
+];
+const expectedNewLocationLabels = new Map([
+  ['49', 'Aztec Empire · Tenochtitlan'],
+  ['50', 'Inca Empire · Cusco'],
+  ['23', 'Medieval Europe · London'],
+]);
 const recordKeys = [
   'causeStudyPointIds', 'connectionNotes', 'dateLabel', 'effectStudyPointIds', 'endYear',
   'evidence', 'examConnection', 'examSkills', 'id', 'keyPeople', 'keyTerms', 'locationNumber', 'mainEventKey',
@@ -71,6 +103,15 @@ const expectedExamSkills = new Map([
   ['apwh-u1-timbuktu-mali-gold-salt-tax', ['Causation']],
   ['apwh-u1-timbuktu-islamic-learning-griots', ['Comparison', 'CCOT']],
   ['apwh-u1-timbuktu-mansa-musa-pilgrimage', ['Causation', 'Contextualization']],
+  ['apwh-u1-tenochtitlan-chinampas-urban-state', ['Causation', 'Comparison']],
+  ['apwh-u1-tenochtitlan-religion-warfare-legitimacy', ['Comparison', 'Contextualization']],
+  ['apwh-u1-tenochtitlan-triple-alliance-tribute', ['Causation', 'Comparison']],
+  ['apwh-u1-cusco-ayllu-mita-labor', ['Causation', 'Comparison']],
+  ['apwh-u1-cusco-pachacuti-tawantinsuyu', ['Causation', 'Contextualization']],
+  ['apwh-u1-cusco-roads-quipu-administration', ['Causation', 'Comparison']],
+  ['apwh-u1-london-manorial-feudal-order', ['CCOT', 'Contextualization']],
+  ['apwh-u1-london-towns-guilds-commerce', ['Causation', 'CCOT']],
+  ['apwh-u1-london-magna-carta-monarchy', ['Comparison', 'Contextualization']],
 ]);
 
 const expectedUnitCards = {
@@ -117,6 +158,15 @@ const expectedMetadata = new Map([
   ['apwh-u1-timbuktu-mali-gold-salt-tax', [['1.5', '1.7'], ['ECN', 'GOV']]],
   ['apwh-u1-timbuktu-islamic-learning-griots', [['1.5', '1.7'], ['CDI', 'SIO']]],
   ['apwh-u1-timbuktu-mansa-musa-pilgrimage', [['1.5', '1.7'], ['GOV', 'ECN', 'CDI']]],
+  ['apwh-u1-tenochtitlan-chinampas-urban-state', [['1.4', '1.7'], ['ENV', 'ECN', 'GOV']]],
+  ['apwh-u1-tenochtitlan-religion-warfare-legitimacy', [['1.4', '1.7'], ['CDI', 'GOV']]],
+  ['apwh-u1-tenochtitlan-triple-alliance-tribute', [['1.4', '1.7'], ['GOV', 'ECN']]],
+  ['apwh-u1-cusco-ayllu-mita-labor', [['1.4', '1.7'], ['SIO', 'GOV', 'ECN']]],
+  ['apwh-u1-cusco-pachacuti-tawantinsuyu', [['1.4', '1.7'], ['GOV', 'ENV']]],
+  ['apwh-u1-cusco-roads-quipu-administration', [['1.4', '1.7'], ['GOV', 'TEC']]],
+  ['apwh-u1-london-manorial-feudal-order', [['1.6', '1.7'], ['SIO', 'ECN']]],
+  ['apwh-u1-london-towns-guilds-commerce', [['1.6', '1.7'], ['ECN', 'SIO']]],
+  ['apwh-u1-london-magna-carta-monarchy', [['1.6', '1.7'], ['GOV']]],
 ]);
 
 const expectedCausalEdges = new Map([
@@ -130,6 +180,16 @@ const expectedCausalEdges = new Map([
     "Revenue from Mali's control of trade helped finance Mansa Musa's pilgrimage and public display of wealth."],
   ['apwh-u1-timbuktu-mansa-musa-pilgrimage->apwh-u1-timbuktu-islamic-learning-griots',
     "Mansa Musa's post-pilgrimage patronage strengthened mosques, schools, and scholarly connections in Mali."],
+  ['apwh-u1-tenochtitlan-chinampas-urban-state->apwh-u1-tenochtitlan-triple-alliance-tribute',
+    'Intensive chinampa agriculture helped sustain the large urban population and military resources from which Mexica rulers expanded tribute demands.'],
+  ['apwh-u1-tenochtitlan-triple-alliance-tribute->apwh-u1-tenochtitlan-religion-warfare-legitimacy',
+    'Tribute warfare supplied wealth and captives while public ritual presented Mexica expansion as part of a sacred political order.'],
+  ['apwh-u1-cusco-pachacuti-tawantinsuyu->apwh-u1-cusco-ayllu-mita-labor',
+    'Rapid territorial expansion required Inca rulers to organize local ayllus and rotate labor obligations across a much larger state.'],
+  ['apwh-u1-cusco-ayllu-mita-labor->apwh-u1-cusco-roads-quipu-administration',
+    "Mobilized mit'a labor built and maintained roads, while officials used quipu records to track resources and obligations."],
+  ['apwh-u1-london-manorial-feudal-order->apwh-u1-london-towns-guilds-commerce',
+    'Agricultural production and population recovery supported markets and towns whose merchants and guilds operated beyond individual manors.'],
 ]);
 
 const expectedRelatedPairs = new Map([
@@ -141,6 +201,12 @@ const expectedRelatedPairs = new Map([
     'Mobile Muslim teachers and shared religious networks help compare the spread and local adaptation of Islam across regions.'],
   ['apwh-u1-baghdad-merchant-ulema-network|apwh-u1-timbuktu-islamic-learning-griots',
     'Commercial and scholarly networks carried Islamic institutions while local societies retained distinct cultural practices.'],
+  ['apwh-u1-cusco-ayllu-mita-labor|apwh-u1-tenochtitlan-triple-alliance-tribute',
+    "The Aztec tribute system and the Inca mit'a system extracted resources differently: one emphasized subject payments, while the other mobilized labor through communities."],
+  ['apwh-u1-cusco-ayllu-mita-labor|apwh-u1-tenochtitlan-chinampas-urban-state',
+    'Both states adapted difficult environments through organized labor, although chinampas intensified lake agriculture while Inca communities managed highland production and terraces.'],
+  ['apwh-u1-delhi-sultanate-state-building|apwh-u1-london-magna-carta-monarchy',
+    'Both cases reveal negotiations between rulers and powerful groups, but Magna Carta formalized baronial constraints while Delhi sultans balanced minority rule with military and local political accommodation.'],
 ]);
 
 test('publishes the Unit 1 location-study API', () => {
@@ -174,7 +240,7 @@ test('returns a defensive chronological array', () => {
   }
 });
 
-test('ships the exact twelve complete English study points', () => {
+test('ships the exact twenty-one complete English study points', () => {
   assert.deepEqual(new Set(api.records.map(record => record.id)), new Set(expectedIds));
   assert.doesNotMatch(JSON.stringify(api.records), /[\u3400-\u9fff]/);
 
@@ -214,10 +280,32 @@ test('ships the exact twelve complete English study points', () => {
       assert.ok(isNonEmptyString(record.source.locator), `${record.id} source locator`);
       assert.equal(record.source.id, 'amsco-apwh-u1');
       assert.match(record.source.locator,
-        /^AMSCO AP World History, Unit 1, Topics? 1\.[1-4](?: and 1\.[1-4])?(?:; Topic 2\.2 trade mechanism context)?$/);
+        /^AMSCO AP World History, Unit 1, Topic 1\.[1-6](?:; Topic 2\.2 trade mechanism context)?$/);
       assert.doesNotMatch(record.source.locator, /varies by edition|TBD|placeholder/i);
     }
   }
+});
+
+test('publishes the exact nine new Unit 1 records', () => {
+  assert.deepEqual(api.records
+    .filter(record => expectedNewLocationLabels.has(record.locationNumber))
+    .map(record => [
+      record.id, record.locationNumber, record.title, record.dateLabel,
+      record.startYear, record.endYear, record.mainEventKey,
+      [...record.topicCodes], [...record.themeIds], [...record.examSkills],
+    ]), expectedNewRecords);
+});
+
+test('uses civilization-first labels for the new learner locations', () => {
+  for (const [pin, label] of expectedNewLocationLabels) {
+    assert.equal(api.locationName(pin), label, pin);
+    assert.equal(api.getByLocation(pin).length, 3, `${label} record count`);
+  }
+});
+
+test('covers every College Board Unit 1 topic', () => {
+  assert.deepEqual([...new Set(api.records.flatMap(record => record.topicCodes))].sort(),
+    ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7']);
 });
 
 test('assigns the exact historical-thinking skills to each study point', () => {
@@ -233,7 +321,7 @@ test('publishes exact, map-independent Unit 1 bookend cards', () => {
   assert.equal(api.getUnitCard('synthesis'), api.unitCards.synthesis);
   assert.equal(api.getUnitCard('missing-card'), null);
   assert.equal(api.getUnitCard(null), null);
-  assert.equal(api.records.length, 12);
+  assert.equal(api.records.length, 21);
   for (const card of Object.values(api.unitCards)) {
     assert.match(card.role, /^Unit 1 (Context|Synthesis) Card$/);
     assert.ok(!api.records.includes(card), `${card.kind} not a study record`);
@@ -296,12 +384,12 @@ test('record comparator exercises end-year and id tie breakers', () => {
 test('uses globally unique stable study identifiers', () => {
   const ids = api.records.map(record => record.id);
   assert.equal(new Set(ids).size, ids.length);
-  assert.ok(ids.every(id => /^apwh-u1-(hangzhou|angkor|delhi|baghdad|timbuktu)-/.test(id)));
+  assert.ok(ids.every(id => /^apwh-u1-(hangzhou|angkor|delhi|baghdad|timbuktu|tenochtitlan|cusco|london)-/.test(id)));
 });
 
 test('assigns the exact APWH topics and map themes', () => {
-  const validTopics = new Set(['1.1', '1.2', '1.3', '1.5', '1.7']);
-  const validThemes = new Set(['GOV', 'ECN', 'CDI', 'SIO', 'TEC']);
+  const validTopics = new Set(['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7']);
+  const validThemes = new Set(['GOV', 'ECN', 'CDI', 'SIO', 'TEC', 'ENV']);
 
   assert.equal(expectedMetadata.size, api.records.length);
   for (const record of api.records) {
@@ -309,6 +397,15 @@ test('assigns the exact APWH topics and map themes', () => {
     assert.ok(record.topicCodes.every(code => validTopics.has(code)), `${record.id} topics`);
     assert.ok(record.themeIds.every(id => validThemes.has(id)), `${record.id} themes`);
   }
+});
+
+test('source ledger covers every Unit 1 study ID exactly once', () => {
+  for (const id of expectedIds) {
+    assert.equal(ledgerSource.split('\n')
+      .filter(line => line.startsWith(`| \`${id}\` |`)).length, 1, id);
+  }
+  assert.equal((ledgerSource.match(/\| `apwh-u1-/g) || []).length, 21);
+  assert.doesNotMatch(ledgerSource, /Timbuktu.*Topic 1\.4|Hangzhou.*Topics 1\.1 and 1\.2/i);
 });
 
 test('ships the exact reciprocal causal graph and mechanism notes', () => {
