@@ -631,7 +631,7 @@
       dateLabel: '1200–1450',
       startYear: 1200,
       endYear: 1450,
-      summary: 'European manors organized rural production, while feudal relationships linked landholding nobles through personal obligations and military service.',
+      summary: 'London serves as a representative regional map anchor for medieval European manors, which organized rural production, and feudal relationships among landholding nobles.',
       significance: 'These overlapping local institutions shaped political fragmentation and agricultural life even as monarchies, towns, and commerce gradually expanded.',
       keyPeople: [{ name: 'manorial lords and peasants', role: 'Negotiated rents, labor services, protection, and access to land within local agricultural communities.' }],
       keyTerms: [
@@ -654,7 +654,7 @@
       dateLabel: '1200–1450',
       startYear: 1200,
       endYear: 1450,
-      summary: 'Growing towns such as London supported merchant and craft guilds that regulated trade, training, production, and membership.',
+      summary: 'London serves as a representative map anchor for the broader European growth of towns and merchant and craft guilds that regulated economic life.',
       significance: 'Urban and commercial growth created institutions and social groups with interests extending beyond manorial agriculture and local noble authority.',
       keyPeople: [{ name: 'guild members', role: 'Merchants and artisans who regulated occupations, trained apprentices, and defended collective privileges.' }],
       keyTerms: [
@@ -677,7 +677,7 @@
       dateLabel: '1215',
       startYear: 1215,
       endYear: 1215,
-      summary: 'English barons compelled King John to accept Magna Carta during a political conflict over taxation, warfare, and royal authority.',
+      summary: 'London and England anchor a European case of negotiated monarchy in which barons compelled King John to accept Magna Carta during political conflict.',
       significance: 'The charter expressed medieval elite bargaining and the principle that a monarch faced established legal constraints, not a system of modern democracy.',
       keyPeople: [{ name: 'King John', role: 'Accepted Magna Carta after conflict with English barons over failed wars, taxation, and arbitrary royal actions.' }],
       keyTerms: [
