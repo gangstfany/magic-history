@@ -6,11 +6,14 @@
     '3': 'Baghdad',
     '6': 'Delhi',
     '7': 'Angkor',
+    '23': 'Medieval Europe · London',
+    '49': 'Aztec Empire · Tenochtitlan',
+    '50': 'Inca Empire · Cusco',
     '73': 'Timbuktu',
   });
 
-  const VALID_TOPIC_CODES = new Set(['1.1', '1.2', '1.3', '1.5', '1.7']);
-  const VALID_THEME_IDS = new Set(['GOV', 'ECN', 'CDI', 'SIO', 'TEC']);
+  const VALID_TOPIC_CODES = new Set(['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7']);
+  const VALID_THEME_IDS = new Set(['GOV', 'ECN', 'CDI', 'SIO', 'TEC', 'ENV']);
   const VALID_EXAM_SKILLS = new Set(['Causation', 'Comparison', 'CCOT', 'Contextualization']);
   const STUDY_CONTEXT = {
     'apwh-u1-hangzhou-song-commercial-revolution': [['1.1', '1.7'], ['ECN', 'GOV']],
@@ -25,6 +28,15 @@
     'apwh-u1-timbuktu-mali-gold-salt-tax': [['1.5', '1.7'], ['ECN', 'GOV']],
     'apwh-u1-timbuktu-islamic-learning-griots': [['1.5', '1.7'], ['CDI', 'SIO']],
     'apwh-u1-timbuktu-mansa-musa-pilgrimage': [['1.5', '1.7'], ['GOV', 'ECN', 'CDI']],
+    'apwh-u1-tenochtitlan-chinampas-urban-state': [['1.4', '1.7'], ['ENV', 'ECN', 'GOV']],
+    'apwh-u1-tenochtitlan-religion-warfare-legitimacy': [['1.4', '1.7'], ['CDI', 'GOV']],
+    'apwh-u1-tenochtitlan-triple-alliance-tribute': [['1.4', '1.7'], ['GOV', 'ECN']],
+    'apwh-u1-cusco-ayllu-mita-labor': [['1.4', '1.7'], ['SIO', 'GOV', 'ECN']],
+    'apwh-u1-cusco-pachacuti-tawantinsuyu': [['1.4', '1.7'], ['GOV', 'ENV']],
+    'apwh-u1-cusco-roads-quipu-administration': [['1.4', '1.7'], ['GOV', 'TEC']],
+    'apwh-u1-london-manorial-feudal-order': [['1.6', '1.7'], ['SIO', 'ECN']],
+    'apwh-u1-london-towns-guilds-commerce': [['1.6', '1.7'], ['ECN', 'SIO']],
+    'apwh-u1-london-magna-carta-monarchy': [['1.6', '1.7'], ['GOV']],
   };
 
   const CONNECTION_DATA = new Map(Object.keys(STUDY_CONTEXT).map(id => [id, {
@@ -95,6 +107,31 @@
     'apwh-u1-timbuktu-islamic-learning-griots',
     "Mansa Musa's post-pilgrimage patronage strengthened mosques, schools, and scholarly connections in Mali.",
   );
+  addCausalConnection(
+    'apwh-u1-tenochtitlan-chinampas-urban-state',
+    'apwh-u1-tenochtitlan-triple-alliance-tribute',
+    'Intensive chinampa agriculture helped sustain the large urban population and military resources from which Mexica rulers expanded tribute demands.',
+  );
+  addCausalConnection(
+    'apwh-u1-tenochtitlan-triple-alliance-tribute',
+    'apwh-u1-tenochtitlan-religion-warfare-legitimacy',
+    'Tribute warfare supplied wealth and captives while public ritual presented Mexica expansion as part of a sacred political order.',
+  );
+  addCausalConnection(
+    'apwh-u1-cusco-pachacuti-tawantinsuyu',
+    'apwh-u1-cusco-ayllu-mita-labor',
+    'Rapid territorial expansion required Inca rulers to organize local ayllus and rotate labor obligations across a much larger state.',
+  );
+  addCausalConnection(
+    'apwh-u1-cusco-ayllu-mita-labor',
+    'apwh-u1-cusco-roads-quipu-administration',
+    "Mobilized mit'a labor built and maintained roads, while officials used quipu records to track resources and obligations.",
+  );
+  addCausalConnection(
+    'apwh-u1-london-manorial-feudal-order',
+    'apwh-u1-london-towns-guilds-commerce',
+    'Agricultural production and population recovery supported markets and towns whose merchants and guilds operated beyond individual manors.',
+  );
 
   addRelatedConnection(
     'apwh-u1-delhi-sultanate-state-building',
@@ -115,6 +152,21 @@
     'apwh-u1-baghdad-merchant-ulema-network',
     'apwh-u1-timbuktu-islamic-learning-griots',
     'Commercial and scholarly networks carried Islamic institutions while local societies retained distinct cultural practices.',
+  );
+  addRelatedConnection(
+    'apwh-u1-tenochtitlan-triple-alliance-tribute',
+    'apwh-u1-cusco-ayllu-mita-labor',
+    "The Aztec tribute system and the Inca mit'a system extracted resources differently: one emphasized subject payments, while the other mobilized labor through communities.",
+  );
+  addRelatedConnection(
+    'apwh-u1-tenochtitlan-chinampas-urban-state',
+    'apwh-u1-cusco-ayllu-mita-labor',
+    'Both states adapted difficult environments through organized labor, although chinampas intensified lake agriculture while Inca communities managed highland production and terraces.',
+  );
+  addRelatedConnection(
+    'apwh-u1-london-magna-carta-monarchy',
+    'apwh-u1-delhi-sultanate-state-building',
+    'Both cases reveal negotiations between rulers and powerful groups, but Magna Carta formalized baronial constraints while Delhi sultans balanced minority rule with military and local political accommodation.',
   );
 
   function freezeRecord(record) {
@@ -177,7 +229,7 @@
         'Hangzhou became a major political and commercial center linked to both inland and maritime exchange.',
       ],
       examConnection: 'Use this case to explain how state stability and expanding markets changed economic life in East Asia during the period c. 1200–1450.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topics 1.1 and 1.2' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.1' },
     }),
     freezeRecord({
       id: 'apwh-u1-hangzhou-grand-canal-urban-market',
@@ -200,7 +252,7 @@
         'Reliable water transport moved bulky grain more efficiently than overland shipment and supported large cities.',
       ],
       examConnection: 'Use the Grand Canal as evidence that government infrastructure could integrate regional economies and support urban growth in Song China.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topics 1.1 and 1.2' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.1' },
     }),
     freezeRecord({
       id: 'apwh-u1-hangzhou-paper-money-maritime-tools',
@@ -223,7 +275,7 @@
         'Chinese mariners used the compass and improved ship design to navigate regional sea routes.',
       ],
       examConnection: 'Use these innovations to explain how financial practices and navigation technologies increased the scale of exchange in and beyond East Asia.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topics 1.1 and 1.2' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.1' },
     }),
     freezeRecord({
       id: 'apwh-u1-angkor-khmer-hydraulic-state',
@@ -384,7 +436,7 @@
         'Caravans exchanged West African gold for salt, textiles, horses, and other North African goods.',
       ],
       examConnection: 'Use Mali to explain how African states converted control of trade routes and commodities into military and political power.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.4; Topic 2.2 trade mechanism context' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.5; Topic 2.2 trade mechanism context' },
     }),
     freezeRecord({
       id: 'apwh-u1-timbuktu-islamic-learning-griots',
@@ -407,7 +459,7 @@
         'Griots continued to preserve dynastic and community memory through recitation and music.',
       ],
       examConnection: 'Use Timbuktu to explain cultural continuity and change: Islamic learning expanded while oral specialists retained important social roles.',
-      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.4' },
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.5' },
     }),
     freezeRecord({
       id: 'apwh-u1-timbuktu-mansa-musa-pilgrimage',
@@ -430,7 +482,214 @@
         'After the pilgrimage, he sponsored mosques, religious schools, and scholars in Mali.',
       ],
       examConnection: 'Use the pilgrimage to explain how an African ruler employed religion and wealth to build legitimacy and strengthen interregional connections.',
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.5' },
+    }),
+    freezeRecord({
+      id: 'apwh-u1-tenochtitlan-chinampas-urban-state',
+      examSkills: ['Causation', 'Comparison'],
+      locationNumber: '49',
+      mainEventKey: 'world-event-49-0',
+      title: 'Chinampas and Urban State Capacity',
+      dateLabel: '1325–1450',
+      startYear: 1325,
+      endYear: 1450,
+      summary: 'Mexica farmers expanded chinampa agriculture around Tenochtitlan to support a dense island capital and its growing political power.',
+      significance: 'Intensive lake agriculture generated reliable food surpluses that sustained urban specialists, armies, rulers, and the institutions of an expanding state.',
+      keyPeople: [{ name: 'Mexica farmers', role: 'Built and maintained raised agricultural plots that supplied maize, vegetables, and flowers to the capital.' }],
+      keyTerms: [
+        { term: 'chinampa', explanation: 'A raised, highly productive agricultural plot constructed in the shallow waters of the Valley of Mexico.' },
+        { term: 'Tenochtitlan', explanation: 'The Mexica island capital that became the center of the Aztec Empire.' },
+      ],
+      evidence: [
+        'Chinampas used fertile lake mud and carefully managed waterways to produce repeated harvests close to Tenochtitlan.',
+        'Agricultural surplus helped feed a large urban population that included artisans, merchants, priests, soldiers, and officials.',
+      ],
+      examConnection: 'Use chinampas to explain how societies adapted environments and converted agricultural productivity into urban growth and state capacity.',
       source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.4' },
+    }),
+    freezeRecord({
+      id: 'apwh-u1-tenochtitlan-religion-warfare-legitimacy',
+      examSkills: ['Comparison', 'Contextualization'],
+      locationNumber: '49',
+      mainEventKey: 'world-event-49-0',
+      title: 'Religion, Warfare, and Mexica Legitimacy',
+      dateLabel: '1325–1450',
+      startYear: 1325,
+      endYear: 1450,
+      summary: 'Mexica rulers linked warfare, tribute, and public religious ritual to a sacred story of their capital and empire.',
+      significance: 'Religious ceremonies presented conquest and sacrifice as obligations within a cosmic order, helping rulers justify expansion and mobilize society.',
+      keyPeople: [{ name: 'Mexica priests', role: 'Conducted state rituals that connected military success and royal authority to the gods.' }],
+      keyTerms: [
+        { term: 'Huitzilopochtli', explanation: 'The Mexica patron deity associated with the sun, warfare, and the sacred identity of Tenochtitlan.' },
+        { term: 'human sacrifice', explanation: 'A state ritual that Mexica leaders connected to sustaining cosmic order and displaying political power.' },
+      ],
+      evidence: [
+        'The Templo Mayor placed state ceremony at the physical and symbolic center of Tenochtitlan.',
+        'Military campaigns supplied captives for ritual and demonstrated the ruler’s ability to defend and expand the sacred community.',
+      ],
+      examConnection: 'Use Mexica ritual and warfare to compare how rulers in different regions used belief systems and public display to legitimate political authority.',
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.4' },
+    }),
+    freezeRecord({
+      id: 'apwh-u1-tenochtitlan-triple-alliance-tribute',
+      examSkills: ['Causation', 'Comparison'],
+      locationNumber: '49',
+      mainEventKey: 'world-event-49-0',
+      title: 'Triple Alliance and Tribute Empire',
+      dateLabel: '1428–1450',
+      startYear: 1428,
+      endYear: 1450,
+      summary: 'Tenochtitlan joined Texcoco and Tlacopan in the Triple Alliance and used conquest to collect tribute from subject communities.',
+      significance: 'Tribute moved food, textiles, labor, and luxury goods toward the imperial center, strengthening rulers while creating resentment among subject peoples.',
+      keyPeople: [{ name: 'Itzcoatl', role: 'Led Tenochtitlan during the formation of the Triple Alliance and the early expansion of its tribute power.' }],
+      keyTerms: [
+        { term: 'Triple Alliance', explanation: 'The political and military alliance of Tenochtitlan, Texcoco, and Tlacopan formed in 1428.' },
+        { term: 'tribute empire', explanation: 'An empire that leaves many conquered communities locally governed while requiring regular payments and obedience.' },
+      ],
+      evidence: [
+        'Conquered communities delivered specified goods such as maize, cloth, cacao, feathers, and military equipment.',
+        'The alliance concentrated an increasing share of tribute and influence in Tenochtitlan.',
+      ],
+      examConnection: 'Use the Triple Alliance to compare tribute-based imperial rule with other systems that extracted taxes, goods, or labor from subject populations.',
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.4' },
+    }),
+    freezeRecord({
+      id: 'apwh-u1-cusco-ayllu-mita-labor',
+      examSkills: ['Causation', 'Comparison'],
+      locationNumber: '50',
+      mainEventKey: 'world-event-50-0',
+      title: "Ayllu, Mit'a, and State Labor",
+      dateLabel: '1438–1450',
+      startYear: 1438,
+      endYear: 1450,
+      summary: "Inca rulers organized ayllu communities through rotating mit'a labor obligations rather than relying on a money tax.",
+      significance: "The mit'a converted community labor into roads, terraces, armies, storehouses, and public works that expanded imperial capacity across the Andes.",
+      keyPeople: [{ name: 'ayllu leaders', role: 'Coordinated kin-based communities and helped allocate households for rotating state labor obligations.' }],
+      keyTerms: [
+        { term: 'ayllu', explanation: 'An Andean kin-based community that shared land, obligations, and mutual support.' },
+        { term: "mit'a", explanation: 'A rotating labor obligation through which communities supplied workers to the Inca state.' },
+      ],
+      evidence: [
+        'Households supplied labor for farming state lands, military service, construction, and transport.',
+        'The state redistributed stored goods during campaigns, ceremonies, and periods of local need.',
+      ],
+      examConnection: "Use ayllu and mit'a to explain how the Inca mobilized labor and compare their system with tribute or tax collection in other empires.",
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.4' },
+    }),
+    freezeRecord({
+      id: 'apwh-u1-cusco-pachacuti-tawantinsuyu',
+      examSkills: ['Causation', 'Contextualization'],
+      locationNumber: '50',
+      mainEventKey: 'world-event-50-0',
+      title: 'Pachacuti and Tawantinsuyu',
+      dateLabel: '1438–1450',
+      startYear: 1438,
+      endYear: 1450,
+      summary: 'Pachacuti transformed the kingdom centered on Cusco into the expanding Inca state called Tawantinsuyu.',
+      significance: 'Expansion joined contrasting highland and coastal environments under a ruler who reorganized territory, labor, and political relationships from Cusco.',
+      keyPeople: [{ name: 'Pachacuti', role: 'Inca ruler credited with reorganizing Cusco and beginning the rapid imperial expansion of Tawantinsuyu.' }],
+      keyTerms: [
+        { term: 'Tawantinsuyu', explanation: 'The Inca name for their empire, often translated as the Land of the Four Quarters.' },
+        { term: 'vertical economy', explanation: 'Andean access to products from different elevations through communities, colonies, and exchange.' },
+      ],
+      evidence: [
+        'Pachacuti organized conquered territory into four broad regions connected to the capital at Cusco.',
+        'Inca expansion linked ecological zones that produced different crops, animals, and raw materials.',
+      ],
+      examConnection: 'Use Pachacuti to explain how military expansion and environmental diversity shaped the administrative needs of the Inca state.',
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.4' },
+    }),
+    freezeRecord({
+      id: 'apwh-u1-cusco-roads-quipu-administration',
+      examSkills: ['Causation', 'Comparison'],
+      locationNumber: '50',
+      mainEventKey: 'world-event-50-0',
+      title: 'Roads, Quipu, and Imperial Administration',
+      dateLabel: '1438–1450',
+      startYear: 1438,
+      endYear: 1450,
+      summary: 'Inca roads, runners, storehouses, and quipu records connected distant Andean communities to administrators centered on Cusco.',
+      significance: 'Transport and recordkeeping allowed officials to mobilize workers, count resources, move armies, and redistribute supplies without alphabetic writing.',
+      keyPeople: [{ name: 'quipucamayocs', role: 'Specialists who made and interpreted knotted-cord records for administrators.' }],
+      keyTerms: [
+        { term: 'quipu', explanation: 'A system of knotted cords used to record numerical and administrative information.' },
+        { term: 'chasqui', explanation: 'A relay runner who carried messages and goods along the Inca road system.' },
+      ],
+      evidence: [
+        'A wide road network connected provincial centers, state storehouses, and military routes through difficult terrain.',
+        'Quipu records helped officials track population, tribute obligations, labor, and stored resources.',
+      ],
+      examConnection: 'Use roads and quipu to compare how large states solved the shared problems of communication, recordkeeping, and resource mobilization.',
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.4' },
+    }),
+    freezeRecord({
+      id: 'apwh-u1-london-manorial-feudal-order',
+      examSkills: ['CCOT', 'Contextualization'],
+      locationNumber: '23',
+      mainEventKey: 'world-event-23-0',
+      title: 'Manorial Agriculture and Feudal Order',
+      dateLabel: '1200–1450',
+      startYear: 1200,
+      endYear: 1450,
+      summary: 'European manors organized rural production, while feudal relationships linked landholding nobles through personal obligations and military service.',
+      significance: 'These overlapping local institutions shaped political fragmentation and agricultural life even as monarchies, towns, and commerce gradually expanded.',
+      keyPeople: [{ name: 'manorial lords and peasants', role: 'Negotiated rents, labor services, protection, and access to land within local agricultural communities.' }],
+      keyTerms: [
+        { term: 'manorialism', explanation: 'A rural economic and social system organized around an estate, its lord, and dependent peasant labor.' },
+        { term: 'feudalism', explanation: 'A broad label for decentralized political relationships based on landholding, loyalty, and military obligation.' },
+      ],
+      evidence: [
+        'Most Europeans lived in agricultural communities where peasants owed rents or labor to landholding elites.',
+        'Kings often depended on nobles whose local land, castles, and armed followers limited centralized authority.',
+      ],
+      examConnection: 'Use manorial and feudal relationships to contextualize Europe’s decentralized order and trace continuity alongside the later growth of towns and monarchies.',
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.6' },
+    }),
+    freezeRecord({
+      id: 'apwh-u1-london-towns-guilds-commerce',
+      examSkills: ['Causation', 'CCOT'],
+      locationNumber: '23',
+      mainEventKey: 'world-event-23-0',
+      title: 'Towns, Guilds, and Commercial Growth',
+      dateLabel: '1200–1450',
+      startYear: 1200,
+      endYear: 1450,
+      summary: 'Growing towns such as London supported merchant and craft guilds that regulated trade, training, production, and membership.',
+      significance: 'Urban and commercial growth created institutions and social groups with interests extending beyond manorial agriculture and local noble authority.',
+      keyPeople: [{ name: 'guild members', role: 'Merchants and artisans who regulated occupations, trained apprentices, and defended collective privileges.' }],
+      keyTerms: [
+        { term: 'guild', explanation: 'An association of merchants or craftspeople that regulated standards, training, prices, and market access.' },
+        { term: 'commercial growth', explanation: 'The expansion of markets, specialized production, money exchange, and long-distance trade.' },
+      ],
+      evidence: [
+        'Merchant guilds protected trade privileges, while craft guilds supervised apprenticeship and product standards.',
+        'London connected regional agricultural production with wider North Sea and European commercial networks.',
+      ],
+      examConnection: 'Use guilds and towns to explain how expanding commerce changed European social organization while many rural manorial practices continued.',
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.6' },
+    }),
+    freezeRecord({
+      id: 'apwh-u1-london-magna-carta-monarchy',
+      examSkills: ['Comparison', 'Contextualization'],
+      locationNumber: '23',
+      mainEventKey: 'world-event-23-0',
+      title: 'Magna Carta and Negotiated Monarchy',
+      dateLabel: '1215',
+      startYear: 1215,
+      endYear: 1215,
+      summary: 'English barons compelled King John to accept Magna Carta during a political conflict over taxation, warfare, and royal authority.',
+      significance: 'The charter expressed medieval elite bargaining and the principle that a monarch faced established legal constraints, not a system of modern democracy.',
+      keyPeople: [{ name: 'King John', role: 'Accepted Magna Carta after conflict with English barons over failed wars, taxation, and arbitrary royal actions.' }],
+      keyTerms: [
+        { term: 'Magna Carta', explanation: 'A 1215 charter protecting specific baronial and ecclesiastical privileges and limiting some royal actions.' },
+        { term: 'negotiated monarchy', explanation: 'Rule shaped by bargaining between a monarch and powerful groups whose cooperation the ruler needed.' },
+      ],
+      evidence: [
+        'The charter arose from a baronial revolt and chiefly protected the interests of nobles, the church, and other privileged groups.',
+        'Clauses required the king to observe inherited customs and forms of lawful judgment in specified disputes.',
+      ],
+      examConnection: 'Use Magna Carta to compare constraints on rulers while avoiding anachronism: it limited some royal behavior but did not create modern democracy.',
+      source: { id: 'amsco-apwh-u1', locator: 'AMSCO AP World History, Unit 1, Topic 1.6' },
     }),
   ]);
 
