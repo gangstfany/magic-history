@@ -335,16 +335,15 @@ test('uses civilization-first labels for the new learner locations', () => {
   }
 });
 
-test('names Runnymede on the learner-facing Magna Carta study card', () => {
+test('locks the geography and democracy caveats on the Magna Carta study card', () => {
   const record = api.getById('apwh-u1-london-magna-carta-monarchy');
-  const learnerFacingCopy = [
-    record.summary,
-    record.significance,
-    ...record.evidence,
-    record.examConnection,
-  ].join(' ');
 
-  assert.match(learnerFacingCopy, /\bRunnymede\b/);
+  assert.match(record.summary,
+    /London and England serve as a representative map anchor/);
+  assert.match(record.summary,
+    /King John.*seal Magna Carta at Runnymede/);
+  assert.match(`${record.significance} ${record.examConnection}`,
+    /(?:not a system of modern democracy|did not create modern democracy)/);
 });
 
 test('covers every College Board Unit 1 topic', () => {
