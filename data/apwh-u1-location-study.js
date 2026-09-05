@@ -677,7 +677,7 @@
       dateLabel: '1215',
       startYear: 1215,
       endYear: 1215,
-      summary: 'London and England anchor a European case of negotiated monarchy in which barons compelled King John to accept Magna Carta during political conflict.',
+      summary: 'London and England serve as a representative map anchor for a European case of negotiated monarchy: English barons compelled King John to seal Magna Carta at Runnymede during political conflict.',
       significance: 'The charter expressed medieval elite bargaining and the principle that a monarch faced established legal constraints, not a system of modern democracy.',
       keyPeople: [{ name: 'King John', role: 'Accepted Magna Carta after conflict with English barons over failed wars, taxation, and arbitrary royal actions.' }],
       keyTerms: [

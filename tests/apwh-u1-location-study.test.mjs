@@ -335,6 +335,18 @@ test('uses civilization-first labels for the new learner locations', () => {
   }
 });
 
+test('names Runnymede on the learner-facing Magna Carta study card', () => {
+  const record = api.getById('apwh-u1-london-magna-carta-monarchy');
+  const learnerFacingCopy = [
+    record.summary,
+    record.significance,
+    ...record.evidence,
+    record.examConnection,
+  ].join(' ');
+
+  assert.match(learnerFacingCopy, /\bRunnymede\b/);
+});
+
 test('covers every College Board Unit 1 topic', () => {
   assert.deepEqual([...new Set(api.records.flatMap(record => record.topicCodes))].sort(),
     ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7']);
