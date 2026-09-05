@@ -48,6 +48,42 @@ const UNIT_1_BOOKEND_CONTENT = Object.freeze([
   }),
 ]);
 
+const UNIT_1_NEW_STUDY_VIEWS = Object.freeze([
+  Object.freeze({
+    number: '49',
+    region: 'americas',
+    mainEventKey: 'world-event-49-0',
+    label: 'Aztec Empire · Tenochtitlan',
+    ids: Object.freeze([
+      'apwh-u1-tenochtitlan-chinampas-urban-state',
+      'apwh-u1-tenochtitlan-religion-warfare-legitimacy',
+      'apwh-u1-tenochtitlan-triple-alliance-tribute',
+    ]),
+  }),
+  Object.freeze({
+    number: '50',
+    region: 'americas',
+    mainEventKey: 'world-event-50-0',
+    label: 'Inca Empire · Cusco',
+    ids: Object.freeze([
+      'apwh-u1-cusco-ayllu-mita-labor',
+      'apwh-u1-cusco-pachacuti-tawantinsuyu',
+      'apwh-u1-cusco-roads-quipu-administration',
+    ]),
+  }),
+  Object.freeze({
+    number: '23',
+    region: 'europe',
+    mainEventKey: 'world-event-23-0',
+    label: 'Medieval Europe · London',
+    ids: Object.freeze([
+      'apwh-u1-london-manorial-feudal-order',
+      'apwh-u1-london-towns-guilds-commerce',
+      'apwh-u1-london-magna-carta-monarchy',
+    ]),
+  }),
+]);
+
 const UNIT_2_BOOKEND_CONTENT = Object.freeze([
   Object.freeze({
     name: 'Context',
@@ -705,6 +741,93 @@ async function assertUnitStudyBookends(page, view, label, {
   if (stateBeforeOverflow) {
     assert.deepEqual(await stateSnapshot(), stateBeforeOverflow,
       `${label} responsive Context checks must preserve filters, Timeline selection, location, and the map transform`);
+  }
+}
+
+async function assertNewUnit1StudyView(view, fixture, label) {
+  assert.equal((await view.locator('.location-study-title').innerText()).trim(),
+    `${fixture.label} · Unit 1`, `${label} must render its exact learner-facing heading`);
+  assert.deepEqual(await view.locator('[data-study-event]').evaluateAll(nodes =>
+    nodes.map(node => node.dataset.studyEvent)), fixture.ids,
+  `${label} must render its three canonical study IDs in stable chronological order`);
+  assert.equal(await view.locator('[data-study-detail]').count(), 1,
+    `${label} must start with exactly one expanded detail`);
+  assert.deepEqual(await view.locator('[data-study-event]').evaluateAll(nodes =>
+    nodes.map(node => node.getAttribute('aria-expanded'))), ['true', 'false', 'false'],
+  `${label} must initially expand only its first study point`);
+
+  const rows = view.locator('[data-study-event]');
+  for (let index = 0; index < fixture.ids.length; index++) {
+    await rows.nth(index).click();
+    assert.equal(await view.locator('[data-study-detail]').count(), 1,
+      `${label} row ${index + 1} must preserve one-at-a-time detail expansion`);
+    assert.equal(await view.locator('[data-study-event][aria-expanded="true"]').count(), 1,
+      `${label} row ${index + 1} must leave exactly one expanded toggle`);
+    assert.equal(await view.locator('[data-study-detail]').getAttribute('data-study-detail'), fixture.ids[index],
+      `${label} row ${index + 1} must open its exact canonical detail`);
+  }
+}
+
+async function verifyStandaloneNewUnit1StudyViews(page) {
+  for (const fixture of UNIT_1_NEW_STUDY_VIEWS) {
+    const label = `standalone ${fixture.label}`;
+    await page.evaluate(({ number, region }) => {
+      window.__mapFilter.setLearningView('map');
+      window.__mapFilter.setPeriod('u1');
+      window.__mapFilter.openHit(number, region);
+    }, fixture);
+    const entry = page.locator(`#eventPanel [data-location-study-open="${fixture.number}"]`);
+    await expectVisible(entry, `${label} event panel must expose its study entry`);
+    assert.equal((await entry.innerText()).trim(), 'View all 3 study points',
+      `${label} must expose the exact three-point action label`);
+    await entry.click();
+    const view = page.locator(
+      `#eventPanel [data-location-study-view="${fixture.number}"][data-location-study-unit="u1"]`);
+    await expectVisible(view, `${label} study view must open`);
+    await assertNewUnit1StudyView(view, fixture, label);
+    await view.locator(`[data-location-study-back="${fixture.number}"]`).click();
+  }
+}
+
+async function verifyHomepageNewUnit1StudyViews(page, frame) {
+  await page.locator('.map-card-head [data-learning-view="map"]').click();
+
+  for (const fixture of UNIT_1_NEW_STUDY_VIEWS) {
+    const label = `homepage ${fixture.label}`;
+    await page.locator('#hostPeriod').selectOption('u1');
+    await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
+      ?.__mapFilter?.getState().period === 'u1');
+    await page.locator('#hostSearch').fill('');
+    const title = await frame.locator('body').evaluate((body, mainEventKey) =>
+      window.getTimelineState().visibleEvents.find(event => event.key === mainEventKey)?.titleEn,
+    fixture.mainEventKey);
+    assert.ok(title, `${label} fixture must resolve its exact Unit 1 Timeline title`);
+    await page.locator('#hostSearch').fill(title);
+    const result = page.locator(`#home-events [data-event-key="${fixture.mainEventKey}"]`);
+    await result.waitFor();
+    await expectVisible(result, `${label} homepage search must expose its exact keyed result`);
+    await result.click();
+    const entry = page.locator(`#home-events [data-location-study-open="${fixture.number}"]`);
+    await entry.waitFor();
+    const mirroredState = await frame.locator('body').evaluate(() => ({
+      period: window.__mapFilter.getState().period,
+      selectedAnchor: window.getTimelineState().selectedAnchor?.num,
+      selectedEventKey: window.getTimelineState().selectedEventKey,
+    }));
+    assert.deepEqual(mirroredState, {
+      period: 'u1',
+      selectedAnchor: fixture.number,
+      selectedEventKey: fixture.mainEventKey,
+    }, `${label} homepage bridge must open its exact Unit 1 map pin and event`);
+    await expectVisible(entry, `${label} mirrored panel must expose its study entry`);
+    assert.equal((await entry.innerText()).trim(), 'View all 3 study points',
+      `${label} must mirror the exact three-point action label`);
+    await entry.click();
+    const view = page.locator(
+      `#home-events [data-location-study-view="${fixture.number}"][data-location-study-unit="u1"]`);
+    await expectVisible(view, `${label} mirrored study view must open`);
+    await assertNewUnit1StudyView(view, fixture, label);
+    await view.locator(`[data-location-study-back="${fixture.number}"]`).click();
   }
 }
 
@@ -1970,6 +2093,8 @@ async function verifyTimeline(page, port) {
     await view.locator(`[data-location-study-back="${fixture.number}"]`).click();
   }
 
+  await verifyStandaloneNewUnit1StudyViews(page);
+
   const hydraulicStudyId = 'apwh-u1-angkor-khmer-hydraulic-state';
   const legitimationStudyId = 'apwh-u1-angkor-hindu-buddhist-legitimation';
   const openAngkorHydraulicStudy = async () => {
@@ -2466,7 +2591,7 @@ async function verifyTimeline(page, port) {
   await expectVisible(page.locator('#eventPanel [data-location-study-open="1"]'),
     'returning to Unit 1 must restore the trial study action');
 
-  await page.evaluate(() => window.__mapFilter.openHit('23', 'europe'));
+  await page.evaluate(() => window.__mapFilter.openHit('47', 'americas'));
   assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 0,
     'a non-trial location must retain the original event-card UI');
 
@@ -4941,6 +5066,7 @@ async function verifyHomeLearningShell(page, port) {
   assert.equal((await frame.locator('body').evaluate(() => window.getTimelineState())).selectedEventKey, mirroredPracticeKey,
     'opening a mirrored Practice result must select its exact event');
 
+  await verifyHomepageNewUnit1StudyViews(page, frame);
   await verifyHomepageUnit2StudyContract(page, frame);
   await verifyHomepageUnit3StudyContract(page, frame);
 }
