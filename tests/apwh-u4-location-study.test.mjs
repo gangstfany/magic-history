@@ -68,30 +68,270 @@ const expectedManifest = [
 ];
 
 const expectedRecordContent = [
-  { id: 'apwh-u4-lisbon-atlantic-constraints', title: 'Atlantic Constraints and Overseas Expansion', summary: 'Portugal faced Atlantic opportunities and Iberian limits while Castile and Aragon constrained easy territorial expansion on the peninsula.', significance: "Portugal's Atlantic position, Iberian limits, and primogeniture encouraged overseas routes, but geography created incentives rather than making expansion inevitable.", keyPeople: [{ name: 'Portuguese nobles and merchants', role: 'Backed voyages offering traders, the crown, and younger noble sons new paths to wealth and status.' }], keyTerms: [{ term: 'primogeniture', explanation: 'Inheritance favoring the eldest son, which could push younger nobles to seek advancement elsewhere.' }, { term: 'Atlantic position', explanation: "Portugal's access to Atlantic islands, winds, and coastal routes." }], evidence: ['Castile and Aragon occupied much of the neighboring Iberian land frontier available to Portuguese expansion.', 'Portuguese sailors used Atlantic islands and the African coast as stages for increasingly ambitious voyages.'], examConnection: 'Use these constraints as contextual causes, while qualifying the claim: political choices, finance, and technology were also necessary.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.1 and 4.2' } },
-  { id: 'apwh-u4-lisbon-navigation-state-sponsorship', title: 'Navigation Knowledge and State Sponsorship', summary: 'Portuguese voyages combined compass and astrolabe use with lateen and square sails, shipbuilding experience, and royal finance.', significance: 'Knowledge from multiple Afro-Eurasian traditions became more powerful when the Portuguese state financed voyages and sustained repeated experimentation.', keyPeople: [{ name: 'Prince Henry the Navigator', role: 'Sponsored Portuguese exploration and concentrated navigators, mapmakers, and royal resources on Atlantic and African routes.' }], keyTerms: [{ term: 'astrolabe', explanation: 'An instrument sailors adapted to estimate latitude by observing celestial bodies.' }, { term: 'caravel rig', explanation: 'A later mixed Portuguese sail plan combining triangular lateen sails with square sails.' }], evidence: ['Portuguese navigators used the compass and astrolabe alongside accumulated Mediterranean, African, and Asian knowledge.', 'Royal sponsorship paid for ships, crews, information gathering, and repeated voyages along the African coast.'], examConnection: 'Link borrowed navigational knowledge to state capacity; neither technology alone nor royal ambition alone explains sustained exploration.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.1 and 4.2' } },
-  { id: 'apwh-u4-lisbon-sea-route-indian-ocean', title: 'A Sea Route to the Indian Ocean', summary: 'Bartolomeu Dias rounded southern Africa in 1488, and Vasco da Gama reached India by sea in 1498.', significance: 'The route around the Cape of Good Hope connected Portugal directly to Indian Ocean commerce and redirected some exchange through Atlantic-facing ports.', keyPeople: [{ name: 'Bartolomeu Dias and Vasco da Gama', role: 'Dias rounded the cape in 1488; da Gama used that route to reach India in 1498.' }], keyTerms: [{ term: 'Cape of Good Hope', explanation: 'The southern African cape whose rounding opened a sea route toward the Indian Ocean.' }, { term: 'sea route to India', explanation: 'The oceanic passage around Africa that let Portuguese ships reach Indian Ocean ports.' }], evidence: ['Dias rounded the southern tip of Africa in 1488 and demonstrated that the Atlantic connected to waters leading east.', 'Da Gama arrived at Calicut in India in 1498 after sailing around the Cape of Good Hope.'], examConnection: 'Use the voyages as a causal sequence in Atlantic-to-Indian Ocean expansion, without mislabeling this route as Pacific.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.2 and 4.8' } },
-  { id: 'apwh-u4-malacca-existing-indian-ocean-networks', title: 'Indian Ocean Trade before Portuguese Arrival', summary: 'Muslim, Hindu, and Southeast Asian merchants used monsoon winds to exchange goods through Malacca long before Portuguese conquest.', significance: 'Portuguese sailors entered a mature commercial system they did not create, changing control at strategic ports without originating Indian Ocean trade.', keyPeople: [{ name: 'Muslim, Hindu, and Southeast Asian merchants', role: 'Sustained commercial communities and seasonal voyages linking Malacca to wider maritime networks.' }], keyTerms: [{ term: 'monsoon winds', explanation: 'Seasonally reversing winds that structured Indian Ocean sailing schedules.' }, { term: 'entrepot', explanation: 'A port where merchants store, exchange, and re-export goods from several regions.' }], evidence: ['Merchants timed voyages to predictable monsoon cycles before any Portuguese ship reached Malacca.', 'Malacca already linked textiles, spices, ceramics, and other goods moving among Asian markets.'], examConnection: 'Use Malacca for CCOT: Portuguese coercion changed parts of the network while Asian merchants, monsoons, and older routes continued.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.2 and 4.8' } },
-  { id: 'apwh-u4-malacca-cartaz-fortified-ports', title: 'Cartaz Passes and Fortified Ports', summary: 'After conquering Malacca in 1511, Portuguese forces used forts, cannon, and cartaz passes to tax and redirect maritime traffic.', significance: "Afonso de Albuquerque's strategy built a trading-post empire controlling selected sea lanes and ports rather than most inland territory.", keyPeople: [{ name: 'Afonso de Albuquerque', role: 'Directed the 1511 conquest of Malacca and strengthened Portuguese control through fortified ports.' }], keyTerms: [{ term: 'cartaz', explanation: 'A Portuguese naval pass ships were pressured to buy and display in controlled waters.' }, { term: 'trading-post empire', explanation: 'An empire based on fortified ports and sea-lane control instead of broad inland conquest.' }], evidence: ['Portuguese forces captured Malacca in 1511 and fortified the port with cannon.', 'Officials demanded passes, collected duties, and threatened ships trading outside Portuguese rules.'], examConnection: 'Explain how cannon, forts, and passes taxed routes, then distinguish coastal leverage from inland territorial rule.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.2 and 4.4' } },
-  { id: 'apwh-u4-malacca-asian-responses-limits', title: 'Asian Responses and the Limits of Portuguese Power', summary: 'Asian states and merchants resisted, negotiated with, or redirected trade around Portuguese pressure in ways that varied by place and time.', significance: 'Aceh and other rivals challenged Portuguese influence, the Dutch VOC later displaced it, and Nagasaki restrictions show that Asian responses were not uniform or passive.', keyPeople: [{ name: 'Dutch VOC and the rulers of Aceh', role: 'Competed with Portuguese shipping and fortifications through different commercial and military strategies.' }], keyTerms: [{ term: 'Dutch VOC', explanation: 'A chartered Dutch company combining trade, armed force, and state-backed privileges in Asia.' }, { term: 'Nagasaki restriction', explanation: 'Japanese policies confining and regulating selected European trade.' }], evidence: ['Aceh and other powers fought or competed with Portuguese Malacca and supported alternative routes.', 'The Dutch VOC captured Malacca in 1641, while Japanese rulers restricted European access through Nagasaki.'], examConnection: 'Compare Acehnese, Dutch, and Japanese responses to show how local political capacity limited European trading-post power.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.6' } },
-  { id: 'apwh-u4-santo-domingo-columbian-exchange', title: 'The Columbian Exchange in the Caribbean', summary: 'Contact joined Caribbean, American, African, and Eurasian ecologies through transfers of crops, animals, people, and pathogens.', significance: 'The Columbian Exchange was bidirectional, but unequal power and biological vulnerability made its effects especially destructive for Taíno communities.', keyPeople: [{ name: 'Taíno communities', role: 'Experienced new animals, crops, diseases, labor demands, and colonial settlement after sustained Atlantic contact.' }], keyTerms: [{ term: 'Columbian Exchange', explanation: 'The transfer of plants, animals, pathogens, and people between the Americas and Afro-Eurasia after 1492.' }, { term: 'ecological transfer', explanation: 'The movement of organisms and environmental practices between separated ecosystems.' }], evidence: ['Europeans brought horses, cattle, pigs, wheat, and pathogens to Caribbean islands.', 'American crops moved eastward while forced African migration added people and foodways to Atlantic societies.'], examConnection: 'Compare transfers in both directions, then explain why bidirectional exchange did not mean equal effects on participating populations.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.3 and 4.8' } },
-  { id: 'apwh-u4-santo-domingo-disease-demographic-collapse', title: 'Disease and Demographic Collapse', summary: 'Smallpox and other Afro-Eurasian diseases caused catastrophic mortality among Indigenous Caribbean peoples who lacked prior exposure.', significance: 'Epidemics weakened communities and aided Spanish conquest, but conquest was not automatic because warfare, alliances, labor, and policy also shaped outcomes.', keyPeople: [{ name: 'Indigenous Caribbean communities', role: 'Faced repeated epidemics alongside displacement, violence, and colonial labor demands.' }], keyTerms: [{ term: 'smallpox', explanation: 'A contagious disease that caused devastating mortality in populations without previous exposure.' }, { term: 'demographic collapse', explanation: 'A severe population decline produced by interacting disease, violence, hunger, and exploitation.' }], evidence: ['Smallpox and other diseases spread through Caribbean populations after sustained European contact.', 'Mortality combined with warfare, displacement, and forced labor to reduce Indigenous populations sharply.'], examConnection: 'Use disease as a major cause aiding conquest, while rejecting automatic explanations by adding warfare, alliance, and labor evidence.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.3 and 4.8' } },
-  { id: 'apwh-u4-santo-domingo-conquest-encomienda', title: 'Conquest and Encomienda', summary: 'Spanish encomenderos claimed rights to Indigenous labor and tribute in Santo Domingo as conquest became colonial administration.', significance: 'Encomienda organized coercive labor and tribute without automatically granting Indigenous land or making workers identical to enslaved African chattel.', keyPeople: [{ name: 'Bartolomé de las Casas', role: 'Condemned abuses of Indigenous people and pressed the Spanish crown to reform colonial labor practices.' }], keyTerms: [{ term: 'encomienda', explanation: 'A crown grant authorizing a colonist to demand labor or tribute from designated Indigenous communities.' }, { term: 'New Laws', explanation: 'The 1542 reforms intended to restrict Indigenous enslavement and curb hereditary encomienda power.' }], evidence: ['The crown established encomienda arrangements in Hispaniola during the early sixteenth century.', 'Las Casas publicized abuses, and the New Laws of 1542 attempted to limit colonists\' control.'], examConnection: 'Distinguish encomienda labor and tribute from land ownership and hereditary African chattel slavery when comparing labor systems.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.3 and 4.4' } },
-  { id: 'apwh-u4-potosi-silver-mercury-boom', title: 'Silver Discovery and Mercury Refining', summary: 'After silver was discovered at Potosí in 1545, mercury amalgamation increased the lower-grade ore that refiners could process.', significance: 'Like Zacatecas in New Spain, Potosí generated extraordinary output and profit, while mercury exposure, dangerous shafts, and harsh labor made the boom deadly.', keyPeople: [{ name: 'Potosí mine owners and refiners', role: 'Combined capital, coerced labor, and mercury processing to expand colonial silver production.' }], keyTerms: [{ term: 'mercury amalgamation', explanation: 'A refining process using mercury to separate silver from crushed ore.' }, { term: 'Zacatecas', explanation: 'A major silver-mining center in New Spain useful for comparison with Potosí.' }], evidence: ['The 1545 Potosí discovery produced one of the Spanish Empire\'s largest silver centers.', 'Mercury processing raised output from lower-grade ore but exposed workers and communities to poison.'], examConnection: 'Compare Potosí and Zacatecas for technology-driven output and profit while treating danger and coerced labor as part of the system.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.5' } },
-  { id: 'apwh-u4-potosi-colonial-mita-labor', title: "Colonial Mit'a and Coerced Mining Labor", summary: "Viceroy Francisco de Toledo reorganized a colonial mit'a in 1573 to draft Andean communities for labor at Potosí and Huancavelica.", significance: "Colonial officials adapted an Inca labor obligation to Spanish mining, but the colonial mit'a was not identical to reciprocal service under Inca rule.", keyPeople: [{ name: 'Viceroy Francisco de Toledo', role: "Reorganized communities and the colonial mit'a to supply workers to Potosí and Huancavelica." }], keyTerms: [{ term: "mit'a", explanation: 'A rotating labor obligation adapted into a coercive colonial mining draft.' }, { term: 'Huancavelica', explanation: 'The Andean mercury center supplying material essential to silver amalgamation.' }], evidence: ["Toledo's 1573 reforms required selected Andean communities to send rotating workers to Potosí.", 'Workers also faced dangerous mercury production at Huancavelica and separation from households.'], examConnection: "Compare the colonial mit'a with its Inca precedent by identifying continuity in obligation and change in purpose, coercion, and benefit.", source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.7' } },
-  { id: 'apwh-u4-potosi-global-silver-flows', title: 'Potosí Silver in the Global Economy', summary: 'The Spanish crown taxed American bullion as merchants carried silver into Europe and across the Pacific toward Asian markets.', significance: 'Potosí silver financed imperial exchange, contributed to the European Price Revolution, and met Asian demand, linking Atlantic and Pacific systems.', keyPeople: [{ name: 'Spanish crown officials', role: 'Taxed, registered, and directed bullion flows supporting imperial spending and long-distance trade.' }], keyTerms: [{ term: 'bullion', explanation: 'Precious metal valued by weight and transported for payment or reserves.' }, { term: 'Price Revolution', explanation: 'Early modern European inflation associated partly with population growth and increased silver supplies.' }], evidence: ['The Spanish crown collected a royal share of silver and shipped large quantities toward Europe.', 'American silver also crossed the Pacific through Manila and entered Chinese and other Asian markets.'], examConnection: 'Connect American production with European inflation and Asian demand to show that Potosí belonged to a global economy.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8' } },
-  { id: 'apwh-u4-salvador-sugar-plantation-expansion', title: 'Sugar and Plantation Expansion', summary: 'Portuguese planters expanded sugar around Salvador through engenhos combining land, mills, capital, and coerced labor.', significance: 'Suitable ecology mattered, but plantation growth also depended on investment, Atlantic demand, processing infrastructure, and coercion rather than climate alone.', keyPeople: [{ name: 'Portuguese planters', role: 'Organized land, credit, mills, and coerced workforces to produce sugar for Atlantic markets.' }], keyTerms: [{ term: 'engenho', explanation: 'A Brazilian sugar-mill complex including processing equipment and often a plantation.' }, { term: 'sugar plantation', explanation: 'A large commercial estate specializing in labor-intensive cane cultivation and processing.' }], evidence: ['Warm coastal conditions and fertile soils supported cane cultivation near Salvador.', 'Mills required expensive machinery, coordinated labor, fuel, transport, and overseas consumers.'], examConnection: 'Explain plantation expansion through environmental and economic causes, with coerced labor as a central production mechanism.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.5' } },
-  { id: 'apwh-u4-salvador-african-chattel-slavery', title: 'From Indigenous Labor to African Chattel Slavery', summary: 'Portuguese colonists increasingly forced enslaved Africans to labor on plantations as Indigenous-only labor systems weakened.', significance: 'Disease, escape, resistance, and policy limited Indigenous-only labor while racialized hereditary chattel slavery became central to plantation production.', keyPeople: [{ name: 'Enslaved Africans', role: 'Performed skilled and exhausting plantation labor while preserving communities and resisting bondage.' }], keyTerms: [{ term: 'chattel slavery', explanation: 'A hereditary system treating enslaved people as legally transferable property.' }, { term: 'plantation', explanation: 'A large estate producing a commercial crop through tightly controlled labor.' }], evidence: ['Epidemics, flight, and resistance made a stable Indigenous-only plantation workforce difficult to maintain.', 'Atlantic traders transported growing numbers of enslaved Africans to Brazil for sugar production.'], examConnection: "Compare Indigenous coercion with African chattel slavery, emphasizing the later system's racialization, heredity, and property status.", source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.7' } },
-  { id: 'apwh-u4-salvador-mercantilism-atlantic-profits', title: 'Mercantilism and Atlantic Profits', summary: 'The Portuguese crown used monopoly rules, taxes, and regulated shipping to direct Brazilian sugar revenue through imperial channels.', significance: 'Mercantilist controls sought to enrich Portugal, yet merchants, planters, creditors, shippers, and foreign refiners ensured that not all gains stayed there.', keyPeople: [{ name: 'Portuguese crown officials', role: 'Enforced trade rules, collected taxes, and reserved colonial commerce for approved channels.' }], keyTerms: [{ term: 'mercantilism', explanation: 'Policies intended to increase state power by regulating trade and accumulating revenue.' }, { term: 'monopoly', explanation: 'Exclusive control over a trade, commodity, or route enforced by political authority.' }], evidence: ['The crown taxed sugar and regulated ships carrying colonial products across the Atlantic.', 'Planters, merchants, financiers, shippers, and northern European refiners also captured profits.'], examConnection: 'Use sugar to explain how mercantilism directed revenue, while qualifying any claim that every gain stayed in Portugal.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8' } },
-  { id: 'apwh-u4-elmina-firearms-captive-cycle', title: 'African States and the Firearms–Captive Cycle', summary: 'Some African rulers and merchants exchanged captives for imported firearms, which could intensify warfare and generate additional captives.', significance: 'African intermediaries shaped the trade, but their participation does not erase the decisive force of European demand, shipping, and coercion.', keyPeople: [{ name: 'African rulers and merchants', role: 'Negotiated exchanges, pursued political strategies, and in some regions supplied captives to Atlantic traders.' }], keyTerms: [{ term: 'firearms–captive cycle', explanation: 'A reinforcing pattern in which guns aided warfare producing captives exchanged for more weapons.' }, { term: 'captive trade', explanation: 'The seizure, sale, and forced transfer of people through political and commercial networks.' }], evidence: ['Some states used imported guns to strengthen armies or intensify raids against rivals.', 'European plantation demand and Atlantic shipping created a large external market for captives.'], examConnection: 'Explain reciprocal incentives without assigning uniform responsibility: African choices mattered, and European demand and coercion remained essential.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.6' } },
-  { id: 'apwh-u4-elmina-middle-passage-chattel-slavery', title: 'Middle Passage and Chattel Slavery', summary: 'Captive Africans were confined in barracoons, forced onto ships, and carried through lethal Middle Passage conditions into hereditary slavery.', significance: 'The voyage transformed violent capture into racialized property, while resistance aboard ships showed that captives never accepted enslavement passively.', keyPeople: [{ name: 'Captive Africans', role: 'Endured forced embarkation and confinement while resisting through refusal, revolt, communication, and survival.' }], keyTerms: [{ term: 'Middle Passage', explanation: 'The forced Atlantic voyage carrying enslaved Africans to the Americas.' }, { term: 'barracoon', explanation: 'A fortified enclosure where captives could be imprisoned before forced embarkation.' }], evidence: ['Traders confined captives at coastal forts and barracoons before forcing them aboard ships.', 'Crowding, disease, hunger, violence, and suicide caused deaths, while captives also organized resistance.'], examConnection: 'Use the sequence from barracoon to ship to hereditary property to explain the construction of racialized chattel slavery.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.7' } },
-  { id: 'apwh-u4-elmina-african-demographic-political-effects', title: 'Demographic and Political Effects in Africa', summary: 'Atlantic enslavement removed millions and altered household, gender, military, and political relationships in affected West African regions.', significance: 'Gender imbalance, insecurity, and fragmentation could intensify where exports concentrated, but effects varied and were not uniform across Africa.', keyPeople: [{ name: 'West African communities', role: 'Adapted to population loss, insecurity, changing gender ratios, and political pressures in distinct ways.' }], keyTerms: [{ term: 'gender imbalance', explanation: 'An unequal ratio of men and women produced partly by selective patterns of enslavement.' }, { term: 'political fragmentation', explanation: 'The weakening or division of authority amid warfare, raids, migration, and competition.' }], evidence: ['Export of many working-age people changed family formation and labor burdens in heavily affected communities.', 'Warfare strengthened some states and destabilized others, with outcomes differing across regions.'], examConnection: 'Make a qualified causal claim naming a region and mechanism instead of treating every African society as one case.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8' } },
-  { id: 'apwh-u4-manila-galleon-route', title: 'The Manila Galleon Route', summary: 'Beginning in 1565, Spanish galleons linked Manila in the Spanish Philippines with Acapulco in New Spain across the Pacific.', significance: 'The route created a regular cross-Pacific connection between American bullion and Asian markets, with Manila a representative port rather than the whole network.', keyPeople: [{ name: 'Spanish officials in the Philippines', role: 'Regulated and protected the galleon route connecting Manila to Acapulco.' }], keyTerms: [{ term: 'Manila galleon', explanation: 'A large Spanish vessel used on the regular Manila–Acapulco route.' }, { term: 'Acapulco', explanation: 'The New Spanish Pacific port where cargo entered American and Atlantic distribution routes.' }], evidence: ['The regular Manila–Acapulco route began in 1565 under Spanish imperial rule.', 'Galleons carried American silver west and Asian luxury goods east across the Pacific.'], examConnection: 'Use Manila as evidence that exchange was cross-Pacific as well as Atlantic, while treating the city as one representative node.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.5' } },
-  { id: 'apwh-u4-manila-silver-asian-goods', title: 'American Silver for Asian Goods', summary: 'Chinese merchants exchanged silk, porcelain, and other Asian goods for American silver brought to Manila by Spanish ships.', significance: 'Chinese silver demand pulled bullion across the Pacific and shaped galleon commerce rather than leaving Europeans as its sole drivers.', keyPeople: [{ name: 'Chinese merchants', role: 'Supplied silk, porcelain, and other goods in exchange for silver circulating through Manila.' }], keyTerms: [{ term: 'silver demand', explanation: 'Strong demand for bullion, reinforced in China by taxes and commercial payments made in silver.' }, { term: 'silk and porcelain', explanation: 'High-value Chinese manufactures sought by American and European consumers.' }], evidence: ['Merchants carried large quantities of American silver into Manila and onward to Chinese markets.', 'Chinese silk and porcelain formed major return cargoes shipped toward Acapulco.'], examConnection: 'Explain both supply and demand: American mines supplied bullion, while Chinese demand pulled it toward Asian goods markets.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8' } },
-  { id: 'apwh-u4-manila-pacific-commercial-network', title: 'A Pacific Commercial Network', summary: "Merchants in the Americas, the Philippines, and China connected regional production and exchange through Manila's entrepot markets.", significance: 'The galleon trade linked existing networks into a wider Pacific system, but it did not erase local Asian commerce or reduce exchange to Spanish control.', keyPeople: [{ name: 'American, Philippine, and Chinese merchants', role: 'Moved silver, provisions, manufactures, and information among overlapping local and long-distance markets.' }], keyTerms: [{ term: 'entrepot', explanation: 'A port where goods from different regions are stored, exchanged, and re-exported.' }, { term: 'Pacific commercial network', explanation: 'Linked routes and markets connecting American and Asian producers and consumers.' }], evidence: ['Manila joined American silver with Chinese goods and Philippine labor and provisioning systems.', 'Regional Asian merchants and markets continued operating alongside the Spanish-regulated route.'], examConnection: 'Contextualize early globalization as the linking of existing networks, not the replacement of Asian commerce by one European system.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8' } },
-  { id: 'apwh-u4-new-spain-tenochtitlan-mexico-city', title: 'From Tenochtitlan to Mexico City', summary: 'After the 1521 fall of Tenochtitlan, Spaniards destroyed and rebuilt much of the Mexica capital as colonial Mexico City.', significance: 'Continuity of place and Indigenous labor accompanied a major change in political power as Spain remade a Mexica center for colonial government.', keyPeople: [{ name: 'Hernán Cortés, Mexica defenders, and Indigenous allies', role: 'Fought over Tenochtitlan in a conflict shaped by Spanish forces and Indigenous enemies of Mexica rule.' }], keyTerms: [{ term: 'Tenochtitlan', explanation: 'The Mexica island capital conquered after siege in 1521.' }, { term: 'Mexico City', explanation: 'The Spanish colonial capital built over and through conquered Tenochtitlan.' }], evidence: ['Cortés relied on numerous Indigenous allies as well as Spanish soldiers during the 1521 siege.', 'Colonizers dismantled temples and rebuilt institutions while retaining the site as a capital.'], examConnection: 'Use the city for CCOT: rule and landscape changed after 1521, while location and urban importance continued.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.3 and 4.4' } },
-  { id: 'apwh-u4-new-spain-casta-colonial-governance', title: 'Casta and Colonial Governance', summary: 'Colonial institutions distinguished peninsulares, criollos, Indigenous people, Africans, and mixed communities through ranked but negotiable categories.', significance: 'Casta labels influenced privilege and office, yet lived identities were more flexible than a perfectly fixed official diagram suggests.', keyPeople: [{ name: 'Peninsulares and criollos', role: 'Competed for status and office in an order generally favoring people born in Iberia.' }], keyTerms: [{ term: 'peninsulares', explanation: 'Iberian-born residents often preferred for high colonial offices.' }, { term: 'criollos', explanation: 'American-born people of Spanish ancestry who could possess wealth but resent peninsular preference.' }, { term: 'casta', explanation: 'Flexible colonial labels ranking ancestry and status in Spanish America.' }], evidence: ['High royal and church offices often favored peninsulares over wealthy criollos.', 'Casta labels appeared in records, but wealth, family, locality, and legal action could alter status.'], examConnection: 'Compare formal hierarchy with lived practice: casta shaped privilege without functioning as a single perfectly fixed racial chart.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.7' } },
-  { id: 'apwh-u4-new-spain-syncretism-resistance', title: 'Syncretism, Resistance, and Social Change', summary: 'Indigenous and African communities adapted Christianity and colonial institutions while preserving traditions and resisting domination.', significance: 'The Virgin of Guadalupe illustrates syncretism, while the Pueblo Revolt comparison shows that adaptation and resistance coexisted rather than simple erasure.', keyPeople: [{ name: 'Indigenous and African communities', role: 'Preserved, combined, and defended cultural practices under colonial rule across New Spain.' }], keyTerms: [{ term: 'syncretism', explanation: 'Selective blending of beliefs and practices from interacting traditions.' }, { term: 'Virgin of Guadalupe', explanation: 'A Mexican Catholic devotion interpreted through Christian and Indigenous meanings.' }, { term: 'Pueblo Revolt', explanation: 'The 1680 uprising in New Mexico that expelled Spanish rulers for more than a decade.' }], evidence: ['Guadalupe devotion joined Catholic forms with meanings rooted in Indigenous experience.', 'The Pueblo Revolt of 1680 shows organized resistance to colonial labor and religious pressure.'], examConnection: 'Use Mexico City as a representative anchor, then compare syncretic adaptation with revolt to reject total cultural erasure.', source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.6, 4.7, and 4.8' } },
+  {
+    id: 'apwh-u4-lisbon-atlantic-constraints',
+    title: 'Atlantic Constraints and Overseas Expansion',
+    summary: 'Portugal faced Atlantic opportunities and Iberian limits while Castile and Aragon constrained easy territorial expansion on the peninsula.',
+    significance: "Portugal's Atlantic position, Iberian limits, and primogeniture encouraged overseas routes, but geography created incentives rather than making expansion inevitable.",
+    keyPeople: [{ name: 'Portuguese nobles and merchants', role: 'Backed voyages offering traders, the crown, and younger noble sons new paths to wealth and status.' }],
+    keyTerms: [{ term: 'primogeniture', explanation: 'Inheritance favoring the eldest son, which could push younger nobles to seek advancement elsewhere.' }, { term: 'Atlantic position', explanation: "Portugal's access to Atlantic islands, winds, and coastal routes." }],
+    evidence: ['Castile and Aragon occupied much of the neighboring Iberian land frontier available to Portuguese expansion.', 'Portuguese sailors used Atlantic islands and the African coast as stages for increasingly ambitious voyages.'],
+    examConnection: 'Use these constraints as contextual causes, while qualifying the claim: political choices, finance, and technology were also necessary.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.1 and 4.2' },
+  },
+  {
+    id: 'apwh-u4-lisbon-navigation-state-sponsorship',
+    title: 'Navigation Knowledge and State Sponsorship',
+    summary: 'Portuguese voyages combined compass and astrolabe use with lateen and square sails, shipbuilding experience, and royal finance.',
+    significance: 'Knowledge from multiple Afro-Eurasian traditions became more powerful when the Portuguese state financed voyages and sustained repeated experimentation.',
+    keyPeople: [{ name: 'Prince Henry the Navigator', role: 'Sponsored Portuguese exploration and concentrated navigators, mapmakers, and royal resources on Atlantic and African routes.' }],
+    keyTerms: [{ term: 'astrolabe', explanation: 'An instrument sailors adapted to estimate latitude by observing celestial bodies.' }, { term: 'caravel rig', explanation: 'A later mixed Portuguese sail plan combining triangular lateen sails with square sails.' }],
+    evidence: ['Portuguese navigators used the compass and astrolabe alongside accumulated Mediterranean, African, and Asian knowledge.', 'Royal sponsorship paid for ships, crews, information gathering, and repeated voyages along the African coast.'],
+    examConnection: 'Link borrowed navigational knowledge to state capacity; neither technology alone nor royal ambition alone explains sustained exploration.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.1 and 4.2' },
+  },
+  {
+    id: 'apwh-u4-lisbon-sea-route-indian-ocean',
+    title: 'A Sea Route to the Indian Ocean',
+    summary: 'Bartolomeu Dias rounded southern Africa in 1488, and Vasco da Gama reached India by sea in 1498.',
+    significance: 'The route around the Cape of Good Hope connected Portugal directly to Indian Ocean commerce and redirected some exchange through Atlantic-facing ports.',
+    keyPeople: [{ name: 'Bartolomeu Dias and Vasco da Gama', role: 'Dias rounded the cape in 1488; da Gama used that route to reach India in 1498.' }],
+    keyTerms: [{ term: 'Cape of Good Hope', explanation: 'The southern African cape whose rounding opened a sea route toward the Indian Ocean.' }, { term: 'sea route to India', explanation: 'The oceanic passage around Africa that let Portuguese ships reach Indian Ocean ports.' }],
+    evidence: ['Dias rounded the southern tip of Africa in 1488 and demonstrated that the Atlantic connected to waters leading east.', 'Da Gama arrived at Calicut in India in 1498 after sailing around the Cape of Good Hope.'],
+    examConnection: 'Use the voyages as a causal sequence in Atlantic-to-Indian Ocean expansion, without mislabeling this route as Pacific.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.2 and 4.8' },
+  },
+  {
+    id: 'apwh-u4-malacca-existing-indian-ocean-networks',
+    title: 'Indian Ocean Trade before Portuguese Arrival',
+    summary: 'Muslim, Hindu, and Southeast Asian merchants used monsoon winds to exchange goods through Malacca long before Portuguese conquest.',
+    significance: 'Portuguese sailors entered a mature commercial system they did not create, changing control at strategic ports without originating Indian Ocean trade.',
+    keyPeople: [{ name: 'Muslim, Hindu, and Southeast Asian merchants', role: 'Sustained commercial communities and seasonal voyages linking Malacca to wider maritime networks.' }],
+    keyTerms: [{ term: 'monsoon winds', explanation: 'Seasonally reversing winds that structured Indian Ocean sailing schedules.' }, { term: 'entrepot', explanation: 'A port where merchants store, exchange, and re-export goods from several regions.' }],
+    evidence: ['Merchants timed voyages to predictable monsoon cycles before any Portuguese ship reached Malacca.', 'Malacca already linked textiles, spices, ceramics, and other goods moving among Asian markets.'],
+    examConnection: 'Use Malacca for CCOT: Portuguese coercion changed parts of the network while Asian merchants, monsoons, and older routes continued.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.2 and 4.8' },
+  },
+  {
+    id: 'apwh-u4-malacca-cartaz-fortified-ports',
+    title: 'Cartaz Passes and Fortified Ports',
+    summary: 'After conquering Malacca in 1511, Portuguese forces used forts, cannon, and cartaz passes to tax and redirect maritime traffic.',
+    significance: "Afonso de Albuquerque's strategy built a trading-post empire controlling selected sea lanes and ports rather than most inland territory.",
+    keyPeople: [{ name: 'Afonso de Albuquerque', role: 'Directed the 1511 conquest of Malacca and strengthened Portuguese control through fortified ports.' }],
+    keyTerms: [{ term: 'cartaz', explanation: 'A Portuguese naval pass ships were pressured to buy and display in controlled waters.' }, { term: 'trading-post empire', explanation: 'An empire based on fortified ports and sea-lane control instead of broad inland conquest.' }],
+    evidence: ['Portuguese forces captured Malacca in 1511 and fortified the port with cannon.', 'Officials demanded passes, collected duties, and threatened ships trading outside Portuguese rules.'],
+    examConnection: 'Explain how cannon, forts, and passes taxed routes, then distinguish coastal leverage from inland territorial rule.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.2 and 4.4' },
+  },
+  {
+    id: 'apwh-u4-malacca-asian-responses-limits',
+    title: 'Asian Responses and the Limits of Portuguese Power',
+    summary: 'Asian states and merchants resisted, negotiated with, or redirected trade around Portuguese pressure in ways that varied by place and time.',
+    significance: 'Aceh and other rivals challenged Portuguese influence, the Dutch VOC later displaced it, and Nagasaki restrictions show that Asian responses were not uniform or passive.',
+    keyPeople: [{ name: 'Dutch VOC and the rulers of Aceh', role: 'Competed with Portuguese shipping and fortifications through different commercial and military strategies.' }],
+    keyTerms: [{ term: 'Dutch VOC', explanation: 'A chartered Dutch company combining trade, armed force, and state-backed privileges in Asia.' }, { term: 'Nagasaki restriction', explanation: 'Japanese policies confining and regulating selected European trade.' }],
+    evidence: ['Aceh and other powers fought or competed with Portuguese Malacca and supported alternative routes.', 'The Dutch VOC captured Malacca in 1641, while Japanese rulers restricted European access through Nagasaki.'],
+    examConnection: 'Compare Acehnese, Dutch, and Japanese responses to show how local political capacity limited European trading-post power.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.6' },
+  },
+  {
+    id: 'apwh-u4-santo-domingo-columbian-exchange',
+    title: 'The Columbian Exchange in the Caribbean',
+    summary: 'Contact joined Caribbean, American, African, and Eurasian ecologies through transfers of crops, animals, people, and pathogens.',
+    significance: 'The Columbian Exchange was bidirectional, but unequal power and biological vulnerability made its effects especially destructive for Taíno communities.',
+    keyPeople: [{ name: 'Taíno communities', role: 'Experienced new animals, crops, diseases, labor demands, and colonial settlement after sustained Atlantic contact.' }],
+    keyTerms: [{ term: 'Columbian Exchange', explanation: 'The transfer of plants, animals, pathogens, and people between the Americas and Afro-Eurasia after 1492.' }, { term: 'ecological transfer', explanation: 'The movement of organisms and environmental practices between separated ecosystems.' }],
+    evidence: ['Europeans brought horses, cattle, pigs, wheat, and pathogens to Caribbean islands.', 'American crops moved eastward while forced African migration added people and foodways to Atlantic societies.'],
+    examConnection: 'Compare transfers in both directions, then explain why bidirectional exchange did not mean equal effects on participating populations.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.3 and 4.8' },
+  },
+  {
+    id: 'apwh-u4-santo-domingo-disease-demographic-collapse',
+    title: 'Disease and Demographic Collapse',
+    summary: 'Smallpox and other Afro-Eurasian diseases caused catastrophic mortality among Indigenous Caribbean peoples who lacked prior exposure.',
+    significance: 'Epidemics weakened communities and aided Spanish conquest, but conquest was not automatic because warfare, alliances, labor, and policy also shaped outcomes.',
+    keyPeople: [{ name: 'Indigenous Caribbean communities', role: 'Faced repeated epidemics alongside displacement, violence, and colonial labor demands.' }],
+    keyTerms: [{ term: 'smallpox', explanation: 'A contagious disease that caused devastating mortality in populations without previous exposure.' }, { term: 'demographic collapse', explanation: 'A severe population decline produced by interacting disease, violence, hunger, and exploitation.' }],
+    evidence: ['Smallpox and other diseases spread through Caribbean populations after sustained European contact.', 'Mortality combined with warfare, displacement, and forced labor to reduce Indigenous populations sharply.'],
+    examConnection: 'Use disease as a major cause aiding conquest, while rejecting automatic explanations by adding warfare, alliance, and labor evidence.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.3 and 4.8' },
+  },
+  {
+    id: 'apwh-u4-santo-domingo-conquest-encomienda',
+    title: 'Conquest and Encomienda',
+    summary: 'Spanish encomenderos claimed rights to Indigenous labor and tribute in Santo Domingo as conquest became colonial administration.',
+    significance: 'Encomienda organized coercive labor and tribute without automatically granting Indigenous land or making workers identical to enslaved African chattel.',
+    keyPeople: [{ name: 'Bartolomé de las Casas', role: 'Condemned abuses of Indigenous people and pressed the Spanish crown to reform colonial labor practices.' }],
+    keyTerms: [{ term: 'encomienda', explanation: 'A crown grant authorizing a colonist to demand labor or tribute from designated Indigenous communities.' }, { term: 'New Laws', explanation: 'The 1542 reforms intended to restrict Indigenous enslavement and curb hereditary encomienda power.' }],
+    evidence: ['The crown established encomienda arrangements in Hispaniola during the early sixteenth century.', 'Las Casas publicized abuses, and the New Laws of 1542 attempted to limit colonists\' control.'],
+    examConnection: 'Distinguish encomienda labor and tribute from land ownership and hereditary African chattel slavery when comparing labor systems.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.3 and 4.4' },
+  },
+  {
+    id: 'apwh-u4-potosi-silver-mercury-boom',
+    title: 'Silver Discovery and Mercury Refining',
+    summary: 'After silver was discovered at Potosí in 1545, mercury amalgamation increased the lower-grade ore that refiners could process.',
+    significance: 'Like Zacatecas in New Spain, Potosí generated extraordinary output and profit, while mercury exposure, dangerous shafts, and harsh labor made the boom deadly.',
+    keyPeople: [{ name: 'Potosí mine owners and refiners', role: 'Combined capital, coerced labor, and mercury processing to expand colonial silver production.' }],
+    keyTerms: [{ term: 'mercury amalgamation', explanation: 'A refining process using mercury to separate silver from crushed ore.' }, { term: 'Zacatecas', explanation: 'A major silver-mining center in New Spain useful for comparison with Potosí.' }],
+    evidence: ['The 1545 Potosí discovery produced one of the Spanish Empire\'s largest silver centers.', 'Mercury processing raised output from lower-grade ore but exposed workers and communities to poison.'],
+    examConnection: 'Compare Potosí and Zacatecas for technology-driven output and profit while treating danger and coerced labor as part of the system.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.5' },
+  },
+  {
+    id: 'apwh-u4-potosi-colonial-mita-labor',
+    title: "Colonial Mit'a and Coerced Mining Labor",
+    summary: "Viceroy Francisco de Toledo reorganized a colonial mit'a in 1573 to draft Andean communities for labor at Potosí and Huancavelica.",
+    significance: "Colonial officials adapted an Inca labor obligation to Spanish mining, but the colonial mit'a was not identical to reciprocal service under Inca rule.",
+    keyPeople: [{ name: 'Viceroy Francisco de Toledo', role: "Reorganized communities and the colonial mit'a to supply workers to Potosí and Huancavelica." }],
+    keyTerms: [{ term: "mit'a", explanation: 'A rotating labor obligation adapted into a coercive colonial mining draft.' }, { term: 'Huancavelica', explanation: 'The Andean mercury center supplying material essential to silver amalgamation.' }],
+    evidence: ["Toledo's 1573 reforms required selected Andean communities to send rotating workers to Potosí.", 'Workers also faced dangerous mercury production at Huancavelica and separation from households.'],
+    examConnection: "Compare the colonial mit'a with its Inca precedent by identifying continuity in obligation and change in purpose, coercion, and benefit.",
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.7' },
+  },
+  {
+    id: 'apwh-u4-potosi-global-silver-flows',
+    title: 'Potosí Silver in the Global Economy',
+    summary: 'The Spanish crown taxed American bullion as merchants carried silver into Europe and across the Pacific toward Asian markets.',
+    significance: 'Potosí silver financed imperial exchange, contributed to the European Price Revolution, and met Asian demand, linking Atlantic and Pacific systems.',
+    keyPeople: [{ name: 'Spanish crown officials', role: 'Taxed, registered, and directed bullion flows supporting imperial spending and long-distance trade.' }],
+    keyTerms: [{ term: 'bullion', explanation: 'Precious metal valued by weight and transported for payment or reserves.' }, { term: 'Price Revolution', explanation: 'Early modern European inflation associated partly with population growth and increased silver supplies.' }],
+    evidence: ['The Spanish crown collected a royal share of silver and shipped large quantities toward Europe.', 'American silver also crossed the Pacific through Manila and entered Chinese and other Asian markets.'],
+    examConnection: 'Connect American production with European inflation and Asian demand to show that Potosí belonged to a global economy.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8' },
+  },
+  {
+    id: 'apwh-u4-salvador-sugar-plantation-expansion',
+    title: 'Sugar and Plantation Expansion',
+    summary: 'Portuguese planters expanded sugar around Salvador through engenhos combining land, mills, capital, and coerced labor.',
+    significance: 'Suitable ecology mattered, but plantation growth also depended on investment, Atlantic demand, processing infrastructure, and coercion rather than climate alone.',
+    keyPeople: [{ name: 'Portuguese planters', role: 'Organized land, credit, mills, and coerced workforces to produce sugar for Atlantic markets.' }],
+    keyTerms: [{ term: 'engenho', explanation: 'A Brazilian sugar-mill complex including processing equipment and often a plantation.' }, { term: 'sugar plantation', explanation: 'A large commercial estate specializing in labor-intensive cane cultivation and processing.' }],
+    evidence: ['Warm coastal conditions and fertile soils supported cane cultivation near Salvador.', 'Mills required expensive machinery, coordinated labor, fuel, transport, and overseas consumers.'],
+    examConnection: 'Explain plantation expansion through environmental and economic causes, with coerced labor as a central production mechanism.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.5' },
+  },
+  {
+    id: 'apwh-u4-salvador-african-chattel-slavery',
+    title: 'From Indigenous Labor to African Chattel Slavery',
+    summary: 'Portuguese colonists increasingly forced enslaved Africans to labor on plantations as Indigenous-only labor systems weakened.',
+    significance: 'Disease, escape, resistance, and policy limited Indigenous-only labor while racialized hereditary chattel slavery became central to plantation production.',
+    keyPeople: [{ name: 'Enslaved Africans', role: 'Performed skilled and exhausting plantation labor while preserving communities and resisting bondage.' }],
+    keyTerms: [{ term: 'chattel slavery', explanation: 'A hereditary system treating enslaved people as legally transferable property.' }, { term: 'plantation', explanation: 'A large estate producing a commercial crop through tightly controlled labor.' }],
+    evidence: ['Epidemics, flight, and resistance made a stable Indigenous-only plantation workforce difficult to maintain.', 'Atlantic traders transported growing numbers of enslaved Africans to Brazil for sugar production.'],
+    examConnection: "Compare Indigenous coercion with African chattel slavery, emphasizing the later system's racialization, heredity, and property status.",
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.7' },
+  },
+  {
+    id: 'apwh-u4-salvador-mercantilism-atlantic-profits',
+    title: 'Mercantilism and Atlantic Profits',
+    summary: 'The Portuguese crown used monopoly rules, taxes, and regulated shipping to direct Brazilian sugar revenue through imperial channels.',
+    significance: 'Mercantilist controls sought to enrich Portugal, yet merchants, planters, creditors, shippers, and foreign refiners ensured that not all gains stayed there.',
+    keyPeople: [{ name: 'Portuguese crown officials', role: 'Enforced trade rules, collected taxes, and reserved colonial commerce for approved channels.' }],
+    keyTerms: [{ term: 'mercantilism', explanation: 'Policies intended to increase state power by regulating trade and accumulating revenue.' }, { term: 'monopoly', explanation: 'Exclusive control over a trade, commodity, or route enforced by political authority.' }],
+    evidence: ['The crown taxed sugar and regulated ships carrying colonial products across the Atlantic.', 'Planters, merchants, financiers, shippers, and northern European refiners also captured profits.'],
+    examConnection: 'Use sugar to explain how mercantilism directed revenue, while qualifying any claim that every gain stayed in Portugal.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8' },
+  },
+  {
+    id: 'apwh-u4-elmina-firearms-captive-cycle',
+    title: 'African States and the Firearms–Captive Cycle',
+    summary: 'Some African rulers and merchants exchanged captives for imported firearms, which could intensify warfare and generate additional captives.',
+    significance: 'African intermediaries shaped the trade, but their participation does not erase the decisive force of European demand, shipping, and coercion.',
+    keyPeople: [{ name: 'African rulers and merchants', role: 'Negotiated exchanges, pursued political strategies, and in some regions supplied captives to Atlantic traders.' }],
+    keyTerms: [{ term: 'firearms–captive cycle', explanation: 'A reinforcing pattern in which guns aided warfare producing captives exchanged for more weapons.' }, { term: 'captive trade', explanation: 'The seizure, sale, and forced transfer of people through political and commercial networks.' }],
+    evidence: ['Some states used imported guns to strengthen armies or intensify raids against rivals.', 'European plantation demand and Atlantic shipping created a large external market for captives.'],
+    examConnection: 'Explain reciprocal incentives without assigning uniform responsibility: African choices mattered, and European demand and coercion remained essential.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.6' },
+  },
+  {
+    id: 'apwh-u4-elmina-middle-passage-chattel-slavery',
+    title: 'Middle Passage and Chattel Slavery',
+    summary: 'Captive Africans were confined in barracoons, forced onto ships, and carried through lethal Middle Passage conditions into hereditary slavery.',
+    significance: 'The voyage transformed violent capture into racialized property, while resistance aboard ships showed that captives never accepted enslavement passively.',
+    keyPeople: [{ name: 'Captive Africans', role: 'Endured forced embarkation and confinement while resisting through refusal, revolt, communication, and survival.' }],
+    keyTerms: [{ term: 'Middle Passage', explanation: 'The forced Atlantic voyage carrying enslaved Africans to the Americas.' }, { term: 'barracoon', explanation: 'A fortified enclosure where captives could be imprisoned before forced embarkation.' }],
+    evidence: ['Traders confined captives at coastal forts and barracoons before forcing them aboard ships.', 'Crowding, disease, hunger, violence, and suicide caused deaths, while captives also organized resistance.'],
+    examConnection: 'Use the sequence from barracoon to ship to hereditary property to explain the construction of racialized chattel slavery.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.7' },
+  },
+  {
+    id: 'apwh-u4-elmina-african-demographic-political-effects',
+    title: 'Demographic and Political Effects in Africa',
+    summary: 'Atlantic enslavement removed millions and altered household, gender, military, and political relationships in affected West African regions.',
+    significance: 'Gender imbalance, insecurity, and fragmentation could intensify where exports concentrated, but effects varied and were not uniform across Africa.',
+    keyPeople: [{ name: 'West African communities', role: 'Adapted to population loss, insecurity, changing gender ratios, and political pressures in distinct ways.' }],
+    keyTerms: [{ term: 'gender imbalance', explanation: 'An unequal ratio of men and women produced partly by selective patterns of enslavement.' }, { term: 'political fragmentation', explanation: 'The weakening or division of authority amid warfare, raids, migration, and competition.' }],
+    evidence: ['Export of many working-age people changed family formation and labor burdens in heavily affected communities.', 'Warfare strengthened some states and destabilized others, with outcomes differing across regions.'],
+    examConnection: 'Make a qualified causal claim naming a region and mechanism instead of treating every African society as one case.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8' },
+  },
+  {
+    id: 'apwh-u4-manila-galleon-route',
+    title: 'The Manila Galleon Route',
+    summary: 'Beginning in 1565, Spanish galleons linked Manila in the Spanish Philippines with Acapulco in New Spain across the Pacific.',
+    significance: 'The route created a regular cross-Pacific connection between American bullion and Asian markets, with Manila a representative port rather than the whole network.',
+    keyPeople: [{ name: 'Spanish officials in the Philippines', role: 'Regulated and protected the galleon route connecting Manila to Acapulco.' }],
+    keyTerms: [{ term: 'Manila galleon', explanation: 'A large Spanish vessel used on the regular Manila–Acapulco route.' }, { term: 'Acapulco', explanation: 'The New Spanish Pacific port where cargo entered American and Atlantic distribution routes.' }],
+    evidence: ['The regular Manila–Acapulco route began in 1565 under Spanish imperial rule.', 'Galleons carried American silver west and Asian luxury goods east across the Pacific.'],
+    examConnection: 'Use Manila as evidence that exchange was cross-Pacific as well as Atlantic, while treating the city as one representative node.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.5' },
+  },
+  {
+    id: 'apwh-u4-manila-silver-asian-goods',
+    title: 'American Silver for Asian Goods',
+    summary: 'Chinese merchants exchanged silk, porcelain, and other Asian goods for American silver brought to Manila by Spanish ships.',
+    significance: 'Chinese silver demand pulled bullion across the Pacific and shaped galleon commerce rather than leaving Europeans as its sole drivers.',
+    keyPeople: [{ name: 'Chinese merchants', role: 'Supplied silk, porcelain, and other goods in exchange for silver circulating through Manila.' }],
+    keyTerms: [{ term: 'silver demand', explanation: 'Strong demand for bullion, reinforced in China by taxes and commercial payments made in silver.' }, { term: 'silk and porcelain', explanation: 'High-value Chinese manufactures sought by American and European consumers.' }],
+    evidence: ['Merchants carried large quantities of American silver into Manila and onward to Chinese markets.', 'Chinese silk and porcelain formed major return cargoes shipped toward Acapulco.'],
+    examConnection: 'Explain both supply and demand: American mines supplied bullion, while Chinese demand pulled it toward Asian goods markets.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8' },
+  },
+  {
+    id: 'apwh-u4-manila-pacific-commercial-network',
+    title: 'A Pacific Commercial Network',
+    summary: "Merchants in the Americas, the Philippines, and China connected regional production and exchange through Manila's entrepot markets.",
+    significance: 'The galleon trade linked existing networks into a wider Pacific system, but it did not erase local Asian commerce or reduce exchange to Spanish control.',
+    keyPeople: [{ name: 'American, Philippine, and Chinese merchants', role: 'Moved silver, provisions, manufactures, and information among overlapping local and long-distance markets.' }],
+    keyTerms: [{ term: 'entrepot', explanation: 'A port where goods from different regions are stored, exchanged, and re-exported.' }, { term: 'Pacific commercial network', explanation: 'Linked routes and markets connecting American and Asian producers and consumers.' }],
+    evidence: ['Manila joined American silver with Chinese goods and Philippine labor and provisioning systems.', 'Regional Asian merchants and markets continued operating alongside the Spanish-regulated route.'],
+    examConnection: 'Contextualize early globalization as the linking of existing networks, not the replacement of Asian commerce by one European system.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8' },
+  },
+  {
+    id: 'apwh-u4-new-spain-tenochtitlan-mexico-city',
+    title: 'From Tenochtitlan to Mexico City',
+    summary: 'After the 1521 fall of Tenochtitlan, Spaniards destroyed and rebuilt much of the Mexica capital as colonial Mexico City.',
+    significance: 'Continuity of place and Indigenous labor accompanied a major change in political power as Spain remade a Mexica center for colonial government.',
+    keyPeople: [{ name: 'Hernán Cortés, Mexica defenders, and Indigenous allies', role: 'Fought over Tenochtitlan in a conflict shaped by Spanish forces and Indigenous enemies of Mexica rule.' }],
+    keyTerms: [{ term: 'Tenochtitlan', explanation: 'The Mexica island capital conquered after siege in 1521.' }, { term: 'Mexico City', explanation: 'The Spanish colonial capital built over and through conquered Tenochtitlan.' }],
+    evidence: ['Cortés relied on numerous Indigenous allies as well as Spanish soldiers during the 1521 siege.', 'Colonizers dismantled temples and rebuilt institutions while retaining the site as a capital.'],
+    examConnection: 'Use the city for CCOT: rule and landscape changed after 1521, while location and urban importance continued.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.3 and 4.4' },
+  },
+  {
+    id: 'apwh-u4-new-spain-casta-colonial-governance',
+    title: 'Casta and Colonial Governance',
+    summary: 'Colonial institutions distinguished peninsulares, criollos, Indigenous people, Africans, and mixed communities through ranked but negotiable categories.',
+    significance: 'Casta labels influenced privilege and office, yet lived identities were more flexible than a perfectly fixed official diagram suggests.',
+    keyPeople: [{ name: 'Peninsulares and criollos', role: 'Competed for status and office in an order generally favoring people born in Iberia.' }],
+    keyTerms: [{ term: 'peninsulares', explanation: 'Iberian-born residents often preferred for high colonial offices.' }, { term: 'criollos', explanation: 'American-born people of Spanish ancestry who could possess wealth but resent peninsular preference.' }, { term: 'casta', explanation: 'Flexible colonial labels ranking ancestry and status in Spanish America.' }],
+    evidence: ['High royal and church offices often favored peninsulares over wealthy criollos.', 'Casta labels appeared in records, but wealth, family, locality, and legal action could alter status.'],
+    examConnection: 'Compare formal hierarchy with lived practice: casta shaped privilege without functioning as a single perfectly fixed racial chart.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.7' },
+  },
+  {
+    id: 'apwh-u4-new-spain-syncretism-resistance',
+    title: 'Syncretism, Resistance, and Social Change',
+    summary: 'Indigenous and African communities adapted Christianity and colonial institutions while preserving traditions and resisting domination.',
+    significance: 'The Virgin of Guadalupe illustrates syncretism, while the Pueblo Revolt comparison shows that adaptation and resistance coexisted rather than simple erasure.',
+    keyPeople: [{ name: 'Indigenous and African communities', role: 'Preserved, combined, and defended cultural practices under colonial rule across New Spain.' }],
+    keyTerms: [{ term: 'syncretism', explanation: 'Selective blending of beliefs and practices from interacting traditions.' }, { term: 'Virgin of Guadalupe', explanation: 'A Mexican Catholic devotion interpreted through Christian and Indigenous meanings.' }, { term: 'Pueblo Revolt', explanation: 'The 1680 uprising in New Mexico that expelled Spanish rulers for more than a decade.' }],
+    evidence: ['Guadalupe devotion joined Catholic forms with meanings rooted in Indigenous experience.', 'The Pueblo Revolt of 1680 shows organized resistance to colonial labor and religious pressure.'],
+    examConnection: 'Use Mexico City as a representative anchor, then compare syncretic adaptation with revolt to reject total cultural erasure.',
+    source: { id: 'amsco-apwh-u4', locator: 'AMSCO AP World History, Unit 4, Topics 4.6, 4.7, and 4.8' },
+  },
 ];
 
 const recordKeys = [
@@ -290,6 +530,84 @@ test('rejects duplicate, malformed, and wrong-prefix IDs', () => {
   ]) {
     const malformed = replaceAllSource(rule, firstId, replacement);
     assertModuleError(rule, malformed, `Invalid Unit 4 study record ${replacement}: ${rule}`);
+  }
+});
+
+test('rejects malformed and wrong-prefix raw IDs without changing the manifest', () => {
+  const cases = [
+    ["RAW_RECORDS[0].id = 'apwh-u3-lisbon-atlantic-constraints';",
+      'apwh-u3-lisbon-atlantic-constraints',
+      'invalid stable ID apwh-u3-lisbon-atlantic-constraints'],
+    ["RAW_RECORDS[0].id = 'apwh-u4-Lisbon bad';",
+      'apwh-u4-Lisbon bad',
+      'invalid stable ID apwh-u4-Lisbon bad'],
+  ];
+  for (const [injection, id, rule] of cases) {
+    const malformed = replaceSource(rule, rawInsertion,
+      `  ];\n  ${injection}\n\n  validateRawRecords();`);
+    assertModuleError(rule, malformed, `Invalid Unit 4 study record ${id}: ${rule}`);
+  }
+});
+
+test('rejects raw-only location and main-event mutations', () => {
+  const cases = [
+    ["RAW_RECORDS[0].locationNumber = '999';", 'invalid locationNumber 999'],
+    ["RAW_RECORDS[0].locationNumber = '2';", 'invalid locationNumber 2'],
+    ["RAW_RECORDS[0].mainEventKey = 'world-event-42-9';", 'invalid mainEventKey world-event-42-9'],
+    ["RAW_RECORDS[0].mainEventKey = 'world-event-2-2';",
+      'invalid mainEventKey world-event-2-2 for location 42'],
+  ];
+  for (const [injection, rule] of cases) {
+    const malformed = replaceSource(rule, rawInsertion,
+      `  ];\n  ${injection}\n\n  validateRawRecords();`);
+    assertModuleError(rule, malformed, `Invalid Unit 4 study record ${firstId}: ${rule}`);
+  }
+});
+
+test('rejects raw-only malformed dates, ranges, and date-label disagreements', () => {
+  const cases = [
+    ["RAW_RECORDS[0].dateLabel = '1400/1499';", 'invalid dateLabel 1400/1499'],
+    ["RAW_RECORDS[0].startYear = '1400';", 'startYear must be an integer'],
+    ["RAW_RECORDS[0].endYear = '1499';", 'endYear must be an integer'],
+    ['RAW_RECORDS[0].startYear = 1500;', 'startYear 1500 exceeds endYear 1499'],
+    ['RAW_RECORDS[0].startYear = 1401;',
+      'dateLabel years 1400–1499 do not match startYear 1401 and endYear 1499'],
+  ];
+  for (const [injection, rule] of cases) {
+    const malformed = replaceSource(rule, rawInsertion,
+      `  ];\n  ${injection}\n\n  validateRawRecords();`);
+    assertModuleError(rule, malformed, `Invalid Unit 4 study record ${firstId}: ${rule}`);
+  }
+});
+
+test('rejects blank and non-string manifest and raw IDs with safe Unit 4 diagnostics', () => {
+  const cases = [
+    ['blank manifest ID', manifestInsertion, "STUDY_MANIFEST[0][0] = '   ';",
+      'Invalid Unit 4 study record (missing ID): manifest ID must be a nonempty string'],
+    ['numeric manifest ID', manifestInsertion, 'STUDY_MANIFEST[0][0] = 42;',
+      'Invalid Unit 4 study record 42: manifest ID must be a nonempty string'],
+    ['object manifest ID', manifestInsertion, 'STUDY_MANIFEST[0][0] = {};',
+      'Invalid Unit 4 study record [object Object]: manifest ID must be a nonempty string'],
+    ['symbol manifest ID', manifestInsertion, "STUDY_MANIFEST[0][0] = Symbol('manifest');",
+      'Invalid Unit 4 study record Symbol(manifest): manifest ID must be a nonempty string'],
+    ['blank raw ID', rawInsertion, "RAW_RECORDS[0].id = '   ';",
+      'Invalid Unit 4 study record (missing ID): record ID must be a nonempty string'],
+    ['numeric raw ID', rawInsertion, 'RAW_RECORDS[0].id = 42;',
+      'Invalid Unit 4 study record 42: record ID must be a nonempty string'],
+    ['object raw ID', rawInsertion, 'RAW_RECORDS[0].id = {};',
+      'Invalid Unit 4 study record [object Object]: record ID must be a nonempty string'],
+    ['symbol raw ID', rawInsertion, "RAW_RECORDS[0].id = Symbol('raw');",
+      'Invalid Unit 4 study record Symbol(raw): record ID must be a nonempty string'],
+    ['unprintable raw ID', rawInsertion,
+      "RAW_RECORDS[0].id = { toString() { throw new Error('boom'); } };",
+      'Invalid Unit 4 study record (unprintable value): record ID must be a nonempty string'],
+  ];
+  for (const [label, insertionPoint, injection, message] of cases) {
+    const malformed = replaceSource(label, insertionPoint,
+      `  ];\n  ${injection}\n\n  ${insertionPoint === manifestInsertion
+        ? 'validateManifestRows(STUDY_MANIFEST);'
+        : 'validateRawRecords();'}`);
+    assertModuleError(label, malformed, message);
   }
 });
 
