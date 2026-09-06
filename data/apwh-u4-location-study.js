@@ -865,9 +865,13 @@
       }
       if (seenKinds.has(card.kind)) failCard(card, `duplicate kind ${card.kind}`);
       seenKinds.add(card.kind);
+      if (typeof card.id !== 'string' || !card.id.trim()) {
+        failCard(card, 'card ID must be a nonempty string');
+      }
       if (seenIds.has(card.id)) failCard(card, 'duplicate card ID');
       seenIds.add(card.id);
-      if (!/^apwh-u4-(context|synthesis)-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(card.id)) {
+      const stableIdPattern = new RegExp(`^apwh-u4-${card.kind}-[a-z0-9]+(?:-[a-z0-9]+)*$`);
+      if (!stableIdPattern.test(card.id)) {
         failCard(card, 'invalid stable ID');
       }
       for (const field of ['role', 'title', 'summary', 'prompt']) {

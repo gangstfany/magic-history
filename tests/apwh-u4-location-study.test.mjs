@@ -10,10 +10,40 @@ const dataModuleSource = readFileSync(new URL('../data/apwh-u4-location-study.js
 const ledgerUrl = new URL('../docs/data-sources/apwh-u4-location-study-source-ledger.md', import.meta.url);
 const ledgerSource = existsSync(ledgerUrl) ? readFileSync(ledgerUrl, 'utf8') : '';
 const prohibitedNonEnglishScripts = /[\u0400-\u052f\u0600-\u06ff\u0750-\u077f\u3400-\u9fff]/;
-const parseLedgerRows = source => source.split('\n')
-  .filter(line => /^\| `apwh-u4-/.test(line))
-  .map(line => line.split('|').slice(1, -1)
-    .map(cell => cell.trim().replace(/^`|`$/g, '')));
+const ledgerHeader = '| Stable ID | AP topic assignment | Main event | Source locator | Claims covered |';
+const ledgerSeparator = '| --- | --- | --- | --- | --- |';
+const failLedger = rule => { throw new Error(`Invalid Unit 4 source ledger: ${rule}`); };
+const parseLedgerRows = source => {
+  const lines = source.split('\n');
+  const headerIndex = lines.findIndex(line => line.trim() === ledgerHeader);
+  if (headerIndex < 0 || lines[headerIndex + 1]?.trim() !== ledgerSeparator) {
+    failLedger('missing canonical five-column table header');
+  }
+  const expectedIds = new Set(expectedLedgerRows.map(row => row[0]));
+  const rows = [];
+  for (let index = headerIndex + 2; index < lines.length; index += 1) {
+    const line = lines[index].trim();
+    if (!line || !line.startsWith('|')) break;
+    const cells = line.split('|').slice(1, -1).map(cell => cell.trim());
+    if (cells.length !== 5) failLedger('row must contain exactly five columns');
+    const idMatch = cells[0].match(/^`(apwh-u4-[a-z0-9]+(?:-[a-z0-9]+)*)`$/);
+    if (!idMatch) failLedger(`malformed Stable ID cell ${cells[0]}`);
+    const id = idMatch[1];
+    if (!expectedIds.has(id)) failLedger(`unexpected Stable ID ${id}`);
+    const mainEventMatch = cells[2].match(/^`([^`]+)`$/);
+    if (!mainEventMatch) failLedger(`malformed Main event cell ${cells[2]}`);
+    rows.push([id, cells[1], mainEventMatch[1], cells[3], cells[4]]);
+  }
+  const remainingParsedIds = new Map();
+  for (const [id] of rows) remainingParsedIds.set(id, (remainingParsedIds.get(id) || 0) + 1);
+  const occurrences = [...source.matchAll(/apwh-u4-[A-Za-z0-9_-]*/g)].map(match => match[0]);
+  for (const id of occurrences) {
+    const remaining = remainingParsedIds.get(id) || 0;
+    if (!remaining) failLedger(`unparsed Stable ID occurrence ${id}`);
+    remainingParsedIds.set(id, remaining - 1);
+  }
+  return rows;
+};
 const replaceSource = (label, search, replacement) => {
   const malformed = dataModuleSource.replace(search, replacement);
   assert.notEqual(malformed, dataModuleSource, `${label} fixture mutation`);
@@ -559,6 +589,50 @@ test('locks all five English source-ledger columns for exactly twenty-four Unit 
   assert.deepEqual(rows, expectedLedgerRows);
 });
 
+const ledgerDivider = '| --- | --- | --- | --- | --- |';
+const firstLedgerId = 'apwh-u4-lisbon-atlantic-constraints';
+const ledgerParserMutationCases = [
+    [
+      'missing closing Stable ID backtick',
+      ledgerSource.replace(`\`${firstLedgerId}\``, `\`${firstLedgerId}`),
+      `Invalid Unit 4 source ledger: malformed Stable ID cell \`${firstLedgerId}`,
+    ],
+    [
+      'unquoted extra Unit 4 row',
+      ledgerSource.replace(ledgerDivider, `${ledgerDivider}\n| apwh-u4-extra-record | 4.1 | world-event-42-0 | AMSCO AP World History, Unit 4, Topic 4.1 | Extra claim. |`),
+      'Invalid Unit 4 source ledger: malformed Stable ID cell apwh-u4-extra-record',
+    ],
+    [
+      'indented extra Unit 4 row',
+      ledgerSource.replace(ledgerDivider, `${ledgerDivider}\n  | \`apwh-u4-extra-record\` | 4.1 | world-event-42-0 | AMSCO AP World History, Unit 4, Topic 4.1 | Extra claim. |`),
+      'Invalid Unit 4 source ledger: unexpected Stable ID apwh-u4-extra-record',
+    ],
+    [
+      'four-column Unit 4 row',
+      ledgerSource.replace(ledgerDivider, `${ledgerDivider}\n| \`apwh-u4-extra-record\` | 4.1 | world-event-42-0 | AMSCO AP World History, Unit 4, Topic 4.1 |`),
+      'Invalid Unit 4 source ledger: row must contain exactly five columns',
+    ],
+    [
+      'Unit 4 ID outside the table',
+      `${ledgerSource}\nOutside table: ${firstLedgerId}.\n`,
+      `Invalid Unit 4 source ledger: unparsed Stable ID occurrence ${firstLedgerId}`,
+    ],
+    [
+      'noncanonical Unit 4 ID outside the table',
+      `${ledgerSource}\nOutside table: apwh-u4-BAD\n`,
+      'Invalid Unit 4 source ledger: unparsed Stable ID occurrence apwh-u4-BAD',
+    ],
+];
+for (const [label, malformed, message] of ledgerParserMutationCases) {
+  test(`rejects source-ledger ${label}`, () => {
+    assert.notEqual(malformed, ledgerSource, `${label} fixture mutation`);
+    assert.throws(() => parseLedgerRows(malformed), error => {
+      assert.equal(error.message, message, `${label} diagnostic`);
+      return true;
+    });
+  });
+}
+
 test('provides defensive lookups, canonical identity, cards, and a locked global', () => {
   for (const record of api.records) assert.equal(api.getById(record.id), record);
   const lisbon = api.getByLocation(42);
@@ -885,6 +959,18 @@ test('rejects malformed Unit 4 cards with exact kind, ID, and rule diagnostics',
       `Invalid Unit 4 unit card ${kind} ${id}: ${rule}`);
   }
 });
+
+const cardIdMutationCases = [
+  ['kind and ID mismatch', "UNIT_CARD_LIST[0].id = 'apwh-u4-synthesis-wrong-kind';", 'apwh-u4-synthesis-wrong-kind', 'invalid stable ID'],
+  ['numeric ID', 'UNIT_CARD_LIST[0].id = 42;', '42', 'card ID must be a nonempty string'],
+  ['symbol ID', "UNIT_CARD_LIST[0].id = Symbol('card');", 'Symbol(card)', 'card ID must be a nonempty string'],
+];
+for (const [label, statement, id, rule] of cardIdMutationCases) {
+  test(`rejects Unit 4 card ${label}`, () => {
+    assertModuleError(label, mutateUnitCards(label, statement),
+      `Invalid Unit 4 unit card context ${id}: ${rule}`);
+  });
+}
 
 test('rejects null and non-object Unit 4 cards before dereferencing', () => {
   assertModuleError('null card', mutateUnitCards('null card', 'UNIT_CARD_LIST[0] = null;'),
