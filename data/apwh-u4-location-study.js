@@ -66,6 +66,26 @@
       : describeRuleValue(id);
     throw new Error(`Invalid Unit 4 study record ${diagnosticId}: ${rule}`);
   }
+  function failCard(card, rule) {
+    let kind;
+    let id;
+    try {
+      kind = card?.kind;
+      id = card?.id;
+    } catch {
+      kind = '(unprintable value)';
+      id = '(unprintable value)';
+    }
+    const diagnosticKind = kind === undefined || kind === null
+      || (typeof kind === 'string' && !kind.trim())
+      ? '(missing kind)'
+      : describeRuleValue(kind);
+    const diagnosticId = id === undefined || id === null
+      || (typeof id === 'string' && !id.trim())
+      ? '(missing ID)'
+      : describeRuleValue(id);
+    throw new Error(`Invalid Unit 4 unit card ${diagnosticKind} ${diagnosticId}: ${rule}`);
+  }
   function validateValues(record, values, allowed, field, singular) {
     if (!Array.isArray(values)) failRecord(record, `${field} must be an array`);
     if (!values.length) failRecord(record, `missing ${field}`);
@@ -183,6 +203,61 @@
     themeIds: Object.freeze([...themeIds]),
     examSkills: Object.freeze([...examSkills]),
   })])));
+
+  const CONNECTION_DATA = new Map(STUDY_MANIFEST.map(([id]) => [id, {
+    causeStudyPointIds: [], effectStudyPointIds: [], relatedStudyPointIds: [], connectionNotes: {},
+  }]));
+
+  function addCausalConnection(causeId, effectId, note) {
+    const cause = CONNECTION_DATA.get(causeId);
+    const effect = CONNECTION_DATA.get(effectId);
+    if (!cause) throw new Error(`Invalid Unit 4 study connection causal: missing cause ${causeId}`);
+    if (!effect) throw new Error(`Invalid Unit 4 study connection causal: missing effect ${effectId}`);
+    if (causeId === effectId) throw new Error(`Invalid Unit 4 study connection causal: self connection ${causeId}`);
+    cause.effectStudyPointIds.push(effectId);
+    effect.causeStudyPointIds.push(causeId);
+    cause.connectionNotes[effectId] = note;
+    effect.connectionNotes[causeId] = note;
+  }
+
+  function addRelatedConnection(leftId, rightId, note) {
+    const left = CONNECTION_DATA.get(leftId);
+    const right = CONNECTION_DATA.get(rightId);
+    if (!left) throw new Error(`Invalid Unit 4 study connection related: missing left ${leftId}`);
+    if (!right) throw new Error(`Invalid Unit 4 study connection related: missing right ${rightId}`);
+    if (leftId === rightId) throw new Error(`Invalid Unit 4 study connection related: self connection ${leftId}`);
+    left.relatedStudyPointIds.push(rightId);
+    right.relatedStudyPointIds.push(leftId);
+    left.connectionNotes[rightId] = note;
+    right.connectionNotes[leftId] = note;
+  }
+
+  addCausalConnection('apwh-u4-lisbon-atlantic-constraints', 'apwh-u4-lisbon-navigation-state-sponsorship', 'Atlantic geography and restricted overland access increased Portuguese incentives to seek an ocean route.');
+  addCausalConnection('apwh-u4-lisbon-navigation-state-sponsorship', 'apwh-u4-lisbon-sea-route-indian-ocean', 'State sponsorship combined navigational knowledge, ship design, and accumulated sailing experience into longer voyages.');
+  addCausalConnection('apwh-u4-malacca-existing-indian-ocean-networks', 'apwh-u4-malacca-cartaz-fortified-ports', 'Existing monsoon commerce made Malacca valuable to Portuguese officials seeking to redirect and tax trade.');
+  addCausalConnection('apwh-u4-malacca-cartaz-fortified-ports', 'apwh-u4-malacca-asian-responses-limits', 'Fortified ports and cartaz passes provoked resistance and competition that limited Portuguese control.');
+  addCausalConnection('apwh-u4-santo-domingo-columbian-exchange', 'apwh-u4-santo-domingo-disease-demographic-collapse', 'Transoceanic transfers brought unfamiliar pathogens into Caribbean populations.');
+  addCausalConnection('apwh-u4-santo-domingo-disease-demographic-collapse', 'apwh-u4-santo-domingo-conquest-encomienda', 'Demographic collapse weakened Indigenous communities and helped Spanish conquerors impose labor and tribute demands.');
+  addCausalConnection('apwh-u4-potosi-silver-mercury-boom', 'apwh-u4-potosi-colonial-mita-labor', 'Rich silver deposits became far more profitable when mercury amalgamation raised usable output.');
+  addCausalConnection('apwh-u4-potosi-colonial-mita-labor', 'apwh-u4-potosi-global-silver-flows', "Colonial officials expanded the mit'a to supply the labor needed for sustained silver production.");
+  addCausalConnection('apwh-u4-salvador-sugar-plantation-expansion', 'apwh-u4-salvador-african-chattel-slavery', 'Profitable sugar cultivation created a large and continuing demand for coerced plantation labor.');
+  addCausalConnection('apwh-u4-salvador-african-chattel-slavery', 'apwh-u4-salvador-mercantilism-atlantic-profits', 'Hereditary chattel slavery supported plantation output whose sale enriched merchants and imperial treasuries.');
+  addCausalConnection('apwh-u4-elmina-firearms-captive-cycle', 'apwh-u4-elmina-middle-passage-chattel-slavery', 'European demand and firearms exchanges encouraged some states and merchants to intensify captive-taking.');
+  addCausalConnection('apwh-u4-elmina-middle-passage-chattel-slavery', 'apwh-u4-elmina-african-demographic-political-effects', 'Atlantic shipment converted captives into hereditary property while producing resistance and lethal human loss.');
+  addCausalConnection('apwh-u4-manila-galleon-route', 'apwh-u4-manila-silver-asian-goods', 'Spanish rule in the Philippines established a regular transpacific shipping route.');
+  addCausalConnection('apwh-u4-manila-silver-asian-goods', 'apwh-u4-manila-pacific-commercial-network', 'Chinese demand for silver and American demand for Asian goods sustained a Pacific commercial network.');
+  addCausalConnection('apwh-u4-new-spain-tenochtitlan-mexico-city', 'apwh-u4-new-spain-casta-colonial-governance', 'Spanish conquest rebuilt the Mexica capital as the administrative center of New Spain.');
+  addCausalConnection('apwh-u4-new-spain-casta-colonial-governance', 'apwh-u4-new-spain-syncretism-resistance', 'Colonial ancestry hierarchies generated both cultural adaptation and resistance among Indigenous, African, and mixed communities.');
+  addCausalConnection('apwh-u4-lisbon-sea-route-indian-ocean', 'apwh-u4-malacca-cartaz-fortified-ports', 'Portuguese ocean access enabled officials to seize Malacca and enforce cartaz passes at a strategic port.');
+  addCausalConnection('apwh-u4-santo-domingo-disease-demographic-collapse', 'apwh-u4-salvador-african-chattel-slavery', 'Caribbean population collapse pushed colonists toward the forced migration and enslavement of Africans in Atlantic plantations.');
+  addCausalConnection('apwh-u4-salvador-sugar-plantation-expansion', 'apwh-u4-elmina-firearms-captive-cycle', 'Expanding Brazilian sugar production increased demand for captives supplied through West African coastal trade.');
+  addCausalConnection('apwh-u4-potosi-global-silver-flows', 'apwh-u4-manila-silver-asian-goods', 'American silver carried through Pacific routes paid for Asian goods and linked Potosí to Manila and Chinese markets.');
+
+  addRelatedConnection('apwh-u4-malacca-cartaz-fortified-ports', 'apwh-u4-santo-domingo-conquest-encomienda', 'Compare a maritime trading-post empire that controlled strategic routes with a territorial colony that controlled land, labor, and tribute.');
+  addRelatedConnection('apwh-u4-potosi-colonial-mita-labor', 'apwh-u4-salvador-african-chattel-slavery', "Compare the colonial mit'a, adapted from an earlier Andean obligation, with racialized hereditary chattel slavery on Atlantic plantations.");
+  addRelatedConnection('apwh-u4-malacca-existing-indian-ocean-networks', 'apwh-u4-manila-pacific-commercial-network', 'Compare the older monsoon-based Indian Ocean network with the newer transpacific network centered on Manila and Acapulco.');
+  addRelatedConnection('apwh-u4-elmina-african-demographic-political-effects', 'apwh-u4-new-spain-casta-colonial-governance', 'Compare political and demographic disruption in West Africa with ancestry-based social ranking inside colonial New Spain.');
+  addRelatedConnection('apwh-u4-santo-domingo-columbian-exchange', 'apwh-u4-manila-silver-asian-goods', 'Compare the multidirectional Columbian Exchange with the silver-for-goods circuit that tied the Americas to Asian markets.');
 
   const RAW_RECORDS = [
     {
@@ -665,18 +740,54 @@
     for (const [id] of STUDY_MANIFEST) if (!ids.has(id)) failRecord({ id }, 'missing raw record');
   }
 
+  const UNIT_CARD_LIST = [
+    {
+      id: 'apwh-u4-context-land-to-oceanic-empires', kind: 'context', role: 'Unit 4 Context Card',
+      title: 'Why Oceanic Expansion Became Profitable',
+      examSkills: ['Contextualization', 'Causation'],
+      summary: 'Unit 3 states drew revenue from land, labor, and established Afro-Eurasian commerce. In Unit 4, Iberian rulers used borrowed and adapted navigational knowledge, state financing, and Atlantic ports to reach those older markets by sea. Oceanic expansion became profitable when armed ships and colonial institutions let empires redirect trade, seize labor, and tax extraction; geography and technology created opportunities, but political choices determined how they were used.',
+      prompt: 'How did inherited commercial knowledge and new state-backed ocean routes change the methods—not simply the scale—of imperial expansion after 1450?',
+      takeaways: [
+        'Oceanic expansion built on Afro-Eurasian knowledge and preexisting trade networks.',
+        'State finance and naval force helped rulers convert maritime access into revenue.',
+        'Trading-post control and territorial colonization were different imperial strategies.',
+      ],
+    },
+    {
+      id: 'apwh-u4-synthesis-extraction-hierarchy-revolution', kind: 'synthesis', role: 'Unit 4 Synthesis Card',
+      title: 'From Imperial Extraction to Revolutionary Challenge',
+      examSkills: ['CCOT', 'Causation'],
+      summary: 'Unit 4 empires generated wealth through silver, plantation commodities, monopoly trade, and coerced labor while organizing colonial societies through legal and ancestry-based hierarchies. These systems strengthened states and merchants, but they also spread rights language, sharpened inequalities, and created groups with reasons to challenge imperial legitimacy. Unit 5 revolutions would contest who possessed sovereignty and rights without immediately eliminating the economic and social structures built before 1750.',
+      prompt: 'Which Unit 4 institutions created both the resources for stronger empires and the grievances that later revolutionary movements could mobilize?',
+      takeaways: [
+        'Colonial extraction strengthened imperial states and commercial elites.',
+        'Coerced labor and ancestry-based hierarchy produced durable inequality and resistance.',
+        'Revolutionary rights claims challenged imperial legitimacy more quickly than they dismantled older social structures.',
+      ],
+    },
+  ];
+
+  function freezeUnitCard(card) {
+    return Object.freeze({
+      ...card,
+      examSkills: Object.freeze([...card.examSkills]),
+      takeaways: Object.freeze([...card.takeaways]),
+    });
+  }
+
   function freezeRecord(record) {
     const context = STUDY_CONTEXT[record.id];
+    const connections = CONNECTION_DATA.get(record.id);
     return Object.freeze({
       ...record,
       sequence: context.sequence,
       topicCodes: Object.freeze([...context.topicCodes]),
       themeIds: Object.freeze([...context.themeIds]),
       examSkills: Object.freeze([...context.examSkills]),
-      causeStudyPointIds: Object.freeze([]),
-      effectStudyPointIds: Object.freeze([]),
-      relatedStudyPointIds: Object.freeze([]),
-      connectionNotes: Object.freeze({}),
+      causeStudyPointIds: Object.freeze([...connections.causeStudyPointIds]),
+      effectStudyPointIds: Object.freeze([...connections.effectStudyPointIds]),
+      relatedStudyPointIds: Object.freeze([...connections.relatedStudyPointIds]),
+      connectionNotes: Object.freeze({ ...connections.connectionNotes }),
       keyPeople: Object.freeze(record.keyPeople.map(person => Object.freeze({ ...person }))),
       keyTerms: Object.freeze(record.keyTerms.map(term => Object.freeze({ ...term }))),
       evidence: Object.freeze([...record.evidence]),
@@ -693,9 +804,103 @@
   const rawById = new Map(RAW_RECORDS.map(record => [record.id, record]));
   const STUDY_EVENTS = Object.freeze(STUDY_MANIFEST.map(([id]) => freezeRecord(rawById.get(id))));
   const byId = new Map(STUDY_EVENTS.map(record => [record.id, record]));
+
+  function validateStudyGraph() {
+    const categoryReciprocals = {
+      causeStudyPointIds: 'effectStudyPointIds',
+      effectStudyPointIds: 'causeStudyPointIds',
+      relatedStudyPointIds: 'relatedStudyPointIds',
+    };
+    for (const record of STUDY_EVENTS) {
+      const linked = [];
+      const categories = new Map();
+      for (const key of Object.keys(categoryReciprocals)) {
+        for (const targetId of record[key]) {
+          if (targetId === record.id) failRecord(record, `self connection in ${key}`);
+          if (record[key].indexOf(targetId) !== record[key].lastIndexOf(targetId)) {
+            failRecord(record, `duplicate connection in ${key} to ${describeRuleValue(targetId)}`);
+          }
+          if (categories.has(targetId)) {
+            failRecord(record, `cross-category connection ${targetId} in ${categories.get(targetId)} and ${key}`);
+          }
+          categories.set(targetId, key);
+          linked.push(targetId);
+          const target = byId.get(targetId);
+          if (!target) failRecord(record, `unresolved connection ${targetId}`);
+          if (!target[categoryReciprocals[key]].includes(record.id)) {
+            failRecord(record, `nonreciprocal ${key} connection to ${targetId}`);
+          }
+          const note = record.connectionNotes[targetId];
+          if (typeof note !== 'string' || !note.trim()) {
+            failRecord(record, `missing connection note for ${targetId}`);
+          }
+          if (!hasEnglishText(note)) failRecord(record, `non-English connection note for ${targetId}`);
+          if (target.connectionNotes[record.id] !== note) {
+            failRecord(record, `nonreciprocal connection note for ${targetId}`);
+          }
+        }
+      }
+      if (!linked.length) failRecord(record, 'missing connection');
+      const extra = Object.keys(record.connectionNotes).find(id => !linked.includes(id));
+      if (extra !== undefined) failRecord(record, `extra connection note key ${describeRuleValue(extra)}`);
+    }
+  }
+
+  validateStudyGraph();
+
   const byLocation = new Map(LOCATION_NUMBERS.map(number => [number,
     STUDY_EVENTS.filter(record => record.locationNumber === number).sort(compareRecords)]));
-  const UNIT_CARDS = Object.freeze({});
+
+  function validateUnitCards() {
+    const unitCardKeys = ['examSkills', 'id', 'kind', 'prompt', 'role', 'summary', 'takeaways', 'title'];
+    const seenKinds = new Set();
+    const seenIds = new Set();
+    for (const card of UNIT_CARD_LIST) {
+      if (!isPlainObject(card)) failCard(card, 'card must be a non-null plain object');
+      if (Object.keys(card).sort().join(',') !== unitCardKeys.join(',')) {
+        failCard(card, 'card must contain exactly the approved fields');
+      }
+      if (!['context', 'synthesis'].includes(card.kind)) {
+        failCard(card, `invalid kind ${describeRuleValue(card.kind)}`);
+      }
+      if (seenKinds.has(card.kind)) failCard(card, `duplicate kind ${card.kind}`);
+      seenKinds.add(card.kind);
+      if (seenIds.has(card.id)) failCard(card, 'duplicate card ID');
+      seenIds.add(card.id);
+      if (!/^apwh-u4-(context|synthesis)-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(card.id)) {
+        failCard(card, 'invalid stable ID');
+      }
+      for (const field of ['role', 'title', 'summary', 'prompt']) {
+        if (typeof card[field] !== 'string' || !card[field].trim()) failCard(card, `missing ${field}`);
+        if (!hasEnglishText(card[field])) failCard(card, `non-English ${field}`);
+      }
+      if (!Array.isArray(card.examSkills)) failCard(card, 'examSkills must be an array');
+      if (!card.examSkills.length) failCard(card, 'missing examSkills');
+      if (card.examSkills.length > 2) failCard(card, 'too many examSkills');
+      for (const skill of card.examSkills) {
+        if (typeof skill !== 'string' || !skill.trim() || !VALID_EXAM_SKILLS.has(skill)) {
+          failCard(card, `invalid examSkill ${describeRuleValue(skill)}`);
+        }
+        if (card.examSkills.indexOf(skill) !== card.examSkills.lastIndexOf(skill)) {
+          failCard(card, `duplicate examSkill ${skill}`);
+        }
+      }
+      if (!Array.isArray(card.takeaways)) failCard(card, 'takeaways must be an array');
+      if (card.takeaways.length !== 3) failCard(card, 'takeaways must contain exactly three items');
+      for (const takeaway of card.takeaways) {
+        if (typeof takeaway !== 'string' || !takeaway.trim()) failCard(card, 'empty takeaway');
+        if (!hasEnglishText(takeaway)) failCard(card, 'non-English takeaway');
+      }
+    }
+    if (UNIT_CARD_LIST.length !== 2 || !seenKinds.has('context') || !seenKinds.has('synthesis')) {
+      failCard(null, 'expected exactly context and synthesis');
+    }
+  }
+
+  validateUnitCards();
+  const UNIT_CARDS = Object.freeze(Object.fromEntries(
+    UNIT_CARD_LIST.map(card => [card.kind, freezeUnitCard(card)]),
+  ));
 
   const api = Object.freeze({
     unitId: UNIT_ID,
@@ -710,7 +915,10 @@
     },
     getByLocation(number) { return [...(byLocation.get(String(number)) || [])]; },
     getById(id) { return byId.get(String(id)) || null; },
-    getUnitCard() { return null; },
+    getUnitCard(kind) {
+      const key = String(kind);
+      return Object.prototype.hasOwnProperty.call(UNIT_CARDS, key) ? UNIT_CARDS[key] : null;
+    },
   });
 
   Object.defineProperty(root, 'APWH_U4_LOCATION_STUDY', {

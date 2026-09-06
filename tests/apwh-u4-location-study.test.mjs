@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 
@@ -7,6 +7,13 @@ await import('../data/apwh-u4-location-study.js');
 
 const api = globalThis.APWH_U4_LOCATION_STUDY;
 const dataModuleSource = readFileSync(new URL('../data/apwh-u4-location-study.js', import.meta.url), 'utf8');
+const ledgerUrl = new URL('../docs/data-sources/apwh-u4-location-study-source-ledger.md', import.meta.url);
+const ledgerSource = existsSync(ledgerUrl) ? readFileSync(ledgerUrl, 'utf8') : '';
+const prohibitedNonEnglishScripts = /[\u0400-\u052f\u0600-\u06ff\u0750-\u077f\u3400-\u9fff]/;
+const parseLedgerRows = source => source.split('\n')
+  .filter(line => /^\| `apwh-u4-/.test(line))
+  .map(line => line.split('|').slice(1, -1)
+    .map(cell => cell.trim().replace(/^`|`$/g, '')));
 const replaceSource = (label, search, replacement) => {
   const malformed = dataModuleSource.replace(search, replacement);
   assert.notEqual(malformed, dataModuleSource, `${label} fixture mutation`);
@@ -341,6 +348,91 @@ const recordKeys = [
   'summary', 'themeIds', 'title', 'topicCodes',
 ];
 
+const expectedUnitCards = {
+  context: {
+    id: 'apwh-u4-context-land-to-oceanic-empires', kind: 'context', role: 'Unit 4 Context Card',
+    title: 'Why Oceanic Expansion Became Profitable',
+    examSkills: ['Contextualization', 'Causation'],
+    summary: 'Unit 3 states drew revenue from land, labor, and established Afro-Eurasian commerce. In Unit 4, Iberian rulers used borrowed and adapted navigational knowledge, state financing, and Atlantic ports to reach those older markets by sea. Oceanic expansion became profitable when armed ships and colonial institutions let empires redirect trade, seize labor, and tax extraction; geography and technology created opportunities, but political choices determined how they were used.',
+    prompt: 'How did inherited commercial knowledge and new state-backed ocean routes change the methods—not simply the scale—of imperial expansion after 1450?',
+    takeaways: [
+      'Oceanic expansion built on Afro-Eurasian knowledge and preexisting trade networks.',
+      'State finance and naval force helped rulers convert maritime access into revenue.',
+      'Trading-post control and territorial colonization were different imperial strategies.',
+    ],
+  },
+  synthesis: {
+    id: 'apwh-u4-synthesis-extraction-hierarchy-revolution', kind: 'synthesis', role: 'Unit 4 Synthesis Card',
+    title: 'From Imperial Extraction to Revolutionary Challenge',
+    examSkills: ['CCOT', 'Causation'],
+    summary: 'Unit 4 empires generated wealth through silver, plantation commodities, monopoly trade, and coerced labor while organizing colonial societies through legal and ancestry-based hierarchies. These systems strengthened states and merchants, but they also spread rights language, sharpened inequalities, and created groups with reasons to challenge imperial legitimacy. Unit 5 revolutions would contest who possessed sovereignty and rights without immediately eliminating the economic and social structures built before 1750.',
+    prompt: 'Which Unit 4 institutions created both the resources for stronger empires and the grievances that later revolutionary movements could mobilize?',
+    takeaways: [
+      'Colonial extraction strengthened imperial states and commercial elites.',
+      'Coerced labor and ancestry-based hierarchy produced durable inequality and resistance.',
+      'Revolutionary rights claims challenged imperial legitimacy more quickly than they dismantled older social structures.',
+    ],
+  },
+};
+
+const expectedCausalEdges = new Map([
+  ['apwh-u4-lisbon-atlantic-constraints->apwh-u4-lisbon-navigation-state-sponsorship', 'Atlantic geography and restricted overland access increased Portuguese incentives to seek an ocean route.'],
+  ['apwh-u4-lisbon-navigation-state-sponsorship->apwh-u4-lisbon-sea-route-indian-ocean', 'State sponsorship combined navigational knowledge, ship design, and accumulated sailing experience into longer voyages.'],
+  ['apwh-u4-malacca-existing-indian-ocean-networks->apwh-u4-malacca-cartaz-fortified-ports', 'Existing monsoon commerce made Malacca valuable to Portuguese officials seeking to redirect and tax trade.'],
+  ['apwh-u4-malacca-cartaz-fortified-ports->apwh-u4-malacca-asian-responses-limits', 'Fortified ports and cartaz passes provoked resistance and competition that limited Portuguese control.'],
+  ['apwh-u4-santo-domingo-columbian-exchange->apwh-u4-santo-domingo-disease-demographic-collapse', 'Transoceanic transfers brought unfamiliar pathogens into Caribbean populations.'],
+  ['apwh-u4-santo-domingo-disease-demographic-collapse->apwh-u4-santo-domingo-conquest-encomienda', 'Demographic collapse weakened Indigenous communities and helped Spanish conquerors impose labor and tribute demands.'],
+  ['apwh-u4-potosi-silver-mercury-boom->apwh-u4-potosi-colonial-mita-labor', 'Rich silver deposits became far more profitable when mercury amalgamation raised usable output.'],
+  ['apwh-u4-potosi-colonial-mita-labor->apwh-u4-potosi-global-silver-flows', "Colonial officials expanded the mit'a to supply the labor needed for sustained silver production."],
+  ['apwh-u4-salvador-sugar-plantation-expansion->apwh-u4-salvador-african-chattel-slavery', 'Profitable sugar cultivation created a large and continuing demand for coerced plantation labor.'],
+  ['apwh-u4-salvador-african-chattel-slavery->apwh-u4-salvador-mercantilism-atlantic-profits', 'Hereditary chattel slavery supported plantation output whose sale enriched merchants and imperial treasuries.'],
+  ['apwh-u4-elmina-firearms-captive-cycle->apwh-u4-elmina-middle-passage-chattel-slavery', 'European demand and firearms exchanges encouraged some states and merchants to intensify captive-taking.'],
+  ['apwh-u4-elmina-middle-passage-chattel-slavery->apwh-u4-elmina-african-demographic-political-effects', 'Atlantic shipment converted captives into hereditary property while producing resistance and lethal human loss.'],
+  ['apwh-u4-manila-galleon-route->apwh-u4-manila-silver-asian-goods', 'Spanish rule in the Philippines established a regular transpacific shipping route.'],
+  ['apwh-u4-manila-silver-asian-goods->apwh-u4-manila-pacific-commercial-network', 'Chinese demand for silver and American demand for Asian goods sustained a Pacific commercial network.'],
+  ['apwh-u4-new-spain-tenochtitlan-mexico-city->apwh-u4-new-spain-casta-colonial-governance', 'Spanish conquest rebuilt the Mexica capital as the administrative center of New Spain.'],
+  ['apwh-u4-new-spain-casta-colonial-governance->apwh-u4-new-spain-syncretism-resistance', 'Colonial ancestry hierarchies generated both cultural adaptation and resistance among Indigenous, African, and mixed communities.'],
+  ['apwh-u4-lisbon-sea-route-indian-ocean->apwh-u4-malacca-cartaz-fortified-ports', 'Portuguese ocean access enabled officials to seize Malacca and enforce cartaz passes at a strategic port.'],
+  ['apwh-u4-santo-domingo-disease-demographic-collapse->apwh-u4-salvador-african-chattel-slavery', 'Caribbean population collapse pushed colonists toward the forced migration and enslavement of Africans in Atlantic plantations.'],
+  ['apwh-u4-salvador-sugar-plantation-expansion->apwh-u4-elmina-firearms-captive-cycle', 'Expanding Brazilian sugar production increased demand for captives supplied through West African coastal trade.'],
+  ['apwh-u4-potosi-global-silver-flows->apwh-u4-manila-silver-asian-goods', 'American silver carried through Pacific routes paid for Asian goods and linked Potosí to Manila and Chinese markets.'],
+]);
+
+const expectedRelatedPairs = new Map([
+  ['apwh-u4-malacca-cartaz-fortified-ports|apwh-u4-santo-domingo-conquest-encomienda', 'Compare a maritime trading-post empire that controlled strategic routes with a territorial colony that controlled land, labor, and tribute.'],
+  ['apwh-u4-potosi-colonial-mita-labor|apwh-u4-salvador-african-chattel-slavery', "Compare the colonial mit'a, adapted from an earlier Andean obligation, with racialized hereditary chattel slavery on Atlantic plantations."],
+  ['apwh-u4-malacca-existing-indian-ocean-networks|apwh-u4-manila-pacific-commercial-network', 'Compare the older monsoon-based Indian Ocean network with the newer transpacific network centered on Manila and Acapulco.'],
+  ['apwh-u4-elmina-african-demographic-political-effects|apwh-u4-new-spain-casta-colonial-governance', 'Compare political and demographic disruption in West Africa with ancestry-based social ranking inside colonial New Spain.'],
+  ['apwh-u4-manila-silver-asian-goods|apwh-u4-santo-domingo-columbian-exchange', 'Compare the multidirectional Columbian Exchange with the silver-for-goods circuit that tied the Americas to Asian markets.'],
+]);
+
+const expectedLedgerRows = [
+  ['apwh-u4-lisbon-atlantic-constraints', 'Topics 4.1 and 4.2', 'world-event-42-0', 'AMSCO AP World History, Unit 4, Topics 4.1 and 4.2', 'Portuguese nobles and merchants responded to Atlantic access, Iberian land constraints, and primogeniture by backing overseas routes, although geography created incentives rather than making expansion inevitable.'],
+  ['apwh-u4-lisbon-navigation-state-sponsorship', 'Topics 4.1 and 4.2', 'world-event-42-0', 'AMSCO AP World History, Unit 4, Topics 4.1 and 4.2', 'Prince Henry and Portuguese sponsors combined royal finance with adapted compass, astrolabe, sail, and shipbuilding knowledge to sustain voyages, while technology without state choices was insufficient.'],
+  ['apwh-u4-lisbon-sea-route-indian-ocean', 'Topics 4.2 and 4.8', 'world-event-42-0', 'AMSCO AP World History, Unit 4, Topics 4.2 and 4.8', 'Bartolomeu Dias and Vasco da Gama used the Cape route to connect Portugal to Indian Ocean commerce, redirecting some exchange through Atlantic ports without creating those older markets.'],
+  ['apwh-u4-malacca-existing-indian-ocean-networks', 'Topics 4.2 and 4.8', 'world-event-2-2', 'AMSCO AP World History, Unit 4, Topics 4.2 and 4.8', 'Muslim, Hindu, and Southeast Asian merchants used monsoon schedules and Malacca as an entrepot before Portuguese conquest, so later coercion altered but did not originate Indian Ocean trade.'],
+  ['apwh-u4-malacca-cartaz-fortified-ports', 'Topics 4.2 and 4.4', 'world-event-2-2', 'AMSCO AP World History, Unit 4, Topics 4.2 and 4.4', 'Afonso de Albuquerque and Portuguese officials used cannon, forts, and cartaz passes to tax and redirect maritime traffic, creating coastal leverage rather than broad inland territorial rule.'],
+  ['apwh-u4-malacca-asian-responses-limits', 'Topics 4.5 and 4.6', 'world-event-2-2', 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.6', 'Aceh, Asian merchants, regional rulers, and later the Dutch VOC resisted, negotiated with, or bypassed Portuguese controls, showing that Asian responses and Portuguese influence varied by place and time.'],
+  ['apwh-u4-santo-domingo-columbian-exchange', 'Topics 4.3 and 4.8', 'world-event-68-0', 'AMSCO AP World History, Unit 4, Topics 4.3 and 4.8', 'Indigenous Caribbean peoples, Europeans, Africans, plants, animals, and pathogens moved through the Columbian Exchange, transforming environments and diets while producing sharply unequal demographic consequences.'],
+  ['apwh-u4-santo-domingo-disease-demographic-collapse', 'Topics 4.3 and 4.8', 'world-event-68-0', 'AMSCO AP World History, Unit 4, Topics 4.3 and 4.8', 'Taíno communities faced unfamiliar pathogens that caused demographic collapse and weakened resistance, although warfare, displacement, and coerced labor also intensified mortality.'],
+  ['apwh-u4-santo-domingo-conquest-encomienda', 'Topics 4.3 and 4.4', 'world-event-68-0', 'AMSCO AP World History, Unit 4, Topics 4.3 and 4.4', 'Spanish conquerors and encomenderos imposed tribute and labor through encomienda after conquest, while Indigenous resistance and Crown regulation meant the institution was coercive but contested.'],
+  ['apwh-u4-potosi-silver-mercury-boom', 'Topics 4.4 and 4.5', 'world-event-57-0', 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.5', 'Spanish mine owners and refiners used Potosí silver deposits and mercury amalgamation to raise usable output and imperial revenue, despite severe environmental and occupational costs.'],
+  ['apwh-u4-potosi-colonial-mita-labor', 'Topics 4.4 and 4.7', 'world-event-57-0', 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.7', "Viceroy Toledo and colonial officials adapted the Andean mit'a into a rotating mining draft that sustained silver production, but this colonial coercion was not identical to reciprocal service under Inca rule."],
+  ['apwh-u4-potosi-global-silver-flows', 'Topics 4.5 and 4.8', 'world-event-57-0', 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8', 'Spanish officials, merchants, and Asian buyers moved Potosí silver through Atlantic and Pacific circuits to finance trade and states, although routes and beneficiaries extended far beyond one mine or empire.'],
+  ['apwh-u4-salvador-sugar-plantation-expansion', 'Topics 4.4 and 4.5', 'world-event-60-0', 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.5', 'Portuguese planters and mill owners expanded Brazilian sugar estates to meet Atlantic demand, generating profits and labor demand while plantation growth depended on specific ecological and imperial conditions.'],
+  ['apwh-u4-salvador-african-chattel-slavery', 'Topics 4.4 and 4.7', 'world-event-60-0', 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.7', 'Portuguese colonists increasingly forced enslaved Africans into hereditary plantation labor as Indigenous populations declined and resisted, though Indigenous enslavement did not disappear immediately.'],
+  ['apwh-u4-salvador-mercantilism-atlantic-profits', 'Topics 4.5 and 4.8', 'world-event-60-0', 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8', 'Portuguese officials and merchants used mercantilist rules, duties, and protected colonial trade to channel sugar profits toward the empire, while smuggling and foreign competition constrained monopoly control.'],
+  ['apwh-u4-elmina-firearms-captive-cycle', 'Topics 4.4 and 4.6', 'world-event-87-0', 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.6', 'European traders and some African states and merchants exchanged firearms and goods for captives, intensifying warfare and captive-taking, but African participation does not erase European demand and shipping.'],
+  ['apwh-u4-elmina-middle-passage-chattel-slavery', 'Topics 4.4 and 4.7', 'world-event-87-0', 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.7', 'European slavers and plantation buyers carried African captives through the Middle Passage and converted them into hereditary property, while captives resisted aboard ships and after arrival.'],
+  ['apwh-u4-elmina-african-demographic-political-effects', 'Topics 4.5 and 4.8', 'world-event-87-0', 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8', 'West African communities and states experienced population loss, altered gender balances, insecurity, and political change from Atlantic captive exports, although effects differed greatly across regions.'],
+  ['apwh-u4-manila-galleon-route', 'Topics 4.4 and 4.5', 'world-event-12-0', 'AMSCO AP World History, Unit 4, Topics 4.4 and 4.5', 'Spanish colonial officials and sailors established the Manila–Acapulco galleon route to move cargo regularly across the Pacific, with Manila serving as a representative port rather than the whole network.'],
+  ['apwh-u4-manila-silver-asian-goods', 'Topics 4.5 and 4.8', 'world-event-12-0', 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8', 'Chinese merchants, Spanish traders, and American producers exchanged silver for silk, porcelain, and other Asian goods, while Chinese demand rather than European action alone pulled bullion across the Pacific.'],
+  ['apwh-u4-manila-pacific-commercial-network', 'Topics 4.5 and 4.8', 'world-event-12-0', 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.8', 'Merchants and colonial institutions centered on Manila and Acapulco sustained a transpacific commercial network, but this newer circuit depended on older Asian production and exchange systems.'],
+  ['apwh-u4-new-spain-tenochtitlan-mexico-city', 'Topics 4.3 and 4.4', 'world-event-49-7', 'AMSCO AP World History, Unit 4, Topics 4.3 and 4.4', 'Hernán Cortés, Indigenous allies, Mexica defenders, and Spanish colonizers transformed conquered Tenochtitlan into Mexico City, changing political rule while preserving the site and its urban importance.'],
+  ['apwh-u4-new-spain-casta-colonial-governance', 'Topics 4.5 and 4.7', 'world-event-49-7', 'AMSCO AP World History, Unit 4, Topics 4.5 and 4.7', 'Colonial officials ranked peninsulares, criollos, Indigenous people, Africans, and mixed communities through casta categories that shaped privilege, although wealth, locality, family, and litigation made status negotiable.'],
+  ['apwh-u4-new-spain-syncretism-resistance', 'Topics 4.6, 4.7, and 4.8', 'world-event-49-7', 'AMSCO AP World History, Unit 4, Topics 4.6, 4.7, and 4.8', 'Indigenous and African communities used syncretism, Guadalupe devotion, and organized resistance such as the Pueblo Revolt to adapt to or challenge colonial pressure, so cultural change was not simple erasure.'],
+];
+
 test('publishes the exact Unit 4 manifest and canonical locations', () => {
   assert.equal(api.unitId, 'u4');
   assert.equal(api.unitNumber, 4);
@@ -386,7 +478,7 @@ test('enforces taxonomy, IDs, event bindings, coverage, and three records per lo
   }
 });
 
-test('ships complete English content and deeply frozen empty graph fields', () => {
+test('ships complete English content with deeply frozen graph fields', () => {
   for (const record of api.records) {
     assert.deepEqual(Object.keys(record).sort(), recordKeys);
     assert.doesNotMatch(JSON.stringify(record), /[\u3400-\u9fff]/);
@@ -395,10 +487,6 @@ test('ships complete English content and deeply frozen empty graph fields', () =
     assert.ok(record.keyPeople.length >= 1);
     assert.ok(record.keyTerms.length >= 2);
     assert.ok(record.evidence.length >= 2);
-    for (const field of ['causeStudyPointIds', 'effectStudyPointIds', 'relatedStudyPointIds']) {
-      assert.deepEqual(record[field], []);
-    }
-    assert.deepEqual(record.connectionNotes, {});
     assert.ok(Object.isFrozen(record));
     for (const nested of [record.topicCodes, record.themeIds, record.examSkills,
       record.causeStudyPointIds, record.effectStudyPointIds, record.relatedStudyPointIds,
@@ -410,7 +498,64 @@ test('ships complete English content and deeply frozen empty graph fields', () =
   }
 });
 
-test('provides defensive lookups, canonical identity, null cards, and a locked global', () => {
+test('publishes exact causal chains and related comparison pairs with reciprocal English notes', () => {
+  const causal = new Map();
+  const related = new Map();
+  const categoryReciprocals = {
+    causeStudyPointIds: 'effectStudyPointIds',
+    effectStudyPointIds: 'causeStudyPointIds',
+    relatedStudyPointIds: 'relatedStudyPointIds',
+  };
+  for (const record of api.records) {
+    const seen = new Set();
+    for (const [category, reciprocal] of Object.entries(categoryReciprocals)) {
+      assert.equal(new Set(record[category]).size, record[category].length, `${record.id} ${category} duplicate`);
+      for (const targetId of record[category]) {
+        assert.notEqual(targetId, record.id, `${record.id} self link`);
+        assert.ok(!seen.has(targetId), `${record.id} cross-category ${targetId}`);
+        seen.add(targetId);
+        const target = api.getById(targetId);
+        assert.ok(target, `${record.id} unresolved ${targetId}`);
+        assert.ok(target[reciprocal].includes(record.id), `${record.id} nonreciprocal ${targetId}`);
+        assert.match(record.connectionNotes[targetId], /[A-Za-z]/);
+        assert.doesNotMatch(record.connectionNotes[targetId], prohibitedNonEnglishScripts);
+        assert.equal(target.connectionNotes[record.id], record.connectionNotes[targetId]);
+        if (category === 'effectStudyPointIds') {
+          causal.set(`${record.id}->${targetId}`, record.connectionNotes[targetId]);
+        }
+        if (category === 'relatedStudyPointIds') {
+          related.set([record.id, targetId].sort().join('|'), record.connectionNotes[targetId]);
+        }
+      }
+    }
+    assert.ok(seen.size >= 1, `${record.id} must have a connection`);
+    assert.deepEqual(Object.keys(record.connectionNotes).sort(), [...seen].sort());
+  }
+  assert.deepEqual(causal, expectedCausalEdges);
+  assert.deepEqual(related, expectedRelatedPairs);
+});
+
+test('publishes exact immutable Unit 4 cards outside map records', () => {
+  assert.deepEqual(api.unitCards, expectedUnitCards);
+  for (const kind of ['toString', 'constructor', '__proto__', 'missing']) assert.equal(api.getUnitCard(kind), null);
+  for (const card of Object.values(api.unitCards)) {
+    assert.ok(Object.isFrozen(card));
+    assert.ok(Object.isFrozen(card.examSkills));
+    assert.ok(Object.isFrozen(card.takeaways));
+    assert.ok(!api.records.includes(card));
+    assert.ok(!api.locationNumbers.some(number => api.getByLocation(number).includes(card)));
+  }
+});
+
+test('locks all five English source-ledger columns for exactly twenty-four Unit 4 records', () => {
+  assert.doesNotMatch(ledgerSource, prohibitedNonEnglishScripts);
+  const rows = parseLedgerRows(ledgerSource);
+  assert.equal(rows.length, 24);
+  assert.ok(rows.every(row => row.length === 5 && row.every(cell => /[A-Za-z0-9]/.test(cell))));
+  assert.deepEqual(rows, expectedLedgerRows);
+});
+
+test('provides defensive lookups, canonical identity, cards, and a locked global', () => {
   for (const record of api.records) assert.equal(api.getById(record.id), record);
   const lisbon = api.getByLocation(42);
   lisbon.pop();
@@ -421,7 +566,6 @@ test('provides defensive lookups, canonical identity, null cards, and a locked g
     assert.equal(api.locationName(unknown), null);
     assert.equal(api.getUnitCard(unknown), null);
   }
-  assert.deepEqual(api.unitCards, {});
   assert.ok(Object.isFrozen(api) && Object.isFrozen(api.records)
     && Object.isFrozen(api.locationNumbers) && Object.isFrozen(api.unitCards));
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'APWH_U4_LOCATION_STUDY');
@@ -660,4 +804,104 @@ test('rejects extra or missing records and invalid canonical locations', () => {
   assertModuleError('invalid canonical location',
     replaceSource('invalid canonical location', "'42': 'Maritime Portugal · Lisbon'", "'999': 'Maritime Portugal · Lisbon'"),
     'Invalid Unit 4 study locations: expected exactly 42,2,68,57,60,87,12,49');
+});
+
+const mutateConnections = (label, statement) => replaceSource(
+  label,
+  /(\n\s*const RAW_RECORDS\s*=\s*\[)/,
+  `\n  ${statement}$1`,
+);
+const mutateUnitCards = (label, statement) => replaceSource(
+  label,
+  /(\n\s*function freezeUnitCard\(card\)\s*\{)/,
+  `\n  ${statement}$1`,
+);
+
+test('rejects missing graph endpoints with exact diagnostics', () => {
+  const cases = [
+    ['missing causal cause', "addCausalConnection('apwh-u4-missing-cause', 'apwh-u4-lisbon-navigation-state-sponsorship', 'English causal note.');", 'Invalid Unit 4 study connection causal: missing cause apwh-u4-missing-cause'],
+    ['missing causal effect', "addCausalConnection('apwh-u4-lisbon-atlantic-constraints', 'apwh-u4-missing-effect', 'English causal note.');", 'Invalid Unit 4 study connection causal: missing effect apwh-u4-missing-effect'],
+    ['missing related left', "addRelatedConnection('apwh-u4-missing-left', 'apwh-u4-santo-domingo-conquest-encomienda', 'English comparison note.');", 'Invalid Unit 4 study connection related: missing left apwh-u4-missing-left'],
+    ['missing related right', "addRelatedConnection('apwh-u4-malacca-cartaz-fortified-ports', 'apwh-u4-missing-right', 'English comparison note.');", 'Invalid Unit 4 study connection related: missing right apwh-u4-missing-right'],
+  ];
+  for (const [label, statement, message] of cases) {
+    assertModuleError(label, mutateConnections(label, statement), message);
+  }
+});
+
+test('rejects causal and related self-connections with exact diagnostics', () => {
+  assertModuleError('causal self', mutateConnections(
+    'causal self',
+    `addCausalConnection('${firstId}', '${firstId}', 'English causal note.');`,
+  ), `Invalid Unit 4 study connection causal: self connection ${firstId}`);
+  assertModuleError('related self', mutateConnections(
+    'related self',
+    `addRelatedConnection('${firstId}', '${firstId}', 'English related note.');`,
+  ), `Invalid Unit 4 study connection related: self connection ${firstId}`);
+});
+
+const firstEffectId = 'apwh-u4-lisbon-navigation-state-sponsorship';
+const graphMutationCases = [
+  ['duplicate link', /cause\.effectStudyPointIds\.push\(effectId\);/, 'cause.effectStudyPointIds.push(effectId, effectId);', `Invalid Unit 4 study record ${firstId}: duplicate connection in effectStudyPointIds to ${firstEffectId}`],
+  ['cross-category same target pair', /effect\.causeStudyPointIds\.push\(causeId\);/, 'effect.causeStudyPointIds.push(causeId);\n    cause.relatedStudyPointIds.push(effectId);\n    effect.relatedStudyPointIds.push(causeId);', `Invalid Unit 4 study record ${firstId}: cross-category connection ${firstEffectId} in effectStudyPointIds and relatedStudyPointIds`],
+  ['nonreciprocal category', /effect\.causeStudyPointIds\.push\(causeId\);/, '// omit reverse category fixture', `Invalid Unit 4 study record ${firstId}: nonreciprocal effectStudyPointIds connection to ${firstEffectId}`],
+  ['missing note', /cause\.connectionNotes\[effectId\]\s*=\s*note;\s*effect\.connectionNotes\[causeId\]\s*=\s*note;/, '// omit reciprocal notes fixture', `Invalid Unit 4 study record ${firstId}: missing connection note for ${firstEffectId}`],
+  ['non-English note', /cause\.connectionNotes\[effectId\]\s*=\s*note;/, "cause.connectionNotes[effectId] = '12345.';", `Invalid Unit 4 study record ${firstId}: non-English connection note for ${firstEffectId}`],
+  ['mismatched note', /effect\.connectionNotes\[causeId\]\s*=\s*note;/, 'effect.connectionNotes[causeId] = `${note} Different.`;', `Invalid Unit 4 study record ${firstId}: nonreciprocal connection note for ${firstEffectId}`],
+  ['extra note', /connectionNotes:\s*Object\.freeze\(\{\s*\.\.\.connections\.connectionNotes\s*\}\),/, "connectionNotes: Object.freeze({ ...connections.connectionNotes, 'apwh-u4-extra': 'Extra note.' }),", `Invalid Unit 4 study record ${firstId}: extra connection note key apwh-u4-extra`],
+  ['unresolved frozen link', /effectStudyPointIds:\s*Object\.freeze\(\[\s*\.\.\.connections\.effectStudyPointIds\s*\]\),/, "effectStudyPointIds: Object.freeze([...connections.effectStudyPointIds, 'apwh-u4-missing-link']),", `Invalid Unit 4 study record ${firstId}: unresolved connection apwh-u4-missing-link`],
+];
+for (const [label, search, replacement, message] of graphMutationCases) {
+  test(`rejects graph ${label}`, () => {
+    assertModuleError(label, replaceSource(label, search, replacement), message);
+  });
+}
+
+test('rejects malformed Unit 4 cards with exact kind, ID, and rule diagnostics', () => {
+  const contextId = 'apwh-u4-context-land-to-oceanic-empires';
+  const synthesisId = 'apwh-u4-synthesis-extraction-hierarchy-revolution';
+  const cases = [
+    ['missing role', "UNIT_CARD_LIST[0].role = '';", 'context', contextId, 'missing role'],
+    ['missing title', "UNIT_CARD_LIST[0].title = '';", 'context', contextId, 'missing title'],
+    ['empty takeaway', "UNIT_CARD_LIST[0].takeaways[0] = '';", 'context', contextId, 'empty takeaway'],
+    ['missing takeaway', 'UNIT_CARD_LIST[0].takeaways.pop();', 'context', contextId, 'takeaways must contain exactly three items'],
+    ['duplicate kind', "UNIT_CARD_LIST[1].kind = 'context';", 'context', synthesisId, 'duplicate kind context'],
+    ['duplicate ID', 'UNIT_CARD_LIST[1].id = UNIT_CARD_LIST[0].id;', 'synthesis', contextId, 'duplicate card ID'],
+    ['invalid ID', "UNIT_CARD_LIST[0].id = 'apwh-u3-context-wrong-unit';", 'context', 'apwh-u3-context-wrong-unit', 'invalid stable ID'],
+    ['invalid skill', "UNIT_CARD_LIST[0].examSkills = ['Argumentation'];", 'context', contextId, 'invalid examSkill Argumentation'],
+    ['nonarray skill', "UNIT_CARD_LIST[0].examSkills = 'Causation';", 'context', contextId, 'examSkills must be an array'],
+    ['empty skills', 'UNIT_CARD_LIST[0].examSkills = [];', 'context', contextId, 'missing examSkills'],
+    ['duplicate skill', "UNIT_CARD_LIST[0].examSkills = ['Causation', 'Causation'];", 'context', contextId, 'duplicate examSkill Causation'],
+    ['oversized skills', "UNIT_CARD_LIST[0].examSkills = ['Contextualization', 'Causation', 'Comparison'];", 'context', contextId, 'too many examSkills'],
+  ];
+  for (const [label, statement, kind, id, rule] of cases) {
+    assertModuleError(label, mutateUnitCards(label, statement),
+      `Invalid Unit 4 unit card ${kind} ${id}: ${rule}`);
+  }
+});
+
+test('rejects null and non-object Unit 4 cards before dereferencing', () => {
+  assertModuleError('null card', mutateUnitCards('null card', 'UNIT_CARD_LIST[0] = null;'),
+    'Invalid Unit 4 unit card (missing kind) (missing ID): card must be a non-null plain object');
+  assertModuleError('scalar card', mutateUnitCards('scalar card', 'UNIT_CARD_LIST[0] = 42;'),
+    'Invalid Unit 4 unit card (missing kind) (missing ID): card must be a non-null plain object');
+});
+
+test('rejects a missing Unit 4 card with a safe exact-set diagnostic', () => {
+  assertModuleError('missing synthesis card', mutateUnitCards(
+    'missing synthesis card',
+    'UNIT_CARD_LIST.pop();',
+  ), 'Invalid Unit 4 unit card (missing kind) (missing ID): expected exactly context and synthesis');
+});
+
+test('frozen graph and card mutations cannot alter canonical lookup reads', () => {
+  const record = api.getById(firstId);
+  const originalEffects = [...record.effectStudyPointIds];
+  const originalNote = record.connectionNotes[firstEffectId];
+  assert.throws(() => record.effectStudyPointIds.push('apwh-u4-mutation'));
+  assert.throws(() => { record.connectionNotes[firstEffectId] = 'Changed.'; });
+  assert.throws(() => api.getUnitCard('context').takeaways.pop());
+  assert.deepEqual(api.getById(firstId).effectStudyPointIds, originalEffects);
+  assert.equal(api.getById(firstId).connectionNotes[firstEffectId], originalNote);
+  assert.deepEqual(api.getUnitCard('context'), expectedUnitCards.context);
 });
