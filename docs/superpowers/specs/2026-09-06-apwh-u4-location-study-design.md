@@ -66,7 +66,7 @@ Topic 4.8 is expressed through selected record assignments, Context and Synthesi
 | --- | --- | --- | --- |
 | `42` | `Maritime Portugal · Lisbon` | `world-event-42-0` | Atlantic constraints, navigation, and state-sponsored expansion |
 | `2` | `Portuguese Trading-Post Empire · Malacca` | `world-event-2-2` | Existing Indian Ocean commerce, fortified ports, and Asian limits |
-| `68` | `Caribbean Colonization · Santo Domingo` | `world-event-68-0` | Disease, conquest, encomienda, and biological exchange |
+| `68` | `Caribbean Colonization · Santo Domingo` | `world-event-68-0` | Biological exchange, disease, conquest, and encomienda |
 | `57` | `Spanish Silver Economy · Potosí` | `world-event-57-0` | Silver extraction, colonial mit'a, and global monetary flows |
 | `60` | `Brazilian Sugar Plantations · Salvador` | `world-event-60-0` | Sugar profits, plantation organization, and enslaved labor |
 | `87` | `Atlantic Slave Trade · Elmina` | `world-event-87-0` | Captive supply, Middle Passage, and consequences in Africa |
@@ -87,9 +87,9 @@ The stable IDs below are required. Dates may be refined during source audit only
 | Malacca | `apwh-u4-malacca-existing-indian-ocean-networks` | `Indian Ocean Trade before Portuguese Arrival` | `1450–1500` | 4.2, 4.8 | condition |
 | Malacca | `apwh-u4-malacca-cartaz-fortified-ports` | `Cartaz Passes and Fortified Ports` | `1511–1600` | 4.2, 4.4 | mechanism |
 | Malacca | `apwh-u4-malacca-asian-responses-limits` | `Asian Responses and the Limits of Portuguese Power` | `1500–1650` | 4.5, 4.6 | consequence |
-| Santo Domingo | `apwh-u4-santo-domingo-disease-demographic-collapse` | `Disease and Demographic Collapse` | `1492–1600` | 4.3, 4.8 | condition |
-| Santo Domingo | `apwh-u4-santo-domingo-conquest-encomienda` | `Conquest and Encomienda` | `1503–1542` | 4.3, 4.4 | mechanism |
-| Santo Domingo | `apwh-u4-santo-domingo-columbian-exchange` | `The Columbian Exchange in the Caribbean` | `1492–1600` | 4.3, 4.8 | consequence |
+| Santo Domingo | `apwh-u4-santo-domingo-columbian-exchange` | `The Columbian Exchange in the Caribbean` | `1492–1600` | 4.3, 4.8 | condition |
+| Santo Domingo | `apwh-u4-santo-domingo-disease-demographic-collapse` | `Disease and Demographic Collapse` | `1492–1600` | 4.3, 4.8 | mechanism |
+| Santo Domingo | `apwh-u4-santo-domingo-conquest-encomienda` | `Conquest and Encomienda` | `1503–1542` | 4.3, 4.4 | consequence |
 | Potosí | `apwh-u4-potosi-silver-mercury-boom` | `Silver Discovery and Mercury Refining` | `1545–1600` | 4.4, 4.5 | condition |
 | Potosí | `apwh-u4-potosi-colonial-mita-labor` | `Colonial Mit'a and Coerced Mining Labor` | `1573–1750` | 4.4, 4.7 | mechanism |
 | Potosí | `apwh-u4-potosi-global-silver-flows` | `Potosí Silver in the Global Economy` | `1570–1750` | 4.5, 4.8 | consequence |
