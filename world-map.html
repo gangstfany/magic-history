@@ -5408,6 +5408,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     }
     if (!target || !isDirectStudyConnection(source, id)
         || !locationStudyRecords(target.locationNumber).some(record => record.id === id)) return false;
+    const syncUnit4Timeline = api.unitId === 'u4';
+    const targetTimelineEvent = syncUnit4Timeline ? timelineEventByKey.get(target.mainEventKey) : null;
+    const targetTimelineAnchor = targetTimelineEvent?.anchors?.find(anchor =>
+      String(anchor.num) === target.locationNumber);
+    if (syncUnit4Timeline
+        && (!targetTimelineEvent || targetTimelineEvent.unit !== api.unitId || !targetTimelineAnchor)) return false;
     const disclosurePrefix = `${source.id}:`;
     const openDisclosures = Object.freeze([...locationStudyState.openDisclosures]
       .filter(stateKey => stateKey.startsWith(disclosurePrefix))
@@ -5424,6 +5430,15 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     locationStudyState.openDisclosures.clear();
     locationStudyState.locationNumber = target.locationNumber;
     locationStudyState.expandedStudyId = id;
+    if (syncUnit4Timeline) {
+      selectedTimelineKey = targetTimelineEvent.key;
+      syncTimelineSelection(targetTimelineEvent, {
+        reveal: true,
+        moveMap: target.locationNumber !== sourceLocationNumber,
+        preferredAnchor: targetTimelineAnchor,
+        renderDetail: false,
+      });
+    }
     renderLocationStudy(target.locationNumber, { focusHeading });
     return locationStudyState.expandedStudyId === id
       && !!eventPanel.querySelector(`[data-study-detail="${CSS.escape(id)}"]`);
@@ -5443,16 +5458,32 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         || !frame.openDisclosures.every(key => STUDY_DISCLOSURE_KEYS.has(key))) return false;
     const source = api.getById(frame.studyId);
     const target = api.getById(frame.invokerTargetId);
+    const syncUnit4Timeline = api.unitId === 'u4';
+    const sourceTimelineEvent = syncUnit4Timeline && source
+      ? timelineEventByKey.get(source.mainEventKey) : null;
+    const sourceTimelineAnchor = sourceTimelineEvent?.anchors?.find(anchor =>
+      String(anchor.num) === source.locationNumber);
     if (!source || source.locationNumber !== frame.locationNumber
         || !target || target.locationNumber !== current.locationNumber
         || !isDirectStudyConnection(source, target.id)
-        || !locationStudyRecords(frame.locationNumber).some(record => record.id === source.id)) return false;
+        || !locationStudyRecords(frame.locationNumber).some(record => record.id === source.id)
+        || (syncUnit4Timeline
+          && (!sourceTimelineEvent || sourceTimelineEvent.unit !== api.unitId || !sourceTimelineAnchor))) return false;
     invalidateLocationStudyRestore();
     locationStudyState.connectionStack.pop();
     locationStudyState.openDisclosures.clear();
     frame.openDisclosures.forEach(key => locationStudyState.openDisclosures.add(`${source.id}:${key}`));
     locationStudyState.locationNumber = frame.locationNumber;
     locationStudyState.expandedStudyId = source.id;
+    if (syncUnit4Timeline) {
+      selectedTimelineKey = sourceTimelineEvent.key;
+      syncTimelineSelection(sourceTimelineEvent, {
+        reveal: true,
+        moveMap: source.locationNumber !== current.locationNumber,
+        preferredAnchor: sourceTimelineAnchor,
+        renderDetail: false,
+      });
+    }
     renderLocationStudy(frame.locationNumber);
     const restoreToken = ++locationStudyRestoreToken;
     locationStudyState.pendingRestore = Object.freeze({
@@ -5555,7 +5586,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     eventZone.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }
 
-  function syncTimelineSelection(event, { reveal = false, moveMap = false, preferredAnchor = null } = {}) {
+  function syncTimelineSelection(event, {
+    reveal = false,
+    moveMap = false,
+    preferredAnchor = null,
+    renderDetail = true,
+  } = {}) {
     const anchor = preferredTimelineAnchor(event, preferredAnchor);
     selectedTimelineAnchor = anchor ? { num: String(anchor.num), region: anchor.region } : null;
     timelineTrack.querySelectorAll('.world-timeline-card').forEach(card => {
@@ -5571,7 +5607,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const groups = (event.visibleAnchors || event.anchors)
       .map(anchor => findPinGroup(anchor.num)).filter(Boolean);
     groups.forEach(group => { group.classList.add('timeline-selected', 'revealed'); });
-    if (activeLearningView === 'map' && activeMapMode === 'events') renderTimelineDetail(event, anchor);
+    if (renderDetail && activeLearningView === 'map' && activeMapMode === 'events') renderTimelineDetail(event, anchor);
     const preferredGroup = anchor && findPinGroup(anchor.num);
     if (moveMap && preferredGroup) fitToPins([preferredGroup], 450);
     if (reveal) revealTimelineCard(event.key);
@@ -6083,7 +6119,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       const g = pinGroups().find(x => pinNum(x) === num);
       if (g) g.classList.add('revealed');        // 结果条对应的标点保持可见
       showingResults = false;                    // 交棒给标点自己的事件卡
-      if (!(eventKey && selectTimelineEvent(eventKey, {
+      const selectedEventKey = eventKey
+        || (getActivePeriod() === 'u4' ? locationStudyRecords(num)[0]?.mainEventKey : null);
+      if (!(selectedEventKey && selectTimelineEvent(selectedEventKey, {
         reveal: true, moveMap: false, preferredAnchor: { num, region }
       })) && !selectTimelineByPin(num, true)) {
         renderEventPanel(num, g && g.querySelector('circle') ? g.querySelector('circle').getAttribute('fill') : '#8b1a1a');
