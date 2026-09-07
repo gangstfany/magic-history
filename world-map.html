@@ -5533,9 +5533,23 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         || !number || !ordinaryLocationStudyContext()
         || !eventPanel.querySelector(`[data-location-study-back="${CSS.escape(number)}"]`)) return false;
     const returnContext = locationStudyState.returnContext;
-    clearLocationStudyState();
     const timelineEvent = returnContext?.kind === 'timeline'
       ? timelineEventByKey.get(returnContext.eventKey) : null;
+    const rootFrame = locationStudyState.connectionStack[0] || null;
+    const rootRecord = rootFrame && typeof api.getById === 'function'
+      ? api.getById(rootFrame.studyId) : null;
+    const rootTimeline = timelineEvent
+      ? { event: timelineEvent, anchor: preferredTimelineAnchor(timelineEvent, returnContext.anchor) }
+      : locationStudyTimelineBinding(rootRecord);
+    const syncTimeline = api.connectionTimelineMode === 'main-event' && !!rootFrame;
+    if (syncTimeline && (!rootTimeline || typeof restoreLocationStudyTimelineFilters !== 'function')) return false;
+    if (syncTimeline) {
+      restoreLocationStudyTimelineFilters(rootFrame.filterSnapshot, rootTimeline.event, rootTimeline.anchor);
+      syncTimelineSelection(rootTimeline.event, {
+        reveal: true, moveMap: true, preferredAnchor: rootTimeline.anchor, renderDetail: false,
+      });
+    }
+    clearLocationStudyState();
     if (timelineEvent) {
       const anchor = preferredTimelineAnchor(timelineEvent, returnContext.anchor);
       renderTimelineDetail(timelineEvent, anchor);
@@ -5778,6 +5792,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   };
   // 全局只允许同时激活一个地区(单选,不是多选)
   let activeRegion = null;
+  let suppressRegionFilterApply = false;
 
   function positionRegionLabel(evt) {
     const pad = 14;
@@ -5792,7 +5807,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   function revealRegionPins(region, on) {
     // 有筛选在生效时,谁该亮由 apply() 统一决定(它会把地区当成再收窄一层),
     // 这里一股脑全亮会把不符合筛选的标点也放出来。
-    if (filterIsActive && filterIsActive()) { if (onRegionChange) onRegionChange(); return; }
+    if (filterIsActive && filterIsActive()) {
+      if (onRegionChange && !suppressRegionFilterApply) onRegionChange();
+      return;
+    }
     svg.querySelectorAll(`.pin-group[data-region="${region}"]`).forEach(g => {
       g.classList.toggle('revealed', on);
     });
@@ -5823,7 +5841,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (filtering) {
       // 收起地区 = 把筛选的范围放回全球。activeRegion 是在 paintRegion 之后才清的,
       // 所以那次重算用的还是旧范围,这里必须再算一次。
-      if (onRegionChange) onRegionChange();
+      if (onRegionChange && !suppressRegionFilterApply) onRegionChange();
     } else {
       // 该地区的标点一起收起了,下方展开的事件也跟着清空
       eventPanel.classList.remove('show');
@@ -5833,7 +5851,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     activeNum = null;
     hideAllRoutes();
     animateTransform(MIN_ZOOM, 0, 0, 500);
-    if (!filtering && onRegionChange) onRegionChange();
+    if (!filtering && onRegionChange && !suppressRegionFilterApply) onRegionChange();
   }
 
   function activateRegion(region) {
@@ -5851,7 +5869,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     hideAllRoutes();
     // 标点比较挤的地区(欧洲/西非那些)点开后自动把镜头推近框住,不用手动去找
     fitToPins(Array.from(svg.querySelectorAll(`.pin-group[data-region="${region}"]`)));
-    if (!(filterIsActive && filterIsActive()) && onRegionChange) onRegionChange();
+    if (!(filterIsActive && filterIsActive()) && onRegionChange && !suppressRegionFilterApply) onRegionChange();
   }
 
   // ---- 键盘 / 读屏可达性 ----
@@ -6122,13 +6140,25 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       tokens: Object.freeze(tokens.slice()),
       cats: Object.freeze([...activeCats]),
       inputValue: searchInput ? searchInput.value : '',
+      region: activeRegion,
     });
+    const setLocationStudyRegion = region => {
+      if (region === activeRegion) return;
+      suppressRegionFilterApply = true;
+      try {
+        if (region) activateRegion(region);
+        else deactivateRegion();
+      } finally {
+        suppressRegionFilterApply = false;
+      }
+    };
     const applyLocationStudyFilterSnapshot = snapshot => {
       query = snapshot.query;
       tokens = [...snapshot.tokens];
       activeCats = new Set(snapshot.cats);
       if (searchInput) searchInput.value = snapshot.inputValue;
       syncPills();
+      setLocationStudyRegion(snapshot.region);
     };
     revealLocationStudyTimelineEvent = (event, anchor) => {
       const visible = visibleTimelineEvents.some(item => item.key === event.key
@@ -6140,6 +6170,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       activeCats = new Set(allCats);
       if (searchInput) searchInput.value = '';
       syncPills();
+      setLocationStudyRegion(null);
       selectedTimelineKey = event.key;
       selectedTimelineAnchor = { num: String(anchor.num), region: anchor.region };
       apply({ preserveLocationStudy: true });
@@ -6307,7 +6338,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       getPeriodOptions: () => periodOptions.slice(),
       getCats: () => cats.map(c => ({ abbr: c.abbr, full: c.full, color: c.color, count: catCount(c.abbr) })),
       getActiveCats: () => new Set(activeCats),
-      getState: () => ({ query, cats: new Set(activeCats), period: activePeriod }),
+      getState: () => ({ query, cats: new Set(activeCats), period: activePeriod, region: activeRegion }),
       setQuery, toggleCat, setPeriod, reset, openHit, getTimelineState,
       openEventInMap: (num, region, eventKey) => openEventInMap(
         num, region, eventKey, { selectEventUnit: true }),
