@@ -2003,15 +2003,70 @@ async function assertUnit4CanonicalStudyState(context, fixture, studyId, connect
   }, `${label} canonical iframe state must match its exact target: ${JSON.stringify(actual)}`);
 }
 
-async function assertUnit4ConnectionJump(page, frame, surface, jump) {
+async function unit4FilterState(context) {
+  return context.locator('body').evaluate(() => {
+    const state = window.__mapFilter.getState();
+    const pressedRegions = [...document.querySelectorAll('.region-path[aria-pressed="true"]')]
+      .map(path => path.dataset.region).sort();
+    return {
+      query: state.query,
+      cats: [...state.cats].sort(),
+      allCats: window.__mapFilter.getCats().map(cat => cat.abbr).sort(),
+      period: state.period,
+      region: state.region ?? pressedRegions[0] ?? null,
+      pressedRegions,
+    };
+  });
+}
+
+async function prepareUnit4FilteredStudyJump(context) {
+  await context.locator('body').evaluate(() => {
+    window.__mapFilter.reset();
+    window.__mapFilter.setLearningView('map');
+    window.__mapFilter.setPeriod('u4');
+    window.__mapFilter.toggleCat('GOV');
+    const region = document.querySelector('.region-path[data-region="americas"][aria-pressed]');
+    region.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+}
+
+async function assertHomepageFilterControls(page, expected, label) {
+  assert.equal(await page.locator('#hostSearch').inputValue(), expected.query,
+    `${label} homepage search control must mirror the iframe query`);
+  assert.equal(await page.locator('#hostPeriod').inputValue(), expected.period,
+    `${label} homepage Unit control must mirror the iframe period`);
+  const pressedCats = await page.locator('#hostCats [data-cat][aria-pressed="true"]')
+    .evaluateAll(nodes => nodes.map(node => node.dataset.cat).sort());
+  assert.deepEqual(pressedCats, expected.cats,
+    `${label} homepage category controls must mirror the iframe categories`);
+}
+
+async function assertUnit4ConnectionJump(page, frame, surface, jump, {
+  filtered = false,
+  outerBack = false,
+} = {}) {
   const sourceFixture = unit4FixtureByStudyId(jump.sourceId);
   const targetFixture = unit4FixtureByStudyId(jump.targetId);
   assert.ok(sourceFixture && targetFixture,
     `${surface} Unit 4 ${jump.name} fixture must resolve literal source and target locations`);
   const label = `${surface} Unit 4 ${jump.name} (${sourceFixture.label} -> ${targetFixture.label})`;
+  const canonicalContext = surface === 'standalone' ? page : frame;
+  if (filtered) await prepareUnit4FilteredStudyJump(canonicalContext);
   const opened = surface === 'standalone'
     ? await openStandaloneUnit4Study(page, sourceFixture, label)
     : await openHomepageUnit4Study(page, frame, sourceFixture, label);
+  const sourceFilter = await unit4FilterState(canonicalContext);
+  if (filtered) {
+    assert.deepEqual({ ...sourceFilter, allCats: undefined }, {
+      query: surface === 'homepage' ? sourceFixture.title : '',
+      cats: sourceFilter.allCats.filter(cat => cat !== 'GOV'),
+      allCats: undefined,
+      period: 'u4',
+      region: 'americas',
+      pressedRegions: ['americas'],
+    }, `${label} must begin with the intended query/category/region filters`);
+    if (surface === 'homepage') await assertHomepageFilterControls(page, sourceFilter, `${label} source`);
+  }
   await opened.view.locator(`[data-study-event="${jump.sourceId}"]`).click();
   let sourceDetail = opened.view.locator(`[data-study-detail="${jump.sourceId}"]`);
   const connections = sourceDetail.locator('details[data-study-disclosure="connections"]');
@@ -2027,8 +2082,15 @@ async function assertUnit4ConnectionJump(page, frame, surface, jump) {
   let targetView = opened.panel.locator(
     `[data-location-study-view="${targetFixture.number}"][data-location-study-unit="u4"]`);
   await expectVisible(targetView, `${label} must render the target study view`);
-  const canonicalContext = surface === 'standalone' ? page : frame;
   await assertUnit4CanonicalStudyState(canonicalContext, targetFixture, jump.targetId, 1, label);
+  if (filtered) {
+    const targetFilter = await unit4FilterState(canonicalContext);
+    assert.deepEqual(targetFilter, {
+      query: '', cats: targetFilter.allCats, allCats: targetFilter.allCats,
+      period: 'u4', region: null, pressedRegions: [],
+    }, `${label} must temporarily release every filter that can hide the target`);
+    if (surface === 'homepage') await assertHomepageFilterControls(page, targetFilter, `${label} target`);
+  }
   if (surface === 'homepage' && sourceFixture.number !== targetFixture.number) {
     assert.equal(await page.locator('#hostSearch').inputValue(), '',
       `${label} must clear the source-only homepage search while showing the cross-location target`);
@@ -2046,6 +2108,21 @@ async function assertUnit4ConnectionJump(page, frame, surface, jump) {
   assert.equal(await targetView.locator('[data-location-study-back]').count(), 1,
     `${label} must keep the outer location Back action available`);
 
+  if (outerBack) {
+    await targetView.locator(`[data-location-study-back="${targetFixture.number}"]`).click();
+    await expectVisible(opened.panel.locator('.event-list'),
+      `${label} outer Back must restore the source ordinary event`);
+    await expectVisible(opened.entry, `${label} outer Back must restore the source study entry`);
+    assert.deepEqual(await unit4OrdinaryEventSnapshot(opened.panel), opened.ordinarySnapshot,
+      `${label} outer Back must restore the exact source ordinary event detail`);
+    await assertUnit4TimelineState(canonicalContext, sourceFixture, `${label} outer Back`);
+    const restoredFilter = await unit4FilterState(canonicalContext);
+    assert.deepEqual(restoredFilter, sourceFilter,
+      `${label} outer Back must restore query, categories, and region exactly`);
+    if (surface === 'homepage') await assertHomepageFilterControls(page, restoredFilter, `${label} outer Back`);
+    return;
+  }
+
   await targetView.locator('[data-study-connection-back]').click();
   if (surface === 'homepage' && sourceFixture.number !== targetFixture.number) {
     assert.equal(await page.locator('#hostSearch').inputValue(), sourceFixture.title,
@@ -2058,6 +2135,12 @@ async function assertUnit4ConnectionJump(page, frame, surface, jump) {
   await expectVisible(sourceDetail, `${label} Back must restore the source learning record`);
   await assertUnit4CanonicalStudyState(canonicalContext, sourceFixture, jump.sourceId, 0,
     `${label} Back`);
+  if (filtered) {
+    const restoredFilter = await unit4FilterState(canonicalContext);
+    assert.deepEqual(restoredFilter, sourceFilter,
+      `${label} connection Back must restore query, categories, and region exactly`);
+    if (surface === 'homepage') await assertHomepageFilterControls(page, restoredFilter, `${label} Back`);
+  }
   assert.equal(await sourceView.locator(`[data-study-event="${jump.sourceId}"]`).getAttribute('aria-expanded'), 'true',
     `${label} Back must restore the source expanded record`);
   assert.equal(await sourceDetail.locator('details[data-study-disclosure="connections"]').getAttribute('open'), '',
@@ -2079,6 +2162,11 @@ async function verifyStandaloneUnit4StudyContract(page) {
   for (const jump of UNIT_4_CONNECTION_JUMPS) {
     await assertUnit4ConnectionJump(page, null, 'standalone', jump);
   }
+  const crossLocationJump = UNIT_4_CONNECTION_JUMPS[1];
+  await assertUnit4ConnectionJump(page, null, 'standalone', crossLocationJump, { outerBack: true });
+  await assertUnit4ConnectionJump(page, null, 'standalone', crossLocationJump, { filtered: true });
+  await assertUnit4ConnectionJump(page, null, 'standalone', crossLocationJump,
+    { filtered: true, outerBack: true });
 
   const fixture = UNIT_4_STUDY_VIEWS[0];
   const label = `standalone ${fixture.label} Unit 4 cleanup`;
@@ -2117,6 +2205,11 @@ async function verifyHomepageUnit4StudyContract(page, frame) {
   for (const jump of UNIT_4_CONNECTION_JUMPS) {
     await assertUnit4ConnectionJump(page, frame, 'homepage', jump);
   }
+  const crossLocationJump = UNIT_4_CONNECTION_JUMPS[1];
+  await assertUnit4ConnectionJump(page, frame, 'homepage', crossLocationJump, { outerBack: true });
+  await assertUnit4ConnectionJump(page, frame, 'homepage', crossLocationJump, { filtered: true });
+  await assertUnit4ConnectionJump(page, frame, 'homepage', crossLocationJump,
+    { filtered: true, outerBack: true });
 
   const fixture = UNIT_4_STUDY_VIEWS[0];
   const label = `homepage ${fixture.label} Unit 4 cleanup`;
