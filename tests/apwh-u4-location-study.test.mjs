@@ -24,6 +24,7 @@ const parseLedgerRows = source => {
   for (let index = headerIndex + 2; index < lines.length; index += 1) {
     const line = lines[index].trim();
     if (!line || !line.startsWith('|')) break;
+    if (!line.endsWith('|')) failLedger('row must start and end with pipe delimiters');
     const cells = line.split('|').slice(1, -1).map(cell => cell.trim());
     if (cells.length !== 5) failLedger('row must contain exactly five columns');
     const idMatch = cells[0].match(/^`(apwh-u4-[a-z0-9]+(?:-[a-z0-9]+)*)`$/);
@@ -591,11 +592,23 @@ test('locks all five English source-ledger columns for exactly twenty-four Unit 
 
 const ledgerDivider = '| --- | --- | --- | --- | --- |';
 const firstLedgerId = 'apwh-u4-lisbon-atlantic-constraints';
+const firstLedgerMainEvent = 'world-event-42-0';
+const firstLedgerRow = ledgerSource.split('\n').find(line => line.includes(`\`${firstLedgerId}\``));
 const ledgerParserMutationCases = [
+    [
+      'trailing garbage after the closing row delimiter',
+      ledgerSource.replace(firstLedgerRow, `${firstLedgerRow} trailing garbage`),
+      'Invalid Unit 4 source ledger: row must start and end with pipe delimiters',
+    ],
     [
       'missing closing Stable ID backtick',
       ledgerSource.replace(`\`${firstLedgerId}\``, `\`${firstLedgerId}`),
       `Invalid Unit 4 source ledger: malformed Stable ID cell \`${firstLedgerId}`,
+    ],
+    [
+      'missing closing Main event backtick',
+      ledgerSource.replace(`\`${firstLedgerMainEvent}\``, `\`${firstLedgerMainEvent}`),
+      `Invalid Unit 4 source ledger: malformed Main event cell \`${firstLedgerMainEvent}`,
     ],
     [
       'unquoted extra Unit 4 row',
@@ -962,6 +975,8 @@ test('rejects malformed Unit 4 cards with exact kind, ID, and rule diagnostics',
 
 const cardIdMutationCases = [
   ['kind and ID mismatch', "UNIT_CARD_LIST[0].id = 'apwh-u4-synthesis-wrong-kind';", 'apwh-u4-synthesis-wrong-kind', 'invalid stable ID'],
+  ['empty ID', "UNIT_CARD_LIST[0].id = '';", '(missing ID)', 'card ID must be a nonempty string'],
+  ['whitespace-only ID', "UNIT_CARD_LIST[0].id = '   ';", '(missing ID)', 'card ID must be a nonempty string'],
   ['numeric ID', 'UNIT_CARD_LIST[0].id = 42;', '42', 'card ID must be a nonempty string'],
   ['symbol ID', "UNIT_CARD_LIST[0].id = Symbol('card');", 'Symbol(card)', 'card ID must be a nonempty string'],
 ];
