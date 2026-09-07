@@ -1182,10 +1182,9 @@ nav.topnav {
       }
       const studyBack = e.target.closest('[data-location-study-back]');
       if (studyBack && win.__mapFilter.backLocationStudy) {
-        const number = studyBack.dataset.locationStudyBack;
         if (win.__mapFilter.backLocationStudy()) {
           syncHomeEvents();
-          homeEvents.querySelector(`[data-location-study-open="${CSS.escape(number)}"]`)?.focus();
+          homeEvents.querySelector('[data-location-study-open]')?.focus();
         }
         return;
       }

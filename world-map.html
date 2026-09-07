@@ -5536,6 +5536,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const timelineEvent = returnContext?.kind === 'timeline'
       ? timelineEventByKey.get(returnContext.eventKey) : null;
     const rootFrame = locationStudyState.connectionStack[0] || null;
+    const rootFilterFrame = locationStudyState.connectionStack.find(frame => frame.filterSnapshot) || null;
     const rootRecord = rootFrame && typeof api.getById === 'function'
       ? api.getById(rootFrame.studyId) : null;
     const rootTimeline = timelineEvent
@@ -5544,7 +5545,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const syncTimeline = api.connectionTimelineMode === 'main-event' && !!rootFrame;
     if (syncTimeline && (!rootTimeline || typeof restoreLocationStudyTimelineFilters !== 'function')) return false;
     if (syncTimeline) {
-      restoreLocationStudyTimelineFilters(rootFrame.filterSnapshot, rootTimeline.event, rootTimeline.anchor);
+      restoreLocationStudyTimelineFilters(rootFilterFrame?.filterSnapshot || null,
+        rootTimeline.event, rootTimeline.anchor);
       syncTimelineSelection(rootTimeline.event, {
         reveal: true, moveMap: true, preferredAnchor: rootTimeline.anchor, renderDetail: false,
       });
