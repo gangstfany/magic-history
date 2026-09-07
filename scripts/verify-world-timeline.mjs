@@ -9,6 +9,7 @@ import { runInNewContext } from 'node:vm';
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PAGE_FILE = join(PROJECT_ROOT, 'world-map.html');
+const HOME_PAGE_FILE = join(PROJECT_ROOT, 'index.html');
 const SOURCE_ID_BASELINE_FILE = join(PROJECT_ROOT, 'scripts', 'world-source-id-baseline.json');
 const MIME_TYPES = Object.freeze({
   '.css': 'text/css; charset=utf-8',
@@ -209,6 +210,55 @@ const UNIT_3_STUDY_VIEWS = Object.freeze([
 ]);
 
 const UNIT_3_LENSES = Object.freeze(['Expansion', 'Administration', 'Legitimation & Conflict']);
+
+const UNIT_4_LISBON_FIXTURE = Object.freeze({
+  number: '42',
+  region: 'europe',
+  mainEventKey: 'world-event-42-0',
+  heading: 'Maritime Portugal · Lisbon · Unit 4',
+  ids: Object.freeze([
+    'apwh-u4-lisbon-atlantic-constraints',
+    'apwh-u4-lisbon-navigation-state-sponsorship',
+    'apwh-u4-lisbon-sea-route-indian-ocean',
+  ]),
+});
+
+function verifyUnit4RendererRegistrationSources(worldMapSource, homePageSource) {
+  const scriptTag = '<script src="data/apwh-u4-location-study.js"></script>';
+  const pageLogicStart = '<script>\n(function () {';
+  for (const [label, source] of [
+    ['world-map.html', worldMapSource],
+    ['index.html', homePageSource],
+  ]) {
+    assert.equal(source.split(scriptTag).length - 1, 1,
+      `${label} must load the Unit 4 location-study data script exactly once`);
+    assert.ok(source.indexOf(scriptTag) < source.indexOf(pageLogicStart),
+      `${label} must load the Unit 4 location-study data before page logic`);
+  }
+
+  assert.ok(worldMapSource.indexOf('<script src="data/apwh-u3-location-study.js"></script>')
+    < worldMapSource.indexOf(scriptTag),
+  'world-map.html must load Unit 4 location-study data after the Unit 3 data script');
+
+  const expectedLocationRegistry = `const LOCATION_STUDY_GLOBAL_BY_UNIT = Object.freeze({
+    u1: 'APWH_U1_LOCATION_STUDY',
+    u2: 'APWH_U2_LOCATION_STUDY',
+    u3: 'APWH_U3_LOCATION_STUDY',
+    u4: 'APWH_U4_LOCATION_STUDY',
+  });`;
+  const expectedHomeRegistry = `const HOME_STUDY_GLOBAL_BY_UNIT = Object.freeze({
+    u1: 'APWH_U1_LOCATION_STUDY',
+    u2: 'APWH_U2_LOCATION_STUDY',
+    u3: 'APWH_U3_LOCATION_STUDY',
+    u4: 'APWH_U4_LOCATION_STUDY',
+  });`;
+  const extractRegistry = (source, name) => source.match(
+    new RegExp(`const ${name} = Object\\.freeze\\(\\{[\\s\\S]*?\\n  \\}\\);`))?.[0];
+  assert.equal(extractRegistry(worldMapSource, 'LOCATION_STUDY_GLOBAL_BY_UNIT'), expectedLocationRegistry,
+    'world-map.html must expose the exact Unit 1–4 location-study registry');
+  assert.equal(extractRegistry(homePageSource, 'HOME_STUDY_GLOBAL_BY_UNIT'), expectedHomeRegistry,
+    'index.html must expose the exact Unit 1–4 location-study registry');
+}
 
 async function importFirst(candidates) {
   const require = createRequire(import.meta.url);
@@ -1019,13 +1069,16 @@ async function verifyStandaloneUnit2StudyContract(page) {
   await view.locator(`[data-study-event="${cairo.ids[2]}"]`).click();
   await assertUnit2LongDetailResponsive(page, view, 'standalone Cairo Unit 2');
 
-  await page.evaluate(() => window.__mapFilter.setPeriod('u4'));
-  assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 0,
-    'Unit 4 must not expose a location-study entry');
+  await page.evaluate(() => {
+    window.__mapFilter.setPeriod('u4');
+    window.__mapFilter.openHit('42', 'europe');
+  });
+  await expectVisible(page.locator('#eventPanel [data-location-study-open="42"]'),
+    'Unit 4 Lisbon must expose a location-study entry');
   assert.equal(await page.locator('#eventPanel [data-location-study-view]').count(), 0,
-    'Unit 4 must not retain a location-study view');
+    'switching to the Unit 4 Lisbon entry must not retain the prior Unit 2 study view');
   assert.equal(await page.locator('#eventPanel [data-study-unit-card]').count(), 0,
-    'Unit 4 must not retain Unit 2 bookend cards');
+    'switching to the Unit 4 Lisbon entry must not retain Unit 2 bookend cards');
 }
 
 async function openHomepageUnit2Study(page, frame, fixture) {
@@ -1427,18 +1480,22 @@ async function assertStandaloneUnit3Switching(page) {
     window.__mapFilter.setPeriod('u4');
     window.__mapFilter.openHit('42', 'europe');
   });
-  assert.equal(await page.locator('#eventPanel [data-location-study-open]').count(), 0,
-    'Unit 4 must expose no location-study entry');
-  assert.equal(await page.locator('#eventPanel [data-location-study-view]').count(), 0,
-    'Unit 4 must expose no location-study view');
-  assert.equal(await page.locator('#eventPanel [data-study-unit-card]').count(), 0,
-    'Unit 4 must expose no location-study cards');
-  assert.equal(await page.locator('#eventPanel details[open]').count(), 0,
-    'Unit 4 must expose no stale open study details');
-  assert.equal(await page.evaluate(() => window.__mapFilter.getLocationStudyUiState().unitId), null,
-    'Unit 4 must leave no canonical location-study unit ID');
-  assert.equal(await page.evaluate(() => !!document.activeElement?.closest?.('[data-location-study-view]')), false,
-    'Unit 4 must leave no focus reference inside a removed study view');
+  const entry = page.locator('#eventPanel [data-location-study-open="42"]');
+  await expectVisible(entry, 'Unit 4 Lisbon must expose a location-study entry');
+  assert.equal((await entry.innerText()).trim(), 'View all 3 study points',
+    'Unit 4 Lisbon must expose the shared three-point action label');
+  await entry.click();
+  const unit4View = page.locator(
+    '#eventPanel [data-location-study-view="42"][data-location-study-unit="u4"]');
+  await expectVisible(unit4View, 'Unit 4 Lisbon location-study view must open');
+  assert.equal((await unit4View.locator('.location-study-title').innerText()).trim(),
+    UNIT_4_LISBON_FIXTURE.heading, 'Unit 4 Lisbon must render its exact learner-facing heading');
+  assert.deepEqual(await unit4View.locator('[data-study-event]').evaluateAll(nodes =>
+    nodes.map(node => node.dataset.studyEvent)), UNIT_4_LISBON_FIXTURE.ids,
+  'Unit 4 Lisbon must render its three canonical record cards in order');
+  assert.deepEqual(await trimmedTexts(unit4View.locator('.location-study-unit-role')),
+    ['Unit 4 Context Card', 'Unit 4 Synthesis Card'],
+  'Unit 4 Lisbon must render the shared Context and Synthesis cards');
 }
 
 async function verifyStandaloneUnit3StudyContract(page) {
@@ -1508,21 +1565,44 @@ async function assertHomepageUnit3Switching(page, frame) {
   await page.locator('#hostPeriod').selectOption('u4');
   await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
     ?.__mapFilter?.getState().period === 'u4');
-  await frame.locator('body').evaluate(() => window.__mapFilter.openHit('42', 'europe'));
-  await page.waitForFunction(() => !document.querySelector('#home-events [data-location-study-view]'));
-  assert.equal(await page.locator('#home-events [data-location-study-open]').count(), 0,
-    'homepage Unit 4 must expose no location-study entry');
-  assert.equal(await page.locator('#home-events [data-location-study-view]').count(), 0,
-    'homepage Unit 4 must expose no location-study view');
-  assert.equal(await page.locator('#home-events [data-study-unit-card]').count(), 0,
-    'homepage Unit 4 must expose no location-study cards');
-  assert.equal(await page.locator('#home-events details[open]').count(), 0,
-    'homepage Unit 4 must expose no stale open study details');
-  assert.equal(await frame.locator('body').evaluate(() =>
-    window.__mapFilter.getLocationStudyUiState().unitId), null,
-  'homepage Unit 4 must leave no canonical location-study unit ID');
-  assert.equal(await page.evaluate(() => !!document.activeElement?.closest?.('[data-location-study-view]')), false,
-    'homepage Unit 4 must leave no focus reference inside a removed study view');
+  await page.locator('#hostSearch').fill('');
+  const title = await frame.locator('body').evaluate((body, mainEventKey) =>
+    window.getTimelineState().visibleEvents.find(event => event.key === mainEventKey)?.titleEn,
+  UNIT_4_LISBON_FIXTURE.mainEventKey);
+  assert.ok(title, 'homepage Lisbon fixture must resolve exact world-event-42-0');
+  await page.locator('#hostSearch').fill(title);
+  const result = page.locator(
+    `#home-events [data-event-key="${UNIT_4_LISBON_FIXTURE.mainEventKey}"]`);
+  await result.waitFor();
+  await expectVisible(result, 'homepage Unit 4 search must expose exact world-event-42-0');
+  await result.click();
+  const entry = page.locator('#home-events [data-location-study-open="42"]');
+  await entry.waitFor();
+  const mirroredState = await frame.locator('body').evaluate(() => ({
+    period: window.__mapFilter.getState().period,
+    selectedAnchor: window.getTimelineState().selectedAnchor?.num,
+    selectedEventKey: window.getTimelineState().selectedEventKey,
+  }));
+  assert.deepEqual(mirroredState, {
+    period: 'u4',
+    selectedAnchor: UNIT_4_LISBON_FIXTURE.number,
+    selectedEventKey: UNIT_4_LISBON_FIXTURE.mainEventKey,
+  }, 'homepage Unit 4 bridge must open exact Lisbon anchor and world-event-42-0');
+  await expectVisible(entry, 'homepage Unit 4 Lisbon mirror must expose a location-study entry');
+  assert.equal((await entry.innerText()).trim(), 'View all 3 study points',
+    'homepage Unit 4 Lisbon mirror must expose the shared three-point action label');
+  await entry.click();
+  const unit4View = page.locator(
+    '#home-events [data-location-study-view="42"][data-location-study-unit="u4"]');
+  await expectVisible(unit4View, 'homepage Unit 4 Lisbon mirror study view must open');
+  assert.equal((await unit4View.locator('.location-study-title').innerText()).trim(),
+    UNIT_4_LISBON_FIXTURE.heading, 'homepage Unit 4 Lisbon must render its exact heading');
+  assert.deepEqual(await unit4View.locator('[data-study-event]').evaluateAll(nodes =>
+    nodes.map(node => node.dataset.studyEvent)), UNIT_4_LISBON_FIXTURE.ids,
+  'homepage Unit 4 Lisbon must mirror its three canonical record cards in order');
+  assert.deepEqual(await trimmedTexts(unit4View.locator('.location-study-unit-role')),
+    ['Unit 4 Context Card', 'Unit 4 Synthesis Card'],
+  'homepage Unit 4 Lisbon must mirror the Context and Synthesis cards');
 }
 
 async function assertHomepageUnit3CrossLocationConnection(page, frame) {
@@ -5073,9 +5153,15 @@ async function verifyHomeLearningShell(page, port) {
 
 export async function verifyBrowser() {
   await stat(PAGE_FILE);
+  await stat(HOME_PAGE_FILE);
+  const [worldMapSource, homePageSource] = await Promise.all([
+    readFile(PAGE_FILE, 'utf8'),
+    readFile(HOME_PAGE_FILE, 'utf8'),
+  ]);
+  verifyUnit4RendererRegistrationSources(worldMapSource, homePageSource);
   // Canonical data currently exercises every disclosure, so execute the actual shipped
   // helper to cover the otherwise-unreachable empty-optional-section contract.
-  verifyStudyDisclosureRendererRuntime(await readFile(PAGE_FILE, 'utf8'));
+  verifyStudyDisclosureRendererRuntime(worldMapSource);
   const playwright = await discoverPlaywright();
   const browserPath = await discoverChromium(playwright.chromium);
   const server = startServer();
