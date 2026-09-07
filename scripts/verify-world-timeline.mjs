@@ -2013,7 +2013,7 @@ async function unit4FilterState(context) {
       cats: [...state.cats].sort(),
       allCats: window.__mapFilter.getCats().map(cat => cat.abbr).sort(),
       period: state.period,
-      region: state.region ?? pressedRegions[0] ?? null,
+      apiRegion: state.region ?? null,
       pressedRegions,
     };
   });
@@ -2072,7 +2072,7 @@ async function assertUnit4ConnectionJump(page, frame, surface, jump, {
       cats: sourceFilter.allCats.filter(cat => cat !== 'GOV'),
       allCats: undefined,
       period: 'u4',
-      region: 'americas',
+      apiRegion: 'americas',
       pressedRegions: ['americas'],
     }, `${label} must begin with the intended query/category/region filters`);
     if (surface === 'homepage') await assertHomepageFilterControls(page, sourceFilter, `${label} source`);
@@ -2097,7 +2097,7 @@ async function assertUnit4ConnectionJump(page, frame, surface, jump, {
     const targetFilter = await unit4FilterState(canonicalContext);
     assert.deepEqual(targetFilter, {
       query: '', cats: targetFilter.allCats, allCats: targetFilter.allCats,
-      period: 'u4', region: null, pressedRegions: [],
+      period: 'u4', apiRegion: null, pressedRegions: [],
     }, `${label} must temporarily release every filter that can hide the target`);
     if (surface === 'homepage') await assertHomepageFilterControls(page, targetFilter, `${label} target`);
   }
@@ -2198,7 +2198,7 @@ async function verifyStandaloneUnit4DepthTwoFilterStack(page) {
   const neutralFilter = await unit4FilterState(page);
   assert.deepEqual(neutralFilter, {
     query: '', cats: neutralFilter.allCats, allCats: neutralFilter.allCats,
-    period: 'u4', region: null, pressedRegions: [],
+    period: 'u4', apiRegion: null, pressedRegions: [],
   }, `${label} first Back must retain the intermediate neutral filter state`);
   await middleView.locator('[data-study-connection-back]').click();
   await assertUnit4CanonicalStudyState(page, sourceFixture,
@@ -2206,6 +2206,97 @@ async function verifyStandaloneUnit4DepthTwoFilterStack(page) {
   assert.deepEqual(await unit4FilterState(page), sourceFilter,
     `${label} second Back must restore the original query/category/region snapshot`);
   await resetUnit4StudyJumpFilters(page);
+}
+
+async function followUnit4StudyConnection(view, sourceId, targetId, label) {
+  await view.locator(`[data-study-event="${sourceId}"]`).click();
+  const disclosure = view.locator(
+    `[data-study-detail="${sourceId}"] details[data-study-disclosure="connections"]`);
+  if ((await disclosure.getAttribute('open')) === null) await disclosure.locator('summary').click();
+  const connection = disclosure.locator(`[data-study-connection="${targetId}"]`);
+  await expectVisible(connection, `${label} must expose ${sourceId} -> ${targetId}`);
+  await connection.click();
+}
+
+async function verifyUnit4DepthTwoRootFilterRestore(page, frame, surface) {
+  const canonical = surface === 'standalone' ? page : frame;
+  const source = unit4FixtureByStudyId('apwh-u4-lisbon-navigation-state-sponsorship');
+  const middle = unit4FixtureByStudyId('apwh-u4-lisbon-sea-route-indian-ocean');
+  const target = unit4FixtureByStudyId('apwh-u4-malacca-cartaz-fortified-ports');
+  const sourceId = 'apwh-u4-lisbon-navigation-state-sponsorship';
+  const middleId = 'apwh-u4-lisbon-sea-route-indian-ocean';
+  const targetId = 'apwh-u4-malacca-cartaz-fortified-ports';
+  const label = `${surface} Unit 4 same-event then cross-location depth-two round trip`;
+  if (surface === 'standalone') {
+    await page.evaluate(title => window.__mapFilter.setQuery(title), source.title);
+  }
+  const opened = surface === 'standalone'
+    ? await openStandaloneUnit4Study(page, source, label)
+    : await openHomepageUnit4Study(page, frame, source, label);
+  const sourceFilter = await unit4FilterState(canonical);
+  assert.deepEqual(sourceFilter, {
+    query: source.title,
+    cats: sourceFilter.allCats,
+    allCats: sourceFilter.allCats,
+    period: 'u4',
+    apiRegion: null,
+    pressedRegions: [],
+  }, `${label} must begin with the exact source query and independently neutral region states`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, sourceFilter, `${label} source`);
+
+  await followUnit4StudyConnection(opened.view, sourceId, middleId, `${label} first hop`);
+  let middleView = opened.panel.locator(
+    `[data-location-study-view="${middle.number}"][data-location-study-unit="u4"]`);
+  await assertUnit4CanonicalStudyState(canonical, middle, middleId, 1, `${label} first hop`);
+  assert.deepEqual(await unit4FilterState(canonical), sourceFilter,
+    `${label} same-Timeline-event hop must retain the root query`);
+  if (surface === 'homepage') {
+    await assertHomepageFilterControls(page, sourceFilter, `${label} first hop`);
+    assert.equal(await opened.panel.locator(`[data-study-detail="${middleId}"]`).count(), 1,
+      `${label} homepage mirror must show the exact first-hop record`);
+  }
+
+  await followUnit4StudyConnection(middleView, middleId, targetId, `${label} second hop`);
+  let targetView = opened.panel.locator(
+    `[data-location-study-view="${target.number}"][data-location-study-unit="u4"]`);
+  await assertUnit4CanonicalStudyState(canonical, target, targetId, 2, `${label} second hop`);
+  const neutral = await unit4FilterState(canonical);
+  assert.deepEqual(neutral, {
+    query: '', cats: neutral.allCats, allCats: neutral.allCats,
+    period: 'u4', apiRegion: null, pressedRegions: [],
+  }, `${label} cross-location target must temporarily release the source query`);
+  if (surface === 'homepage') {
+    await assertHomepageFilterControls(page, neutral, `${label} second hop`);
+    assert.equal(await opened.panel.locator(`[data-study-detail="${targetId}"]`).count(), 1,
+      `${label} homepage mirror must show the exact second-hop record`);
+  }
+
+  await targetView.locator('[data-study-connection-back]').click();
+  middleView = opened.panel.locator(
+    `[data-location-study-view="${middle.number}"][data-location-study-unit="u4"]`);
+  await expectVisible(middleView, `${label} connection Back must return to the first-hop view`);
+  await assertUnit4CanonicalStudyState(canonical, middle, middleId, 1, `${label} connection Back`);
+  assert.deepEqual(await unit4FilterState(canonical), sourceFilter,
+    `${label} connection Back must restore the root query captured on the second frame`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, sourceFilter, `${label} connection Back`);
+
+  await followUnit4StudyConnection(middleView, middleId, targetId, `${label} repeated second hop`);
+  targetView = opened.panel.locator(
+    `[data-location-study-view="${target.number}"][data-location-study-unit="u4"]`);
+  await expectVisible(targetView, `${label} repeated second hop must return to Malacca`);
+  await targetView.locator(`[data-location-study-back="${target.number}"]`).click();
+  await expectVisible(opened.panel.locator('.event-list'),
+    `${label} outer Back must restore the Lisbon ordinary event`);
+  await expectVisible(opened.entry, `${label} outer Back must restore the Lisbon study entry`);
+  assert.deepEqual(await unit4OrdinaryEventSnapshot(opened.panel), opened.ordinarySnapshot,
+    `${label} outer Back must restore the exact Lisbon ordinary event`);
+  await assertUnit4TimelineState(canonical, source, `${label} outer Back`);
+  assert.deepEqual(await unit4FilterState(canonical), sourceFilter,
+    `${label} outer Back must restore the earliest non-null root filter snapshot`);
+  assert.equal(await opened.entry.evaluate(element => document.activeElement === element), true,
+    `${label} outer Back must focus the actual Lisbon source entry`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, sourceFilter, `${label} outer Back`);
+  await canonical.locator('body').evaluate(() => window.__mapFilter.reset());
 }
 
 async function verifyStandaloneUnit4StudyContract(page) {
@@ -2226,6 +2317,7 @@ async function verifyStandaloneUnit4StudyContract(page) {
   await assertUnit4ConnectionJump(page, null, 'standalone', crossLocationJump,
     { filtered: true, outerBack: true });
   await verifyStandaloneUnit4DepthTwoFilterStack(page);
+  await verifyUnit4DepthTwoRootFilterRestore(page, null, 'standalone');
 
   const fixture = UNIT_4_STUDY_VIEWS[0];
   const label = `standalone ${fixture.label} Unit 4 cleanup`;
@@ -2269,6 +2361,7 @@ async function verifyHomepageUnit4StudyContract(page, frame) {
   await assertUnit4ConnectionJump(page, frame, 'homepage', crossLocationJump, { filtered: true });
   await assertUnit4ConnectionJump(page, frame, 'homepage', crossLocationJump,
     { filtered: true, outerBack: true });
+  await verifyUnit4DepthTwoRootFilterRestore(page, frame, 'homepage');
 
   const fixture = UNIT_4_STUDY_VIEWS[0];
   const label = `homepage ${fixture.label} Unit 4 cleanup`;
