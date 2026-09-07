@@ -1769,6 +1769,9 @@ async function unit4TimelineState(context) {
         ? { num: timeline.selectedAnchor.num, region: timeline.selectedAnchor.region }
         : null,
       selectedEventKey: timeline.selectedEventKey,
+      visibleEventKeys: timeline.visibleEvents.map(event => event.key),
+      currentEventKeys: [...document.querySelectorAll('.world-timeline-card[aria-current="step"]')]
+        .map(card => card.dataset.eventKey),
       selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
         .map(group => group.querySelector('text')?.textContent.trim()).filter(Boolean).sort(),
     };
@@ -1777,7 +1780,16 @@ async function unit4TimelineState(context) {
 
 async function assertUnit4TimelineState(context, fixture, label) {
   const actual = await unit4TimelineState(context);
-  assert.deepEqual(actual, {
+  assert.ok(actual.visibleEventKeys.includes(fixture.eventKey),
+    `${label} must keep its exact selected Timeline event visible: ${JSON.stringify(actual)}`);
+  assert.deepEqual(actual.currentEventKeys, [fixture.eventKey],
+    `${label} must expose exactly one current Timeline card for its exact event: ${JSON.stringify(actual)}`);
+  assert.deepEqual({
+    period: actual.period,
+    selectedAnchor: actual.selectedAnchor,
+    selectedEventKey: actual.selectedEventKey,
+    selectedMapPins: actual.selectedMapPins,
+  }, {
     period: 'u4',
     selectedAnchor: { num: fixture.number, region: fixture.region },
     selectedEventKey: fixture.eventKey,
@@ -1828,6 +1840,8 @@ async function openHomepageUnit4OrdinaryEvent(page, frame, fixture, label) {
     ?.__mapFilter?.getState().period === 'u4');
   await page.locator('#hostSearch').fill('');
   await page.locator('#hostSearch').fill(fixture.title);
+  await page.waitForFunction(title => document.querySelector('#worldMapFrame')?.contentWindow
+    ?.__mapFilter?.getState().query === title, fixture.title);
   const sourceTitle = await frame.locator('body').evaluate((body, eventKey) =>
     window.getTimelineState().visibleEvents.find(event => event.key === eventKey)?.titleEn || null,
   fixture.eventKey);
@@ -1941,6 +1955,9 @@ async function assertUnit4CanonicalStudyState(context, fixture, studyId, connect
         ? { num: timeline.selectedAnchor.num, region: timeline.selectedAnchor.region }
         : null,
       selectedEventKey: timeline.selectedEventKey,
+      visibleEventKeys: timeline.visibleEvents.map(event => event.key),
+      currentEventKeys: [...document.querySelectorAll('.world-timeline-card[aria-current="step"]')]
+        .map(card => card.dataset.eventKey),
       selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
         .map(group => group.querySelector('text')?.textContent.trim()).filter(Boolean).sort(),
       unitId: studyState.unitId,
@@ -1953,7 +1970,24 @@ async function assertUnit4CanonicalStudyState(context, fixture, studyId, connect
       detailCount: view?.querySelectorAll('[data-study-detail]').length || 0,
     };
   });
-  assert.deepEqual(actual, {
+  assert.ok(actual.visibleEventKeys.includes(fixture.eventKey),
+    `${label} canonical iframe must keep its target Timeline event visible: ${JSON.stringify(actual)}`);
+  assert.deepEqual(actual.currentEventKeys, [fixture.eventKey],
+    `${label} canonical iframe must expose exactly one current target Timeline card: ${JSON.stringify(actual)}`);
+  assert.deepEqual({
+    period: actual.period,
+    selectedAnchor: actual.selectedAnchor,
+    selectedEventKey: actual.selectedEventKey,
+    selectedMapPins: actual.selectedMapPins,
+    unitId: actual.unitId,
+    studyId: actual.studyId,
+    connectionDepth: actual.connectionDepth,
+    viewNumber: actual.viewNumber,
+    viewUnit: actual.viewUnit,
+    heading: actual.heading,
+    detailId: actual.detailId,
+    detailCount: actual.detailCount,
+  }, {
     period: 'u4',
     selectedAnchor: { num: fixture.number, region: fixture.region },
     selectedEventKey: fixture.eventKey,
