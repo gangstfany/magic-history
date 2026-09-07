@@ -3967,6 +3967,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
   // 筛选器的挂起/恢复由下面的 initSearchFilter 赋值(它在闭包里,外面拿不到内部状态)
   let suspendFilters = null, restoreFilters = null, applyFiltersToContext = null, setPeriodFilter = null;
+  let revealLocationStudyTimelineEvent = null, restoreLocationStudyTimelineFilters = null;
   let getActivePeriod = () => document.getElementById('periodFilter')?.value || 'u1';
   let currentEventPass = null;   // 同上:出题时用它拿"当前筛选下的题库"
   let onRegionChange = null, filterIsActive = null;   // 地区现在是筛选的一个维度,两边要互相知道
@@ -5055,6 +5056,14 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     });
   }
 
+  function locationStudyTimelineBinding(record) {
+    const api = activeLocationStudyApi();
+    if (!api || api.connectionTimelineMode !== 'main-event' || !record) return null;
+    const event = timelineEventByKey.get(record.mainEventKey);
+    const anchor = event?.anchors?.find(item => String(item.num) === String(record.locationNumber));
+    return event && event.unit === api.unitId && anchor ? { event, anchor } : null;
+  }
+
   function locationStudyEntryHTML(num, origin = { kind: 'location' }) {
     const records = locationStudyRecords(num);
     if (!records.length) return '';
@@ -5408,34 +5417,34 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     }
     if (!target || !isDirectStudyConnection(source, id)
         || !locationStudyRecords(target.locationNumber).some(record => record.id === id)) return false;
-    const syncUnit4Timeline = api.unitId === 'u4';
-    const targetTimelineEvent = syncUnit4Timeline ? timelineEventByKey.get(target.mainEventKey) : null;
-    const targetTimelineAnchor = targetTimelineEvent?.anchors?.find(anchor =>
-      String(anchor.num) === target.locationNumber);
-    if (syncUnit4Timeline
-        && (!targetTimelineEvent || targetTimelineEvent.unit !== api.unitId || !targetTimelineAnchor)) return false;
+    const syncTimeline = api.connectionTimelineMode === 'main-event';
+    const targetTimeline = locationStudyTimelineBinding(target);
+    if (syncTimeline && (!targetTimeline || typeof revealLocationStudyTimelineEvent !== 'function')) return false;
     const disclosurePrefix = `${source.id}:`;
     const openDisclosures = Object.freeze([...locationStudyState.openDisclosures]
       .filter(stateKey => stateKey.startsWith(disclosurePrefix))
       .map(stateKey => stateKey.slice(disclosurePrefix.length)));
+    const filterSnapshot = syncTimeline
+      ? revealLocationStudyTimelineEvent(targetTimeline.event, targetTimeline.anchor) : null;
     const frame = Object.freeze({
       locationNumber: sourceLocationNumber,
       studyId: source.id,
       openDisclosures,
       scrollTop,
       invokerTargetId: id,
+      filterSnapshot,
     });
     invalidateLocationStudyRestore();
     locationStudyState.connectionStack.push(frame);
     locationStudyState.openDisclosures.clear();
     locationStudyState.locationNumber = target.locationNumber;
     locationStudyState.expandedStudyId = id;
-    if (syncUnit4Timeline) {
-      selectedTimelineKey = targetTimelineEvent.key;
-      syncTimelineSelection(targetTimelineEvent, {
+    if (syncTimeline) {
+      selectedTimelineKey = targetTimeline.event.key;
+      syncTimelineSelection(targetTimeline.event, {
         reveal: true,
         moveMap: target.locationNumber !== sourceLocationNumber,
-        preferredAnchor: targetTimelineAnchor,
+        preferredAnchor: targetTimeline.anchor,
         renderDetail: false,
       });
     }
@@ -5458,30 +5467,25 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         || !frame.openDisclosures.every(key => STUDY_DISCLOSURE_KEYS.has(key))) return false;
     const source = api.getById(frame.studyId);
     const target = api.getById(frame.invokerTargetId);
-    const syncUnit4Timeline = api.unitId === 'u4';
-    const sourceTimelineEvent = syncUnit4Timeline && source
-      ? timelineEventByKey.get(source.mainEventKey) : null;
-    const sourceTimelineAnchor = sourceTimelineEvent?.anchors?.find(anchor =>
-      String(anchor.num) === source.locationNumber);
+    const syncTimeline = api.connectionTimelineMode === 'main-event';
+    const sourceTimeline = locationStudyTimelineBinding(source);
     if (!source || source.locationNumber !== frame.locationNumber
         || !target || target.locationNumber !== current.locationNumber
         || !isDirectStudyConnection(source, target.id)
         || !locationStudyRecords(frame.locationNumber).some(record => record.id === source.id)
-        || (syncUnit4Timeline
-          && (!sourceTimelineEvent || sourceTimelineEvent.unit !== api.unitId || !sourceTimelineAnchor))) return false;
+        || (syncTimeline && (!sourceTimeline
+          || typeof restoreLocationStudyTimelineFilters !== 'function'))) return false;
     invalidateLocationStudyRestore();
     locationStudyState.connectionStack.pop();
     locationStudyState.openDisclosures.clear();
     frame.openDisclosures.forEach(key => locationStudyState.openDisclosures.add(`${source.id}:${key}`));
     locationStudyState.locationNumber = frame.locationNumber;
     locationStudyState.expandedStudyId = source.id;
-    if (syncUnit4Timeline) {
-      selectedTimelineKey = sourceTimelineEvent.key;
-      syncTimelineSelection(sourceTimelineEvent, {
-        reveal: true,
-        moveMap: source.locationNumber !== current.locationNumber,
-        preferredAnchor: sourceTimelineAnchor,
-        renderDetail: false,
+    if (syncTimeline) {
+      restoreLocationStudyTimelineFilters(frame.filterSnapshot, sourceTimeline.event, sourceTimeline.anchor);
+      syncTimelineSelection(sourceTimeline.event, {
+        reveal: true, moveMap: source.locationNumber !== current.locationNumber,
+        preferredAnchor: sourceTimeline.anchor, renderDetail: false,
       });
     }
     renderLocationStudy(frame.locationNumber);
@@ -5649,7 +5653,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     if (group) group.classList.add('timeline-selected', 'revealed');
   }
 
-  function renderTimeline(events, unitLabel) {
+  function renderTimeline(events, unitLabel, { renderDetail = true } = {}) {
     visibleTimelineEvents = events.slice().sort((a, b) => a.sortYear - b.sortYear || a.key.localeCompare(b.key));
     timelineScope.textContent = `${unitLabel || '全部 Units'} · 按时间顺序浏览`;
     if (!visibleTimelineEvents.length) {
@@ -5669,7 +5673,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     }).join('');
     const nextKey = visibleTimelineEvents.some(event => event.key === selectedTimelineKey)
       ? selectedTimelineKey : visibleTimelineEvents[0].key;
-    selectTimelineEvent(nextKey, { reveal: false, moveMap: false });
+    selectTimelineEvent(nextKey, { reveal: false, moveMap: false, renderDetail });
   }
 
   timelineTrack.addEventListener('click', event => {
@@ -6060,11 +6064,12 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       eventZone.scrollTo({ top: 0, behavior: 'auto' });
     }
 
-    function apply() {
+    function apply({ preserveLocationStudy = false } = {}) {
       const studyOwnedEventPanel = !!eventPanel.querySelector('[data-location-study-view]');
-      clearLocationStudyState();
+      if (!preserveLocationStudy) clearLocationStudyState();
       if (clearBtn) clearBtn.hidden = !query;
-      const ownsEventDetails = activeLearningView === 'map' && activeMapMode === 'events';
+      const ownsEventDetails = activeLearningView === 'map' && activeMapMode === 'events'
+        && !preserveLocationStudy;
       const resetStudyPanel = studyOwnedEventPanel && ownsEventDetails && !filterActive();
       let countText = '';
       let displayedHits = null;
@@ -6100,7 +6105,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       })).filter(event => event.visibleAnchors.length);
       timelineRegionScope = activeRegion;
       const activeUnit = PERIODS.find(period => period.id === activePeriod);
-      renderTimeline(timelineMatches, activeUnit ? activeUnit.label : '全部 Units');
+      renderTimeline(timelineMatches, activeUnit ? activeUnit.label : '全部 Units', {
+        renderDetail: !preserveLocationStudy,
+      });
       if (resetStudyPanel) resetOrdinaryEventPanel();
       // 搜索结果本身就是事件详情区里的可操作控件；Timeline 重建会同步 canonical
       // selection,随后把结果列表还原，确保用户能点到携带精确 event key 的那一条。
@@ -6109,6 +6116,41 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       if (onCountChange) onCountChange(countText);
     }
     applyFiltersToContext = apply;
+
+    const locationStudyFilterSnapshot = () => Object.freeze({
+      query,
+      tokens: Object.freeze(tokens.slice()),
+      cats: Object.freeze([...activeCats]),
+      inputValue: searchInput ? searchInput.value : '',
+    });
+    const applyLocationStudyFilterSnapshot = snapshot => {
+      query = snapshot.query;
+      tokens = [...snapshot.tokens];
+      activeCats = new Set(snapshot.cats);
+      if (searchInput) searchInput.value = snapshot.inputValue;
+      syncPills();
+    };
+    revealLocationStudyTimelineEvent = (event, anchor) => {
+      const visible = visibleTimelineEvents.some(item => item.key === event.key
+        && (item.visibleAnchors || item.anchors).some(itemAnchor =>
+          String(itemAnchor.num) === String(anchor.num)));
+      if (visible) return null;
+      const snapshot = locationStudyFilterSnapshot();
+      takeQuery('');
+      activeCats = new Set(allCats);
+      if (searchInput) searchInput.value = '';
+      syncPills();
+      selectedTimelineKey = event.key;
+      selectedTimelineAnchor = { num: String(anchor.num), region: anchor.region };
+      apply({ preserveLocationStudy: true });
+      return snapshot;
+    };
+    restoreLocationStudyTimelineFilters = (snapshot, event, anchor) => {
+      if (snapshot) applyLocationStudyFilterSnapshot(snapshot);
+      selectedTimelineKey = event.key;
+      selectedTimelineAnchor = { num: String(anchor.num), region: anchor.region };
+      if (snapshot) apply({ preserveLocationStudy: true });
+    };
 
     // 点结果条 => 跟手动"点地块→点标点"完全一样:高亮国家、弹事件卡、跑路线动画
     function openHit(num, region, eventKey) {
@@ -6120,7 +6162,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       if (g) g.classList.add('revealed');        // 结果条对应的标点保持可见
       showingResults = false;                    // 交棒给标点自己的事件卡
       const selectedEventKey = eventKey
-        || (getActivePeriod() === 'u4' ? locationStudyRecords(num)[0]?.mainEventKey : null);
+        || locationStudyTimelineBinding(locationStudyRecords(num)[0])?.event.key;
       if (!(selectedEventKey && selectTimelineEvent(selectedEventKey, {
         reveal: true, moveMap: false, preferredAnchor: { num, region }
       })) && !selectTimelineByPin(num, true)) {

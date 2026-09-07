@@ -1392,10 +1392,15 @@ nav.topnav {
     periodSel.value = '';
     // 地图那边一改筛选就重铺结果列表,这边跟着把它镜像到右侧事件面板;
     // 同时把两个下拉回同步到地图的真实状态 —— 状态若被程序改动(如 reset),控件不会显示成过期值。
-    // 搜索框不在此列:它的值是用户正在敲的原文,而状态里存的是规范化后的小写版本,回写会把人家的输入改掉。
+    // 用户输入时不抢写输入框；但学习视图内部为跨地点跳转暂时清除/恢复筛选时，
+    // 首页控件也必须反映真实查询状态，不能显示一个已经不再生效的旧关键词。
     api.onCountChange(text => {
       countBox.textContent = text || '';
       const st = api.getState();
+      if (document.activeElement !== searchInput && searchInput.value !== st.query) {
+        searchInput.value = st.query;
+        clearBtn.hidden = !st.query;
+      }
       if (periodSel.value !== st.period) periodSel.value = st.period;
       catsBox.querySelectorAll('.mth-cat').forEach(b =>
         b.setAttribute('aria-pressed', st.cats.has(b.dataset.cat) ? 'true' : 'false'));

@@ -909,6 +909,7 @@
   const api = Object.freeze({
     unitId: UNIT_ID,
     unitNumber: UNIT_NUMBER,
+    connectionTimelineMode: 'main-event',
     locationNumbers: LOCATION_NUMBERS,
     records: STUDY_EVENTS,
     unitCards: UNIT_CARDS,
