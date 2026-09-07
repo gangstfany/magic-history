@@ -2026,7 +2026,17 @@ async function prepareUnit4FilteredStudyJump(context) {
     window.__mapFilter.setPeriod('u4');
     window.__mapFilter.toggleCat('GOV');
     const region = document.querySelector('.region-path[data-region="americas"][aria-pressed]');
-    region.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    if (region.getAttribute('aria-pressed') !== 'true') {
+      region.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }
+  });
+}
+
+async function resetUnit4StudyJumpFilters(context) {
+  await context.locator('body').evaluate(() => {
+    const activeRegion = document.querySelector('.region-path[aria-pressed="true"]');
+    if (activeRegion) activeRegion.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    window.__mapFilter.reset();
   });
 }
 
@@ -2120,6 +2130,7 @@ async function assertUnit4ConnectionJump(page, frame, surface, jump, {
     assert.deepEqual(restoredFilter, sourceFilter,
       `${label} outer Back must restore query, categories, and region exactly`);
     if (surface === 'homepage') await assertHomepageFilterControls(page, restoredFilter, `${label} outer Back`);
+    if (filtered) await resetUnit4StudyJumpFilters(canonicalContext);
     return;
   }
 
@@ -2148,6 +2159,53 @@ async function assertUnit4ConnectionJump(page, frame, surface, jump, {
   assert.equal(await sourceDetail.locator(`[data-study-connection="${jump.targetId}"]`)
     .evaluate(element => document.activeElement === element), true,
   `${label} Back must restore focus to the invoking connection button`);
+  if (filtered) await resetUnit4StudyJumpFilters(canonicalContext);
+}
+
+async function verifyStandaloneUnit4DepthTwoFilterStack(page) {
+  const sourceFixture = unit4FixtureByStudyId('apwh-u4-potosi-global-silver-flows');
+  const middleFixture = unit4FixtureByStudyId('apwh-u4-manila-silver-asian-goods');
+  const targetFixture = unit4FixtureByStudyId('apwh-u4-santo-domingo-columbian-exchange');
+  const label = 'standalone Unit 4 depth-two filter stack';
+  await prepareUnit4FilteredStudyJump(page);
+  const opened = await openStandaloneUnit4Study(page, sourceFixture, label);
+  const sourceFilter = await unit4FilterState(page);
+  const follow = async (view, sourceId, targetId) => {
+    await view.locator(`[data-study-event="${sourceId}"]`).click();
+    const disclosure = view.locator(
+      `[data-study-detail="${sourceId}"] details[data-study-disclosure="connections"]`);
+    if ((await disclosure.getAttribute('open')) === null) await disclosure.locator('summary').click();
+    await disclosure.locator(`[data-study-connection="${targetId}"]`).click();
+  };
+  await follow(opened.view, 'apwh-u4-potosi-global-silver-flows',
+    'apwh-u4-manila-silver-asian-goods');
+  let middleView = opened.panel.locator(
+    `[data-location-study-view="${middleFixture.number}"][data-location-study-unit="u4"]`);
+  await assertUnit4CanonicalStudyState(page, middleFixture,
+    'apwh-u4-manila-silver-asian-goods', 1, `${label} first target`);
+  await follow(middleView, 'apwh-u4-manila-silver-asian-goods',
+    'apwh-u4-santo-domingo-columbian-exchange');
+  let targetView = opened.panel.locator(
+    `[data-location-study-view="${targetFixture.number}"][data-location-study-unit="u4"]`);
+  await assertUnit4CanonicalStudyState(page, targetFixture,
+    'apwh-u4-santo-domingo-columbian-exchange', 2, `${label} second target`);
+  await targetView.locator('[data-study-connection-back]').click();
+  middleView = opened.panel.locator(
+    `[data-location-study-view="${middleFixture.number}"][data-location-study-unit="u4"]`);
+  await expectVisible(middleView, `${label} first Back must restore Manila`);
+  await assertUnit4CanonicalStudyState(page, middleFixture,
+    'apwh-u4-manila-silver-asian-goods', 1, `${label} first Back`);
+  const neutralFilter = await unit4FilterState(page);
+  assert.deepEqual(neutralFilter, {
+    query: '', cats: neutralFilter.allCats, allCats: neutralFilter.allCats,
+    period: 'u4', region: null, pressedRegions: [],
+  }, `${label} first Back must retain the intermediate neutral filter state`);
+  await middleView.locator('[data-study-connection-back]').click();
+  await assertUnit4CanonicalStudyState(page, sourceFixture,
+    'apwh-u4-potosi-global-silver-flows', 0, `${label} second Back`);
+  assert.deepEqual(await unit4FilterState(page), sourceFilter,
+    `${label} second Back must restore the original query/category/region snapshot`);
+  await resetUnit4StudyJumpFilters(page);
 }
 
 async function verifyStandaloneUnit4StudyContract(page) {
@@ -2167,6 +2225,7 @@ async function verifyStandaloneUnit4StudyContract(page) {
   await assertUnit4ConnectionJump(page, null, 'standalone', crossLocationJump, { filtered: true });
   await assertUnit4ConnectionJump(page, null, 'standalone', crossLocationJump,
     { filtered: true, outerBack: true });
+  await verifyStandaloneUnit4DepthTwoFilterStack(page);
 
   const fixture = UNIT_4_STUDY_VIEWS[0];
   const label = `standalone ${fixture.label} Unit 4 cleanup`;
