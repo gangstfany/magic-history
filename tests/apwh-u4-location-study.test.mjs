@@ -6,6 +6,10 @@ import { runInNewContext } from 'node:vm';
 await import('../data/apwh-u4-location-study.js');
 
 const api = globalThis.APWH_U4_LOCATION_STUDY;
+
+test('Unit 4 opts into main-event Timeline synchronization for study connections', () => {
+  assert.equal(api.connectionTimelineMode, 'main-event');
+});
 const dataModuleSource = readFileSync(new URL('../data/apwh-u4-location-study.js', import.meta.url), 'utf8');
 const ledgerUrl = new URL('../docs/data-sources/apwh-u4-location-study-source-ledger.md', import.meta.url);
 const ledgerSource = existsSync(ledgerUrl) ? readFileSync(ledgerUrl, 'utf8') : '';

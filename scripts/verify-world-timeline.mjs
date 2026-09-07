@@ -2029,6 +2029,10 @@ async function assertUnit4ConnectionJump(page, frame, surface, jump) {
   await expectVisible(targetView, `${label} must render the target study view`);
   const canonicalContext = surface === 'standalone' ? page : frame;
   await assertUnit4CanonicalStudyState(canonicalContext, targetFixture, jump.targetId, 1, label);
+  if (surface === 'homepage' && sourceFixture.number !== targetFixture.number) {
+    assert.equal(await page.locator('#hostSearch').inputValue(), '',
+      `${label} must clear the source-only homepage search while showing the cross-location target`);
+  }
   assert.equal((await targetView.locator('.location-study-title').innerText()).trim(),
     `${targetFixture.label} · Unit 4`, `${label} mirror must render the exact target heading`);
   assert.equal(await targetView.locator('[data-study-detail]').count(), 1,
@@ -2043,6 +2047,10 @@ async function assertUnit4ConnectionJump(page, frame, surface, jump) {
     `${label} must keep the outer location Back action available`);
 
   await targetView.locator('[data-study-connection-back]').click();
+  if (surface === 'homepage' && sourceFixture.number !== targetFixture.number) {
+    assert.equal(await page.locator('#hostSearch').inputValue(), sourceFixture.title,
+      `${label} Back must restore the exact homepage source search`);
+  }
   const sourceView = opened.panel.locator(
     `[data-location-study-view="${sourceFixture.number}"][data-location-study-unit="u4"]`);
   await expectVisible(sourceView, `${label} Back must restore the source study view`);
