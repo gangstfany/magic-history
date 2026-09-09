@@ -1,31 +1,28 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import { existsSync, readFileSync } from 'node:fs';
-import vm from 'node:vm';
-
-const moduleUrl = new URL('../data/apwh-u5-location-study.js', import.meta.url);
-assert.equal(existsSync(moduleUrl), true, 'Unit 5 data module must exist');
-const dataModuleSource = readFileSync(moduleUrl, 'utf8');
-const evaluate = (source = dataModuleSource, seed = {}) => {
-  const sandbox = { ...seed }; sandbox.window = sandbox;
-  vm.runInNewContext(source, sandbox);
-  return sandbox.APWH_U5_LOCATION_STUDY;
-};
-
-const expectedLocations = new Map([
-  ['23', 'Enlightenment Foundations · London'],
-  ['51', 'American Revolution · Philadelphia'],
-  ['24', 'French Revolution · Paris'],
-  ['66', 'Haitian Revolution · Saint-Domingue / Port-au-Prince'],
-  ['52', 'Latin American Independence · Caracas'],
-  ['36', 'Industrial Revolution · Manchester'],
-  ['29', 'Nationalism and Industrial Power · Berlin'],
-  ['14', 'Meiji State-Led Industrialization · Edo / Tokyo'],
-  ['84', "Muhammad Ali's Egypt · Cairo"],
-  ['105', "Women's Rights · Seneca Falls"],
-]);
-
-const expectedManifest = [
+(function publishUnit5LocationStudy(root) {
+  'use strict';
+  if (Object.prototype.hasOwnProperty.call(root, 'APWH_U5_LOCATION_STUDY')) {
+    throw new Error('Invalid Unit 5 global APWH_U5_LOCATION_STUDY: refusing to overwrite existing value');
+  }
+  const UNIT_ID = 'u5';
+  const UNIT_NUMBER = 5;
+  const VALID_TOPIC_CODES = new Set(['5.1','5.2','5.3','5.4','5.5','5.6','5.7','5.8','5.9','5.10']);
+  const VALID_THEME_IDS = new Set(['GOV','ECN','CDI','SIO','TEC','ENV']);
+  const VALID_EXAM_SKILLS = new Set(['Causation','Comparison','CCOT','Contextualization']);
+  const LOCATION_NUMBERS = Object.freeze(['23','51','24','66','52','36','29','14','84','105']);
+  const LOCATIONS = Object.freeze({
+    '23':'Enlightenment Foundations · London',
+    '51':'American Revolution · Philadelphia',
+    '24':'French Revolution · Paris',
+    '66':'Haitian Revolution · Saint-Domingue / Port-au-Prince',
+    '52':'Latin American Independence · Caracas',
+    '36':'Industrial Revolution · Manchester',
+    '29':'Nationalism and Industrial Power · Berlin',
+    '14':'Meiji State-Led Industrialization · Edo / Tokyo',
+    '84':"Muhammad Ali's Egypt · Cairo",
+    '105':"Women's Rights · Seneca Falls",
+  });
+  const LOCATION_BINDINGS = Object.freeze({'23':'world-event-23-2','51':'world-event-51-0','24':'world-event-24-1','66':'world-event-66-1','52':'world-event-52-0','36':'world-event-36-0','29':'world-event-29-0','14':'world-event-14-1','84':'world-event-84-2','105':'world-event-105-0'});
+  const STUDY_MANIFEST = [
 ['apwh-u5-london-natural-law-empiricism','23',1,'Natural Law and Empirical Reasoning','1600–1750',1600,1750,'world-event-23-2',['5.1'],['CDI','TEC'],['Contextualization']],
 ['apwh-u5-london-social-contract-natural-rights','23',2,'Social Contract and Natural Rights','1651–1762',1651,1762,'world-event-23-2',['5.1'],['CDI','GOV'],['Causation']],
 ['apwh-u5-london-rights-language-atlantic','23',3,'Rights Language Becomes Portable','1700–1800',1700,1800,'world-event-23-2',['5.1','5.2'],['CDI','GOV'],['Causation','CCOT']],
@@ -58,11 +55,12 @@ const expectedManifest = [
 ['apwh-u5-seneca-organized-feminism-limits','105',3,'Organized Feminism and Limited Immediate Change','1848–1900',1848,1900,'world-event-105-0',['5.8','5.9','5.10'],['SIO','GOV'],['Causation','CCOT']],
 ];
 
-const P = (id, summary, significance, person, role, term, explanation, evidence, examConnection, locator) => ({
+
+  const P = (id, summary, significance, person, role, term, explanation, evidence, examConnection, locator) => ({
   id, summary, significance, keyPeople: [{ name: person, role }], keyTerms: [{ term, explanation }],
   evidence, examConnection, source: { id: 'amsco-apwh-u5', locator },
 });
-const expectedRecordContent = [
+  const RAW_RECORDS = [
 P('apwh-u5-london-natural-law-empiricism','Bacon used observation and Newton expressed physical motion as mathematical laws.','Their methods encouraged a wider European and Atlantic Enlightenment to seek discoverable natural laws for society.','Francis Bacon and Isaac Newton','Bacon advanced empirical inquiry; Newton demonstrated mathematical natural law.','empiricism','Knowledge built from observation and tested experience.',['Bacon argued that repeated observation could build reliable knowledge.','Newtonian physics presented a law-governed universe to later social thinkers.'],'Contextualize Enlightenment reasoning without claiming British thinkers alone created it.','AMSCO AP World History, Unit 5, Topic 5.1'),
 P('apwh-u5-london-social-contract-natural-rights','Hobbes, Locke, Montesquieu, and Rousseau offered competing accounts of authority, consent, rights, and restraint.','Their disagreements made social-contract reasoning a flexible challenge to inherited rule.','Hobbes, Locke, Montesquieu, and Rousseau','Distinguished a strong sovereign, natural rights, separated powers, and popular sovereignty.','social contract','An agreement used to explain why people authorize government.',['Hobbes exchanged broad obedience for security under a strong sovereign.','Locke defended resistance, while Montesquieu and Rousseau proposed different limits and sources of authority.'],'Compare the thinkers precisely rather than treating their claims as identical.','AMSCO AP World History, Unit 5, Topic 5.1'),
 P('apwh-u5-london-rights-language-atlantic','Print and correspondence carried rights and sovereignty arguments across borders.','Revolutionaries adapted portable language to different local grievances and unequal societies.','Atlantic readers and printers','Circulated and adapted arguments about rights, consent, and sovereignty.','popular sovereignty','The claim that legitimate authority originates with the people.',['Pamphlets moved political arguments beyond courts and universities.','American, French, Haitian, and Latin American actors adapted rights claims differently.'],'Trace continuity in vocabulary and change in who claimed rights.','AMSCO AP World History, Unit 5, Topics 5.1 and 5.2'),
@@ -95,80 +93,102 @@ P('apwh-u5-seneca-declaration-sentiments','The 1848 Declaration of Sentiments de
 P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associations sustained feminism after 1848 without immediate voting victory.','Organization built durable networks despite delayed suffrage success.','Women\'s-rights organizers','Campaigned for legal, educational, economic, and voting rights.','organized feminism','Sustained collective advocacy for women\'s equality.',['Activists held conventions and circulated petitions.','Most American women still lacked the national vote in 1900.'],'Distinguish movement growth from immediate voting-rights success.','AMSCO AP World History, Unit 5, Topics 5.8, 5.9, and 5.10'),
 ];
 
-const manifestOf = r => [r.id,r.locationNumber,r.sequence,r.title,r.dateLabel,r.startYear,r.endYear,r.mainEventKey,[...r.topicCodes],[...r.themeIds],[...r.examSkills]];
-const contentOf = r => ({ id:r.id,summary:r.summary,significance:r.significance,keyPeople:Array.from(r.keyPeople,x=>({...x})),keyTerms:Array.from(r.keyTerms,x=>({...x})),evidence:Array.from(r.evidence),examConnection:r.examConnection,source:{...r.source} });
 
-test('publishes the exact ordered Unit 5 manifest and learner content', () => {
-  const api = evaluate();
-  assert.equal(api.unitId,'u5'); assert.equal(api.unitNumber,5); assert.equal(api.connectionTimelineMode,'main-event');
-  assert.deepEqual([...api.locationNumbers],[...expectedLocations.keys()]);
-  assert.equal(api.records.length,30);
-  assert.deepEqual(Array.from(api.records,manifestOf),expectedManifest);
-  assert.deepEqual(Array.from(api.records,contentOf),expectedRecordContent);
-  for (const [number,name] of expectedLocations) assert.equal(api.locationName(number),name);
-});
-
-test('covers exact IDs, topics, themes, skills, sequences, and event bindings', () => {
-  const api=evaluate();
-  assert.equal(new Set(api.records.map(r=>r.id)).size,30);
-  assert.ok(api.records.every(r=>/^apwh-u5-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(r.id)));
-  assert.deepEqual([...new Set(api.records.flatMap(r=>r.topicCodes))].sort(),['5.1','5.10','5.2','5.3','5.4','5.5','5.6','5.7','5.8','5.9']);
-  assert.ok(api.records.flatMap(r=>r.themeIds).every(x=>['GOV','ECN','CDI','SIO','TEC','ENV'].includes(x)));
-  assert.ok(api.records.flatMap(r=>r.examSkills).every(x=>['Causation','Comparison','CCOT','Contextualization'].includes(x)));
-  for (const [number] of expectedLocations) {
-    const records=api.getByLocation(number);
-    assert.equal(records.length,3); assert.deepEqual(Array.from(records,r=>r.sequence),[1,2,3]);
-    assert.ok(records.every(r=>r.mainEventKey.startsWith(`world-event-${number}-`)));
-  }
-});
-
-test('provides defensive Unit 4-compatible lookups and deep immutability', () => {
-  const api=evaluate(); const first=api.records[0];
-  assert.equal(api.getById(first.id),first); assert.equal(api.getById('missing'),null);
-  assert.equal(api.locationName('missing'),null); assert.equal(api.getByLocation('missing').length,0);
-  assert.notEqual(api.getByLocation('23'),api.getByLocation('23'));
-  const copy=api.getByLocation('23'); copy.pop(); assert.equal(api.getByLocation('23').length,3);
-  for (const value of [api,api.locationNumbers,api.records,first,first.topicCodes,first.themeIds,first.examSkills,first.keyPeople,first.keyPeople[0],first.keyTerms,first.keyTerms[0],first.evidence,first.source]) assert.equal(Object.isFrozen(value),true);
-});
-
-test('refuses to overwrite an existing Unit 5 global', () => {
-  assert.throws(()=>evaluate(dataModuleSource,{APWH_U5_LOCATION_STUDY:{sentinel:true}}),/Invalid Unit 5 global APWH_U5_LOCATION_STUDY: refusing to overwrite existing value/);
-});
-
-const mutations = [
-  ['wrong location/main-event binding',"'world-event-23-2',['5.1']","'world-event-51-0',['5.1']",'apwh-u5-london-natural-law-empiricism','mainEventKey'],
-  ['duplicate sequence',"'apwh-u5-london-social-contract-natural-rights','23',2","'apwh-u5-london-social-contract-natural-rights','23',1",'apwh-u5-london-social-contract-natural-rights','duplicate sequence'],
-  ['duplicate ID',"['apwh-u5-london-social-contract-natural-rights','23',2","['apwh-u5-london-natural-law-empiricism','23',2",'apwh-u5-london-natural-law-empiricism','duplicate record ID'],
-  ['malformed date',"'1600–1750',1600,1750","'1600 to 1750',1600,1750",'apwh-u5-london-natural-law-empiricism','invalid dateLabel'],
-  ['date-label mismatch',"'1651–1762',1651,1762","'1651–1763',1651,1762",'apwh-u5-london-social-contract-natural-rights','do not match'],
-  ['missing Topic',"['5.1'],['CDI','TEC']","[],['CDI','TEC']",'apwh-u5-london-natural-law-empiricism','missing topicCodes'],
-  ['invalid Topic',"['5.1'],['CDI','GOV']","['5.11'],['CDI','GOV']",'apwh-u5-london-social-contract-natural-rights','invalid topicCode'],
-  ['duplicate Topic',"['5.1','5.2'],['CDI','GOV']","['5.1','5.1'],['CDI','GOV']",'apwh-u5-london-rights-language-atlantic','duplicate topicCode'],
-  ['missing theme',"['5.1'],['CDI','TEC'],['Contextualization']","['5.1'],[],['Contextualization']",'apwh-u5-london-natural-law-empiricism','missing themeIds'],
-  ['invalid theme',"['CDI','TEC'],['Contextualization']","['CDI','WAR'],['Contextualization']",'apwh-u5-london-natural-law-empiricism','invalid themeId'],
-  ['duplicate theme',"['CDI','GOV'],['Causation']","['CDI','CDI'],['Causation']",'apwh-u5-london-social-contract-natural-rights','duplicate themeId'],
-  ['missing skill',"['CDI','TEC'],['Contextualization']","['CDI','TEC'],[]",'apwh-u5-london-natural-law-empiricism','missing examSkills'],
-  ['invalid skill',"['CDI','TEC'],['Contextualization']","['CDI','TEC'],['Recall']",'apwh-u5-london-natural-law-empiricism','invalid examSkill'],
-  ['duplicate skill',"['Causation','CCOT']]","['Causation','Causation']]",'apwh-u5-london-rights-language-atlantic','duplicate examSkill'],
-  ['incomplete content',"'Bacon used observation and Newton expressed physical motion as mathematical laws.'","''",'apwh-u5-london-natural-law-empiricism','summary'],
-  ['non-English content',"'Their methods encouraged a wider European and Atlantic Enlightenment to seek discoverable natural laws for society.'","'启蒙思想'",'apwh-u5-london-natural-law-empiricism','non-English significance'],
-  ['malformed actor',"'Francis Bacon and Isaac Newton','Bacon advanced empirical inquiry; Newton demonstrated mathematical natural law.'","'', 'Bacon advanced empirical inquiry; Newton demonstrated mathematical natural law.'",'apwh-u5-london-natural-law-empiricism','keyPeople'],
-  ['malformed term',"'empiricism','Knowledge built from observation and tested experience.'","'empiricism',''",'apwh-u5-london-natural-law-empiricism','keyTerms'],
-  ['malformed evidence',"['Bacon argued that repeated observation could build reliable knowledge.','Newtonian physics presented a law-governed universe to later social thinkers.']","['Only one statement.']",'apwh-u5-london-natural-law-empiricism','evidence'],
-  ['malformed source',"source: { id: 'amsco-apwh-u5', locator }","source: { id: 'wrong-source', locator }",'apwh-u5-london-natural-law-empiricism','source'],
-  ['fourth record at a location',"['apwh-u5-london-rights-language-atlantic','23',3,'Rights Language Becomes Portable'","['apwh-u5-london-extra-record','23',3,'Extra Record','1700',1700,1700,'world-event-23-2',['5.1'],['CDI'],['Causation']],\n['apwh-u5-london-rights-language-atlantic','23',3,'Rights Language Becomes Portable'",'apwh-u5-london-rights-language-atlantic','exactly three records'],
-  ['null raw records','const RAW_RECORDS = [','const RAW_RECORDS = null; const UNUSED_RAW_RECORDS = [','(missing ID)','raw records must be an array'],
-];
-
-for (const [label,search,replacement,id,rule] of mutations) {
-  test(`rejects ${label}`,()=>{
-    const malformed=dataModuleSource.replace(search,replacement);
-    assert.notEqual(malformed,dataModuleSource,`${label} fixture mutation`);
-    assert.throws(()=>evaluate(malformed),error=>{
-      assert.match(error.message,/Invalid Unit 5/);
-      assert.match(error.message,new RegExp(id.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
-      assert.match(error.message,new RegExp(rule));
-      return true;
+  const describe = value => value === '' ? '""' : String(value);
+  const fail = (id, rule) => { throw new Error(`Invalid Unit 5 study record ${id || '(missing ID)'}: ${rule}`); };
+  const english = value => {
+    if (typeof value !== 'string' || !value.trim()) return false;
+    const letters=value.match(/\p{Letter}/gu)||[];
+    return letters.length>0 && letters.every(letter=>/\p{Script=Latin}/u.test(letter));
+  };
+  const validateValues = (id,values,allowed,field,singular) => {
+    if (!Array.isArray(values)) fail(id,`${field} must be an array`);
+    if (!values.length) fail(id,`missing ${field}`);
+    const seen=new Set();
+    for (const value of values) {
+      if (!allowed.has(value)) fail(id,`invalid ${singular} ${describe(value)}`);
+      if (seen.has(value)) fail(id,`duplicate ${singular} ${describe(value)}`);
+      seen.add(value);
+    }
+  };
+  const validateDate = (id,label,start,end) => {
+    if (typeof label!=='string'||!/^(?:\d{4}|\d{4}–\d{4})$/.test(label)) fail(id,`invalid dateLabel ${describe(label)}`);
+    if (!Number.isInteger(start)||!Number.isInteger(end)||start>end) fail(id,'invalid startYear or endYear');
+    const years=label.match(/\d{4}/g).map(Number);
+    if (years[0]!==start||years.at(-1)!==end) fail(id,`dateLabel years ${years[0]}–${years.at(-1)} do not match startYear ${start} and endYear ${end}`);
+  };
+  const validateManifest = rows => {
+    if (!Array.isArray(rows)) fail('(missing ID)','manifest must be an array');
+    const seen=new Set();
+    for (const row of rows) {
+      const id=Array.isArray(row)?row[0]:'(missing ID)';
+      if (!Array.isArray(row)||row.length!==11) fail(id,'manifest row must contain eleven fields');
+      const [recordId,location,sequence,title,label,start,end,event,topics,themes,skills]=row;
+      if (typeof recordId!=='string'||!/^apwh-u5-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(recordId)) fail(recordId,'invalid stable ID');
+      if (seen.has(recordId)) fail(recordId,'duplicate record ID'); seen.add(recordId);
+      if (!LOCATION_NUMBERS.includes(location)) fail(recordId,`invalid locationNumber ${describe(location)}`);
+      if (!Number.isInteger(sequence)||![1,2,3].includes(sequence)) fail(recordId,`invalid sequence ${describe(sequence)}`);
+      if (!english(title)) fail(recordId,'invalid title');
+      validateDate(recordId,label,start,end);
+      if (event!==LOCATION_BINDINGS[location]) fail(recordId,`invalid mainEventKey ${describe(event)} for location ${location}`);
+      validateValues(recordId,topics,VALID_TOPIC_CODES,'topicCodes','topicCode');
+      validateValues(recordId,themes,VALID_THEME_IDS,'themeIds','themeId');
+      validateValues(recordId,skills,VALID_EXAM_SKILLS,'examSkills','examSkill');
+    }
+    for (const location of LOCATION_NUMBERS) {
+      const local=rows.filter(row=>row[1]===location);
+      if (local.length!==3) fail(local.at(-1)?.[0]||`(location ${location})`,`location ${location} must contain exactly three records`);
+      const sequences=local.map(row=>row[2]);
+      const duplicateIndex=sequences.findIndex((value,index)=>sequences.indexOf(value)!==index);
+      if (duplicateIndex!==-1) fail(local[duplicateIndex][0],`duplicate sequence ${sequences[duplicateIndex]} at location ${location}`);
+    }
+    if (rows.length!==30) fail(rows[30]?.[0]||'(missing ID)','expected exactly 30 records');
+    const covered=new Set(rows.flatMap(row=>row[8]));
+    if ([...VALID_TOPIC_CODES].some(topic=>!covered.has(topic))) fail('(manifest)','topicCodes must cover 5.1 through 5.10');
+  };
+  const expectedLocator = topics => `AMSCO AP World History, Unit 5, ${topics.length===1?'Topic':'Topics'} ${topics.length===1?topics[0]:topics.length===2?topics.join(' and '):`${topics.slice(0,-1).join(', ')}, and ${topics.at(-1)}`}`;
+  const validateRaw = records => {
+    if (!Array.isArray(records)) fail('(missing ID)','raw records must be an array');
+    if (records.length!==30) fail(records[30]?.id||'(missing ID)','expected exactly 30 raw records');
+    const manifestById=new Map(STUDY_MANIFEST.map(row=>[row[0],row])); const seen=new Set();
+    for (const record of records) {
+      const id=record?.id;
+      if (!id) fail('(missing ID)','missing raw record ID');
+      if (seen.has(id)) fail(id,'duplicate raw record ID'); seen.add(id);
+      const row=manifestById.get(id); if (!row) fail(id,'raw record is absent from manifest');
+      if (Object.getPrototypeOf(record)!==Object.prototype||Object.keys(record).sort().join(',')!=='evidence,examConnection,id,keyPeople,keyTerms,significance,source,summary') fail(id,'malformed raw record shape');
+      for (const field of ['summary','significance','examConnection']) {
+        if (!english(record[field])) fail(id,english(record[field])?`${field} must be nonempty`:`${typeof record[field]==='string'&&record[field].trim()?'non-English ':''}${field}`);
+      }
+      if (!Array.isArray(record.keyPeople)||!record.keyPeople.length||record.keyPeople.some(person=>!person||!english(person.name)||!english(person.role))) fail(id,'malformed keyPeople');
+      if (!Array.isArray(record.keyTerms)||!record.keyTerms.length||record.keyTerms.some(term=>!term||!english(term.term)||!english(term.explanation))) fail(id,'malformed keyTerms');
+      if (!Array.isArray(record.evidence)||record.evidence.length<2||record.evidence.some(statement=>!english(statement))) fail(id,'malformed evidence');
+      if (!record.source||record.source.id!=='amsco-apwh-u5'||record.source.locator!==expectedLocator(row[8])) fail(id,'malformed source');
+    }
+    for (const [id] of manifestById) if (!seen.has(id)) fail(id,'missing raw record');
+  };
+  validateManifest(STUDY_MANIFEST);
+  validateRaw(RAW_RECORDS);
+  const contextById = new Map(STUDY_MANIFEST.map(row => [row[0], row]));
+  const freezeRecord = raw => {
+    const [id,locationNumber,sequence,title,dateLabel,startYear,endYear,mainEventKey,topicCodes,themeIds,examSkills]=contextById.get(raw.id);
+    return Object.freeze({
+      ...raw,id,locationNumber,sequence,title,dateLabel,startYear,endYear,mainEventKey,
+      topicCodes:Object.freeze([...topicCodes]),themeIds:Object.freeze([...themeIds]),examSkills:Object.freeze([...examSkills]),
+      keyPeople:Object.freeze(raw.keyPeople.map(value=>Object.freeze({...value}))),
+      keyTerms:Object.freeze(raw.keyTerms.map(value=>Object.freeze({...value}))),
+      evidence:Object.freeze([...raw.evidence]),source:Object.freeze({...raw.source}),
     });
+  };
+  const RECORDS=Object.freeze(STUDY_MANIFEST.map(row=>freezeRecord(RAW_RECORDS.find(record=>record.id===row[0]))));
+  const byId=new Map(RECORDS.map(record=>[record.id,record]));
+  const byLocation=new Map(LOCATION_NUMBERS.map(number=>[number,RECORDS.filter(record=>record.locationNumber===number)]));
+  const api=Object.freeze({
+    unitId:UNIT_ID,unitNumber:UNIT_NUMBER,connectionTimelineMode:'main-event',
+    locationNumbers:LOCATION_NUMBERS,records:RECORDS,
+    getById(id){return byId.get(String(id))||null;},
+    getByLocation(number){return [...(byLocation.get(String(number))||[])];},
+    locationName(number){const key=String(number);return Object.prototype.hasOwnProperty.call(LOCATIONS,key)?LOCATIONS[key]:null;},
   });
-}
+  Object.defineProperty(root,'APWH_U5_LOCATION_STUDY',{value:api,enumerable:true,configurable:false,writable:false});
+})(typeof window !== 'undefined' ? window : globalThis);
