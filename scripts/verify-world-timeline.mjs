@@ -307,41 +307,43 @@ const UNIT_4_CONNECTION_JUMPS = Object.freeze([
   }),
 ]);
 
-function verifyUnit4RendererRegistrationSources(worldMapSource, homePageSource) {
-  const scriptTag = '<script src="data/apwh-u4-location-study.js"></script>';
+function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePageSource) {
+  const scriptTag = '<script src="data/apwh-u5-location-study.js"></script>';
   const pageLogicStart = '<script>\n(function () {';
   for (const [label, source] of [
     ['world-map.html', worldMapSource],
     ['index.html', homePageSource],
   ]) {
     assert.equal(source.split(scriptTag).length - 1, 1,
-      `${label} must load the Unit 4 location-study data script exactly once`);
+      `${label} must load the Unit 5 location-study data script exactly once`);
     assert.ok(source.indexOf(scriptTag) < source.indexOf(pageLogicStart),
-      `${label} must load the Unit 4 location-study data before page logic`);
+      `${label} must load the Unit 5 location-study data before page logic`);
   }
 
-  assert.ok(worldMapSource.indexOf('<script src="data/apwh-u3-location-study.js"></script>')
+  assert.ok(worldMapSource.indexOf('<script src="data/apwh-u4-location-study.js"></script>')
     < worldMapSource.indexOf(scriptTag),
-  'world-map.html must load Unit 4 location-study data after the Unit 3 data script');
+  'world-map.html must load Unit 5 location-study data after the Unit 4 data script');
 
   const expectedLocationRegistry = `const LOCATION_STUDY_GLOBAL_BY_UNIT = Object.freeze({
     u1: 'APWH_U1_LOCATION_STUDY',
     u2: 'APWH_U2_LOCATION_STUDY',
     u3: 'APWH_U3_LOCATION_STUDY',
     u4: 'APWH_U4_LOCATION_STUDY',
+    u5: 'APWH_U5_LOCATION_STUDY',
   });`;
   const expectedHomeRegistry = `const HOME_STUDY_GLOBAL_BY_UNIT = Object.freeze({
     u1: 'APWH_U1_LOCATION_STUDY',
     u2: 'APWH_U2_LOCATION_STUDY',
     u3: 'APWH_U3_LOCATION_STUDY',
     u4: 'APWH_U4_LOCATION_STUDY',
+    u5: 'APWH_U5_LOCATION_STUDY',
   });`;
   const extractRegistry = (source, name) => source.match(
     new RegExp(`const ${name} = Object\\.freeze\\(\\{[\\s\\S]*?\\n  \\}\\);`))?.[0];
   assert.equal(extractRegistry(worldMapSource, 'LOCATION_STUDY_GLOBAL_BY_UNIT'), expectedLocationRegistry,
-    'world-map.html must expose the exact Unit 1–4 location-study registry');
+    'world-map.html must expose the exact Unit 1–5 location-study registry');
   assert.equal(extractRegistry(homePageSource, 'HOME_STUDY_GLOBAL_BY_UNIT'), expectedHomeRegistry,
-    'index.html must expose the exact Unit 1–4 location-study registry');
+    'index.html must expose the exact Unit 1–5 location-study registry');
 }
 
 async function importFirst(candidates) {
@@ -1163,6 +1165,15 @@ async function verifyStandaloneUnit2StudyContract(page) {
     'switching to the Unit 4 Lisbon entry must not retain the prior Unit 2 study view');
   assert.equal(await page.locator('#eventPanel [data-study-unit-card]').count(), 0,
     'switching to the Unit 4 Lisbon entry must not retain Unit 2 bookend cards');
+
+  await page.evaluate(() => {
+    window.__mapFilter.setPeriod('u5');
+    window.__mapFilter.openHit('36', 'europe', 'world-event-36-0');
+  });
+  await expectVisible(
+    page.locator('#eventPanel [data-location-study-open="36"]'),
+    'Unit 5 Manchester must expose a location-study entry'
+  );
 }
 
 async function openHomepageUnit2Study(page, frame, fixture) {
@@ -5820,7 +5831,7 @@ export async function verifyBrowser() {
     readFile(PAGE_FILE, 'utf8'),
     readFile(HOME_PAGE_FILE, 'utf8'),
   ]);
-  verifyUnit4RendererRegistrationSources(worldMapSource, homePageSource);
+  verifyLocationStudyRendererRegistrationSources(worldMapSource, homePageSource);
   // Canonical data currently exercises every disclosure, so execute the actual shipped
   // helper to cover the otherwise-unreachable empty-optional-section contract.
   verifyStudyDisclosureRendererRuntime(worldMapSource);
