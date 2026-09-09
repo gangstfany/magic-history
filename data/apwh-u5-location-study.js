@@ -204,19 +204,31 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
     return letters.length>0 && letters.every(letter=>/\p{Script=Latin}/u.test(letter));
   };
   const plainObject = value => value!==null&&typeof value==='object'&&!Array.isArray(value)&&Object.getPrototypeOf(value)===Object.prototype;
-  const hasExactOwnStringKeys = (value,expectedKeys) => {
-    const keys=Reflect.ownKeys(value);
+  const ordinaryDataDescriptor = (descriptor,{enumerable,configurable,writable}) => descriptor!==undefined
+    && Object.prototype.hasOwnProperty.call(descriptor,'value')
+    && descriptor.enumerable===enumerable
+    && descriptor.configurable===configurable
+    && descriptor.writable===writable;
+  const hasExactOwnEnumerableDataFields = (value,expectedKeys) => {
+    const descriptors=Object.getOwnPropertyDescriptors(value);
+    const keys=Reflect.ownKeys(descriptors);
     return keys.length===expectedKeys.length
       && keys.every(key=>typeof key==='string')
-      && [...keys].sort().every((key,index)=>key===[...expectedKeys].sort()[index]);
+      && [...keys].sort().every((key,index)=>key===[...expectedKeys].sort()[index])
+      && expectedKeys.every(key=>ordinaryDataDescriptor(descriptors[key],{enumerable:true,configurable:true,writable:true}));
   };
   const ordinaryDenseArray = value => {
     if (!Array.isArray(value)||Object.getPrototypeOf(value)!==Array.prototype) return false;
-    const keys=Reflect.ownKeys(value);
-    const expectedKeys=Array.from({length:value.length},(_,index)=>String(index)).concat('length');
+    const descriptors=Object.getOwnPropertyDescriptors(value);
+    const keys=Reflect.ownKeys(descriptors);
+    const lengthDescriptor=descriptors.length;
+    if (!ordinaryDataDescriptor(lengthDescriptor,{enumerable:false,configurable:false,writable:true})||!Number.isSafeInteger(lengthDescriptor.value)||lengthDescriptor.value<0) return false;
+    const indexKeys=Array.from({length:lengthDescriptor.value},(_,index)=>String(index));
+    const expectedKeys=indexKeys.concat('length');
     return keys.length===expectedKeys.length
       && keys.every(key=>typeof key==='string')
-      && expectedKeys.every(key=>Object.prototype.hasOwnProperty.call(value,key));
+      && expectedKeys.every(key=>Object.prototype.hasOwnProperty.call(descriptors,key))
+      && indexKeys.every(key=>ordinaryDataDescriptor(descriptors[key],{enumerable:true,configurable:true,writable:true}));
   };
   const validateLocations = () => {
     const canonicalNumbers=CANONICAL_LOCATIONS.map(entry=>entry[0]);
@@ -320,7 +332,7 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
     const kinds=new Set(); const ids=new Set();
     for (const card of cards) {
       if (!plainObject(card)) failCard(card,'card must be a non-null plain object');
-      if (!hasExactOwnStringKeys(card,keys)) failCard(card,'card must contain exactly the approved fields');
+      if (!hasExactOwnEnumerableDataFields(card,keys)) failCard(card,'card must contain exactly the approved fields');
       if (!['context','synthesis'].includes(card.kind)) failCard(card,`invalid kind ${describe(card.kind)}`);
       if (kinds.has(card.kind)) failCard(card,`duplicate kind ${card.kind}`); kinds.add(card.kind);
       if (typeof card.id!=='string'||!card.id.trim()) failCard(card,'card ID must be a nonempty string');
@@ -358,7 +370,7 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
   const validateConnectionShapes = () => {
     const connectionKeys=['causeStudyPointIds','connectionNotes','effectStudyPointIds','relatedStudyPointIds'];
     for (const [id,connections] of CONNECTION_DATA) {
-      if (!plainObject(connections)||!hasExactOwnStringKeys(connections,connectionKeys)) fail(id,'malformed connection structure');
+      if (!plainObject(connections)||!hasExactOwnEnumerableDataFields(connections,connectionKeys)) fail(id,'malformed connection structure');
       for (const category of ['causeStudyPointIds','effectStudyPointIds','relatedStudyPointIds']) {
         if (!ordinaryDenseArray(connections[category])) fail(id,`${category} must be an ordinary dense array`);
       }

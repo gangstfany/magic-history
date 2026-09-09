@@ -402,6 +402,25 @@ test('rejects symbol fields and non-ordinary nested Unit 5 card arrays before fr
   for (const [statement,message] of cases) assert.throws(()=>evaluate(mutateUnitCards('card exact shape',statement)),message);
 });
 
+test('rejects non-enumerable required Unit 5 card fields before publication',()=>{
+  const malformed=mutateUnitCards('non-enumerable card field',"Object.defineProperty(UNIT_CARD_LIST[0],'prompt',{enumerable:false});");
+  assert.throws(()=>evaluate(malformed),/Invalid Unit 5 unit card .*exactly the approved fields/);
+});
+
+test('rejects nested card array accessors that mutate their parent before publication',()=>{
+  const malformed=mutateUnitCards('mutating card array accessor',"{ const card=UNIT_CARD_LIST[0]; Object.defineProperty(card.examSkills,'0',{configurable:true,enumerable:true,get(){delete card.prompt; return 'Contextualization';}}); }");
+  const sandbox={}; sandbox.window=sandbox;
+  assert.throws(()=>vm.runInNewContext(malformed,sandbox),/Invalid Unit 5 unit card .*examSkills must be an ordinary dense array/);
+  assert.equal(Object.hasOwn(sandbox,'APWH_U5_LOCATION_STUDY'),false);
+});
+
+test('rejects nested card accessors that inject symbol fields before publication',()=>{
+  const malformed=mutateUnitCards('symbol-injecting card array accessor',"{ const card=UNIT_CARD_LIST[0]; Object.defineProperty(card.examSkills,'0',{configurable:true,enumerable:true,get(){card[Symbol('review-extra')]='English extra.'; return 'Contextualization';}}); }");
+  const sandbox={}; sandbox.window=sandbox;
+  assert.throws(()=>vm.runInNewContext(malformed,sandbox),/Invalid Unit 5 unit card .*examSkills must be an ordinary dense array/);
+  assert.equal(Object.hasOwn(sandbox,'APWH_U5_LOCATION_STUDY'),false);
+});
+
 test('locks the canonical introduction and all five source-ledger columns for exactly thirty records',()=>{
   assert.equal(ledgerSource.startsWith(ledgerIntroduction),true);
   const rows=parseLedgerRows(ledgerSource);
