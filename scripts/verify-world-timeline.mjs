@@ -2611,6 +2611,7 @@ async function openStandaloneUnit5OrdinaryEvent(page, fixture, label) {
 
 async function openHomepageUnit5OrdinaryEvent(page, frame, fixture, label, { preserveFilters = false } = {}) {
   await page.locator('.map-card-head [data-learning-view="map"]').click();
+  let sourceTitle = null;
   if (!preserveFilters) {
     await page.locator('#hostPeriod').selectOption('u5');
     await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
@@ -2618,9 +2619,19 @@ async function openHomepageUnit5OrdinaryEvent(page, frame, fixture, label, { pre
     await page.locator('#hostSearch').fill('');
     await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
       ?.__mapFilter?.getState().query === '');
-    const card = frame.locator(`.world-timeline-card[data-event-key="${fixture.mainEventKey}"]`);
-    await card.waitFor({ state: 'visible' });
-    await card.click();
+    sourceTitle = await frame.locator('body').evaluate((body, eventKey) =>
+      window.getTimelineState().visibleEvents.find(event => event.key === eventKey)?.titleEn || null,
+    fixture.mainEventKey);
+    assert.ok(sourceTitle, `${label} must resolve its exact source Timeline title for homepage controls`);
+    await page.locator('#hostSearch').fill(sourceTitle);
+    await page.waitForFunction(expected => document.querySelector('#worldMapFrame')?.contentWindow
+      ?.__mapFilter?.getState().query === expected, sourceTitle);
+    const result = page.locator(
+      `#home-events .event-card.is-result[data-event-key="${fixture.mainEventKey}"]`);
+    await result.waitFor({ state: 'visible' });
+    assert.equal(await result.count(), 1,
+      `${label} homepage source query must expose one exact keyed Timeline result`);
+    await result.click();
   } else {
     const result = page.locator(
       `#home-events .event-card.is-result[data-event-key="${fixture.mainEventKey}"]`);
@@ -2633,7 +2644,18 @@ async function openHomepageUnit5OrdinaryEvent(page, frame, fixture, label, { pre
   await entry.waitFor({ state: 'visible' });
   await assertUnit5TimelineState(frame, fixture, `${label} homepage iframe`);
   await assertUnit5OrdinaryEvent(panel, entry, fixture, `${label} homepage mirror ordinary event`);
-  return { panel, entry, ordinarySnapshot: await unit5OrdinaryEventSnapshot(panel) };
+  const allCats = await frame.locator('body').evaluate(() =>
+    window.__mapFilter.getCats().map(cat => cat.abbr).sort());
+  return {
+    panel,
+    entry,
+    ordinarySnapshot: await unit5OrdinaryEventSnapshot(panel),
+    expectedHomeControls: preserveFilters ? null : {
+      query: sourceTitle,
+      period: 'u5',
+      cats: allCats,
+    },
+  };
 }
 
 async function unit5StudySnapshot(view) {
@@ -2695,7 +2717,10 @@ async function assertUnit5StudyView(page, view, fixture, label, canonicalFrame =
   }
 }
 
-async function assertUnit5OuterBack(context, panel, view, entry, ordinarySnapshot, fixture, label) {
+async function assertUnit5OuterBack(context, panel, view, entry, ordinarySnapshot, fixture, label, {
+  homepagePage = null,
+  expectedHomeControls = null,
+} = {}) {
   const back = view.locator(`[data-location-study-back="${fixture.number}"]`);
   assert.equal(await back.count(), 1, `${label} must expose one outer Back action`);
   await back.click();
@@ -2708,6 +2733,22 @@ async function assertUnit5OuterBack(context, panel, view, entry, ordinarySnapsho
   assert.deepEqual(await unit5OrdinaryEventSnapshot(panel), ordinarySnapshot,
     `${label} Back must restore the exact ordinary source event content`);
   await assertUnit5TimelineState(context, fixture, `${label} Back`);
+  if (homepagePage) {
+    assert.ok(expectedHomeControls?.query,
+      `${label} homepage control expectation must be bound to a nonempty source-event query`);
+    await homepagePage.waitForFunction(expected => {
+      const pressedCats = [...document.querySelectorAll('#hostCats [data-cat][aria-pressed="true"]')]
+        .map(button => button.dataset.cat).sort();
+      return document.querySelector('#hostPeriod')?.value === expected.period
+        && document.querySelector('#hostSearch')?.value === expected.query
+        && JSON.stringify(pressedCats) === JSON.stringify(expected.cats);
+    }, expectedHomeControls);
+    await assertHomepageFilterControls(homepagePage, expectedHomeControls,
+      `${label} restored homepage controls`);
+    assert.deepEqual(await trimmedTexts(homepagePage.locator(
+      '.map-card-head [data-learning-view][aria-pressed="true"]')), ['地图'],
+    `${label} must restore the homepage Map control as the sole active learning view`);
+  }
 }
 
 async function openStandaloneUnit5Study(page, fixture, label) {
@@ -2828,25 +2869,34 @@ async function assertUnit5ConnectionJump(page, frame, surface, jump) {
 
 async function prepareUnit5DepthTwoFilters(page, frame, surface, source) {
   const canonical = surface === 'standalone' ? page : frame;
+  if (surface === 'standalone') {
+    await page.evaluate(() => {
+      window.__mapFilter.reset();
+      window.__mapFilter.setLearningView('map');
+      window.__mapFilter.setPeriod('u5');
+      window.__mapFilter.setQuery('');
+    });
+  } else {
+    await page.locator('.map-card-head [data-learning-view="map"]').click();
+    await page.locator('#hostPeriod').selectOption('u5');
+    await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
+      ?.__mapFilter?.getState().period === 'u5');
+    await page.locator('#hostSearch').fill('');
+    await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
+      ?.__mapFilter?.getState().query === '');
+  }
   const title = await canonical.locator('body').evaluate((body, key) =>
     window.getTimelineState().visibleEvents.find(event => event.key === key)?.titleEn || null,
   source.mainEventKey);
   assert.ok(title, `${surface} Unit 5 filtered stack must resolve the source Timeline title`);
   if (surface === 'standalone') {
     await page.evaluate(({ title }) => {
-      window.__mapFilter.reset();
-      window.__mapFilter.setLearningView('map');
-      window.__mapFilter.setPeriod('u5');
       window.__mapFilter.setQuery(title);
       window.__mapFilter.toggleCat('GOV');
       document.querySelector('.region-path[data-region="europe"]').dispatchEvent(
         new MouseEvent('click', { bubbles: true }));
     }, { title });
   } else {
-    await page.locator('.map-card-head [data-learning-view="map"]').click();
-    await page.locator('#hostPeriod').selectOption('u5');
-    await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
-      ?.__mapFilter?.getState().period === 'u5');
     await page.locator('#hostSearch').fill(title);
     await page.waitForFunction(expected => document.querySelector('#worldMapFrame')?.contentWindow
       ?.__mapFilter?.getState().query === expected, title);
@@ -3033,7 +3083,10 @@ async function verifyHomepageUnit5StudyContract(page, frame) {
       unit5StandaloneParitySnapshots.get(fixture.number),
       `${label} must preserve exact standalone/homepage content, ID order, and one-open parity`);
     await assertUnit5OuterBack(frame, opened.panel, opened.view, opened.entry,
-      opened.ordinarySnapshot, fixture, label);
+      opened.ordinarySnapshot, fixture, label, {
+        homepagePage: page,
+        expectedHomeControls: opened.expectedHomeControls,
+      });
   }
   for (const jump of UNIT_5_CONNECTION_JUMPS) {
     await assertUnit5ConnectionJump(page, frame, 'homepage', jump);
