@@ -67,6 +67,64 @@
 ['apwh-u5-seneca-organized-feminism-limits','105',3,'Organized Feminism and Limited Immediate Change','1848–1900',1848,1900,'world-event-105-0',['5.8','5.9','5.10'],['SIO','GOV'],['Causation','CCOT']],
 ];
 
+  let CONNECTION_DATA;
+  function addCausalConnection(causeId,effectId,note) {
+    const cause=CONNECTION_DATA.get(causeId); const effect=CONNECTION_DATA.get(effectId);
+    if (!cause) throw new Error(`Invalid Unit 5 study connection causal: missing cause ${causeId}`);
+    if (!effect) throw new Error(`Invalid Unit 5 study connection causal: missing effect ${effectId}`);
+    if (causeId===effectId) throw new Error(`Invalid Unit 5 study connection causal: self connection ${causeId}`);
+    cause.effectStudyPointIds.push(effectId); effect.causeStudyPointIds.push(causeId);
+    cause.connectionNotes[effectId]=note; effect.connectionNotes[causeId]=note;
+  }
+  function addRelatedConnection(leftId,rightId,note) {
+    const left=CONNECTION_DATA.get(leftId); const right=CONNECTION_DATA.get(rightId);
+    if (!left) throw new Error(`Invalid Unit 5 study connection related: missing left ${leftId}`);
+    if (!right) throw new Error(`Invalid Unit 5 study connection related: missing right ${rightId}`);
+    if (leftId===rightId) throw new Error(`Invalid Unit 5 study connection related: self connection ${leftId}`);
+    left.relatedStudyPointIds.push(rightId); right.relatedStudyPointIds.push(leftId);
+    left.connectionNotes[rightId]=note; right.connectionNotes[leftId]=note;
+  }
+
+  const configureConnections = () => {
+  CONNECTION_DATA = new Map(STUDY_MANIFEST.map(([id]) => [id, {
+    causeStudyPointIds: [], effectStudyPointIds: [], relatedStudyPointIds: [], connectionNotes: {},
+  }]));
+  addCausalConnection('apwh-u5-london-natural-law-empiricism','apwh-u5-london-social-contract-natural-rights','Empirical and natural-law reasoning encouraged Enlightenment thinkers to seek discoverable principles for society and government.');
+  addCausalConnection('apwh-u5-london-social-contract-natural-rights','apwh-u5-london-rights-language-atlantic','Debates over consent, natural rights, and popular sovereignty supplied a reusable political vocabulary that print and correspondence carried across the Atlantic.');
+  addCausalConnection('apwh-u5-philadelphia-colonial-self-government','apwh-u5-philadelphia-declaration-independence','Colonial assemblies and disputes over taxation turned competing claims to sovereignty into organized resistance and a war for independence.');
+  addCausalConnection('apwh-u5-philadelphia-declaration-independence','apwh-u5-philadelphia-republican-rights-limits','Independence enabled republican government to expand political participation for many white men while slavery and legal exclusions limited revolutionary rights.');
+  addCausalConnection('apwh-u5-paris-old-regime-fiscal-crisis','apwh-u5-paris-popular-sovereignty-rights','War debt, unequal taxation, and estate privilege forced an institutional crisis in which Third Estate deputies and popular crowds relocated sovereignty toward the nation.');
+  addCausalConnection('apwh-u5-paris-popular-sovereignty-rights','apwh-u5-paris-radicalization-napoleonic-diffusion','Foreign war and counterrevolution destabilized early constitutional reform, contributing to emergency radicalization before Napoleon centralized selected revolutionary changes.');
+  addCausalConnection('apwh-u5-haiti-plantation-slavery','apwh-u5-haiti-enslaved-revolt-toussaint','Violent plantation exploitation and racial chattel slavery gave enslaved people compelling grievances while their own resistance networks enabled mass revolt.');
+  addCausalConnection('apwh-u5-haiti-enslaved-revolt-toussaint','apwh-u5-haiti-emancipation-independence','Enslaved-led military resistance forced emancipation and defeated France’s attempt to restore control, enabling Dessalines to declare independence.');
+  addCausalConnection('apwh-u5-caracas-creole-grievances-imperial-crisis','apwh-u5-caracas-bolivar-independence-wars','Creole grievances became revolutionary when Spain’s 1808 legitimacy crisis opened space for juntas and Bolívar’s military campaigns.');
+  addCausalConnection('apwh-u5-caracas-bolivar-independence-wars','apwh-u5-caracas-fragmentation-caudillo-limits','Independence wars ended Spanish rule without resolving regional rivalries or social hierarchy, helping caudillos gain power as Gran Colombia fragmented.');
+  addCausalConnection('apwh-u5-manchester-coal-capital-agriculture','apwh-u5-manchester-steam-factory-system','Coal, capital, transport, agricultural change, labor, and overseas resources jointly enabled steam-powered machinery and factory production.');
+  addCausalConnection('apwh-u5-manchester-steam-factory-system','apwh-u5-manchester-urban-class-labor-response','Factories concentrated wage workers under dangerous, disciplined, and unequal conditions, prompting class formation, unions, strikes, and reform campaigns.');
+  addCausalConnection('apwh-u5-berlin-napoleonic-occupation-nationalism','apwh-u5-berlin-bismarck-wars-unification','Occupation provoked nationalism and Prussian reform, but Bismarck later used those institutions and limited wars to convert national sentiment into unification.');
+  addCausalConnection('apwh-u5-berlin-bismarck-wars-unification','apwh-u5-berlin-second-industrial-revolution-power','Prussian-led unification joined larger markets and state capacity that supported railways, finance, research, heavy industry, and military demand.');
+  addCausalConnection('apwh-u5-tokyo-tokugawa-order-foreign-pressure','apwh-u5-tokyo-meiji-political-fiscal-reform','Foreign coercion exposed military weakness while Tokugawa-era markets and literacy provided capacities that Meiji leaders redirected through central reform.');
+  addCausalConnection('apwh-u5-tokyo-meiji-political-fiscal-reform','apwh-u5-tokyo-state-industry-military-power','Centralized prefectures, land-tax revenue, conscription, and schools supplied the fiscal and institutional capacity for state-backed industry and military growth.');
+  addCausalConnection('apwh-u5-cairo-military-pressure-reform','apwh-u5-cairo-cotton-conscription-factories','Foreign military pressure and Muhammad Ali’s consolidation of power motivated Egyptian officials to link cotton monopolies, conscription, schools, and factories to army reform.');
+  addCausalConnection('apwh-u5-cairo-cotton-conscription-factories','apwh-u5-cairo-debt-intervention-limits','A coercive export-and-military reform program built capacity but exposed Egypt to Ottoman and European intervention, while later borrowing increased foreign financial control.');
+  addCausalConnection('apwh-u5-seneca-rights-language-exclusion','apwh-u5-seneca-declaration-sentiments','The contradiction between universal equality claims and women’s legal exclusion, sharpened by abolitionist experience, encouraged activists to adapt revolutionary language at Seneca Falls.');
+  addCausalConnection('apwh-u5-seneca-declaration-sentiments','apwh-u5-seneca-organized-feminism-limits','The convention’s grievance list and suffrage resolution gave women’s-rights organizers a shared program for later conventions, petitions, and associations.');
+  addCausalConnection('apwh-u5-london-rights-language-atlantic','apwh-u5-philadelphia-declaration-independence','Portable natural-rights and consent language helped colonists frame resistance as a legitimate claim to independence.');
+  addCausalConnection('apwh-u5-philadelphia-declaration-independence','apwh-u5-paris-popular-sovereignty-rights','French participation and financing in the American war worsened existing fiscal strain, while American constitutional precedent made rights-based political reordering more imaginable.');
+  addCausalConnection('apwh-u5-paris-popular-sovereignty-rights','apwh-u5-haiti-enslaved-revolt-toussaint','Revolutionary universal-rights claims and metropolitan upheaval opened political space that enslaved people applied more radically through their own decisive collective action.');
+  addCausalConnection('apwh-u5-paris-radicalization-napoleonic-diffusion','apwh-u5-caracas-bolivar-independence-wars','Napoleon’s invasion of Iberia weakened Spanish royal authority and produced the legitimacy crisis in which Bolívar’s wars developed, while Atlantic precedents supplied political language.');
+  addCausalConnection('apwh-u5-paris-radicalization-napoleonic-diffusion','apwh-u5-berlin-napoleonic-occupation-nationalism','Napoleonic occupation and reorganization provoked German nationalism that was later mobilized through Prussian institutions.');
+  addCausalConnection('apwh-u5-manchester-steam-factory-system','apwh-u5-cairo-military-pressure-reform','Industrial military and productive disparity created pressure for state-led reform under Muhammad Ali, while Egyptian officials retained agency in choosing and directing reforms.');
+  addCausalConnection('apwh-u5-manchester-steam-factory-system','apwh-u5-tokyo-tokugawa-order-foreign-pressure','Industrial military disparity exposed through foreign pressure helped motivate Meiji state reform, which adapted domestic capacities rather than simply imitating Britain.');
+  addCausalConnection('apwh-u5-philadelphia-republican-rights-limits','apwh-u5-seneca-rights-language-exclusion','The contradiction between universal revolutionary claims and women’s exclusion supplied both the language and the target for the Declaration of Sentiments.');
+
+  addRelatedConnection('apwh-u5-philadelphia-republican-rights-limits','apwh-u5-haiti-emancipation-independence','Compare American political independence, which retained slavery and major exclusions, with Haitian independence joined to emancipation.');
+  addRelatedConnection('apwh-u5-haiti-emancipation-independence','apwh-u5-caracas-fragmentation-caudillo-limits','Compare Haiti’s enslaved-led social revolution with creole-led Latin American independence, where political separation preserved more of the existing hierarchy.');
+  addRelatedConnection('apwh-u5-paris-radicalization-napoleonic-diffusion','apwh-u5-berlin-bismarck-wars-unification','Compare French revolutionary and occupational diffusion with Bismarck’s state-directed wars and institution-led German unification.');
+  addRelatedConnection('apwh-u5-cairo-cotton-conscription-factories','apwh-u5-tokyo-meiji-political-fiscal-reform','Compare Egyptian and Japanese state-led reform: both mobilized taxes and coercion, but Japan retained greater fiscal sovereignty and achieved more durable autonomy under weaker foreign constraint.');
+  addRelatedConnection('apwh-u5-manchester-urban-class-labor-response','apwh-u5-seneca-organized-feminism-limits','Compare labor organizing by an industrial class constituency with Seneca Falls feminism’s rights-based challenge to gender exclusion; both answered exclusion through different constituencies and methods.');
+  };
+
 
   const P = (id, summary, significance, person, role, term, explanation, evidence, examConnection, locator) => ({
   id, summary, significance, keyPeople: [{ name: person, role }], keyTerms: [{ term, explanation }],
@@ -105,9 +163,41 @@ P('apwh-u5-seneca-declaration-sentiments','The 1848 Declaration of Sentiments de
 P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associations sustained feminism after 1848 without immediate voting victory.','Organization built durable networks despite delayed suffrage success.','Women\'s-rights organizers','Campaigned for legal, educational, economic, and voting rights.','organized feminism','Sustained collective advocacy for women\'s equality.',['Activists held conventions and circulated petitions.','Most American women still lacked the national vote in 1900.'],'Distinguish movement growth from immediate voting-rights success.','AMSCO AP World History, Unit 5, Topics 5.8, 5.9, and 5.10'),
 ];
 
+  const UNIT_CARD_LIST = [
+    {
+      id:'apwh-u5-context-empire-hierarchy-rights', kind:'context', role:'Unit 5 Context Card',
+      title:'How Imperial Hierarchy Produced Revolutionary Claims',
+      examSkills:['Contextualization','Causation'],
+      summary:'Unit 4 maritime empires accumulated wealth through trade, extraction, and coerced labor while organizing colonial societies through legal status and ancestry. Enlightenment arguments about reason, natural rights, and consent gave people excluded by those hierarchies a language they could reuse against imperial and social authority. Unit 5 follows both the spread of those political claims and the industrial transformation that changed which states could enforce power.',
+      prompt:'How did Unit 4 institutions create both the grievances and the communication networks that made Unit 5 revolutionary claims possible?',
+      takeaways:[
+        'Imperial extraction strengthened states while sharpening unequal legal and social positions.',
+        'Rights language became reusable because it made legitimacy depend on people rather than ancestry.',
+        'Different groups applied the same language to different forms of exclusion.',
+      ],
+    },
+    {
+      id:'apwh-u5-synthesis-industry-imperial-pressure', kind:'synthesis', role:'Unit 5 Synthesis Card',
+      title:'From Industrial Capacity to Imperial Expansion',
+      examSkills:['Causation','CCOT'],
+      summary:'Industrial production concentrated labor and capital, expanded transport and communication, and increased the military capacity of industrial states. Factories also required recurring supplies of cotton, rubber, metals, food, and fuel as well as reliable markets. Unit 6 examines how those capabilities and demands intensified imperial control, reorganized colonized economies, and moved workers across regions even as local states and communities resisted.',
+      prompt:'Which Unit 5 changes turned overseas expansion from an opportunity into a recurring economic and strategic pressure?',
+      takeaways:[
+        'Steam, rail, telegraphy, and industrial weapons increased the reach of states and firms.',
+        'Factories created recurring demand for raw materials, labor, and consumers.',
+        'Industrial power widened inequalities without eliminating resistance or local agency.',
+      ],
+    },
+  ];
+
 
   const describe = value => value === '' ? '""' : String(value);
   const fail = (id, rule) => { throw new Error(`Invalid Unit 5 study record ${id || '(missing ID)'}: ${rule}`); };
+  const failCard = (card,rule) => {
+    const kind=card&&typeof card.kind==='string'&&card.kind?card.kind:'(missing kind)';
+    const id=card&&typeof card.id==='string'&&card.id.trim()?card.id:card?.id===undefined||card?.id===null?'(missing ID)':String(card.id);
+    throw new Error(`Invalid Unit 5 unit card ${kind} ${id}: ${rule}`);
+  };
   const english = value => {
     if (typeof value !== 'string' || !value.trim()) return false;
     const letters=value.match(/\p{Letter}/gu)||[];
@@ -209,15 +299,55 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
     }
     for (const [id] of manifestById) if (!seen.has(id)) fail(id,'missing raw record');
   };
+  const validateUnitCards = cards => {
+    if (!Array.isArray(cards)) failCard(null,'cards must be an array');
+    const keys=['examSkills','id','kind','prompt','role','summary','takeaways','title'];
+    const kinds=new Set(); const ids=new Set();
+    for (const card of cards) {
+      if (!plainObject(card)) failCard(card,'card must be a non-null plain object');
+      if (Object.keys(card).sort().join(',')!==keys.join(',')) failCard(card,'card must contain exactly the approved fields');
+      if (!['context','synthesis'].includes(card.kind)) failCard(card,`invalid kind ${describe(card.kind)}`);
+      if (kinds.has(card.kind)) failCard(card,`duplicate kind ${card.kind}`); kinds.add(card.kind);
+      if (typeof card.id!=='string'||!card.id.trim()) failCard(card,'card ID must be a nonempty string');
+      if (ids.has(card.id)) failCard(card,'duplicate card ID'); ids.add(card.id);
+      if (!new RegExp(`^apwh-u5-${card.kind}-[a-z0-9]+(?:-[a-z0-9]+)*$`).test(card.id)) failCard(card,'invalid stable ID');
+      for (const field of ['role','title','summary','prompt']) {
+        if (typeof card[field]!=='string'||!card[field].trim()) failCard(card,`missing ${field}`);
+        if (!english(card[field])) failCard(card,`non-English ${field}`);
+      }
+      if (!Array.isArray(card.examSkills)) failCard(card,'examSkills must be an array');
+      if (!card.examSkills.length) failCard(card,'missing examSkills');
+      if (card.examSkills.length>2) failCard(card,'too many examSkills');
+      const seenSkills=new Set();
+      for (const skill of card.examSkills) {
+        if (typeof skill!=='string'||!skill.trim()||!VALID_EXAM_SKILLS.has(skill)) failCard(card,`invalid examSkill ${describe(skill)}`);
+        if (seenSkills.has(skill)) failCard(card,`duplicate examSkill ${skill}`); seenSkills.add(skill);
+      }
+      if (!Array.isArray(card.takeaways)) failCard(card,'takeaways must be an array');
+      if (card.takeaways.length!==3) failCard(card,'takeaways must contain exactly three items');
+      for (const takeaway of card.takeaways) {
+        if (typeof takeaway!=='string'||!takeaway.trim()) failCard(card,'empty takeaway');
+        if (!english(takeaway)) failCard(card,'non-English takeaway');
+      }
+    }
+    if (cards.length!==2||!kinds.has('context')||!kinds.has('synthesis')) failCard(null,'expected exactly context and synthesis');
+  };
+  const freezeUnitCard = card => Object.freeze({...card,examSkills:Object.freeze([...card.examSkills]),takeaways:Object.freeze([...card.takeaways])});
   validateLocations();
   validateManifest(STUDY_MANIFEST);
   validateRaw(RAW_RECORDS);
+  configureConnections();
   const contextById = new Map(STUDY_MANIFEST.map(row => [row[0], row]));
+  validateUnitCards(UNIT_CARD_LIST);
+  const UNIT_CARDS=Object.freeze(Object.fromEntries(UNIT_CARD_LIST.map(card=>[card.kind,freezeUnitCard(card)])));
   const freezeRecord = raw => {
     const [id,locationNumber,sequence,title,dateLabel,startYear,endYear,mainEventKey,topicCodes,themeIds,examSkills]=contextById.get(raw.id);
+    const connections=CONNECTION_DATA.get(raw.id);
     return Object.freeze({
       ...raw,id,locationNumber,sequence,title,dateLabel,startYear,endYear,mainEventKey,
       topicCodes:Object.freeze([...topicCodes]),themeIds:Object.freeze([...themeIds]),examSkills:Object.freeze([...examSkills]),
+      causeStudyPointIds:Object.freeze([...connections.causeStudyPointIds]),effectStudyPointIds:Object.freeze([...connections.effectStudyPointIds]),
+      relatedStudyPointIds:Object.freeze([...connections.relatedStudyPointIds]),connectionNotes:Object.freeze({...connections.connectionNotes}),
       keyPeople:Object.freeze(raw.keyPeople.map(value=>Object.freeze({...value}))),
       keyTerms:Object.freeze(raw.keyTerms.map(value=>Object.freeze({...value}))),
       evidence:Object.freeze([...raw.evidence]),source:Object.freeze({...raw.source}),
@@ -225,13 +355,38 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
   };
   const RECORDS=Object.freeze(STUDY_MANIFEST.map(row=>freezeRecord(RAW_RECORDS.find(record=>record.id===row[0]))));
   const byId=new Map(RECORDS.map(record=>[record.id,record]));
+  const validateStudyGraph = () => {
+    const reciprocals={causeStudyPointIds:'effectStudyPointIds',effectStudyPointIds:'causeStudyPointIds',relatedStudyPointIds:'relatedStudyPointIds'};
+    for (const record of RECORDS) {
+      const categories=new Map(); const linked=[];
+      for (const [category,reciprocal] of Object.entries(reciprocals)) {
+        for (const targetId of record[category]) {
+          if (targetId===record.id) fail(record.id,`self connection in ${category}`);
+          if (record[category].indexOf(targetId)!==record[category].lastIndexOf(targetId)) fail(record.id,`duplicate connection in ${category} to ${describe(targetId)}`);
+          if (categories.has(targetId)) fail(record.id,`cross-category connection ${targetId} in ${categories.get(targetId)} and ${category}`);
+          categories.set(targetId,category); linked.push(targetId);
+          const target=byId.get(targetId); if (!target) fail(record.id,`unresolved connection ${targetId}`);
+          if (!target[reciprocal].includes(record.id)) fail(record.id,`nonreciprocal ${category} connection to ${targetId}`);
+          const note=record.connectionNotes[targetId];
+          if (typeof note!=='string'||!note.trim()) fail(record.id,`missing connection note for ${targetId}`);
+          if (!english(note)) fail(record.id,`non-English connection note for ${targetId}`);
+          if (target.connectionNotes[record.id]!==note) fail(record.id,`nonreciprocal connection note for ${targetId}`);
+        }
+      }
+      if (!linked.length) fail(record.id,'missing connection');
+      const extra=Object.keys(record.connectionNotes).find(id=>!linked.includes(id));
+      if (extra!==undefined) fail(record.id,`extra connection note key ${describe(extra)}`);
+    }
+  };
+  validateStudyGraph();
   const byLocation=new Map(LOCATION_NUMBERS.map(number=>[number,RECORDS.filter(record=>record.locationNumber===number)]));
   const api=Object.freeze({
     unitId:UNIT_ID,unitNumber:UNIT_NUMBER,connectionTimelineMode:'main-event',
-    locationNumbers:LOCATION_NUMBERS,records:RECORDS,
+    locationNumbers:LOCATION_NUMBERS,records:RECORDS,unitCards:UNIT_CARDS,
     getById(id){return byId.get(String(id))||null;},
     getByLocation(number){return [...(byLocation.get(String(number))||[])];},
     locationName(number){const key=String(number);return Object.prototype.hasOwnProperty.call(LOCATIONS,key)?LOCATIONS[key]:null;},
+    getUnitCard(kind){const key=String(kind);return Object.prototype.hasOwnProperty.call(UNIT_CARDS,key)?UNIT_CARDS[key]:null;},
   });
   Object.defineProperty(root,'APWH_U5_LOCATION_STUDY',{value:api,enumerable:true,configurable:false,writable:false});
 })(typeof window !== 'undefined' ? window : globalThis);
