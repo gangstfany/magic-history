@@ -201,16 +201,34 @@ const expectedLedgerRows = [
   ['apwh-u5-seneca-organized-feminism-limits','5.8, 5.9, 5.10','world-event-105-0','AMSCO AP World History, Unit 5, Topics 5.8, 5.9, and 5.10',"Women's-rights organizers; conventions, petitions, and associations sustained collective advocacy after 1848; movement growth did not produce immediate national voting rights."],
 ];
 
+const backslashRunBefore=(value,index)=>{
+  let backslashes=0;
+  for (let cursor=index-1;cursor>=0&&value[cursor]==='\\';cursor-=1) backslashes+=1;
+  return backslashes;
+};
+const parseMarkdownRowCells=row=>{
+  if (!row.startsWith('|')||!row.endsWith('|')||backslashRunBefore(row,row.length-1)%2===1) failLedger('row must start and end with pipe delimiters');
+  const cells=[]; let cell='';
+  for (let index=1;index<row.length;index+=1) {
+    const character=row[index];
+    if (character!=='|') { cell+=character; continue; }
+    const backslashes=backslashRunBefore(row,index);
+    if (backslashes) cell=`${cell.slice(0,-backslashes)}${'\\'.repeat(Math.floor(backslashes/2))}`;
+    if (backslashes%2===1) { cell+='|'; continue; }
+    cells.push(cell.trim()); cell='';
+  }
+  return cells;
+};
 const parseLedgerRows=source=>{
   if (!source.startsWith(ledgerIntroduction)) failLedger('missing canonical introduction');
-  const lines=source.split('\n'); const headerIndex=lines.findIndex(line=>line===ledgerHeader);
-  if (headerIndex<0||lines[headerIndex+1]!==ledgerSeparator) failLedger('missing canonical five-column table header');
+  const tablePrefix=`${ledgerIntroduction}\n\n${ledgerHeader}\n${ledgerSeparator}\n`;
+  if (!source.startsWith(tablePrefix)) failLedger('table header must immediately follow canonical introduction');
+  const lines=source.split('\n'); const headerIndex=ledgerIntroduction.split('\n').length+1;
   const expectedIds=new Set(expectedLedgerRows.map(row=>row[0])); const rows=[];
   let tableEnd=headerIndex+2;
   for (;tableEnd<lines.length;tableEnd+=1) {
     const raw=lines[tableEnd]; if (!raw) break;
-    if (!raw.startsWith('|')||!raw.endsWith('|')) failLedger('row must start and end with pipe delimiters');
-    const cells=raw.split('|').slice(1,-1).map(cell=>cell.trim());
+    const cells=parseMarkdownRowCells(raw);
     if (cells.length!==5) failLedger('row must contain exactly five columns');
     const idMatch=cells[0].match(/^`(apwh-u5-[a-z0-9]+(?:-[a-z0-9]+)*)`$/);
     if (!idMatch) failLedger(`malformed Stable ID cell ${cells[0]}`);
@@ -322,6 +340,17 @@ test('rejects graph self-links, duplicates, cross-category reuse, nonreciprocity
   }
 });
 
+test('rejects symbol fields and non-ordinary graph arrays and note maps before freezing',()=>{
+  const cases=[
+    ["CONNECTION_DATA.get('apwh-u5-london-natural-law-empiricism').connectionNotes[Symbol('extra')]='English note.';",/extra connection note key Symbol\(extra\)/],
+    ["{ const notes=CONNECTION_DATA.get('apwh-u5-london-natural-law-empiricism').connectionNotes; const note=notes['apwh-u5-london-social-contract-natural-rights']; notes.extra='English extra.'; Object.defineProperty(notes,'apwh-u5-london-social-contract-natural-rights',{enumerable:true,configurable:true,get(){delete notes.extra; return note;}}); }",/extra connection note key extra/],
+    ["CONNECTION_DATA.get('apwh-u5-london-natural-law-empiricism').effectStudyPointIds.extra='English extra.';",/effectStudyPointIds must be an ordinary dense array/],
+    ["Object.setPrototypeOf(CONNECTION_DATA.get('apwh-u5-london-natural-law-empiricism').effectStudyPointIds,Object.create(Array.prototype));",/effectStudyPointIds must be an ordinary dense array/],
+    ["Object.setPrototypeOf(CONNECTION_DATA.get('apwh-u5-london-natural-law-empiricism').connectionNotes,Object.create(Object.prototype));",/connectionNotes must be a plain object/],
+  ];
+  for (const [statement,message] of cases) assert.throws(()=>evaluate(mutateConnections('graph exact shape',statement)),message);
+});
+
 test('publishes exact deeply frozen Unit 5 cards with defensive lookup semantics',()=>{
   const api=evaluate();
   assert.deepEqual(JSON.parse(JSON.stringify(api.unitCards)),expectedUnitCards);
@@ -364,6 +393,15 @@ test('rejects malformed, null, extra-field, and wrong-set Unit 5 cards',()=>{
   for (const [statement,message] of cases) assert.throws(()=>evaluate(mutateUnitCards('malformed card',statement)),message);
 });
 
+test('rejects symbol fields and non-ordinary nested Unit 5 card arrays before freezing',()=>{
+  const cases=[
+    ["UNIT_CARD_LIST[0][Symbol('extra')]='English extra.';",/card must contain exactly the approved fields/],
+    ["UNIT_CARD_LIST[0].examSkills.extra='English extra.';",/examSkills must be an ordinary dense array/],
+    ["Object.setPrototypeOf(UNIT_CARD_LIST[0].takeaways,Object.create(Array.prototype));",/takeaways must be an ordinary dense array/],
+  ];
+  for (const [statement,message] of cases) assert.throws(()=>evaluate(mutateUnitCards('card exact shape',statement)),message);
+});
+
 test('locks the canonical introduction and all five source-ledger columns for exactly thirty records',()=>{
   assert.equal(ledgerSource.startsWith(ledgerIntroduction),true);
   const rows=parseLedgerRows(ledgerSource);
@@ -379,12 +417,20 @@ test('locks the canonical introduction and all five source-ledger columns for ex
   }
 });
 
+test('tokenizes escaped Markdown pipes without creating extra ledger columns',()=>{
+  const row='| one | two \\| literal pipe | three | four | five |';
+  assert.deepEqual(parseMarkdownRowCells(row),['one','two | literal pipe','three','four','five']);
+  const oddRunRow=String.raw`| one | three \\\| literal pipe | three | four | five |`;
+  assert.deepEqual(parseMarkdownRowCells(oddRunRow),['one',String.raw`three \| literal pipe`,'three','four','five']);
+});
+
 test('rejects source-ledger structural garbage, missing rows, extra columns, ordering, and field drift',()=>{
   const firstRow=ledgerSource.split('\n').find(line=>line.includes('`apwh-u5-london-natural-law-empiricism`'));
   const secondRow=ledgerSource.split('\n').find(line=>line.includes('`apwh-u5-london-social-contract-natural-rights`'));
   const lastRow=ledgerSource.split('\n').find(line=>line.includes('`apwh-u5-seneca-organized-feminism-limits`'));
   const fourColumnRow=`${firstRow.split('|').slice(0,-2).join('|')}|`;
   const cases=[
+    [ledgerSource.replace(`${ledgerIntroduction}\n\n${ledgerHeader}`,`${ledgerIntroduction}\n\nInserted prose.\n\n${ledgerHeader}`),/table header must immediately follow canonical introduction/],
     [ledgerSource.replace(firstRow,`${firstRow} trailing garbage`),/row must start and end with pipe delimiters/],
     [ledgerSource.replace(firstRow,fourColumnRow),/row must contain exactly five columns/],
     [ledgerSource.replace(firstRow,firstRow?.replace(/ \|$/,' | extra |')),/row must contain exactly five columns/],

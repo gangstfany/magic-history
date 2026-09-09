@@ -204,6 +204,20 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
     return letters.length>0 && letters.every(letter=>/\p{Script=Latin}/u.test(letter));
   };
   const plainObject = value => value!==null&&typeof value==='object'&&!Array.isArray(value)&&Object.getPrototypeOf(value)===Object.prototype;
+  const hasExactOwnStringKeys = (value,expectedKeys) => {
+    const keys=Reflect.ownKeys(value);
+    return keys.length===expectedKeys.length
+      && keys.every(key=>typeof key==='string')
+      && [...keys].sort().every((key,index)=>key===[...expectedKeys].sort()[index]);
+  };
+  const ordinaryDenseArray = value => {
+    if (!Array.isArray(value)||Object.getPrototypeOf(value)!==Array.prototype) return false;
+    const keys=Reflect.ownKeys(value);
+    const expectedKeys=Array.from({length:value.length},(_,index)=>String(index)).concat('length');
+    return keys.length===expectedKeys.length
+      && keys.every(key=>typeof key==='string')
+      && expectedKeys.every(key=>Object.prototype.hasOwnProperty.call(value,key));
+  };
   const validateLocations = () => {
     const canonicalNumbers=CANONICAL_LOCATIONS.map(entry=>entry[0]);
     if (LOCATION_NUMBERS.length!==canonicalNumbers.length||LOCATION_NUMBERS.some((number,index)=>number!==canonicalNumbers[index])) {
@@ -301,11 +315,12 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
   };
   const validateUnitCards = cards => {
     if (!Array.isArray(cards)) failCard(null,'cards must be an array');
+    if (!ordinaryDenseArray(cards)) failCard(null,'cards must be an ordinary dense array');
     const keys=['examSkills','id','kind','prompt','role','summary','takeaways','title'];
     const kinds=new Set(); const ids=new Set();
     for (const card of cards) {
       if (!plainObject(card)) failCard(card,'card must be a non-null plain object');
-      if (Object.keys(card).sort().join(',')!==keys.join(',')) failCard(card,'card must contain exactly the approved fields');
+      if (!hasExactOwnStringKeys(card,keys)) failCard(card,'card must contain exactly the approved fields');
       if (!['context','synthesis'].includes(card.kind)) failCard(card,`invalid kind ${describe(card.kind)}`);
       if (kinds.has(card.kind)) failCard(card,`duplicate kind ${card.kind}`); kinds.add(card.kind);
       if (typeof card.id!=='string'||!card.id.trim()) failCard(card,'card ID must be a nonempty string');
@@ -316,6 +331,7 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
         if (!english(card[field])) failCard(card,`non-English ${field}`);
       }
       if (!Array.isArray(card.examSkills)) failCard(card,'examSkills must be an array');
+      if (!ordinaryDenseArray(card.examSkills)) failCard(card,'examSkills must be an ordinary dense array');
       if (!card.examSkills.length) failCard(card,'missing examSkills');
       if (card.examSkills.length>2) failCard(card,'too many examSkills');
       const seenSkills=new Set();
@@ -324,6 +340,7 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
         if (seenSkills.has(skill)) failCard(card,`duplicate examSkill ${skill}`); seenSkills.add(skill);
       }
       if (!Array.isArray(card.takeaways)) failCard(card,'takeaways must be an array');
+      if (!ordinaryDenseArray(card.takeaways)) failCard(card,'takeaways must be an ordinary dense array');
       if (card.takeaways.length!==3) failCard(card,'takeaways must contain exactly three items');
       for (const takeaway of card.takeaways) {
         if (typeof takeaway!=='string'||!takeaway.trim()) failCard(card,'empty takeaway');
@@ -338,6 +355,32 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
   validateRaw(RAW_RECORDS);
   configureConnections();
   const contextById = new Map(STUDY_MANIFEST.map(row => [row[0], row]));
+  const validateConnectionShapes = () => {
+    const connectionKeys=['causeStudyPointIds','connectionNotes','effectStudyPointIds','relatedStudyPointIds'];
+    for (const [id,connections] of CONNECTION_DATA) {
+      if (!plainObject(connections)||!hasExactOwnStringKeys(connections,connectionKeys)) fail(id,'malformed connection structure');
+      for (const category of ['causeStudyPointIds','effectStudyPointIds','relatedStudyPointIds']) {
+        if (!ordinaryDenseArray(connections[category])) fail(id,`${category} must be an ordinary dense array`);
+      }
+      if (!plainObject(connections.connectionNotes)) fail(id,'connectionNotes must be a plain object');
+    }
+    const reciprocals={causeStudyPointIds:'effectStudyPointIds',effectStudyPointIds:'causeStudyPointIds',relatedStudyPointIds:'relatedStudyPointIds'};
+    for (const [id,connections] of CONNECTION_DATA) {
+      for (const [category,reciprocal] of Object.entries(reciprocals)) {
+        for (const targetId of connections[category]) {
+          const target=CONNECTION_DATA.get(targetId);
+          if (target&&!target[reciprocal].includes(id)) fail(id,`nonreciprocal ${category} connection to ${targetId}`);
+        }
+      }
+      const linkedIds=[...connections.causeStudyPointIds,...connections.effectStudyPointIds,...connections.relatedStudyPointIds];
+      const noteKeys=Reflect.ownKeys(connections.connectionNotes);
+      const extraNoteKey=noteKeys.find(key=>typeof key!=='string'||!linkedIds.includes(key));
+      if (extraNoteKey!==undefined) fail(id,`extra connection note key ${describe(extraNoteKey)}`);
+      const missingNoteKey=linkedIds.find(key=>!noteKeys.includes(key));
+      if (missingNoteKey!==undefined) fail(id,`missing connection note for ${missingNoteKey}`);
+    }
+  };
+  validateConnectionShapes();
   validateUnitCards(UNIT_CARD_LIST);
   const UNIT_CARDS=Object.freeze(Object.fromEntries(UNIT_CARD_LIST.map(card=>[card.kind,freezeUnitCard(card)])));
   const freezeRecord = raw => {
@@ -374,7 +417,7 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
         }
       }
       if (!linked.length) fail(record.id,'missing connection');
-      const extra=Object.keys(record.connectionNotes).find(id=>!linked.includes(id));
+      const extra=Reflect.ownKeys(record.connectionNotes).find(id=>typeof id!=='string'||!linked.includes(id));
       if (extra!==undefined) fail(record.id,`extra connection note key ${describe(extra)}`);
     }
   };
