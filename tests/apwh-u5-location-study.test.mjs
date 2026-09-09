@@ -351,6 +351,13 @@ test('rejects symbol fields and non-ordinary graph arrays and note maps before f
   for (const [statement,message] of cases) assert.throws(()=>evaluate(mutateConnections('graph exact shape',statement)),message);
 });
 
+test('rejects connection note accessors that mutate later raw records before publication',()=>{
+  const malformed=mutateConnections('mutating connection note accessor',"{ const notes=CONNECTION_DATA.get('apwh-u5-london-natural-law-empiricism').connectionNotes; const target='apwh-u5-london-social-contract-natural-rights'; const note=notes[target]; Object.defineProperty(notes,target,{configurable:true,enumerable:true,get(){RAW_RECORDS[1][Symbol('review-extra')]='English extra.'; return note;}}); }");
+  const sandbox={}; sandbox.window=sandbox;
+  assert.throws(()=>vm.runInNewContext(malformed,sandbox),/Invalid Unit 5 study record .*connectionNotes must contain ordinary enumerable data fields/);
+  assert.equal(Object.hasOwn(sandbox,'APWH_U5_LOCATION_STUDY'),false);
+});
+
 test('publishes exact deeply frozen Unit 5 cards with defensive lookup semantics',()=>{
   const api=evaluate();
   assert.deepEqual(JSON.parse(JSON.stringify(api.unitCards)),expectedUnitCards);

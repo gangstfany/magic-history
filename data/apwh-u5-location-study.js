@@ -390,6 +390,7 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
       if (extraNoteKey!==undefined) fail(id,`extra connection note key ${describe(extraNoteKey)}`);
       const missingNoteKey=linkedIds.find(key=>!noteKeys.includes(key));
       if (missingNoteKey!==undefined) fail(id,`missing connection note for ${missingNoteKey}`);
+      if (!hasExactOwnEnumerableDataFields(connections.connectionNotes,[...new Set(linkedIds)])) fail(id,'connectionNotes must contain ordinary enumerable data fields');
     }
   };
   validateConnectionShapes();
