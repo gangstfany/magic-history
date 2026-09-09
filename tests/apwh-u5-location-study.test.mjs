@@ -6,11 +6,12 @@ import vm from 'node:vm';
 const moduleUrl = new URL('../data/apwh-u5-location-study.js', import.meta.url);
 assert.equal(existsSync(moduleUrl), true, 'Unit 5 data module must exist');
 const dataModuleSource = readFileSync(moduleUrl, 'utf8');
-const evaluate = (source = dataModuleSource, seed = {}) => {
+const evaluateSandbox = (source = dataModuleSource, seed = {}) => {
   const sandbox = { ...seed }; sandbox.window = sandbox;
   vm.runInNewContext(source, sandbox);
-  return sandbox.APWH_U5_LOCATION_STUDY;
+  return sandbox;
 };
+const evaluate = (source = dataModuleSource, seed = {}) => evaluateSandbox(source,seed).APWH_U5_LOCATION_STUDY;
 
 const expectedLocations = new Map([
   ['23', 'Enlightenment Foundations · London'],
@@ -129,6 +130,22 @@ test('provides defensive Unit 4-compatible lookups and deep immutability', () =>
   assert.notEqual(api.getByLocation('23'),api.getByLocation('23'));
   const copy=api.getByLocation('23'); copy.pop(); assert.equal(api.getByLocation('23').length,3);
   for (const value of [api,api.locationNumbers,api.records,first,first.topicCodes,first.themeIds,first.examSkills,first.keyPeople,first.keyPeople[0],first.keyTerms,first.keyTerms[0],first.evidence,first.source]) assert.equal(Object.isFrozen(value),true);
+  const seen=new Set();
+  const assertDeepFrozen=value=>{
+    if (value===null||typeof value!=='object'||seen.has(value)) return;
+    seen.add(value); assert.equal(Object.isFrozen(value),true);
+    for (const key of Reflect.ownKeys(value)) assertDeepFrozen(value[key]);
+  };
+  assertDeepFrozen(api);
+});
+
+test('publishes the Unit 5 global with an immutable property descriptor',()=>{
+  const sandbox=evaluateSandbox();
+  const descriptor=Object.getOwnPropertyDescriptor(sandbox,'APWH_U5_LOCATION_STUDY');
+  assert.equal(descriptor.value,sandbox.APWH_U5_LOCATION_STUDY);
+  assert.equal(descriptor.enumerable,true);
+  assert.equal(descriptor.configurable,false);
+  assert.equal(descriptor.writable,false);
 });
 
 test('refuses to overwrite an existing Unit 5 global', () => {
@@ -150,12 +167,19 @@ const mutations = [
   ['missing skill',"['CDI','TEC'],['Contextualization']","['CDI','TEC'],[]",'apwh-u5-london-natural-law-empiricism','missing examSkills'],
   ['invalid skill',"['CDI','TEC'],['Contextualization']","['CDI','TEC'],['Recall']",'apwh-u5-london-natural-law-empiricism','invalid examSkill'],
   ['duplicate skill',"['Causation','CCOT']]","['Causation','Causation']]",'apwh-u5-london-rights-language-atlantic','duplicate examSkill'],
-  ['incomplete content',"'Bacon used observation and Newton expressed physical motion as mathematical laws.'","''",'apwh-u5-london-natural-law-empiricism','summary'],
+  ['empty content',"'Bacon used observation and Newton expressed physical motion as mathematical laws.'","''",'apwh-u5-london-natural-law-empiricism','summary must be a nonempty string'],
+  ['non-string content',"'Bacon used observation and Newton expressed physical motion as mathematical laws.'",'42','apwh-u5-london-natural-law-empiricism','summary must be a nonempty string'],
   ['non-English content',"'Their methods encouraged a wider European and Atlantic Enlightenment to seek discoverable natural laws for society.'","'启蒙思想'",'apwh-u5-london-natural-law-empiricism','non-English significance'],
   ['malformed actor',"'Francis Bacon and Isaac Newton','Bacon advanced empirical inquiry; Newton demonstrated mathematical natural law.'","'', 'Bacon advanced empirical inquiry; Newton demonstrated mathematical natural law.'",'apwh-u5-london-natural-law-empiricism','keyPeople'],
+  ['extra actor key','keyPeople: [{ name: person, role }]','keyPeople: [{ name: person, role, metadata: { mutable: true } }]','apwh-u5-london-natural-law-empiricism','keyPeople entry must contain exactly name and role'],
+  ['non-plain actor','keyPeople: [{ name: person, role }]','keyPeople: [Object.assign(Object.create(null), { name: person, role })]','apwh-u5-london-natural-law-empiricism','keyPeople entry must be a plain object'],
   ['malformed term',"'empiricism','Knowledge built from observation and tested experience.'","'empiricism',''",'apwh-u5-london-natural-law-empiricism','keyTerms'],
+  ['extra term key','keyTerms: [{ term, explanation }]','keyTerms: [{ term, explanation, metadata: { mutable: true } }]','apwh-u5-london-natural-law-empiricism','keyTerms entry must contain exactly explanation and term'],
+  ['non-plain term','keyTerms: [{ term, explanation }]','keyTerms: [Object.assign(Object.create(null), { term, explanation })]','apwh-u5-london-natural-law-empiricism','keyTerms entry must be a plain object'],
   ['malformed evidence',"['Bacon argued that repeated observation could build reliable knowledge.','Newtonian physics presented a law-governed universe to later social thinkers.']","['Only one statement.']",'apwh-u5-london-natural-law-empiricism','evidence'],
   ['malformed source',"source: { id: 'amsco-apwh-u5', locator }","source: { id: 'wrong-source', locator }",'apwh-u5-london-natural-law-empiricism','source'],
+  ['extra source key',"source: { id: 'amsco-apwh-u5', locator }","source: { id: 'amsco-apwh-u5', locator, metadata: { mutable: true } }",'apwh-u5-london-natural-law-empiricism','source must contain exactly id and locator'],
+  ['non-plain source',"source: { id: 'amsco-apwh-u5', locator }","source: Object.assign(Object.create(null), { id: 'amsco-apwh-u5', locator })",'apwh-u5-london-natural-law-empiricism','source must be a plain object'],
   ['fourth record at a location',"['apwh-u5-london-rights-language-atlantic','23',3,'Rights Language Becomes Portable'","['apwh-u5-london-extra-record','23',3,'Extra Record','1700',1700,1700,'world-event-23-2',['5.1'],['CDI'],['Causation']],\n['apwh-u5-london-rights-language-atlantic','23',3,'Rights Language Becomes Portable'",'apwh-u5-london-rights-language-atlantic','exactly three records'],
   ['null raw records','const RAW_RECORDS = [','const RAW_RECORDS = null; const UNUSED_RAW_RECORDS = [','(missing ID)','raw records must be an array'],
 ];
@@ -168,6 +192,22 @@ for (const [label,search,replacement,id,rule] of mutations) {
       assert.match(error.message,/Invalid Unit 5/);
       assert.match(error.message,new RegExp(id.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
       assert.match(error.message,new RegExp(rule));
+      return true;
+    });
+  });
+}
+
+const locationMutations = [
+  ['extra location',"'105':\"Women's Rights · Seneca Falls\",","'105':\"Women's Rights · Seneca Falls\",'999':'Extra Place',",'location registry must contain exactly the ordered locationNumbers'],
+  ['empty location name',"'23':'Enlightenment Foundations · London'","'23':''",'location 23 must have a nonempty English name'],
+  ['wrong canonical binding',"'23':'world-event-23-2'","'23':'world-event-23-9'",'location 23 has invalid main-event binding'],
+];
+for (const [label,search,replacement,rule] of locationMutations) {
+  test(`rejects ${label} in the location registry`,()=>{
+    const malformed=dataModuleSource.replace(search,replacement);
+    assert.notEqual(malformed,dataModuleSource,`${label} fixture mutation`);
+    assert.throws(()=>evaluate(malformed),error=>{
+      assert.equal(error.message,`Invalid Unit 5 locations (locations): ${rule}`);
       return true;
     });
   });

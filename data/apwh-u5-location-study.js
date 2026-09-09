@@ -22,6 +22,18 @@
     '105':"Women's Rights · Seneca Falls",
   });
   const LOCATION_BINDINGS = Object.freeze({'23':'world-event-23-2','51':'world-event-51-0','24':'world-event-24-1','66':'world-event-66-1','52':'world-event-52-0','36':'world-event-36-0','29':'world-event-29-0','14':'world-event-14-1','84':'world-event-84-2','105':'world-event-105-0'});
+  const CANONICAL_LOCATIONS = Object.freeze([
+    ['23','Enlightenment Foundations · London','world-event-23-2'],
+    ['51','American Revolution · Philadelphia','world-event-51-0'],
+    ['24','French Revolution · Paris','world-event-24-1'],
+    ['66','Haitian Revolution · Saint-Domingue / Port-au-Prince','world-event-66-1'],
+    ['52','Latin American Independence · Caracas','world-event-52-0'],
+    ['36','Industrial Revolution · Manchester','world-event-36-0'],
+    ['29','Nationalism and Industrial Power · Berlin','world-event-29-0'],
+    ['14','Meiji State-Led Industrialization · Edo / Tokyo','world-event-14-1'],
+    ['84',"Muhammad Ali's Egypt · Cairo",'world-event-84-2'],
+    ['105',"Women's Rights · Seneca Falls",'world-event-105-0'],
+  ]);
   const STUDY_MANIFEST = [
 ['apwh-u5-london-natural-law-empiricism','23',1,'Natural Law and Empirical Reasoning','1600–1750',1600,1750,'world-event-23-2',['5.1'],['CDI','TEC'],['Contextualization']],
 ['apwh-u5-london-social-contract-natural-rights','23',2,'Social Contract and Natural Rights','1651–1762',1651,1762,'world-event-23-2',['5.1'],['CDI','GOV'],['Causation']],
@@ -101,6 +113,23 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
     const letters=value.match(/\p{Letter}/gu)||[];
     return letters.length>0 && letters.every(letter=>/\p{Script=Latin}/u.test(letter));
   };
+  const plainObject = value => value!==null&&typeof value==='object'&&!Array.isArray(value)&&Object.getPrototypeOf(value)===Object.prototype;
+  const validateLocations = () => {
+    const canonicalNumbers=CANONICAL_LOCATIONS.map(entry=>entry[0]);
+    if (LOCATION_NUMBERS.length!==canonicalNumbers.length||LOCATION_NUMBERS.some((number,index)=>number!==canonicalNumbers[index])) {
+      throw new Error('Invalid Unit 5 locations (locations): location registry must contain exactly the ordered locationNumbers');
+    }
+    const keys=Object.keys(LOCATIONS);
+    if (keys.length!==canonicalNumbers.length||canonicalNumbers.some(number=>!Object.prototype.hasOwnProperty.call(LOCATIONS,number))) {
+      throw new Error('Invalid Unit 5 locations (locations): location registry must contain exactly the ordered locationNumbers');
+    }
+    for (const [number,name,binding] of CANONICAL_LOCATIONS) {
+      if (!english(LOCATIONS[number])) throw new Error(`Invalid Unit 5 locations (locations): location ${number} must have a nonempty English name`);
+      if (LOCATIONS[number]!==name) throw new Error(`Invalid Unit 5 locations (locations): location ${number} does not match its canonical name`);
+      if (LOCATION_BINDINGS[number]!==binding) throw new Error(`Invalid Unit 5 locations (locations): location ${number} has invalid main-event binding`);
+    }
+    if (Object.keys(LOCATION_BINDINGS).length!==canonicalNumbers.length) throw new Error('Invalid Unit 5 locations (locations): location registry must contain exactly the ordered locationNumbers');
+  };
   const validateValues = (id,values,allowed,field,singular) => {
     if (!Array.isArray(values)) fail(id,`${field} must be an array`);
     if (!values.length) fail(id,`missing ${field}`);
@@ -158,15 +187,29 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
       const row=manifestById.get(id); if (!row) fail(id,'raw record is absent from manifest');
       if (Object.getPrototypeOf(record)!==Object.prototype||Object.keys(record).sort().join(',')!=='evidence,examConnection,id,keyPeople,keyTerms,significance,source,summary') fail(id,'malformed raw record shape');
       for (const field of ['summary','significance','examConnection']) {
-        if (!english(record[field])) fail(id,english(record[field])?`${field} must be nonempty`:`${typeof record[field]==='string'&&record[field].trim()?'non-English ':''}${field}`);
+        if (typeof record[field]!=='string'||!record[field].trim()) fail(id,`${field} must be a nonempty string`);
+        if (!english(record[field])) fail(id,`non-English ${field}`);
       }
-      if (!Array.isArray(record.keyPeople)||!record.keyPeople.length||record.keyPeople.some(person=>!person||!english(person.name)||!english(person.role))) fail(id,'malformed keyPeople');
-      if (!Array.isArray(record.keyTerms)||!record.keyTerms.length||record.keyTerms.some(term=>!term||!english(term.term)||!english(term.explanation))) fail(id,'malformed keyTerms');
+      if (!Array.isArray(record.keyPeople)||!record.keyPeople.length) fail(id,'malformed keyPeople');
+      for (const person of record.keyPeople) {
+        if (!plainObject(person)) fail(id,'keyPeople entry must be a plain object');
+        if (Object.keys(person).sort().join(',')!=='name,role') fail(id,'keyPeople entry must contain exactly name and role');
+        if (!english(person.name)||!english(person.role)) fail(id,'malformed keyPeople');
+      }
+      if (!Array.isArray(record.keyTerms)||!record.keyTerms.length) fail(id,'malformed keyTerms');
+      for (const term of record.keyTerms) {
+        if (!plainObject(term)) fail(id,'keyTerms entry must be a plain object');
+        if (Object.keys(term).sort().join(',')!=='explanation,term') fail(id,'keyTerms entry must contain exactly explanation and term');
+        if (!english(term.term)||!english(term.explanation)) fail(id,'malformed keyTerms');
+      }
       if (!Array.isArray(record.evidence)||record.evidence.length<2||record.evidence.some(statement=>!english(statement))) fail(id,'malformed evidence');
+      if (!plainObject(record.source)) fail(id,'source must be a plain object');
+      if (Object.keys(record.source).sort().join(',')!=='id,locator') fail(id,'source must contain exactly id and locator');
       if (!record.source||record.source.id!=='amsco-apwh-u5'||record.source.locator!==expectedLocator(row[8])) fail(id,'malformed source');
     }
     for (const [id] of manifestById) if (!seen.has(id)) fail(id,'missing raw record');
   };
+  validateLocations();
   validateManifest(STUDY_MANIFEST);
   validateRaw(RAW_RECORDS);
   const contextById = new Map(STUDY_MANIFEST.map(row => [row[0], row]));
