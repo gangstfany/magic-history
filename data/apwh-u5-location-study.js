@@ -230,6 +230,51 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
       && expectedKeys.every(key=>Object.prototype.hasOwnProperty.call(descriptors,key))
       && indexKeys.every(key=>ordinaryDataDescriptor(descriptors[key],{enumerable:true,configurable:true,writable:true}));
   };
+  const ordinaryArrayValues = value => {
+    const descriptors=Object.getOwnPropertyDescriptors(value);
+    return Array.from({length:descriptors.length.value},(_,index)=>descriptors[index].value);
+  };
+  const validateRecordInputShapes = (manifest,rawRecords) => {
+    if (!ordinaryDenseArray(manifest)) fail('(manifest)','manifest must be an ordinary dense array');
+    const rows=ordinaryArrayValues(manifest);
+    for (let index=0;index<rows.length;index+=1) {
+      const row=rows[index];
+      if (!ordinaryDenseArray(row)||Object.getOwnPropertyDescriptor(row,'length').value!==11) {
+        fail(`(manifest row ${index+1})`,'manifest row must be an ordinary dense eleven-field array');
+      }
+      const rowValues=ordinaryArrayValues(row);
+      const id=typeof rowValues[0]==='string'&&rowValues[0]?rowValues[0]:`(manifest row ${index+1})`;
+      for (const [field,fieldIndex] of [['topicCodes',8],['themeIds',9],['examSkills',10]]) {
+        if (!ordinaryDenseArray(rowValues[fieldIndex])) fail(id,`${field} must be an ordinary dense array`);
+      }
+    }
+    if (!Array.isArray(rawRecords)) fail('(missing ID)','raw records must be an array');
+    if (!ordinaryDenseArray(rawRecords)) fail('(missing ID)','raw records must be an ordinary dense array');
+    const records=ordinaryArrayValues(rawRecords);
+    const rawKeys=['evidence','examConnection','id','keyPeople','keyTerms','significance','source','summary'];
+    for (let index=0;index<records.length;index+=1) {
+      const record=records[index];
+      if (!plainObject(record)||!hasExactOwnEnumerableDataFields(record,rawKeys)) {
+        fail(`(raw record ${index+1})`,'record must contain exactly the approved ordinary data fields');
+      }
+      const descriptors=Object.getOwnPropertyDescriptors(record);
+      const id=typeof descriptors.id.value==='string'&&descriptors.id.value?descriptors.id.value:`(raw record ${index+1})`;
+      for (const field of ['keyPeople','keyTerms','evidence']) {
+        if (!ordinaryDenseArray(descriptors[field].value)) fail(id,`${field} must be an ordinary dense array`);
+      }
+      for (const person of ordinaryArrayValues(descriptors.keyPeople.value)) {
+        if (!plainObject(person)) fail(id,'keyPeople entry must be a plain object');
+        if (!hasExactOwnEnumerableDataFields(person,['name','role'])) fail(id,'keyPeople entry must contain exactly name and role');
+      }
+      for (const term of ordinaryArrayValues(descriptors.keyTerms.value)) {
+        if (!plainObject(term)) fail(id,'keyTerms entry must be a plain object');
+        if (!hasExactOwnEnumerableDataFields(term,['term','explanation'])) fail(id,'keyTerms entry must contain exactly explanation and term');
+      }
+      const source=descriptors.source.value;
+      if (!plainObject(source)) fail(id,'source must be a plain object');
+      if (!hasExactOwnEnumerableDataFields(source,['id','locator'])) fail(id,'source must contain exactly id and locator');
+    }
+  };
   const validateLocations = () => {
     const canonicalNumbers=CANONICAL_LOCATIONS.map(entry=>entry[0]);
     if (LOCATION_NUMBERS.length!==canonicalNumbers.length||LOCATION_NUMBERS.some((number,index)=>number!==canonicalNumbers[index])) {
@@ -362,6 +407,7 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
     if (cards.length!==2||!kinds.has('context')||!kinds.has('synthesis')) failCard(null,'expected exactly context and synthesis');
   };
   const freezeUnitCard = card => Object.freeze({...card,examSkills:Object.freeze([...card.examSkills]),takeaways:Object.freeze([...card.takeaways])});
+  validateRecordInputShapes(STUDY_MANIFEST,RAW_RECORDS);
   validateLocations();
   validateManifest(STUDY_MANIFEST);
   validateRaw(RAW_RECORDS);
@@ -435,10 +481,16 @@ P('apwh-u5-seneca-organized-feminism-limits','Conventions, petitions, and associ
     }
   };
   validateStudyGraph();
-  const byLocation=new Map(LOCATION_NUMBERS.map(number=>[number,RECORDS.filter(record=>record.locationNumber===number)]));
+  function compareRecords(a,b) {
+    return a.sequence-b.sequence
+      || a.startYear-b.startYear
+      || a.endYear-b.endYear
+      || String(a.id).localeCompare(String(b.id));
+  }
+  const byLocation=new Map(LOCATION_NUMBERS.map(number=>[number,RECORDS.filter(record=>record.locationNumber===number).sort(compareRecords)]));
   const api=Object.freeze({
     unitId:UNIT_ID,unitNumber:UNIT_NUMBER,connectionTimelineMode:'main-event',
-    locationNumbers:LOCATION_NUMBERS,records:RECORDS,unitCards:UNIT_CARDS,
+    locationNumbers:LOCATION_NUMBERS,records:RECORDS,unitCards:UNIT_CARDS,compareRecords,
     getById(id){return byId.get(String(id))||null;},
     getByLocation(number){return [...(byLocation.get(String(number))||[])];},
     locationName(number){const key=String(number);return Object.prototype.hasOwnProperty.call(LOCATIONS,key)?LOCATIONS[key]:null;},

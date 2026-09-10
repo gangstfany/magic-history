@@ -276,6 +276,114 @@ test('covers exact IDs, topics, themes, skills, sequences, and event bindings', 
   }
 });
 
+test('matches the shared Unit 4 API surface and comparator tie-breakers',()=>{
+  const api=evaluate();
+  assert.deepEqual(Object.keys(api).sort(),[
+    'compareRecords','connectionTimelineMode','getById','getByLocation','getUnitCard',
+    'locationName','locationNumbers','records','unitCards','unitId','unitNumber',
+  ]);
+  const records=[
+    {id:'z',sequence:2,startYear:1,endYear:1},
+    {id:'z',sequence:1,startYear:3,endYear:1},
+    {id:'z',sequence:1,startYear:2,endYear:3},
+    {id:'z',sequence:1,startYear:2,endYear:2},
+    {id:'a',sequence:1,startYear:2,endYear:2},
+  ];
+  assert.deepEqual(records.sort(api.compareRecords).map(record=>record.id),['a','z','z','z','z']);
+  assert.deepEqual(records.map(record=>[record.sequence,record.startYear,record.endYear,record.id]),[
+    [1,2,2,'a'],[1,2,2,'z'],[1,2,3,'z'],[1,3,1,'z'],[2,1,1,'z'],
+  ]);
+});
+
+test('sorts every defensive location lookup with the shared comparator',()=>{
+  let malformed=dataModuleSource
+    .replace("'apwh-u5-london-natural-law-empiricism','23',1","'apwh-u5-london-natural-law-empiricism','23',3")
+    .replace("'apwh-u5-london-rights-language-atlantic','23',3","'apwh-u5-london-rights-language-atlantic','23',1");
+  assert.notEqual(malformed,dataModuleSource,'out-of-order location fixture mutation');
+  const api=evaluate(malformed);
+  const first=api.getByLocation('23');
+  assert.deepEqual(Array.from(first,record=>record.sequence),[1,2,3]);
+  first.reverse();
+  assert.deepEqual(Array.from(api.getByLocation('23'),record=>record.sequence),[1,2,3]);
+});
+
+const mutateRecordInputs=(label,statement)=>{
+  const malformed=dataModuleSource.replace(/(\n\s*(?:validateRecordInputShapes\(STUDY_MANIFEST,RAW_RECORDS\);\n\s*)?validateLocations\(\);)/,`\n  ${statement}$1`);
+  assert.notEqual(malformed,dataModuleSource,`${label} fixture mutation`);
+  return malformed;
+};
+const assertRecordInputRejected=(label,statement)=>{
+  const sandbox={}; sandbox.window=sandbox;
+  assert.throws(()=>vm.runInNewContext(mutateRecordInputs(label,statement),sandbox),/Invalid Unit 5/);
+  assert.equal(Object.hasOwn(sandbox,'APWH_U5_LOCATION_STUDY'),false);
+};
+
+const outerContainerCases=[
+  ['manifest symbol',"STUDY_MANIFEST[Symbol('extra')]='English extra.';"],
+  ['manifest property',"STUDY_MANIFEST.extra='English extra.';"],
+  ['manifest hole','delete STUDY_MANIFEST[1];'],
+  ['manifest prototype','Object.setPrototypeOf(STUDY_MANIFEST,Object.create(Array.prototype));'],
+  ['manifest accessor',"{const value=STUDY_MANIFEST[0]; Object.defineProperty(STUDY_MANIFEST,'0',{enumerable:true,configurable:true,get(){return value;}});}"],
+  ['raw symbol',"RAW_RECORDS[Symbol('extra')]='English extra.';"],
+  ['raw property',"RAW_RECORDS.extra='English extra.';"],
+  ['raw hole','delete RAW_RECORDS[1];'],
+  ['raw prototype','Object.setPrototypeOf(RAW_RECORDS,Object.create(Array.prototype));'],
+  ['raw accessor',"{const value=RAW_RECORDS[0]; Object.defineProperty(RAW_RECORDS,'0',{enumerable:true,configurable:true,get(){return value;}});}"],
+];
+for (const [label,statement] of outerContainerCases) test(`rejects ${label} outer-container shape`,()=>assertRecordInputRejected(label,statement));
+
+const manifestRowCases=[
+  ['symbol',"STUDY_MANIFEST[0][Symbol('extra')]='English extra.';"],
+  ['property',"STUDY_MANIFEST[0].extra='English extra.';"],
+  ['accessor',"{const row=STUDY_MANIFEST[0],value=row[0]; Object.defineProperty(row,'0',{enumerable:true,configurable:true,get(){return value;}});}"],
+  ['prototype','Object.setPrototypeOf(STUDY_MANIFEST[0],Object.create(Array.prototype));'],
+];
+for (const [label,statement] of manifestRowCases) test(`rejects manifest-row ${label} shape`,()=>assertRecordInputRejected(`manifest row ${label}`,statement));
+
+for (const [field,index] of [['topicCodes',8],['themeIds',9],['examSkills',10]]) {
+  const taxonomyCases=[
+    ['symbol',`STUDY_MANIFEST[0][${index}][Symbol('extra')]='English extra.';`],
+    ['property',`STUDY_MANIFEST[0][${index}].extra='English extra.';`],
+    ['accessor',`{const values=STUDY_MANIFEST[0][${index}],value=values[0]; Object.defineProperty(values,'0',{enumerable:true,configurable:true,get(){return value;}});}`],
+    ['hole',`delete STUDY_MANIFEST[0][${index}][0];`],
+    ['prototype',`Object.setPrototypeOf(STUDY_MANIFEST[0][${index}],Object.create(Array.prototype));`],
+  ];
+  for (const [label,statement] of taxonomyCases) test(`rejects ${field} ${label} shape`,()=>assertRecordInputRejected(`${field} ${label}`,statement));
+}
+
+const rawRecordCases=[
+  ['symbol',"RAW_RECORDS[0][Symbol('extra')]={mutable:true};"],
+  ['accessor',"{const record=RAW_RECORDS[0],value=record.summary; Object.defineProperty(record,'summary',{enumerable:true,configurable:true,get(){return value;}});}"],
+  ['non-enumerable',"Object.defineProperty(RAW_RECORDS[0],'summary',{enumerable:false});"],
+];
+for (const [label,statement] of rawRecordCases) test(`rejects raw-record ${label} shape`,()=>assertRecordInputRejected(`raw record ${label}`,statement));
+
+for (const field of ['keyPeople','keyTerms','evidence']) {
+  const nestedArrayCases=[
+    ['property',`RAW_RECORDS[0].${field}.extra='English extra.';`],
+    ['symbol',`RAW_RECORDS[0].${field}[Symbol('extra')]='English extra.';`],
+    ['accessor',`{const values=RAW_RECORDS[0].${field},value=values[0]; Object.defineProperty(values,'0',{enumerable:true,configurable:true,get(){return value;}});}`],
+    ['hole',`delete RAW_RECORDS[0].${field}[0];`],
+    ['prototype',`Object.setPrototypeOf(RAW_RECORDS[0].${field},Object.create(Array.prototype));`],
+  ];
+  for (const [label,statement] of nestedArrayCases) test(`rejects ${field} array ${label} shape`,()=>assertRecordInputRejected(`${field} ${label}`,statement));
+}
+
+for (const [field,key] of [['keyPeople','name'],['keyTerms','term'],['source','id']]) {
+  const target=field==='source'?'RAW_RECORDS[0].source':`RAW_RECORDS[0].${field}[0]`;
+  const nestedObjectCases=[
+    ['symbol',`${target}[Symbol('extra')]={mutable:true};`],
+    ['accessor',`{const value=${target}.${key}; Object.defineProperty(${target},'${key}',{enumerable:true,configurable:true,get(){return value;}});}`],
+    ['non-enumerable',`Object.defineProperty(${target},'${key}',{enumerable:false});`],
+  ];
+  for (const [label,statement] of nestedObjectCases) test(`rejects ${field} object ${label} shape`,()=>assertRecordInputRejected(`${field} object ${label}`,statement));
+}
+
+test('rejects a raw accessor that injects cross-record symbol mutability before publication',()=>{
+  const statement="{const record=RAW_RECORDS[1],value=record.summary; Object.defineProperty(record,'summary',{enumerable:true,configurable:true,get(){RAW_RECORDS[0][Symbol('review-extra')]={mutable:true}; return value;}});}";
+  assertRecordInputRejected('cross-record accessor mutation',statement);
+});
+
 test('publishes exact causal chains and related comparisons with reciprocal mechanism notes', () => {
   const api=evaluate();
   const causal=new Map(); const related=new Map();
