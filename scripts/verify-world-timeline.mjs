@@ -389,6 +389,7 @@ const UNIT_5_CONNECTION_JUMPS = Object.freeze([
 
 const UNIT_5_GLASGOW = Object.freeze({
   number: '37', region: 'europe', mainEventKey: 'world-event-37-0',
+  city: 'Glasgow', title: 'Adam Smith', date: '1776',
 });
 
 function verifyUnit5Fixture(worldMapSource) {
@@ -424,10 +425,6 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
       assert.ok(source.indexOf(registeredScriptTag) < source.indexOf(pageLogicStart),
         `${label} must load Unit ${unit} location-study data before page logic`);
     }
-    assert.equal(source.split(scriptTag).length - 1, 1,
-      `${label} must load the Unit 5 location-study data script exactly once`);
-    assert.ok(source.indexOf(scriptTag) < source.indexOf(pageLogicStart),
-      `${label} must load the Unit 5 location-study data before page logic`);
   }
 
   assert.ok(worldMapSource.indexOf('<script src="data/apwh-u4-location-study.js"></script>')
@@ -2557,9 +2554,9 @@ async function assertUnit5TimelineState(context, fixture, label) {
 
 async function unit5OrdinaryEventSnapshot(panel) {
   return panel.evaluate(element => ({
-    heading: element.querySelector('.event-head')?.innerText.replace(/\s+/g, ' ').trim() || null,
+    heading: element.querySelector('.event-head')?.textContent.replace(/\s+/g, ' ').trim() || null,
     eventCards: [...element.querySelectorAll('.event-list > .event-card')]
-      .map(card => card.innerText.replace(/\s+/g, ' ').trim()),
+      .map(card => card.textContent.replace(/\s+/g, ' ').trim()),
     entry: (() => {
       const button = element.querySelector('[data-location-study-open]');
       return button && {
@@ -2577,7 +2574,7 @@ async function unit5OrdinaryEventSnapshot(panel) {
 async function assertUnit5OrdinaryEvent(panel, entry, fixture, label) {
   await expectVisible(panel.locator('.event-list > .event-card'), `${label} must expose ordinary event content`);
   await expectVisible(entry, `${label} must expose its location-study entry`);
-  assert.equal((await entry.innerText()).trim(), 'View all 3 study points',
+  assert.equal((await entry.textContent()).trim(), 'View all 3 study points',
     `${label} entry must use the shared exact three-point action label`);
   assert.deepEqual(await entry.evaluate(button => ({
     number: button.dataset.locationStudyOpen,
@@ -2619,6 +2616,22 @@ async function openHomepageUnit5OrdinaryEvent(page, frame, fixture, label, { pre
     await page.locator('#hostSearch').fill('');
     await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
       ?.__mapFilter?.getState().query === '');
+    const categoryMetadata = await frame.locator('body').evaluate(() => window.__mapFilter.getCats());
+    const themeToggle = page.locator('#hostThemeToggle');
+    if ((await themeToggle.getAttribute('aria-expanded')) !== 'true') await themeToggle.click();
+    const categoryButtons = page.locator('#hostCats [data-cat]');
+    for (let index = 0; index < await categoryButtons.count(); index++) {
+      const button = categoryButtons.nth(index);
+      if ((await button.getAttribute('aria-pressed')) !== 'true') await button.click();
+    }
+    await page.waitForFunction(expectedCount => document.querySelector('#worldMapFrame')?.contentWindow
+      ?.__mapFilter?.getState().cats.size === expectedCount, categoryMetadata.length);
+    const activeRegion = frame.locator('.region-path[role="button"][aria-pressed="true"]');
+    if (await activeRegion.count()) {
+      await activeRegion.evaluate(element => element.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    }
+    await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
+      ?.__mapFilter?.getState().region === null);
     sourceTitle = await frame.locator('body').evaluate((body, eventKey) =>
       window.getTimelineState().visibleEvents.find(event => event.key === eventKey)?.titleEn || null,
     fixture.mainEventKey);
@@ -2631,6 +2644,26 @@ async function openHomepageUnit5OrdinaryEvent(page, frame, fixture, label, { pre
     await result.waitFor({ state: 'visible' });
     assert.equal(await result.count(), 1,
       `${label} homepage source query must expose one exact keyed Timeline result`);
+    const sourceCategoryText = (await result.locator('.ec-cat').textContent()).replace(/\s+/g, ' ').trim();
+    const sourceCategory = categoryMetadata.find(category => sourceCategoryText.includes(category.full));
+    assert.ok(sourceCategory, `${label} must resolve the source event category from page metadata`);
+    const excludedCategory = categoryMetadata.find(category => category.abbr !== sourceCategory.abbr);
+    assert.ok(excludedCategory, `${label} must have a non-source category available for a nondefault filter`);
+    await page.locator(`#hostCats [data-cat="${excludedCategory.abbr}"]`).click();
+    await page.waitForFunction(({ excluded, expectedCount }) => {
+      const cats = document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getState().cats;
+      return cats?.size === expectedCount && !cats.has(excluded);
+    }, { excluded: excludedCategory.abbr, expectedCount: categoryMetadata.length - 1 });
+    await themeToggle.click();
+    await page.locator('#hostThemePanel').waitFor({ state: 'hidden' });
+    const regionButton = frame.locator(
+      `.region-path[data-region="${fixture.region}"][role="button"]`);
+    if ((await regionButton.getAttribute('aria-pressed')) !== 'true') {
+      await regionButton.evaluate(element => element.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    }
+    await page.waitForFunction(expected => document.querySelector('#worldMapFrame')?.contentWindow
+      ?.__mapFilter?.getState().region === expected, fixture.region);
+    await result.waitFor({ state: 'visible' });
     await result.click();
   } else {
     const result = page.locator(
@@ -2644,17 +2677,26 @@ async function openHomepageUnit5OrdinaryEvent(page, frame, fixture, label, { pre
   await entry.waitFor({ state: 'visible' });
   await assertUnit5TimelineState(frame, fixture, `${label} homepage iframe`);
   await assertUnit5OrdinaryEvent(panel, entry, fixture, `${label} homepage mirror ordinary event`);
-  const allCats = await frame.locator('body').evaluate(() =>
-    window.__mapFilter.getCats().map(cat => cat.abbr).sort());
+  const sourceFilterSnapshot = await unit5FilterState(frame);
+  const sourceTimelineSnapshot = await unit5TimelineState(frame);
+  if (!preserveFilters) {
+    assert.equal(sourceFilterSnapshot.query, sourceTitle,
+      `${label} canonical source query must use the exact event title`);
+    assert.equal(sourceFilterSnapshot.period, 'u5', `${label} canonical source must select Unit 5`);
+    assert.equal(sourceFilterSnapshot.region, fixture.region,
+      `${label} canonical source must select its exact page-metadata region`);
+    assert.deepEqual(sourceFilterSnapshot.pressedRegions, [fixture.region],
+      `${label} canonical source must expose exactly one pressed source region`);
+    assert.ok(sourceFilterSnapshot.cats.length > 0
+      && sourceFilterSnapshot.cats.length === sourceFilterSnapshot.allCats.length - 1,
+    `${label} canonical source must retain a known nondefault category subset`);
+  }
   return {
     panel,
     entry,
     ordinarySnapshot: await unit5OrdinaryEventSnapshot(panel),
-    expectedHomeControls: preserveFilters ? null : {
-      query: sourceTitle,
-      period: 'u5',
-      cats: allCats,
-    },
+    sourceFilterSnapshot,
+    sourceTimelineSnapshot,
   };
 }
 
@@ -2672,7 +2714,7 @@ async function unit5StudySnapshot(view) {
 }
 
 async function assertUnit5StudyView(page, view, fixture, label, canonicalFrame = null) {
-  assert.equal((await view.locator('.location-study-title').innerText()).trim(),
+  assert.equal((await view.locator('.location-study-title').textContent()).trim(),
     `${fixture.label} · Unit 5`, `${label} must render its exact learner-facing heading`);
   assert.equal(await view.locator('.location-study-title').evaluate(element => document.activeElement === element), true,
     `${label} opening must focus its study heading`);
@@ -2702,7 +2744,7 @@ async function assertUnit5StudyView(page, view, fixture, label, canonicalFrame =
       `${label} row ${index + 1} must expose aria-current=true`);
     assert.equal(await rows.nth(index).evaluate(element => document.activeElement === element), true,
       `${label} row ${index + 1} activation must retain focus on its toggle`);
-    assert.ok((await detail.innerText()).trim().length > 0,
+    assert.ok((await detail.textContent()).trim().length > 0,
       `${label} row ${index + 1} detail content must not be empty`);
     assert.deepEqual(await view.locator('[data-study-detail]').evaluateAll(nodes =>
       nodes.map(node => node.dataset.studyDetail)), [expectedId],
@@ -2719,7 +2761,8 @@ async function assertUnit5StudyView(page, view, fixture, label, canonicalFrame =
 
 async function assertUnit5OuterBack(context, panel, view, entry, ordinarySnapshot, fixture, label, {
   homepagePage = null,
-  expectedHomeControls = null,
+  sourceFilterSnapshot = null,
+  sourceTimelineSnapshot = null,
 } = {}) {
   const back = view.locator(`[data-location-study-back="${fixture.number}"]`);
   assert.equal(await back.count(), 1, `${label} must expose one outer Back action`);
@@ -2734,16 +2777,36 @@ async function assertUnit5OuterBack(context, panel, view, entry, ordinarySnapsho
     `${label} Back must restore the exact ordinary source event content`);
   await assertUnit5TimelineState(context, fixture, `${label} Back`);
   if (homepagePage) {
-    assert.ok(expectedHomeControls?.query,
+    assert.ok(sourceFilterSnapshot?.query,
       `${label} homepage control expectation must be bound to a nonempty source-event query`);
-    await homepagePage.waitForFunction(expected => {
+    assert.ok(sourceTimelineSnapshot?.selectedEventKey,
+      `${label} homepage Timeline expectation must be bound to the exact source event`);
+    await homepagePage.waitForFunction(({ filter, timeline, fixture }) => {
+      const win = document.querySelector('#worldMapFrame')?.contentWindow;
+      const frameState = win?.__mapFilter?.getState();
+      const timelineState = win?.getTimelineState?.();
       const pressedCats = [...document.querySelectorAll('#hostCats [data-cat][aria-pressed="true"]')]
         .map(button => button.dataset.cat).sort();
-      return document.querySelector('#hostPeriod')?.value === expected.period
-        && document.querySelector('#hostSearch')?.value === expected.query
-        && JSON.stringify(pressedCats) === JSON.stringify(expected.cats);
-    }, expectedHomeControls);
-    await assertHomepageFilterControls(homepagePage, expectedHomeControls,
+      const frameCats = frameState ? [...frameState.cats].sort() : [];
+      const framePressedRegions = [...(win?.document?.querySelectorAll(
+        '.region-path[aria-pressed="true"]') || [])].map(path => path.dataset.region).sort();
+      return frameState?.period === filter.period
+        && frameState?.query === filter.query
+        && frameState?.region === filter.region
+        && JSON.stringify(frameCats) === JSON.stringify(filter.cats)
+        && JSON.stringify(framePressedRegions) === JSON.stringify(filter.pressedRegions)
+        && timelineState?.selectedEventKey === timeline.selectedEventKey
+        && timelineState?.selectedAnchor?.num === fixture.number
+        && timelineState?.selectedAnchor?.region === fixture.region
+        && document.querySelector('#hostPeriod')?.value === filter.period
+        && document.querySelector('#hostSearch')?.value === filter.query
+        && JSON.stringify(pressedCats) === JSON.stringify(filter.cats);
+    }, { filter: sourceFilterSnapshot, timeline: sourceTimelineSnapshot, fixture });
+    assert.deepEqual(await unit5FilterState(context), sourceFilterSnapshot,
+      `${label} Back must restore the complete canonical iframe filter snapshot`);
+    assert.deepEqual(await unit5TimelineState(context), sourceTimelineSnapshot,
+      `${label} Back must restore the complete canonical iframe Timeline snapshot`);
+    await assertHomepageFilterControls(homepagePage, sourceFilterSnapshot,
       `${label} restored homepage controls`);
     assert.deepEqual(await trimmedTexts(homepagePage.locator(
       '.map-card-head [data-learning-view][aria-pressed="true"]')), ['地图'],
@@ -2821,6 +2884,29 @@ async function unit5FilterState(context) {
   });
 }
 
+async function unit5ExposedStudyState(context) {
+  return context.locator('body').evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    return {
+      unitId: state.unitId,
+      studyId: state.studyId,
+      connectionDepth: state.connectionDepth,
+      openDisclosures: [...state.openDisclosures],
+      pendingRestore: state.pendingRestore ? { ...state.pendingRestore } : null,
+    };
+  });
+}
+
+async function assertUnit5StudyStateCleared(context, label) {
+  assert.deepEqual(await unit5ExposedStudyState(context), {
+    unitId: null,
+    studyId: null,
+    connectionDepth: 0,
+    openDisclosures: [],
+    pendingRestore: null,
+  }, `${label} must clear every exposed study, disclosure, connection, and restore field`);
+}
+
 async function followUnit5StudyConnection(view, sourceId, targetId, expectedGroup, label) {
   await view.locator(`[data-study-event="${sourceId}"]`).click();
   const detail = view.locator(`[data-study-detail="${sourceId}"]`);
@@ -2830,7 +2916,7 @@ async function followUnit5StudyConnection(view, sourceId, targetId, expectedGrou
     `[data-study-connection="${targetId}"][data-study-connection-from="${sourceId}"]`);
   await expectVisible(connection, `${label} must expose ${sourceId} -> ${targetId}`);
   if (expectedGroup) {
-    assert.equal((await connection.locator('xpath=ancestor::*[@data-study-connection-group][1]/h4').innerText()).trim(),
+    assert.equal((await connection.locator('xpath=ancestor::*[@data-study-connection-group][1]/h4').textContent()).trim(),
       expectedGroup, `${label} must expose the expected relationship group`);
   }
   await connection.click();
@@ -2875,6 +2961,8 @@ async function prepareUnit5DepthTwoFilters(page, frame, surface, source) {
       window.__mapFilter.setLearningView('map');
       window.__mapFilter.setPeriod('u5');
       window.__mapFilter.setQuery('');
+      const activeRegion = document.querySelector('.region-path[role="button"][aria-pressed="true"]');
+      if (activeRegion) activeRegion.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
   } else {
     await page.locator('.map-card-head [data-learning-view="map"]').click();
@@ -2884,6 +2972,23 @@ async function prepareUnit5DepthTwoFilters(page, frame, surface, source) {
     await page.locator('#hostSearch').fill('');
     await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
       ?.__mapFilter?.getState().query === '');
+    const themeToggle = page.locator('#hostThemeToggle');
+    if ((await themeToggle.getAttribute('aria-expanded')) !== 'true') await themeToggle.click();
+    const categoryButtons = page.locator('#hostCats [data-cat]');
+    for (let index = 0; index < await categoryButtons.count(); index++) {
+      const button = categoryButtons.nth(index);
+      if ((await button.getAttribute('aria-pressed')) !== 'true') await button.click();
+    }
+    await page.waitForFunction(() => {
+      const win = document.querySelector('#worldMapFrame')?.contentWindow;
+      return win?.__mapFilter?.getState().cats.size === win?.__mapFilter?.getCats().length;
+    });
+    const activeRegion = frame.locator('.region-path[role="button"][aria-pressed="true"]');
+    if (await activeRegion.count()) {
+      await activeRegion.evaluate(element => element.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    }
+    await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
+      ?.__mapFilter?.getState().region === null);
   }
   const title = await canonical.locator('body').evaluate((body, key) =>
     window.getTimelineState().visibleEvents.find(event => event.key === key)?.titleEn || null,
@@ -2904,7 +3009,10 @@ async function prepareUnit5DepthTwoFilters(page, frame, surface, source) {
     if ((await themeToggle.getAttribute('aria-expanded')) !== 'true') await themeToggle.click();
     const gov = page.locator('#hostCats [data-cat="GOV"]');
     if ((await gov.getAttribute('aria-pressed')) === 'true') await gov.click();
-    await frame.locator('.region-path[data-region="europe"][role="button"]').click();
+    await themeToggle.click();
+    await page.locator('#hostThemePanel').waitFor({ state: 'hidden' });
+    await frame.locator('.region-path[data-region="europe"][role="button"]')
+      .evaluate(element => element.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
       ?.__mapFilter?.getState().region === 'europe');
   }
@@ -3016,11 +3124,25 @@ async function assertUnit5PeriodCleanup(page, frame, surface, nextUnit) {
   ]) {
     assert.equal(await panel.locator(selector).count(), 0, `${label} must clear stale ${selector}`);
   }
-  assert.deepEqual(await canonical.locator('body').evaluate(() => {
-    const state = window.__mapFilter.getLocationStudyUiState();
-    return { unitId: state.unitId, studyId: state.studyId, connectionDepth: state.connectionDepth };
-  }), { unitId: null, studyId: null, connectionDepth: 0 },
-  `${label} must clear all canonical study and connection state`);
+  await assertUnit5StudyStateCleared(canonical, label);
+
+  const reentry = surface === 'standalone'
+    ? await openStandaloneUnit5OrdinaryEvent(page, source, `${label} U5 re-entry`)
+    : await openHomepageUnit5OrdinaryEvent(page, frame, source, `${label} U5 re-entry`);
+  const staleSelectors = [
+    '[data-location-study-view]', '[data-study-detail]', '[data-study-connection]',
+    '[data-study-connection-back]', '[data-location-study-back]',
+  ];
+  for (const selector of staleSelectors) {
+    assert.equal(await reentry.panel.locator(selector).count(), 0,
+      `${label} U5 re-entry must not revive stale mirrored ${selector}`);
+    if (surface === 'homepage') {
+      assert.equal(await frame.locator(`#eventPanel ${selector}`).count(), 0,
+        `${label} U5 re-entry must not revive stale canonical ${selector}`);
+    }
+  }
+  await assertUnit5StudyStateCleared(canonical, `${label} U5 re-entry`);
+  await assertUnit5TimelineState(canonical, source, `${label} U5 re-entry`);
 }
 
 async function assertUnit5GlasgowOrdinaryOnly(page, frame, surface) {
@@ -3050,8 +3172,36 @@ async function assertUnit5GlasgowOrdinaryOnly(page, frame, surface) {
     });
     panel = page.locator('#home-events');
   }
-  await expectVisible(panel.locator('.event-list > .event-card'), `${label} must show ordinary detail`);
-  await assertUnit5TimelineState(surface === 'standalone' ? page : frame, fixture, label);
+  const canonical = surface === 'standalone' ? page : frame;
+  const ordinaryCards = panel.locator('.event-list > .event-card');
+  await expectVisible(ordinaryCards, `${label} must show ordinary detail`);
+  assert.equal(await ordinaryCards.count(), 1,
+    `${label} must expose exactly one ordinary card for the exact Glasgow event`);
+  assert.equal((await panel.locator('.event-head .badge').textContent()).trim(), fixture.number,
+    `${label} must retain the exact Glasgow map number`);
+  assert.equal((await panel.locator('.event-head .city-name').textContent()).trim(), fixture.city,
+    `${label} must render the exact Glasgow heading`);
+  assert.equal((await panel.locator('.event-head .city-count').textContent()).trim(), 'Timeline event',
+    `${label} must identify the panel as an exact Timeline event`);
+  const panelDate = ordinaryCards.locator('.ec-yr');
+  const panelTitle = ordinaryCards.locator('.ec-trig .hl').first();
+  await expectVisible(panelDate, `${label} exact date must be visible`);
+  await expectVisible(panelTitle, `${label} exact title must be visible`);
+  assert.equal((await panelDate.textContent()).trim(), fixture.date,
+    `${label} must lock the exact Glasgow event date from page data`);
+  assert.equal((await panelTitle.textContent()).trim(), fixture.title,
+    `${label} must lock the exact Glasgow event title from page data`);
+
+  const timelineCard = canonical.locator(
+    `.world-timeline-card[data-event-key="${fixture.mainEventKey}"]`);
+  await expectVisible(timelineCard, `${label} exact keyed Timeline card must remain visible`);
+  assert.equal(await timelineCard.getAttribute('aria-current'), 'step',
+    `${label} exact keyed Timeline card must be current`);
+  assert.equal((await timelineCard.locator('.world-timeline-date').textContent()).trim(), fixture.date,
+    `${label} Timeline must retain the exact Glasgow date`);
+  assert.equal((await timelineCard.locator('.world-timeline-title-en').textContent()).trim(), fixture.title,
+    `${label} Timeline must retain the exact Glasgow title`);
+  await assertUnit5TimelineState(canonical, fixture, label);
   assert.equal(await panel.locator('[data-location-study-open]').count(), 0,
     `${label} must not expose a location-study entry`);
 }
@@ -3085,7 +3235,8 @@ async function verifyHomepageUnit5StudyContract(page, frame) {
     await assertUnit5OuterBack(frame, opened.panel, opened.view, opened.entry,
       opened.ordinarySnapshot, fixture, label, {
         homepagePage: page,
-        expectedHomeControls: opened.expectedHomeControls,
+        sourceFilterSnapshot: opened.sourceFilterSnapshot,
+        sourceTimelineSnapshot: opened.sourceTimelineSnapshot,
       });
   }
   for (const jump of UNIT_5_CONNECTION_JUMPS) {
