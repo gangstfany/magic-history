@@ -1,36 +1,25 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import { existsSync, readFileSync } from 'node:fs';
-import vm from 'node:vm';
-
-const moduleUrl = new URL('../data/apwh-u6-location-study.js', import.meta.url);
-const dataModuleSource = existsSync(moduleUrl) ? readFileSync(moduleUrl, 'utf8') : '';
-const evaluateSandbox = (source = dataModuleSource, seed = {}) => {
-  const sandbox = { ...seed };
-  sandbox.window = sandbox;
-  vm.runInNewContext(source, sandbox);
-  return sandbox;
-};
-const evaluate = (source = dataModuleSource, seed = {}) => evaluateSandbox(source, seed).APWH_U6_LOCATION_STUDY;
-
-const expectedLocations = new Map([
-  ['29', 'Imperial Partition · Berlin'],
-  ['89', 'British West Africa · Lagos'],
-  ['91', 'Congo Free State · Kinshasa'],
-  ['6', 'British India · Delhi'],
-  ['15', 'Opium Wars · Canton / Guangzhou'],
-  ['80', 'Ethiopian Resistance · Adwa'],
-  ['88', 'Suez Canal · Suez'],
-  ['67', 'Indigenous Displacement · Wounded Knee'],
-  ['53', 'Argentina: Export Economy & Migration · Buenos Aires'],
-  ['70', 'Chinese Migration & Exclusion · San Francisco'],
-]);
-const expectedBindings = new Map([
-  ['29','world-event-29-1'],['89','world-event-89-0'],['91','world-event-91-0'],['6','world-event-6-2'],['15','world-event-15-0'],
-  ['80','world-event-80-0'],['88','world-event-88-0'],['67','world-event-67-0'],['53','world-event-53-1'],['70','world-event-70-0'],
-]);
-
-const expectedManifest = [
+(function publishUnit6LocationStudy(root) {
+  'use strict';
+  if (Object.prototype.hasOwnProperty.call(root, 'APWH_U6_LOCATION_STUDY')) {
+    throw new Error('Invalid Unit 6 global APWH_U6_LOCATION_STUDY: refusing to overwrite existing value');
+  }
+  const UNIT_ID='u6';
+  const UNIT_NUMBER=6;
+  const VALID_TOPIC_CODES=new Set(['6.1','6.2','6.3','6.4','6.5','6.6','6.7','6.8']);
+  const VALID_THEME_IDS=new Set(['GOV','ECN','CDI','SIO','TEC','ENV']);
+  const VALID_EXAM_SKILLS=new Set(['Causation','Comparison','CCOT','Contextualization']);
+  const LOCATION_NUMBERS=Object.freeze(['29','89','91','6','15','80','88','67','53','70']);
+  const LOCATIONS=Object.freeze({
+    '29':'Imperial Partition · Berlin','89':'British West Africa · Lagos','91':'Congo Free State · Kinshasa','6':'British India · Delhi',
+    '15':'Opium Wars · Canton / Guangzhou','80':'Ethiopian Resistance · Adwa','88':'Suez Canal · Suez','67':'Indigenous Displacement · Wounded Knee',
+    '53':'Argentina: Export Economy & Migration · Buenos Aires','70':'Chinese Migration & Exclusion · San Francisco',
+  });
+  const LOCATION_BINDINGS=Object.freeze({'29':'world-event-29-1','89':'world-event-89-0','91':'world-event-91-0','6':'world-event-6-2','15':'world-event-15-0','80':'world-event-80-0','88':'world-event-88-0','67':'world-event-67-0','53':'world-event-53-1','70':'world-event-70-0'});
+  const CANONICAL_LOCATIONS=Object.freeze([
+    ['29','Imperial Partition · Berlin','world-event-29-1'],['89','British West Africa · Lagos','world-event-89-0'],['91','Congo Free State · Kinshasa','world-event-91-0'],['6','British India · Delhi','world-event-6-2'],['15','Opium Wars · Canton / Guangzhou','world-event-15-0'],
+    ['80','Ethiopian Resistance · Adwa','world-event-80-0'],['88','Suez Canal · Suez','world-event-88-0'],['67','Indigenous Displacement · Wounded Knee','world-event-67-0'],['53','Argentina: Export Economy & Migration · Buenos Aires','world-event-53-1'],['70','Chinese Migration & Exclusion · San Francisco','world-event-70-0'],
+  ]);
+  const STUDY_MANIFEST = [
 ['apwh-u6-berlin-industrial-rivalry-rationales','29',1,'Industrial Rivalry and Imperial Rationales','1800–1884',1800,1884,'world-event-29-1',['6.1','6.8'],['ECN','GOV','CDI'],['Contextualization','Causation']],
 ['apwh-u6-berlin-conference-effective-occupation','29',2,'Berlin Conference and Effective Occupation','1884–1885',1884,1885,'world-event-29-1',['6.2'],['GOV'],['Causation']],
 ['apwh-u6-berlin-borders-rivalry-consequences','29',3,'Artificial Borders and Imperial Rivalry','1885–1900',1885,1900,'world-event-29-1',['6.2','6.8'],['GOV','CDI'],['Causation','CCOT']],
@@ -63,11 +52,10 @@ const expectedManifest = [
 ['apwh-u6-san-francisco-exclusion-racialization','70',3,'Exclusion and the Racialization of Labor','1870–1882',1870,1882,'world-event-70-0',['6.7'],['GOV','SIO'],['Causation','CCOT']],
 ];
 
-const P = (id, summary, significance, person, role, term, explanation, evidence, examConnection, locator) => ({
-  id, summary, significance, keyPeople:[{name:person,role}], keyTerms:[{term,explanation}], evidence, examConnection,
-  source:{id:'amsco-apwh-u6',locator},
-});
-const expectedRecordContent = [
+  const P=(id,summary,significance,person,role,term,explanation,evidence,examConnection,locator)=>({
+    id,summary,significance,keyPeople:[{name:person,role}],keyTerms:[{term,explanation}],evidence,examConnection,source:{id:'amsco-apwh-u6',locator},
+  });
+  const RAW_RECORDS = [
 P('apwh-u6-berlin-industrial-rivalry-rationales','Industrial production increased demand for resources and markets while nationalism made colonies symbols of state power.','Economic pressure, national prestige, and interstate rivalry interacted; no single rationale alone explains imperial expansion.','Industrial states and imperial advocates','Linked factory needs and national competition to overseas claims.','imperialism','A policy of extending political, economic, or military control over other societies.',['Factories required recurring supplies of raw materials and dependable markets.','Newly unified and established states treated colonies as measures of national strength.'],'Build a multicausal argument connecting industrial demand, nationalism, and rivalry.','AMSCO AP World History, Unit 6, Topics 6.1 and 6.8'),
 P('apwh-u6-berlin-conference-effective-occupation','Bismarck convened European powers at Berlin to regulate their competition over African claims.','The conference set rules for European recognition of occupation, but it neither included Africans nor instantly completed every conquest.','Otto von Bismarck and European delegates','Bismarck chaired negotiations among imperial powers; no African representatives participated.','effective occupation','The principle that a claimant needed actual authority in a territory for other powers to recognize its claim.',['The Berlin Conference met in 1884 and 1885.','Delegates regulated European claims and river access without inviting Africans.'],'Explain how diplomacy managed European rivalry while excluding African sovereignty.','AMSCO AP World History, Unit 6, Topic 6.2'),
 P('apwh-u6-berlin-borders-rivalry-consequences','European partition drew boundaries around imperial claims with little regard for African political or cultural geography.','Artificial borders divided some communities and joined rivals, creating durable tensions while European competition continued after Berlin.','European colonial officials and African communities','Officials imposed borders; communities experienced division, forced combination, and resistance.','artificial borders','Colonial boundaries drawn without primary regard for existing communities or political relationships.',['Some colonial lines separated members of the same cultural community.','Other borders placed historically rival groups under one colonial administration.'],'Trace both continuity in imperial rivalry and long-term consequences of imposed borders.','AMSCO AP World History, Unit 6, Topics 6.2 and 6.8'),
@@ -100,179 +88,207 @@ P('apwh-u6-san-francisco-chinese-migration-community','Chinese migrants pursued 
 P('apwh-u6-san-francisco-exclusion-racialization','Economic competition and racial politics turned Chinese workers into targets of violence, discrimination, and federal exclusion.','The Chinese Exclusion Act racialized labor policy and restricted a migrant group that western employers had previously recruited.','Chinese communities, anti-Chinese organizers, and federal lawmakers','Communities resisted exclusion while organizers and lawmakers converted prejudice into policy.','Chinese Exclusion Act','The 1882 United States law barring most Chinese labor immigration.',['Anti-Chinese campaigns blamed migrants for wage competition and economic insecurity.','Congress enacted the Chinese Exclusion Act in 1882.'],'Explain how economic claims and racial ideology interacted to produce exclusion.','AMSCO AP World History, Unit 6, Topic 6.7'),
 ];
 
-const manifestOf = record => [record.id,record.locationNumber,record.sequence,record.title,record.dateLabel,record.startYear,record.endYear,record.mainEventKey,[...record.topicCodes],[...record.themeIds],[...record.examSkills]];
-const contentOf = record => ({id:record.id,summary:record.summary,significance:record.significance,keyPeople:Array.from(record.keyPeople,value=>({...value})),keyTerms:Array.from(record.keyTerms,value=>({...value})),evidence:Array.from(record.evidence),examConnection:record.examConnection,source:{...record.source}});
+  let UNIT_CARD_LIST=[];
+  let CONNECTION_DATA=new Map(STUDY_MANIFEST.map(([id])=>[id,{causeStudyPointIds:[],effectStudyPointIds:[],relatedStudyPointIds:[],connectionNotes:{}}]));
 
-test('publishes the exact ordered Unit 6 manifest and learner content', () => {
-  assert.equal(existsSync(moduleUrl), true, 'Unit 6 data module must exist');
-  const api=evaluate();
-  assert.equal(api.unitId,'u6'); assert.equal(api.unitNumber,6); assert.equal(api.connectionTimelineMode,'main-event');
-  assert.deepEqual([...api.locationNumbers],[...expectedLocations.keys()]);
-  assert.equal(api.records.length,30);
-  assert.deepEqual(Array.from(api.records,manifestOf),expectedManifest);
-  assert.deepEqual(Array.from(api.records,contentOf),expectedRecordContent);
-  for (const [number,name] of expectedLocations) assert.equal(api.locationName(number),name);
-});
+  const describe=value=>value===''?'""':String(value);
+  const fail=(id,rule)=>{throw new Error(`Invalid Unit 6 study record ${id||'(missing ID)'}: ${rule}`);};
+  const failCards=rule=>{throw new Error(`Invalid Unit 6 unit cards: ${rule}`);};
+  const english=value=>{
+    if (typeof value!=='string'||!value.trim()) return false;
+    const letters=value.match(/\p{Letter}/gu)||[];
+    return letters.length>0&&letters.every(letter=>/\p{Script=Latin}/u.test(letter));
+  };
+  const plainObject=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)&&Object.getPrototypeOf(value)===Object.prototype;
+  const ordinaryDataDescriptor=(descriptor,{enumerable,configurable,writable})=>descriptor!==undefined
+    &&Object.prototype.hasOwnProperty.call(descriptor,'value')
+    &&descriptor.enumerable===enumerable&&descriptor.configurable===configurable&&descriptor.writable===writable;
+  const hasExactOwnEnumerableDataFields=(value,expectedKeys)=>{
+    const descriptors=Object.getOwnPropertyDescriptors(value); const keys=Reflect.ownKeys(descriptors); const sorted=[...expectedKeys].sort();
+    return keys.length===expectedKeys.length&&keys.every(key=>typeof key==='string')
+      &&[...keys].sort().every((key,index)=>key===sorted[index])
+      &&expectedKeys.every(key=>ordinaryDataDescriptor(descriptors[key],{enumerable:true,configurable:true,writable:true}));
+  };
+  const ordinaryDenseArray=value=>{
+    if (!Array.isArray(value)||Object.getPrototypeOf(value)!==Array.prototype) return false;
+    const descriptors=Object.getOwnPropertyDescriptors(value); const keys=Reflect.ownKeys(descriptors); const lengthDescriptor=descriptors.length;
+    if (!ordinaryDataDescriptor(lengthDescriptor,{enumerable:false,configurable:false,writable:true})||!Number.isSafeInteger(lengthDescriptor.value)||lengthDescriptor.value<0) return false;
+    const indexKeys=Array.from({length:lengthDescriptor.value},(_,index)=>String(index)); const expectedKeys=indexKeys.concat('length');
+    return keys.length===expectedKeys.length&&keys.every(key=>typeof key==='string')&&expectedKeys.every(key=>Object.prototype.hasOwnProperty.call(descriptors,key))
+      &&indexKeys.every(key=>ordinaryDataDescriptor(descriptors[key],{enumerable:true,configurable:true,writable:true}));
+  };
+  const ordinaryArrayValues=value=>{
+    const descriptors=Object.getOwnPropertyDescriptors(value);
+    return Array.from({length:descriptors.length.value},(_,index)=>descriptors[index].value);
+  };
+  const validateRecordInputShapes=(manifest,rawRecords)=>{
+    if (!ordinaryDenseArray(manifest)) fail('(manifest)','manifest must be an ordinary dense array');
+    const rows=ordinaryArrayValues(manifest);
+    for (let index=0;index<rows.length;index+=1) {
+      const row=rows[index];
+      if (!ordinaryDenseArray(row)||Object.getOwnPropertyDescriptor(row,'length').value!==11) fail(`(manifest row ${index+1})`,'manifest row must be an ordinary dense eleven-field array');
+      const rowValues=ordinaryArrayValues(row); const id=typeof rowValues[0]==='string'&&rowValues[0]?rowValues[0]:`(manifest row ${index+1})`;
+      for (const [field,fieldIndex] of [['topicCodes',8],['themeIds',9],['examSkills',10]]) if (!ordinaryDenseArray(rowValues[fieldIndex])) fail(id,`${field} must be an ordinary dense array`);
+    }
+    if (!Array.isArray(rawRecords)) fail('(missing ID)','raw records must be an array');
+    if (!ordinaryDenseArray(rawRecords)) fail('(missing ID)','raw records must be an ordinary dense array');
+    const records=ordinaryArrayValues(rawRecords); const rawKeys=['evidence','examConnection','id','keyPeople','keyTerms','significance','source','summary'];
+    for (let index=0;index<records.length;index+=1) {
+      const record=records[index];
+      if (!plainObject(record)||!hasExactOwnEnumerableDataFields(record,rawKeys)) fail(`(raw record ${index+1})`,'record must contain exactly the approved ordinary data fields');
+      const descriptors=Object.getOwnPropertyDescriptors(record); const id=typeof descriptors.id.value==='string'&&descriptors.id.value?descriptors.id.value:`(raw record ${index+1})`;
+      for (const field of ['keyPeople','keyTerms','evidence']) if (!ordinaryDenseArray(descriptors[field].value)) fail(id,`${field} must be an ordinary dense array`);
+      for (const person of ordinaryArrayValues(descriptors.keyPeople.value)) {
+        if (!plainObject(person)) fail(id,'keyPeople entry must be a plain object');
+        if (!hasExactOwnEnumerableDataFields(person,['name','role'])) fail(id,'keyPeople entry must contain exactly name and role');
+      }
+      for (const term of ordinaryArrayValues(descriptors.keyTerms.value)) {
+        if (!plainObject(term)) fail(id,'keyTerms entry must be a plain object');
+        if (!hasExactOwnEnumerableDataFields(term,['term','explanation'])) fail(id,'keyTerms entry must contain exactly explanation and term');
+      }
+      const source=descriptors.source.value;
+      if (!plainObject(source)) fail(id,'source must be a plain object');
+      if (!hasExactOwnEnumerableDataFields(source,['id','locator'])) fail(id,'source must contain exactly id and locator');
+    }
+  };
+  const validateLocations=()=>{
+    const numbers=CANONICAL_LOCATIONS.map(entry=>entry[0]);
+    if (LOCATION_NUMBERS.length!==numbers.length||LOCATION_NUMBERS.some((number,index)=>number!==numbers[index])) throw new Error('Invalid Unit 6 locations (locations): location registry must contain exactly the ordered locationNumbers');
+    if (Object.keys(LOCATIONS).length!==numbers.length||Object.keys(LOCATION_BINDINGS).length!==numbers.length||numbers.some(number=>!Object.prototype.hasOwnProperty.call(LOCATIONS,number)||!Object.prototype.hasOwnProperty.call(LOCATION_BINDINGS,number))) throw new Error('Invalid Unit 6 locations (locations): location registry must contain exactly the ordered locationNumbers');
+    for (const [number,name,binding] of CANONICAL_LOCATIONS) {
+      if (!english(LOCATIONS[number])) throw new Error(`Invalid Unit 6 locations (locations): location ${number} must have a nonempty English name`);
+      if (LOCATIONS[number]!==name) throw new Error(`Invalid Unit 6 locations (locations): location ${number} does not match its canonical name`);
+      if (LOCATION_BINDINGS[number]!==binding) throw new Error(`Invalid Unit 6 locations (locations): location ${number} has invalid main-event binding`);
+    }
+  };
+  const validateValues=(id,values,allowed,field,singular)=>{
+    if (!Array.isArray(values)) fail(id,`${field} must be an array`);
+    if (!values.length) fail(id,`missing ${field}`);
+    const seen=new Set();
+    for (const value of values) {
+      if (!allowed.has(value)) fail(id,`invalid ${singular} ${describe(value)}`);
+      if (seen.has(value)) fail(id,`duplicate ${singular} ${describe(value)}`);
+      seen.add(value);
+    }
+  };
+  const validateDate=(id,label,start,end)=>{
+    if (typeof label!=='string'||!/^(?:\d{4}|\d{4}–\d{4})$/.test(label)) fail(id,`invalid dateLabel ${describe(label)}`);
+    if (!Number.isInteger(start)||!Number.isInteger(end)||start>end) fail(id,'invalid startYear or endYear');
+    const years=label.match(/\d{4}/g).map(Number);
+    if (years[0]!==start||years.at(-1)!==end) fail(id,`dateLabel years ${years[0]}–${years.at(-1)} do not match startYear ${start} and endYear ${end}`);
+  };
+  const validateManifest=rows=>{
+    if (!Array.isArray(rows)) fail('(missing ID)','manifest must be an array');
+    for (const location of LOCATION_NUMBERS) {
+      const local=rows.filter(row=>Array.isArray(row)&&row[1]===location);
+      if (local.length!==3) fail(local.at(-1)?.[0]||`(location ${location})`,`location ${location} must contain exactly three records`);
+    }
+    const seen=new Set();
+    for (const row of rows) {
+      const id=Array.isArray(row)?row[0]:'(missing ID)';
+      if (!Array.isArray(row)||row.length!==11) fail(id,'manifest row must contain eleven fields');
+      const [recordId,location,sequence,title,label,start,end,event,topics,themes,skills]=row;
+      if (typeof recordId!=='string'||!/^apwh-u6-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(recordId)) fail(recordId,'invalid stable ID');
+      if (seen.has(recordId)) fail(recordId,'duplicate record ID'); seen.add(recordId);
+      if (!LOCATION_NUMBERS.includes(location)) fail(recordId,`invalid locationNumber ${describe(location)}`);
+      if (!Number.isInteger(sequence)||![1,2,3].includes(sequence)) fail(recordId,`invalid sequence ${describe(sequence)}`);
+      if (!english(title)) fail(recordId,'invalid title');
+      validateDate(recordId,label,start,end);
+      if (event!==LOCATION_BINDINGS[location]) fail(recordId,`invalid mainEventKey ${describe(event)} for location ${location}`);
+      validateValues(recordId,topics,VALID_TOPIC_CODES,'topicCodes','topicCode'); validateValues(recordId,themes,VALID_THEME_IDS,'themeIds','themeId'); validateValues(recordId,skills,VALID_EXAM_SKILLS,'examSkills','examSkill');
+    }
+    for (const location of LOCATION_NUMBERS) {
+      const local=rows.filter(row=>row[1]===location); const sequences=local.map(row=>row[2]);
+      const duplicate=sequences.findIndex((value,index)=>sequences.indexOf(value)!==index);
+      if (duplicate!==-1) fail(local[duplicate][0],`duplicate sequence ${sequences[duplicate]} at location ${location}`);
+    }
+    if (rows.length!==30) fail(rows[30]?.[0]||'(missing ID)','expected exactly 30 records');
+    const covered=new Set(rows.flatMap(row=>row[8]));
+    if ([...VALID_TOPIC_CODES].some(topic=>!covered.has(topic))||covered.size!==VALID_TOPIC_CODES.size) fail('(manifest)','topicCodes must cover exactly 6.1 through 6.8');
+  };
+  const expectedLocator=topics=>`AMSCO AP World History, Unit 6, ${topics.length===1?'Topic':'Topics'} ${topics.length===1?topics[0]:topics.length===2?topics.join(' and '):`${topics.slice(0,-1).join(', ')}, and ${topics.at(-1)}`}`;
+  const validateRaw=records=>{
+    if (!Array.isArray(records)) fail('(missing ID)','raw records must be an array');
+    if (records.length!==30) fail(records[30]?.id||'(missing ID)','expected exactly 30 raw records');
+    const manifestById=new Map(STUDY_MANIFEST.map(row=>[row[0],row])); const seen=new Set();
+    for (const record of records) {
+      const id=record?.id; if (!id) fail('(missing ID)','missing raw record ID');
+      if (seen.has(id)) fail(id,'duplicate raw record ID'); seen.add(id);
+      const row=manifestById.get(id); if (!row) fail(id,'raw record is absent from manifest');
+      for (const field of ['summary','significance','examConnection']) {
+        if (typeof record[field]!=='string'||!record[field].trim()) fail(id,`${field} must be a nonempty string`);
+        if (!english(record[field])) fail(id,`non-English ${field}`);
+      }
+      if (!record.keyPeople.length) fail(id,'malformed keyPeople');
+      for (const person of record.keyPeople) if (!english(person.name)||!english(person.role)) fail(id,'malformed keyPeople');
+      if (!record.keyTerms.length) fail(id,'malformed keyTerms');
+      for (const term of record.keyTerms) if (!english(term.term)||!english(term.explanation)) fail(id,'malformed keyTerms');
+      if (record.evidence.length<2||record.evidence.some(statement=>!english(statement))) fail(id,'malformed evidence');
+      if (record.source.id!=='amsco-apwh-u6'||record.source.locator!==expectedLocator(row[8])) fail(id,'malformed source');
+    }
+    for (const [id] of manifestById) if (!seen.has(id)) fail(id,'missing raw record');
+  };
+  const validateConnectionShapes=()=>{
+    const keys=['causeStudyPointIds','connectionNotes','effectStudyPointIds','relatedStudyPointIds'];
+    for (const [id,connections] of CONNECTION_DATA) {
+      if (!plainObject(connections)||!hasExactOwnEnumerableDataFields(connections,keys)) fail(id,'malformed connection structure');
+      for (const category of ['causeStudyPointIds','effectStudyPointIds','relatedStudyPointIds']) if (!ordinaryDenseArray(connections[category])) fail(id,`${category} must be an ordinary dense array`);
+      if (!plainObject(connections.connectionNotes)) fail(id,'connectionNotes must be a plain object');
+      const categories=new Map(); const linked=[];
+      for (const category of ['causeStudyPointIds','effectStudyPointIds','relatedStudyPointIds']) {
+        for (const targetId of connections[category]) {
+          if (targetId===id) fail(id,`self connection in ${category}`);
+          if (connections[category].indexOf(targetId)!==connections[category].lastIndexOf(targetId)) fail(id,`duplicate connection in ${category} to ${describe(targetId)}`);
+          if (categories.has(targetId)) fail(id,`cross-category connection ${targetId}`);
+          categories.set(targetId,category); linked.push(targetId);
+          if (!CONNECTION_DATA.has(targetId)) fail(id,`unresolved connection ${targetId}`);
+        }
+      }
+      const noteKeys=Reflect.ownKeys(connections.connectionNotes);
+      const extra=noteKeys.find(key=>typeof key!=='string'||!linked.includes(key));
+      if (extra!==undefined) fail(id,`extra connection note key ${describe(extra)}`);
+      if (!hasExactOwnEnumerableDataFields(connections.connectionNotes,[...new Set(linked)])) fail(id,'connectionNotes must contain ordinary enumerable data fields');
+    }
+  };
+  const validateUnitCards=cards=>{
+    if (!Array.isArray(cards)) failCards('cards must be an array');
+    if (!ordinaryDenseArray(cards)) failCards('cards must be an ordinary dense array');
+    if (cards.length!==0) failCards('cards must be empty for the Task 2 checkpoint');
+  };
 
-test('covers exact IDs, taxonomy, sequences, and canonical event bindings', () => {
-  const api=evaluate();
-  assert.equal(new Set(api.records.map(record=>record.id)).size,30);
-  assert.ok(api.records.every(record=>/^apwh-u6-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(record.id)));
-  assert.deepEqual([...new Set(api.records.flatMap(record=>record.topicCodes))].sort(),['6.1','6.2','6.3','6.4','6.5','6.6','6.7','6.8']);
-  assert.ok(api.records.flatMap(record=>record.themeIds).every(value=>['GOV','ECN','CDI','SIO','TEC','ENV'].includes(value)));
-  assert.ok(api.records.flatMap(record=>record.examSkills).every(value=>['Causation','Comparison','CCOT','Contextualization'].includes(value)));
-  for (const [number,event] of expectedBindings) {
-    const records=api.getByLocation(number);
-    assert.equal(records.length,3); assert.deepEqual(Array.from(records,record=>record.sequence),[1,2,3]);
-    assert.ok(records.every(record=>record.mainEventKey===event));
+  validateRecordInputShapes(STUDY_MANIFEST,RAW_RECORDS);
+  validateLocations();
+  validateManifest(STUDY_MANIFEST);
+  validateRaw(RAW_RECORDS);
+  validateConnectionShapes();
+  validateUnitCards(UNIT_CARD_LIST);
+
+  const contextById=new Map(STUDY_MANIFEST.map(row=>[row[0],row]));
+  const freezeRecord=raw=>{
+    const [id,locationNumber,sequence,title,dateLabel,startYear,endYear,mainEventKey,topicCodes,themeIds,examSkills]=contextById.get(raw.id);
+    const connections=CONNECTION_DATA.get(raw.id);
+    return Object.freeze({
+      ...raw,id,locationNumber,sequence,title,dateLabel,startYear,endYear,mainEventKey,
+      topicCodes:Object.freeze([...topicCodes]),themeIds:Object.freeze([...themeIds]),examSkills:Object.freeze([...examSkills]),
+      causeStudyPointIds:Object.freeze([...connections.causeStudyPointIds]),effectStudyPointIds:Object.freeze([...connections.effectStudyPointIds]),
+      relatedStudyPointIds:Object.freeze([...connections.relatedStudyPointIds]),connectionNotes:Object.freeze({...connections.connectionNotes}),
+      keyPeople:Object.freeze(raw.keyPeople.map(person=>Object.freeze({...person}))),keyTerms:Object.freeze(raw.keyTerms.map(term=>Object.freeze({...term}))),
+      evidence:Object.freeze([...raw.evidence]),source:Object.freeze({...raw.source}),
+    });
+  };
+  const RECORDS=Object.freeze(STUDY_MANIFEST.map(row=>freezeRecord(RAW_RECORDS.find(record=>record.id===row[0]))));
+  const UNIT_CARDS=Object.freeze({});
+  const byId=new Map(RECORDS.map(record=>[record.id,record]));
+  function compareRecords(a,b) {
+    return a.sequence-b.sequence||a.startYear-b.startYear||a.endYear-b.endYear||String(a.id).localeCompare(String(b.id));
   }
-});
-
-test('matches the established API surface, descriptors, comparator, and lookup semantics', () => {
-  const api=evaluate();
-  assert.deepEqual(Object.keys(api).sort(),['compareRecords','connectionTimelineMode','getById','getByLocation','getUnitCard','locationName','locationNumbers','records','unitCards','unitId','unitNumber']);
-  const rows=[{id:'z',sequence:2,startYear:1,endYear:1},{id:'z',sequence:1,startYear:3,endYear:1},{id:'z',sequence:1,startYear:2,endYear:3},{id:'z',sequence:1,startYear:2,endYear:2},{id:'a',sequence:1,startYear:2,endYear:2}];
-  rows.sort(api.compareRecords);
-  assert.deepEqual(rows.map(record=>[record.sequence,record.startYear,record.endYear,record.id]),[[1,2,2,'a'],[1,2,2,'z'],[1,2,3,'z'],[1,3,1,'z'],[2,1,1,'z']]);
-  const first=api.records[0];
-  assert.equal(api.getById(first.id),first); assert.equal(api.getById('missing'),null);
-  assert.equal(api.locationName('missing'),null); assert.equal(api.getByLocation('missing').length,0);
-  assert.notEqual(api.getByLocation('29'),api.getByLocation('29'));
-  const copy=api.getByLocation('29'); copy.pop(); assert.equal(api.getByLocation('29').length,3);
-  assert.deepEqual(JSON.parse(JSON.stringify(api.unitCards)),{}); assert.equal(api.getUnitCard('context'),null); assert.equal(api.getUnitCard(null),null);
-});
-
-test('deep-freezes all published records, graph containers, cards, and the global descriptor', () => {
-  const sandbox=evaluateSandbox(); const api=sandbox.APWH_U6_LOCATION_STUDY;
-  const descriptor=Object.getOwnPropertyDescriptor(sandbox,'APWH_U6_LOCATION_STUDY');
-  assert.deepEqual({enumerable:descriptor.enumerable,configurable:descriptor.configurable,writable:descriptor.writable},{enumerable:true,configurable:false,writable:false});
-  const seen=new Set();
-  const assertDeepFrozen=value=>{ if (value===null||typeof value!=='object'||seen.has(value)) return; seen.add(value); assert.equal(Object.isFrozen(value),true); for (const key of Reflect.ownKeys(value)) assertDeepFrozen(value[key]); };
-  assertDeepFrozen(api);
-  for (const record of api.records) {
-    assert.deepEqual([...record.causeStudyPointIds],[]); assert.deepEqual([...record.effectStudyPointIds],[]); assert.deepEqual([...record.relatedStudyPointIds],[]);
-    assert.deepEqual({...record.connectionNotes},{});
-  }
-});
-
-test('sorts every defensive location lookup with the shared comparator', () => {
-  const malformed=dataModuleSource.replace("'apwh-u6-berlin-industrial-rivalry-rationales','29',1","'apwh-u6-berlin-industrial-rivalry-rationales','29',3").replace("'apwh-u6-berlin-borders-rivalry-consequences','29',3","'apwh-u6-berlin-borders-rivalry-consequences','29',1");
-  assert.notEqual(malformed,dataModuleSource);
-  assert.deepEqual(Array.from(evaluate(malformed).getByLocation('29'),record=>record.sequence),[1,2,3]);
-});
-
-test('refuses to overwrite an existing Unit 6 global', () => {
-  assert.throws(()=>evaluate(dataModuleSource,{APWH_U6_LOCATION_STUDY:{sentinel:true}}),/Invalid Unit 6 global APWH_U6_LOCATION_STUDY: refusing to overwrite existing value/);
-});
-
-for (const [label,search,replacement,rule] of [
-  ['extra location',"'70':'Chinese Migration & Exclusion · San Francisco',","'70':'Chinese Migration & Exclusion · San Francisco','999':'Extra Place',",/location registry must contain exactly the ordered locationNumbers/],
-  ['empty location name',"'29':'Imperial Partition · Berlin'","'29':''",/location 29 must have a nonempty English name/],
-  ['wrong canonical binding',"'29':'world-event-29-1'","'29':'world-event-29-9'",/location 29 has invalid main-event binding/],
-]) test(`rejects ${label} in the location registry`,()=>{
-  const malformed=dataModuleSource.replace(search,replacement); assert.notEqual(malformed,dataModuleSource,`${label} fixture mutation`);
-  assert.throws(()=>evaluate(malformed),error=>{assert.match(error.message,/Invalid Unit 6/); assert.match(error.message,rule); return true;});
-});
-
-const mutateRecordInputs = (label, statement) => {
-  const malformed=dataModuleSource.replace(/(\n\s*validateRecordInputShapes\(STUDY_MANIFEST,RAW_RECORDS\);)/,`\n  ${statement}$1`);
-  assert.notEqual(malformed,dataModuleSource,`${label} fixture mutation`);
-  return malformed;
-};
-const assertRecordInputRejected=(label,statement,message=/Invalid Unit 6/) => {
-  const sandbox={}; sandbox.window=sandbox;
-  assert.throws(()=>vm.runInNewContext(mutateRecordInputs(label,statement),sandbox),message);
-  assert.equal(Object.hasOwn(sandbox,'APWH_U6_LOCATION_STUDY'),false);
-};
-
-const outerContainerCases=[
-  ['manifest symbol',"STUDY_MANIFEST[Symbol('extra')]='English extra.';"],['manifest property',"STUDY_MANIFEST.extra='English extra.';"],['manifest hole','delete STUDY_MANIFEST[1];'],['manifest prototype','Object.setPrototypeOf(STUDY_MANIFEST,Object.create(Array.prototype));'],['manifest accessor',"{const value=STUDY_MANIFEST[0]; Object.defineProperty(STUDY_MANIFEST,'0',{enumerable:true,configurable:true,get(){return value;}});}"],
-  ['raw symbol',"RAW_RECORDS[Symbol('extra')]='English extra.';"],['raw property',"RAW_RECORDS.extra='English extra.';"],['raw hole','delete RAW_RECORDS[1];'],['raw prototype','Object.setPrototypeOf(RAW_RECORDS,Object.create(Array.prototype));'],['raw accessor',"{const value=RAW_RECORDS[0]; Object.defineProperty(RAW_RECORDS,'0',{enumerable:true,configurable:true,get(){return value;}});}"],
-];
-for (const [label,statement] of outerContainerCases) test(`rejects ${label} outer-container shape`,()=>assertRecordInputRejected(label,statement));
-
-for (const [label,statement] of [
-  ['symbol',"STUDY_MANIFEST[0][Symbol('extra')]='English extra.';"],['property',"STUDY_MANIFEST[0].extra='English extra.';"],['accessor',"{const row=STUDY_MANIFEST[0],value=row[0]; Object.defineProperty(row,'0',{enumerable:true,configurable:true,get(){return value;}});}"],['hole','delete STUDY_MANIFEST[0][1];'],['prototype','Object.setPrototypeOf(STUDY_MANIFEST[0],Object.create(Array.prototype));'],
-]) test(`rejects manifest-row ${label} shape`,()=>assertRecordInputRejected(`manifest row ${label}`,statement));
-
-for (const [field,index] of [['topicCodes',8],['themeIds',9],['examSkills',10]]) {
-  for (const [label,statement] of [['symbol',`STUDY_MANIFEST[0][${index}][Symbol('extra')]='English extra.';`],['property',`STUDY_MANIFEST[0][${index}].extra='English extra.';`],['accessor',`{const values=STUDY_MANIFEST[0][${index}],value=values[0]; Object.defineProperty(values,'0',{enumerable:true,configurable:true,get(){return value;}});}`],['hole',`delete STUDY_MANIFEST[0][${index}][0];`],['prototype',`Object.setPrototypeOf(STUDY_MANIFEST[0][${index}],Object.create(Array.prototype));`]]) {
-    test(`rejects ${field} ${label} shape`,()=>assertRecordInputRejected(`${field} ${label}`,statement));
-  }
-}
-
-for (const [label,statement] of [['symbol',"RAW_RECORDS[0][Symbol('extra')]={mutable:true};"],['accessor',"{const record=RAW_RECORDS[0],value=record.summary; Object.defineProperty(record,'summary',{enumerable:true,configurable:true,get(){return value;}});}"],['non-enumerable',"Object.defineProperty(RAW_RECORDS[0],'summary',{enumerable:false});"]]) {
-  test(`rejects raw-record ${label} shape`,()=>assertRecordInputRejected(`raw record ${label}`,statement));
-}
-for (const field of ['keyPeople','keyTerms','evidence']) {
-  for (const [label,statement] of [['property',`RAW_RECORDS[0].${field}.extra='English extra.';`],['symbol',`RAW_RECORDS[0].${field}[Symbol('extra')]='English extra.';`],['accessor',`{const values=RAW_RECORDS[0].${field},value=values[0]; Object.defineProperty(values,'0',{enumerable:true,configurable:true,get(){return value;}});}`],['hole',`delete RAW_RECORDS[0].${field}[0];`],['prototype',`Object.setPrototypeOf(RAW_RECORDS[0].${field},Object.create(Array.prototype));`]]) {
-    test(`rejects ${field} array ${label} shape`,()=>assertRecordInputRejected(`${field} ${label}`,statement));
-  }
-}
-for (const [field,key] of [['keyPeople','name'],['keyTerms','term'],['source','id']]) {
-  const target=field==='source'?'RAW_RECORDS[0].source':`RAW_RECORDS[0].${field}[0]`;
-  for (const [label,statement] of [['symbol',`${target}[Symbol('extra')]={mutable:true};`],['accessor',`{const value=${target}.${key}; Object.defineProperty(${target},'${key}',{enumerable:true,configurable:true,get(){return value;}});}`],['non-enumerable',`Object.defineProperty(${target},'${key}',{enumerable:false});`]]) {
-    test(`rejects ${field} object ${label} shape`,()=>assertRecordInputRejected(`${field} object ${label}`,statement));
-  }
-}
-
-const semanticMutations=[
-  ['wrong location/main-event binding',"'world-event-29-1',['6.1','6.8']","'world-event-89-0',['6.1','6.8']",'apwh-u6-berlin-industrial-rivalry-rationales',/mainEventKey/],
-  ['duplicate sequence',"'apwh-u6-berlin-conference-effective-occupation','29',2","'apwh-u6-berlin-conference-effective-occupation','29',1",'apwh-u6-berlin-conference-effective-occupation',/duplicate sequence/],
-  ['duplicate ID',"['apwh-u6-berlin-conference-effective-occupation','29',2","['apwh-u6-berlin-industrial-rivalry-rationales','29',2",'apwh-u6-berlin-industrial-rivalry-rationales',/duplicate record ID/],
-  ['malformed date',"'1800–1884',1800,1884","'1800 to 1884',1800,1884",'apwh-u6-berlin-industrial-rivalry-rationales',/invalid dateLabel/],
-  ['date-label mismatch',"'1884–1885',1884,1885","'1884–1886',1884,1885",'apwh-u6-berlin-conference-effective-occupation',/do not match/],
-  ['missing topic',"['6.1','6.8'],['ECN','GOV','CDI']","[],['ECN','GOV','CDI']",'apwh-u6-berlin-industrial-rivalry-rationales',/missing topicCodes/],
-  ['invalid topic',"['6.2'],['GOV'],['Causation']","['6.9'],['GOV'],['Causation']",'apwh-u6-berlin-conference-effective-occupation',/invalid topicCode/],
-  ['duplicate topic',"['6.2','6.8'],['GOV','CDI']","['6.2','6.2'],['GOV','CDI']",'apwh-u6-berlin-borders-rivalry-consequences',/duplicate topicCode/],
-  ['missing theme',"['ECN','GOV','CDI'],['Contextualization','Causation']","[],['Contextualization','Causation']",'apwh-u6-berlin-industrial-rivalry-rationales',/missing themeIds/],
-  ['invalid theme',"['ECN','GOV','CDI'],['Contextualization','Causation']","['ECN','WAR','CDI'],['Contextualization','Causation']",'apwh-u6-berlin-industrial-rivalry-rationales',/invalid themeId/],
-  ['duplicate theme',"['GOV'],['Causation']","['GOV','GOV'],['Causation']",'apwh-u6-berlin-conference-effective-occupation',/duplicate themeId/],
-  ['missing skill',"['GOV'],['Causation']","['GOV'],[]",'apwh-u6-berlin-conference-effective-occupation',/missing examSkills/],
-  ['invalid skill',"['ECN','GOV','CDI'],['Contextualization','Causation']","['ECN','GOV','CDI'],['Recall','Causation']",'apwh-u6-berlin-industrial-rivalry-rationales',/invalid examSkill/],
-  ['duplicate skill',"['Causation','CCOT']]","['Causation','Causation']]",'apwh-u6-berlin-borders-rivalry-consequences',/duplicate examSkill/],
-  ['empty content',"'Industrial production increased demand for resources and markets while nationalism made colonies symbols of state power.'","''",'apwh-u6-berlin-industrial-rivalry-rationales',/summary must be a nonempty string/],
-  ['non-string content',"'Industrial production increased demand for resources and markets while nationalism made colonies symbols of state power.'",'42','apwh-u6-berlin-industrial-rivalry-rationales',/summary must be a nonempty string/],
-  ['non-English content',"'Economic pressure, national prestige, and interstate rivalry interacted; no single rationale alone explains imperial expansion.'","'帝国主义'",'apwh-u6-berlin-industrial-rivalry-rationales',/non-English significance/],
-  ['malformed actor',"'Industrial states and imperial advocates','Linked factory needs and national competition to overseas claims.'","'','Linked factory needs and national competition to overseas claims.'",'apwh-u6-berlin-industrial-rivalry-rationales',/keyPeople/],
-  ['malformed term',"'imperialism','A policy of extending political, economic, or military control over other societies.'","'imperialism',''",'apwh-u6-berlin-industrial-rivalry-rationales',/keyTerms/],
-  ['malformed evidence',"['Factories required recurring supplies of raw materials and dependable markets.','Newly unified and established states treated colonies as measures of national strength.']","['Only one statement.']",'apwh-u6-berlin-industrial-rivalry-rationales',/evidence/],
-  ['malformed source',"source:{id:'amsco-apwh-u6',locator}","source:{id:'wrong-source',locator}",'apwh-u6-berlin-industrial-rivalry-rationales',/source/],
-  ['fourth record',"['apwh-u6-berlin-borders-rivalry-consequences','29',3","['apwh-u6-berlin-extra-record','29',3,'Extra Record','1885',1885,1885,'world-event-29-1',['6.2'],['GOV'],['Causation']],\n['apwh-u6-berlin-borders-rivalry-consequences','29',3",'apwh-u6-berlin-borders-rivalry-consequences',/exactly three records/],
-  ['null raw records','const RAW_RECORDS = [','const RAW_RECORDS = null; const UNUSED_RAW_RECORDS = [','(missing ID)',/raw records must be an array/],
-];
-for (const [label,search,replacement,id,rule] of semanticMutations) test(`rejects ${label}`,()=>{
-  const malformed=dataModuleSource.replace(search,replacement); assert.notEqual(malformed,dataModuleSource,`${label} fixture mutation`);
-  assert.throws(()=>evaluate(malformed),error=>{assert.match(error.message,/Invalid Unit 6/); assert.match(error.message,new RegExp(id.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'))); assert.match(error.message,rule); return true;});
-});
-
-const mutateConnections=(label,statement)=>{
-  const malformed=dataModuleSource.replace(/(\n\s*validateConnectionShapes\(\);)/,`\n  ${statement}$1`);
-  assert.notEqual(malformed,dataModuleSource,`${label} fixture mutation`); return malformed;
-};
-test('rejects unresolved, self, duplicate, malformed, and non-ordinary checkpoint graph data',()=>{
-  const id='apwh-u6-berlin-industrial-rivalry-rationales';
-  const cases=[
-    [`CONNECTION_DATA.get('${id}').effectStudyPointIds.push('apwh-u6-missing');`,/unresolved connection apwh-u6-missing/],
-    [`CONNECTION_DATA.get('${id}').effectStudyPointIds.push('${id}');`,/self connection/],
-    [`CONNECTION_DATA.get('${id}').effectStudyPointIds.push('apwh-u6-berlin-conference-effective-occupation','apwh-u6-berlin-conference-effective-occupation');`,/duplicate connection/],
-    [`CONNECTION_DATA.get('${id}').effectStudyPointIds.extra='English extra.';`,/effectStudyPointIds must be an ordinary dense array/],
-    [`CONNECTION_DATA.get('${id}').effectStudyPointIds[Symbol('extra')]='English extra.';`,/effectStudyPointIds must be an ordinary dense array/],
-    [`{const values=CONNECTION_DATA.get('${id}').effectStudyPointIds; Object.defineProperty(values,'0',{enumerable:true,configurable:true,get(){return 'apwh-u6-berlin-conference-effective-occupation';}});}`,/effectStudyPointIds must be an ordinary dense array/],
-    [`{const values=CONNECTION_DATA.get('${id}').effectStudyPointIds; values.push('apwh-u6-berlin-conference-effective-occupation'); delete values[0];}`,/effectStudyPointIds must be an ordinary dense array/],
-    [`Object.setPrototypeOf(CONNECTION_DATA.get('${id}').relatedStudyPointIds,Object.create(Array.prototype));`,/relatedStudyPointIds must be an ordinary dense array/],
-    [`CONNECTION_DATA.get('${id}').connectionNotes[Symbol('extra')]='English note.';`,/extra connection note key Symbol\(extra\)/],
-    [`Object.defineProperty(CONNECTION_DATA.get('${id}'),'connectionNotes',{enumerable:false});`,/malformed connection structure/],
-    [`Object.setPrototypeOf(CONNECTION_DATA.get('${id}').connectionNotes,Object.create(Object.prototype));`,/connectionNotes must be a plain object/],
-  ];
-  for (const [statement,message] of cases) assert.throws(()=>evaluate(mutateConnections('bad graph',statement)),error=>{assert.match(error.message,/Invalid Unit 6/);assert.match(error.message,new RegExp(id));assert.match(error.message,message);return true;});
-});
-
-const mutateCards=(label,statement)=>{
-  const malformed=dataModuleSource.replace(/(\n\s*validateUnitCards\(UNIT_CARD_LIST\);)/,`\n  ${statement}$1`);
-  assert.notEqual(malformed,dataModuleSource,`${label} fixture mutation`); return malformed;
-};
-test('rejects null and non-ordinary checkpoint card containers',()=>{
-  const cases=[['UNIT_CARD_LIST=null;',/cards must be an array/],["UNIT_CARD_LIST[Symbol('extra')]='English extra.';",/cards must be an ordinary dense array/],["UNIT_CARD_LIST.extra='English extra.';",/cards must be an ordinary dense array/],['Object.setPrototypeOf(UNIT_CARD_LIST,Object.create(Array.prototype));',/cards must be an ordinary dense array/],["Object.defineProperty(UNIT_CARD_LIST,'0',{enumerable:false,configurable:true,writable:true,value:{}});",/cards must be an ordinary dense array/]];
-  for (const [statement,message] of cases) assert.throws(()=>evaluate(mutateCards('bad cards',statement)),error=>{assert.match(error.message,/Invalid Unit 6/);assert.match(error.message,message);return true;});
-});
+  const byLocation=new Map(LOCATION_NUMBERS.map(number=>[number,RECORDS.filter(record=>record.locationNumber===number).sort(compareRecords)]));
+  const api=Object.freeze({
+    unitId:UNIT_ID,unitNumber:UNIT_NUMBER,connectionTimelineMode:'main-event',locationNumbers:LOCATION_NUMBERS,records:RECORDS,unitCards:UNIT_CARDS,compareRecords,
+    getById(id){return byId.get(String(id))||null;},
+    getByLocation(number){return [...(byLocation.get(String(number))||[])];},
+    locationName(number){const key=String(number);return Object.prototype.hasOwnProperty.call(LOCATIONS,key)?LOCATIONS[key]:null;},
+    getUnitCard(kind){const key=String(kind);return Object.prototype.hasOwnProperty.call(UNIT_CARDS,key)?UNIT_CARDS[key]:null;},
+  });
+  Object.defineProperty(root,'APWH_U6_LOCATION_STUDY',{value:api,enumerable:true,configurable:false,writable:false});
+})(typeof window!=='undefined'?window:globalThis);
