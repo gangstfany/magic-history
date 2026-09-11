@@ -20,36 +20,36 @@
     ['80','Ethiopian Resistance · Adwa','world-event-80-0'],['88','Suez Canal · Suez','world-event-88-0'],['67','Indigenous Displacement · Wounded Knee','world-event-67-0'],['53','Argentina: Export Economy & Migration · Buenos Aires','world-event-53-1'],['70','Chinese Migration & Exclusion · San Francisco','world-event-70-0'],
   ]);
   const STUDY_MANIFEST = [
-['apwh-u6-berlin-industrial-rivalry-rationales','29',1,'Industrial Rivalry and Imperial Rationales','1800–1884',1800,1884,'world-event-29-1',['6.1','6.8'],['ECN','GOV','CDI'],['Contextualization','Causation']],
+['apwh-u6-berlin-industrial-rivalry-rationales','29',1,'Industrial Rivalry and Imperial Rationales','1800s–1884',1800,1884,'world-event-29-1',['6.1','6.8'],['ECN','GOV','CDI'],['Contextualization','Causation']],
 ['apwh-u6-berlin-conference-effective-occupation','29',2,'Berlin Conference and Effective Occupation','1884–1885',1884,1885,'world-event-29-1',['6.2'],['GOV'],['Causation']],
 ['apwh-u6-berlin-borders-rivalry-consequences','29',3,'Artificial Borders and Imperial Rivalry','1885–1900',1885,1900,'world-event-29-1',['6.2','6.8'],['GOV','CDI'],['Causation','CCOT']],
-['apwh-u6-lagos-industrial-palm-oil-demand','89',1,'Industrial Demand for Palm Oil','1800–1900',1800,1900,'world-event-89-0',['6.1','6.4'],['ECN','TEC'],['Causation','Contextualization']],
-['apwh-u6-lagos-treaty-trade-political-control','89',2,'From Trade Treaty to Political Control','1870–1885',1870,1885,'world-event-89-0',['6.2','6.5'],['GOV','ECN'],['Causation']],
-['apwh-u6-lagos-export-economy-dependence','89',3,'Export Economy and Colonial Dependence','1800–1900',1800,1900,'world-event-89-0',['6.4','6.5'],['ECN'],['Causation','CCOT']],
+['apwh-u6-lagos-industrial-palm-oil-demand','89',1,'Industrial Demand for Palm Oil','1800s',1800,1900,'world-event-89-0',['6.1','6.4'],['ECN','TEC'],['Causation','Contextualization']],
+['apwh-u6-lagos-treaty-trade-political-control','89',2,'From Trade Treaty to Political Control','1870s–1880s',1870,1885,'world-event-89-0',['6.2','6.5'],['GOV','ECN'],['Causation']],
+['apwh-u6-lagos-export-economy-dependence','89',3,'Export Economy and Colonial Dependence','1800s–1900',1800,1900,'world-event-89-0',['6.4','6.5'],['ECN'],['Causation','CCOT']],
 ['apwh-u6-congo-quinine-steamship-access','91',1,'Quinine, Steamships, and Inland Access','1850–1880',1850,1880,'world-event-91-0',['6.2'],['TEC','ENV'],['Causation','Contextualization']],
 ['apwh-u6-congo-leopold-private-colony','91',2,"Leopold's Private Colony",'1885–1908',1885,1908,'world-event-91-0',['6.1','6.2'],['GOV','ECN'],['Causation']],
 ['apwh-u6-congo-forced-rubber-demographic-catastrophe','91',3,'Forced Rubber Labor and Demographic Catastrophe','1885–1908',1885,1908,'world-event-91-0',['6.4','6.5'],['ECN','SIO'],['Causation','CCOT']],
 ['apwh-u6-delhi-company-rule-rebellion','6',1,'Company Rule and the 1857 Rebellion','1757–1858',1757,1858,'world-event-6-2',['6.2','6.3'],['GOV','CDI'],['Contextualization','Causation']],
 ['apwh-u6-delhi-crown-rule-economic-restructuring','6',2,'Crown Rule and Economic Restructuring','1858–1900',1858,1900,'world-event-6-2',['6.4','6.5'],['GOV','ECN'],['Causation']],
-['apwh-u6-delhi-indenture-labor-migration','6',3,'Indenture and Indian Ocean Labor Migration','1830–1900',1830,1900,'world-event-6-2',['6.6','6.7'],['ECN','SIO'],['Causation','Comparison']],
-['apwh-u6-guangzhou-trade-imbalance-opium','15',1,'Trade Imbalance and the Opium System','1700–1839',1700,1839,'world-event-15-0',['6.5'],['ECN'],['Contextualization','Causation']],
+['apwh-u6-delhi-indenture-labor-migration','6',3,'Indenture and Indian Ocean Labor Migration','1830s–1900',1830,1900,'world-event-6-2',['6.6','6.7'],['ECN','SIO'],['Causation','Comparison']],
+['apwh-u6-guangzhou-trade-imbalance-opium','15',1,'Trade Imbalance and the Opium System','1700s–1839',1700,1839,'world-event-15-0',['6.5'],['ECN'],['Contextualization','Causation']],
 ['apwh-u6-guangzhou-opium-war-unequal-treaty','15',2,'Gunboat War and Unequal Treaties','1839–1860',1839,1860,'world-event-15-0',['6.2','6.5'],['GOV','TEC','ECN'],['Causation']],
 ['apwh-u6-guangzhou-treaty-ports-spheres','15',3,'Treaty Ports and Spheres of Influence','1842–1900',1842,1900,'world-event-15-0',['6.5','6.8'],['GOV','ECN'],['Causation','CCOT']],
-['apwh-u6-adwa-italian-expansion-pressure','80',1,'Italian Expansion and Ethiopian Pressure','1880–1895',1880,1895,'world-event-80-0',['6.1','6.2'],['GOV','CDI'],['Contextualization','Causation']],
+['apwh-u6-adwa-italian-expansion-pressure','80',1,'Italian Expansion and Ethiopian Pressure','1880s–1895',1880,1895,'world-event-80-0',['6.1','6.2'],['GOV','CDI'],['Contextualization','Causation']],
 ['apwh-u6-adwa-ethiopian-military-resistance','80',2,'Organized Ethiopian Military Resistance','1895–1896',1895,1896,'world-event-80-0',['6.3'],['GOV','CDI'],['Causation']],
 ['apwh-u6-adwa-independence-comparative-outcome','80',3,'Independence and Comparative Outcomes','1896–1900',1896,1900,'world-event-80-0',['6.3','6.8'],['GOV'],['Comparison','CCOT']],
-['apwh-u6-suez-industrial-trade-route','88',1,'Industrial Trade and the Shorter Route','1850–1869',1850,1869,'world-event-88-0',['6.1','6.4'],['ECN','TEC'],['Causation','Contextualization']],
+['apwh-u6-suez-industrial-trade-route','88',1,'Industrial Trade and the Shorter Route','1850s–1869',1850,1869,'world-event-88-0',['6.1','6.4'],['ECN','TEC'],['Causation','Contextualization']],
 ['apwh-u6-suez-canal-labor-construction','88',2,'Canal Construction and Egyptian Labor','1859–1869',1859,1869,'world-event-88-0',['6.2','6.4'],['TEC','SIO','ECN'],['Causation']],
-['apwh-u6-suez-debt-strategic-control','88',3,'Debt and British Strategic Control','1870–1882',1870,1882,'world-event-88-0',['6.2','6.5'],['GOV','ECN'],['Causation','CCOT']],
-['apwh-u6-wounded-knee-settler-land-expansion','67',1,'Settler Expansion and Indigenous Land Loss','1830–1890',1830,1890,'world-event-67-0',['6.2'],['GOV','ENV'],['Contextualization','Causation']],
+['apwh-u6-suez-debt-strategic-control','88',3,'Debt and British Strategic Control','1870s–1882',1870,1882,'world-event-88-0',['6.2','6.5'],['GOV','ECN'],['Causation','CCOT']],
+['apwh-u6-wounded-knee-settler-land-expansion','67',1,'Settler Expansion and Indigenous Land Loss','1830s–1890',1830,1890,'world-event-67-0',['6.2'],['GOV','ENV'],['Contextualization','Causation']],
 ['apwh-u6-wounded-knee-ghost-dance-resistance','67',2,'Ghost Dance as Cultural Resistance','1889–1890',1889,1890,'world-event-67-0',['6.3'],['CDI','SIO'],['Causation']],
 ['apwh-u6-wounded-knee-massacre-dispossession','67',3,'Massacre and Consolidated Dispossession','1890',1890,1890,'world-event-67-0',['6.3','6.8'],['GOV','SIO'],['Causation','CCOT']],
-['apwh-u6-buenos-aires-export-growth-labor-demand','53',1,'Export Growth and Labor Demand','1850–1880',1850,1880,'world-event-53-1',['6.4','6.6'],['ECN'],['Causation','Contextualization']],
-['apwh-u6-buenos-aires-european-migration','53',2,'European Migration to Argentina','1880–1909',1880,1909,'world-event-53-1',['6.6'],['ECN','SIO'],['Causation']],
-['apwh-u6-buenos-aires-urban-growth-land-inequality','53',3,'Urban Growth and Unequal Landholding','1880–1900',1880,1900,'world-event-53-1',['6.7'],['ECN','SIO'],['Causation','CCOT']],
-['apwh-u6-san-francisco-railroad-labor-demand','70',1,'Railroad Labor Demand in the American West','1860–1869',1860,1869,'world-event-70-0',['6.6'],['ECN','TEC'],['Contextualization','Causation']],
-['apwh-u6-san-francisco-chinese-migration-community','70',2,'Chinese Migration and Community Formation','1850–1880',1850,1880,'world-event-70-0',['6.6','6.7'],['SIO','ECN'],['Causation']],
-['apwh-u6-san-francisco-exclusion-racialization','70',3,'Exclusion and the Racialization of Labor','1870–1882',1870,1882,'world-event-70-0',['6.7'],['GOV','SIO'],['Causation','CCOT']],
+['apwh-u6-buenos-aires-export-growth-labor-demand','53',1,'Export Growth and Labor Demand','1850s–1880s',1850,1880,'world-event-53-1',['6.4','6.6'],['ECN'],['Causation','Contextualization']],
+['apwh-u6-buenos-aires-european-migration','53',2,'European Migration to Argentina','1880s–1909',1880,1909,'world-event-53-1',['6.6'],['ECN','SIO'],['Causation']],
+['apwh-u6-buenos-aires-urban-growth-land-inequality','53',3,'Urban Growth and Unequal Landholding','1880s–1900s',1880,1900,'world-event-53-1',['6.7'],['ECN','SIO'],['Causation','CCOT']],
+['apwh-u6-san-francisco-railroad-labor-demand','70',1,'Railroad Labor Demand in the American West','1860s–1869',1860,1869,'world-event-70-0',['6.6'],['ECN','TEC'],['Contextualization','Causation']],
+['apwh-u6-san-francisco-chinese-migration-community','70',2,'Chinese Migration and Community Formation','1850s–1880s',1850,1880,'world-event-70-0',['6.6','6.7'],['SIO','ECN'],['Causation']],
+['apwh-u6-san-francisco-exclusion-racialization','70',3,'Exclusion and the Racialization of Labor','1870s–1882',1870,1882,'world-event-70-0',['6.7'],['GOV','SIO'],['Causation','CCOT']],
 ];
 
   const P=(id,summary,significance,person,role,term,explanation,evidence,examConnection,locator)=>({
@@ -171,11 +171,28 @@ P('apwh-u6-san-francisco-exclusion-racialization','Economic competition and raci
       seen.add(value);
     }
   };
+  const parseDateToken=token=>{
+    const match=token.match(/^(\d{4})(s?)$/);
+    return match?{base:Number(match[1]),approximate:match[2]==='s'}:null;
+  };
   const validateDate=(id,label,start,end)=>{
-    if (typeof label!=='string'||!/^(?:\d{4}|\d{4}–\d{4})$/.test(label)) fail(id,`invalid dateLabel ${describe(label)}`);
+    if (typeof label!=='string'||!/^\d{4}s?(?:–\d{4}s?)?$/.test(label)) fail(id,`invalid dateLabel ${describe(label)}`);
     if (!Number.isInteger(start)||!Number.isInteger(end)||start>end) fail(id,'invalid startYear or endYear');
-    const years=label.match(/\d{4}/g).map(Number);
-    if (years[0]!==start||years.at(-1)!==end) fail(id,`dateLabel years ${years[0]}–${years.at(-1)} do not match startYear ${start} and endYear ${end}`);
+    const tokens=label.split('–').map(parseDateToken); const first=tokens[0]; const last=tokens.at(-1);
+    let endMatches;
+    if (tokens.length===1) {
+      // Standalone Xs labels allow the conventional exclusive boundary after their natural decade or century.
+      const conventionalExclusiveBoundary=first.base+(first.base%100===0?100:10);
+      endMatches=first.approximate?end>=first.base&&end<=conventionalExclusiveBoundary:end===first.base;
+    } else if (!last.approximate) {
+      endMatches=end===last.base;
+    } else {
+      // In a range, matching hundred-based Xs endpoints use century scale; otherwise Xs denotes its decade.
+      const firstUsesCenturyScale=first.approximate&&first.base%100===0&&last.base%100===0;
+      const naturalIntervalEnd=last.base+(firstUsesCenturyScale?99:9);
+      endMatches=end>=last.base&&end<=naturalIntervalEnd;
+    }
+    if (first.base!==start||!endMatches) fail(id,`dateLabel tokens ${label} do not match startYear ${start} and endYear ${end} under the approximate interval rule`);
   };
   const validateManifest=rows=>{
     if (!Array.isArray(rows)) fail('(missing ID)','manifest must be an array');
