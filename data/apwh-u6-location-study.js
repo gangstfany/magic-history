@@ -246,7 +246,18 @@ P('apwh-u6-san-francisco-exclusion-racialization','Economic competition and raci
     }
     for (const [id] of manifestById) if (!seen.has(id)) fail(id,'missing raw record');
   };
+  const validateConnectionDataMap=()=>{
+    if (!(CONNECTION_DATA instanceof Map)||Object.getPrototypeOf(CONNECTION_DATA)!==Map.prototype||Reflect.ownKeys(CONNECTION_DATA).length!==0) {
+      fail('(connections)','connection data must be an ordinary local Map');
+    }
+    const manifestIds=STUDY_MANIFEST.map(row=>row[0]); const expectedIds=new Set(manifestIds);
+    for (const id of manifestIds) if (!Map.prototype.has.call(CONNECTION_DATA,id)) fail(id,'missing connection data');
+    for (const key of Map.prototype.keys.call(CONNECTION_DATA)) if (!expectedIds.has(key)) fail(typeof key==='string'?key:'(connections)',`extra connection data entry ${describe(key)}`);
+    const size=Object.getOwnPropertyDescriptor(Map.prototype,'size').get.call(CONNECTION_DATA);
+    if (size!==30) fail('(connections)',`connection data must contain exactly 30 entries, found ${size}`);
+  };
   const validateConnectionShapes=()=>{
+    validateConnectionDataMap();
     const keys=['causeStudyPointIds','connectionNotes','effectStudyPointIds','relatedStudyPointIds'];
     for (const [id,connections] of CONNECTION_DATA) {
       if (!plainObject(connections)||!hasExactOwnEnumerableDataFields(connections,keys)) fail(id,'malformed connection structure');
@@ -266,6 +277,10 @@ P('apwh-u6-san-francisco-exclusion-racialization','Economic competition and raci
       const extra=noteKeys.find(key=>typeof key!=='string'||!linked.includes(key));
       if (extra!==undefined) fail(id,`extra connection note key ${describe(extra)}`);
       if (!hasExactOwnEnumerableDataFields(connections.connectionNotes,[...new Set(linked)])) fail(id,'connectionNotes must contain ordinary enumerable data fields');
+      for (const category of ['causeStudyPointIds','effectStudyPointIds','relatedStudyPointIds']) {
+        if (connections[category].length!==0) fail(id,`${category} must be empty for the Task 2 checkpoint`);
+      }
+      if (Reflect.ownKeys(connections.connectionNotes).length!==0) fail(id,'connectionNotes must be empty for the Task 2 checkpoint');
     }
   };
   const validateUnitCards=cards=>{

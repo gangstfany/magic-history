@@ -262,6 +262,27 @@ const mutateConnections=(label,statement)=>{
   const malformed=dataModuleSource.replace(/(\n\s*validateConnectionShapes\(\);)/,`\n  ${statement}$1`);
   assert.notEqual(malformed,dataModuleSource,`${label} fixture mutation`); return malformed;
 };
+test('rejects a valid-looking reciprocal edge and notes because the Task 2 graph must remain empty',()=>{
+  const source='apwh-u6-berlin-industrial-rivalry-rationales'; const target='apwh-u6-berlin-conference-effective-occupation';
+  const statement=`{const left=CONNECTION_DATA.get('${source}'),right=CONNECTION_DATA.get('${target}'),note='English mechanism note.'; left.effectStudyPointIds.push('${target}'); right.causeStudyPointIds.push('${source}'); left.connectionNotes['${target}']=note; right.connectionNotes['${source}']=note;}`;
+  assert.throws(()=>evaluate(mutateConnections('nonempty checkpoint graph',statement)),error=>{assert.match(error.message,/Invalid Unit 6/);assert.match(error.message,new RegExp(source));assert.match(error.message,/must be empty for the Task 2 checkpoint/);return true;});
+});
+
+test('rejects a deleted manifest entry in the checkpoint connection Map safely',()=>{
+  const id='apwh-u6-berlin-industrial-rivalry-rationales';
+  assert.throws(()=>evaluate(mutateConnections('missing connection Map entry',`CONNECTION_DATA.delete('${id}');`)),error=>{assert.match(error.message,/Invalid Unit 6/);assert.match(error.message,new RegExp(id));assert.match(error.message,/missing connection data/);return true;});
+});
+
+test('rejects an extra entry in the checkpoint connection Map safely',()=>{
+  const id='apwh-u6-extra';
+  const statement=`CONNECTION_DATA.set('${id}',{causeStudyPointIds:[],effectStudyPointIds:[],relatedStudyPointIds:[],connectionNotes:{}});`;
+  assert.throws(()=>evaluate(mutateConnections('extra connection Map entry',statement)),error=>{assert.match(error.message,/Invalid Unit 6/);assert.match(error.message,new RegExp(id));assert.match(error.message,/extra connection data/);return true;});
+});
+
+test('rejects a non-Map checkpoint connection container safely',()=>{
+  assert.throws(()=>evaluate(mutateConnections('non-Map connection container','CONNECTION_DATA={};')),error=>{assert.match(error.message,/Invalid Unit 6/);assert.match(error.message,/connection data must be an ordinary local Map/);return true;});
+});
+
 test('rejects unresolved, self, duplicate, malformed, and non-ordinary checkpoint graph data',()=>{
   const id='apwh-u6-berlin-industrial-rivalry-rationales';
   const cases=[
