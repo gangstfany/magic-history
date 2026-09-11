@@ -229,6 +229,7 @@ const semanticMutations=[
   ['duplicate sequence',"'apwh-u6-berlin-conference-effective-occupation','29',2","'apwh-u6-berlin-conference-effective-occupation','29',1",'apwh-u6-berlin-conference-effective-occupation',/duplicate sequence/],
   ['duplicate ID',"['apwh-u6-berlin-conference-effective-occupation','29',2","['apwh-u6-berlin-industrial-rivalry-rationales','29',2",'apwh-u6-berlin-industrial-rivalry-rationales',/duplicate record ID/],
   ['malformed decade date',"'1800s–1884',1800,1884","'18000s–1884',1800,1884",'apwh-u6-berlin-industrial-rivalry-rationales',/invalid dateLabel/],
+  ['malformed non-base approximate date',"'1800s–1884',1800,1884","'1801s–1884',1801,1884",'apwh-u6-berlin-industrial-rivalry-rationales',/invalid dateLabel/],
   ['date-label mismatch',"'1884–1885',1884,1885","'1884–1886',1884,1885",'apwh-u6-berlin-conference-effective-occupation',/do not match/],
   ['standalone approximate-label end mismatch',"'1800s',1800,1900","'1800s',1800,1901",'apwh-u6-lagos-industrial-palm-oil-demand',/do not match/],
   ['decade-label start mismatch',"'1850s–1869',1850,1869","'1850s–1869',1851,1869",'apwh-u6-suez-industrial-trade-route',/do not match/],

@@ -173,10 +173,11 @@ P('apwh-u6-san-francisco-exclusion-racialization','Economic competition and raci
   };
   const parseDateToken=token=>{
     const match=token.match(/^(\d{4})(s?)$/);
-    return match?{base:Number(match[1]),approximate:match[2]==='s'}:null;
+    if (!match||(match[2]==='s'&&!match[1].endsWith('0'))) return null;
+    return {base:Number(match[1]),approximate:match[2]==='s'};
   };
   const validateDate=(id,label,start,end)=>{
-    if (typeof label!=='string'||!/^\d{4}s?(?:–\d{4}s?)?$/.test(label)) fail(id,`invalid dateLabel ${describe(label)}`);
+    if (typeof label!=='string'||!/^(?:\d{4}|\d{3}0s)(?:–(?:\d{4}|\d{3}0s))?$/.test(label)) fail(id,`invalid dateLabel ${describe(label)}`);
     if (!Number.isInteger(start)||!Number.isInteger(end)||start>end) fail(id,'invalid startYear or endYear');
     const tokens=label.split('–').map(parseDateToken); const first=tokens[0]; const last=tokens.at(-1);
     let endMatches;
