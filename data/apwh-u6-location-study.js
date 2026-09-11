@@ -88,12 +88,63 @@ P('apwh-u6-san-francisco-chinese-migration-community','Chinese migrants pursued 
 P('apwh-u6-san-francisco-exclusion-racialization','Economic competition and racial politics turned Chinese workers into targets of violence, discrimination, and federal exclusion.','The Chinese Exclusion Act racialized labor policy and restricted a migrant group that western employers had previously recruited.','Chinese communities, anti-Chinese organizers, and federal lawmakers','Communities resisted exclusion while organizers and lawmakers converted prejudice into policy.','Chinese Exclusion Act','The 1882 United States law barring most Chinese labor immigration.',['Anti-Chinese campaigns blamed migrants for wage competition and economic insecurity.','Congress enacted the Chinese Exclusion Act in 1882.'],'Explain how economic claims and racial ideology interacted to produce exclusion.','AMSCO AP World History, Unit 6, Topic 6.7'),
 ];
 
-  let UNIT_CARD_LIST=[];
-  let CONNECTION_DATA=new Map(STUDY_MANIFEST.map(([id])=>[id,{causeStudyPointIds:[],effectStudyPointIds:[],relatedStudyPointIds:[],connectionNotes:{}}]));
+  let CONNECTION_DATA;
+  const addCausalConnection=(causeId,effectId,note)=>{
+    const cause=CONNECTION_DATA.get(causeId); const effect=CONNECTION_DATA.get(effectId);
+    if(!cause) throw new Error(`Invalid Unit 6 study connection causal: missing cause ${causeId}`);
+    if(!effect) throw new Error(`Invalid Unit 6 study connection causal: missing effect ${effectId}`);
+    if(causeId===effectId) throw new Error(`Invalid Unit 6 study connection causal: self connection ${causeId}`);
+    cause.effectStudyPointIds.push(effectId); effect.causeStudyPointIds.push(causeId);
+    cause.connectionNotes[effectId]=note; effect.connectionNotes[causeId]=note;
+  };
+  const addRelatedConnection=(leftId,rightId,note)=>{
+    const left=CONNECTION_DATA.get(leftId); const right=CONNECTION_DATA.get(rightId);
+    if(!left) throw new Error(`Invalid Unit 6 study connection related: missing left ${leftId}`);
+    if(!right) throw new Error(`Invalid Unit 6 study connection related: missing right ${rightId}`);
+    if(leftId===rightId) throw new Error(`Invalid Unit 6 study connection related: self connection ${leftId}`);
+    left.relatedStudyPointIds.push(rightId); right.relatedStudyPointIds.push(leftId);
+    left.connectionNotes[rightId]=note; right.connectionNotes[leftId]=note;
+  };
+  const configureConnections=()=>{
+    CONNECTION_DATA=new Map(STUDY_MANIFEST.map(([id])=>[id,{causeStudyPointIds:[],effectStudyPointIds:[],relatedStudyPointIds:[],connectionNotes:{}}]));
+    addCausalConnection('apwh-u6-berlin-industrial-rivalry-rationales','apwh-u6-berlin-conference-effective-occupation','Industrial demand, nationalism, and interstate rivalry intensified competing claims, prompting European powers to regulate their competition at Berlin.');
+    addCausalConnection('apwh-u6-berlin-conference-effective-occupation','apwh-u6-berlin-borders-rivalry-consequences','Rules recognizing effective occupation accelerated territorial claims whose imposed borders divided communities, joined rivals, and preserved imperial competition.');
+    addCausalConnection('apwh-u6-lagos-industrial-palm-oil-demand','apwh-u6-lagos-treaty-trade-political-control','Sustained British demand for palm oil increased the value of controlling trade terms, turning negotiated exchange into pressure for political control.');
+    addCausalConnection('apwh-u6-lagos-treaty-trade-political-control','apwh-u6-lagos-export-economy-dependence','British political control narrowed African bargaining power and redirected transport and production toward export commodities and overseas markets.');
+    addCausalConnection('apwh-u6-congo-quinine-steamship-access','apwh-u6-congo-leopold-private-colony','Quinine and more efficient steamships lowered health and transport barriers, enabling Leopold to extend a private colonial claim into the Congo interior.');
+    addCausalConnection('apwh-u6-congo-leopold-private-colony','apwh-u6-congo-forced-rubber-demographic-catastrophe','Leopold’s private ownership tied official authority to personal extraction, producing violent rubber quotas, hostage-taking, and demographic catastrophe.');
+    addCausalConnection('apwh-u6-delhi-company-rule-rebellion','apwh-u6-delhi-crown-rule-economic-restructuring','The 1857 rebellion exposed the instability of Company rule, prompting Crown government and a more centralized imperial infrastructure after 1858.');
+    addCausalConnection('apwh-u6-delhi-crown-rule-economic-restructuring','apwh-u6-delhi-indenture-labor-migration','Colonial transport, recruiting institutions, and plantation demand enabled contractors to move Indian workers abroad under fixed-term indentures.');
+    addCausalConnection('apwh-u6-guangzhou-trade-imbalance-opium','apwh-u6-guangzhou-opium-war-unequal-treaty','Qing suppression of the opium trade threatened British commercial interests, prompting gunboat war backed by industrial naval power.');
+    addCausalConnection('apwh-u6-guangzhou-opium-war-unequal-treaty','apwh-u6-guangzhou-treaty-ports-spheres','British military victory forced unequal treaties that opened ports and legal privileges, enabling wider foreign spheres of influence without full annexation.');
+    addCausalConnection('apwh-u6-adwa-italian-expansion-pressure','apwh-u6-adwa-ethiopian-military-resistance','Italy’s protectorate claim and invasion prompted Menelik II and Empress Taytu to mobilize Ethiopian diplomacy, supplies, weapons, and troops.');
+    addCausalConnection('apwh-u6-adwa-ethiopian-military-resistance','apwh-u6-adwa-independence-comparative-outcome','Organized Ethiopian mobilization produced the decisive 1896 victory at Adwa, forcing Italy to recognize continued Ethiopian sovereignty.');
+    addCausalConnection('apwh-u6-suez-industrial-trade-route','apwh-u6-suez-canal-labor-construction','Demand for a shorter Europe–Asia steam route mobilized Egyptian authority, a French-led company, finance, and coerced Egyptian labor to construct the canal.');
+    addCausalConnection('apwh-u6-suez-canal-labor-construction','apwh-u6-suez-debt-strategic-control','Construction costs and later borrowing deepened Egyptian debt, enabling British share purchase and strategic occupation of the canal route.');
+    addCausalConnection('apwh-u6-wounded-knee-settler-land-expansion','apwh-u6-wounded-knee-ghost-dance-resistance','Removal, reservation, and allotment policies threatened Indigenous land and lifeways, encouraging a religious movement promising renewal and restoration.');
+    addCausalConnection('apwh-u6-wounded-knee-ghost-dance-resistance','apwh-u6-wounded-knee-massacre-dispossession','Federal officials treated the Ghost Dance as a military threat, producing armed intervention and the massacre of Lakota families at Wounded Knee.');
+    addCausalConnection('apwh-u6-buenos-aires-export-growth-labor-demand','apwh-u6-buenos-aires-european-migration','Export agriculture, railways, and port growth created labor demand that Argentine recruitment policies used to attract European migrants.');
+    addCausalConnection('apwh-u6-buenos-aires-european-migration','apwh-u6-buenos-aires-urban-growth-land-inequality','Large-scale immigration supplied workers and expanded Buenos Aires, while concentrated estates kept land and export wealth unequally distributed.');
+    addCausalConnection('apwh-u6-san-francisco-railroad-labor-demand','apwh-u6-san-francisco-chinese-migration-community','Railroad recruitment and western labor demand drew Chinese migrants who then built durable family, commercial, and mutual-aid networks.');
+    addCausalConnection('apwh-u6-san-francisco-chinese-migration-community','apwh-u6-san-francisco-exclusion-racialization','Durable Chinese communities became targets when economic competition and racial politics converted prejudice into violence and federal exclusion.');
+    addCausalConnection('apwh-u6-lagos-industrial-palm-oil-demand','apwh-u6-berlin-industrial-rivalry-rationales','West African palm oil supplied industrial production, so recurring factory demand for commodities contributed to the economic rivalry and imperial rationales represented at Berlin.');
+    addCausalConnection('apwh-u6-berlin-conference-effective-occupation','apwh-u6-congo-leopold-private-colony','Berlin rules recognizing effective occupation legitimized competing territorial claims and enabled international recognition of Leopold’s private Congo regime.');
+    addCausalConnection('apwh-u6-suez-industrial-trade-route','apwh-u6-delhi-crown-rule-economic-restructuring','The shorter Suez route increased India’s strategic and commercial value to Britain, supporting tighter Crown control and infrastructure serving imperial movement and exports.');
+    addRelatedConnection('apwh-u6-delhi-crown-rule-economic-restructuring','apwh-u6-guangzhou-treaty-ports-spheres','Compare British direct rule and infrastructure in India with treaty-port privileges and spheres of influence in China, where foreign powers constrained sovereignty without full territorial colonization.');
+    addRelatedConnection('apwh-u6-congo-forced-rubber-demographic-catastrophe','apwh-u6-delhi-indenture-labor-migration','Compare Congo rubber quotas enforced by hostage-taking and mutilation with Indian indenture under fixed-term legal contracts; both were coercive, but their legal statuses and degrees of coercion were not equivalent.');
+    addRelatedConnection('apwh-u6-adwa-independence-comparative-outcome','apwh-u6-wounded-knee-massacre-dispossession','Compare Ethiopia’s organized victory and retained sovereignty at Adwa with the violent suppression and consolidated dispossession of Lakota people at Wounded Knee.');
+    addRelatedConnection('apwh-u6-buenos-aires-european-migration','apwh-u6-san-francisco-exclusion-racialization','Compare European migration actively encouraged by Argentina with Chinese migration increasingly racialized and excluded by the United States.');
+    addRelatedConnection('apwh-u6-lagos-treaty-trade-political-control','apwh-u6-congo-leopold-private-colony','Compare British treaty-based commercial expansion that narrowed West African political agency with Leopold’s personally owned Congo Free State and its private-colony rule.');
+  };
+
+  let UNIT_CARD_LIST=[
+    {id:'apwh-u6-context-industry-imperial-pressure',kind:'context',role:'Unit 6 Context Card',title:'From Industrial Capacity to Imperial Pressure',examSkills:['Contextualization','Causation'],summary:'Unit 5 industrialization concentrated productive and military power while creating recurring demand for raw materials, markets, workers, and dependable transport routes. Unit 6 examines how states and firms converted those capabilities and pressures into territorial, treaty, financial, and settler control, while local communities retained agency and resisted in different ways.',prompt:'Which Unit 5 changes made overseas control more feasible and more valuable to industrial states?',takeaways:['Industrial weapons, steam transport, and medicine increased the reach of states and firms.','Factories required recurring supplies and markets rather than occasional luxury trade.','Expansion depended on local conditions and choices as well as European capabilities.']},
+    {id:'apwh-u6-synthesis-imperial-systems-global-conflict',kind:'synthesis',role:'Unit 6 Synthesis Card',title:'From Imperial Systems to Global Conflict',examSkills:['Causation','CCOT'],summary:'Imperial systems placed industrial states\' resources, markets, routes, labor supplies, and security interests outside their borders. Competing claims increasingly overlapped, while colonial boundaries, racial hierarchies, indigenous resistance, and nationalist organization created unresolved pressures. Unit 7 follows how those structures contributed to global wars, mass mobilization, and mass violence.',prompt:'How did Unit 6 make a conflict in one region capable of activating states, resources, and populations across the world?',takeaways:['Industrial states treated distant ports, mines, and routes as national security interests.','Imperial rivalry and artificial borders carried unresolved conflicts into the twentieth century.','Colonized peoples developed resistance and nationalist organizations that outlasted imperial rule.']},
+  ];
 
   const describe=value=>value===''?'""':String(value);
   const fail=(id,rule)=>{throw new Error(`Invalid Unit 6 study record ${id||'(missing ID)'}: ${rule}`);};
-  const failCards=rule=>{throw new Error(`Invalid Unit 6 unit cards: ${rule}`);};
+  const failCards=(card,rule)=>{const id=card&&typeof card.id==='string'?` ${card.id}`:'';throw new Error(`Invalid Unit 6 unit card${id}: ${rule}`);};
   const english=value=>{
     if (typeof value!=='string'||!value.trim()) return false;
     const letters=value.match(/\p{Letter}/gu)||[];
@@ -264,13 +315,16 @@ P('apwh-u6-san-francisco-exclusion-racialization','Economic competition and raci
       for (const category of ['causeStudyPointIds','effectStudyPointIds','relatedStudyPointIds']) if (!ordinaryDenseArray(connections[category])) fail(id,`${category} must be an ordinary dense array`);
       if (!plainObject(connections.connectionNotes)) fail(id,'connectionNotes must be a plain object');
       const categories=new Map(); const linked=[];
+      const reciprocals={causeStudyPointIds:'effectStudyPointIds',effectStudyPointIds:'causeStudyPointIds',relatedStudyPointIds:'relatedStudyPointIds'};
       for (const category of ['causeStudyPointIds','effectStudyPointIds','relatedStudyPointIds']) {
         for (const targetId of connections[category]) {
           if (targetId===id) fail(id,`self connection in ${category}`);
           if (connections[category].indexOf(targetId)!==connections[category].lastIndexOf(targetId)) fail(id,`duplicate connection in ${category} to ${describe(targetId)}`);
           if (categories.has(targetId)) fail(id,`cross-category connection ${targetId}`);
           categories.set(targetId,category); linked.push(targetId);
-          if (!CONNECTION_DATA.has(targetId)) fail(id,`unresolved connection ${targetId}`);
+          const target=CONNECTION_DATA.get(targetId);
+          if (!target) fail(id,`unresolved connection ${targetId}`);
+          if (!target[reciprocals[category]].includes(id)) fail(id,`nonreciprocal ${category} connection to ${targetId}`);
         }
       }
       const noteKeys=Reflect.ownKeys(connections.connectionNotes);
@@ -278,21 +332,43 @@ P('apwh-u6-san-francisco-exclusion-racialization','Economic competition and raci
       if (extra!==undefined) fail(id,`extra connection note key ${describe(extra)}`);
       if (!hasExactOwnEnumerableDataFields(connections.connectionNotes,[...new Set(linked)])) fail(id,'connectionNotes must contain ordinary enumerable data fields');
       for (const category of ['causeStudyPointIds','effectStudyPointIds','relatedStudyPointIds']) {
-        if (connections[category].length!==0) fail(id,`${category} must be empty for the Task 2 checkpoint`);
+        for (const targetId of connections[category]) {
+          const note=connections.connectionNotes[targetId]; const target=CONNECTION_DATA.get(targetId);
+          if (!english(note)) fail(id,`non-English connection note for ${targetId}`);
+          if (target.connectionNotes[id]!==note) fail(id,`nonreciprocal connection note for ${targetId}`);
+          if (category!=='relatedStudyPointIds'&&!/\b(?:because|caus\w*|enabl\w*|increas\w*|intensif\w*|turn\w*|made|drove|driv\w*|produc\w*|creat\w*|suppl\w*|encourag\w*|lower\w*|convert\w*|prompt\w*|expos\w*|forc\w*|impos\w*|link\w*|tied|recruit\w*|support\w*|contribut\w*|mobiliz\w*|threaten\w*|accelerat\w*|narrow\w*|redirect\w*|deepen\w*|treat\w*|drew|attract\w*)\b/i.test(note)) fail(id,`causal connection note must name a mechanism for ${targetId}`);
+        }
       }
-      if (Reflect.ownKeys(connections.connectionNotes).length!==0) fail(id,'connectionNotes must be empty for the Task 2 checkpoint');
+      if (!linked.length) fail(id,'missing connection');
     }
   };
   const validateUnitCards=cards=>{
-    if (!Array.isArray(cards)) failCards('cards must be an array');
-    if (!ordinaryDenseArray(cards)) failCards('cards must be an ordinary dense array');
-    if (cards.length!==0) failCards('cards must be empty for the Task 2 checkpoint');
+    if (!Array.isArray(cards)) failCards(null,'cards must be an array');
+    if (!ordinaryDenseArray(cards)) failCards(null,'cards must be an ordinary dense array');
+    const keys=['examSkills','id','kind','prompt','role','summary','takeaways','title']; const kinds=new Set(); const ids=new Set();
+    for(const card of cards){
+      if(!plainObject(card)) failCards(card,'card must be a non-null plain object');
+      if(!hasExactOwnEnumerableDataFields(card,keys)) failCards(card,'card must contain exactly the approved fields');
+      if(!['context','synthesis'].includes(card.kind)) failCards(card,`invalid kind ${describe(card.kind)}`);
+      if(kinds.has(card.kind)) failCards(card,`duplicate kind ${card.kind}`); kinds.add(card.kind);
+      if(typeof card.id!=='string'||!card.id.trim()) failCards(card,'invalid stable ID');
+      if(ids.has(card.id)) failCards(card,'duplicate card ID'); ids.add(card.id);
+      if(!new RegExp(`^apwh-u6-${card.kind}-[a-z0-9]+(?:-[a-z0-9]+)*$`).test(card.id)) failCards(card,'invalid stable ID');
+      for(const field of ['role','title','summary','prompt']){if(typeof card[field]!=='string'||!card[field].trim())failCards(card,`missing ${field}`);if(!english(card[field]))failCards(card,`non-English ${field}`);}
+      if(!Array.isArray(card.examSkills))failCards(card,'examSkills must be an array');
+      if(!ordinaryDenseArray(card.examSkills))failCards(card,'examSkills must be an ordinary dense array');
+      if(!card.examSkills.length)failCards(card,'missing examSkills'); if(card.examSkills.length>2)failCards(card,'too many examSkills');
+      const seenSkills=new Set();for(const skill of card.examSkills){if(!VALID_EXAM_SKILLS.has(skill))failCards(card,`invalid examSkill ${describe(skill)}`);if(seenSkills.has(skill))failCards(card,`duplicate examSkill ${skill}`);seenSkills.add(skill);}
+      if(!Array.isArray(card.takeaways))failCards(card,'takeaways must be an array');if(!ordinaryDenseArray(card.takeaways))failCards(card,'takeaways must be an ordinary dense array');if(card.takeaways.length!==3)failCards(card,'takeaways must contain exactly three items');for(const takeaway of card.takeaways)if(!english(takeaway))failCards(card,'empty or non-English takeaway');
+    }
+    if(cards.length!==2||!kinds.has('context')||!kinds.has('synthesis')) failCards(null,'expected exactly context and synthesis');
   };
 
   validateRecordInputShapes(STUDY_MANIFEST,RAW_RECORDS);
   validateLocations();
   validateManifest(STUDY_MANIFEST);
   validateRaw(RAW_RECORDS);
+  configureConnections();
   validateConnectionShapes();
   validateUnitCards(UNIT_CARD_LIST);
 
@@ -310,7 +386,8 @@ P('apwh-u6-san-francisco-exclusion-racialization','Economic competition and raci
     });
   };
   const RECORDS=Object.freeze(STUDY_MANIFEST.map(row=>freezeRecord(RAW_RECORDS.find(record=>record.id===row[0]))));
-  const UNIT_CARDS=Object.freeze({});
+  const freezeUnitCard=card=>Object.freeze({...card,examSkills:Object.freeze([...card.examSkills]),takeaways:Object.freeze([...card.takeaways])});
+  const UNIT_CARDS=Object.freeze(Object.fromEntries(UNIT_CARD_LIST.map(card=>[card.kind,freezeUnitCard(card)])));
   const byId=new Map(RECORDS.map(record=>[record.id,record]));
   function compareRecords(a,b) {
     return a.sequence-b.sequence||a.startYear-b.startYear||a.endYear-b.endYear||String(a.id).localeCompare(String(b.id));

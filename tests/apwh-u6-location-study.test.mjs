@@ -5,6 +5,12 @@ import vm from 'node:vm';
 
 const moduleUrl = new URL('../data/apwh-u6-location-study.js', import.meta.url);
 const dataModuleSource = existsSync(moduleUrl) ? readFileSync(moduleUrl, 'utf8') : '';
+const ledgerUrl = new URL('../docs/data-sources/apwh-u6-location-study-source-ledger.md', import.meta.url);
+const ledgerSource = existsSync(ledgerUrl) ? readFileSync(ledgerUrl, 'utf8') : '';
+const ledgerIntroduction = '# APWH Unit 6 Location Study Source Ledger\n\nThe learner records use edition-neutral locators in AMSCO AP World History Unit 6 and the College Board framework effective Fall 2026. Map pins are representative anchors; a named city does not imply that every regional process occurred only there.';
+const ledgerHeader = '| Stable ID | AP topic assignment | Main event | Source locator | Claims covered |';
+const ledgerSeparator = '| --- | --- | --- | --- | --- |';
+const failLedger = rule => { throw new Error(`Invalid Unit 6 source ledger: ${rule}`); };
 const evaluateSandbox = (source = dataModuleSource, seed = {}) => {
   const sandbox = { ...seed };
   sandbox.window = sandbox;
@@ -100,6 +106,119 @@ P('apwh-u6-san-francisco-chinese-migration-community','Chinese migrants pursued 
 P('apwh-u6-san-francisco-exclusion-racialization','Economic competition and racial politics turned Chinese workers into targets of violence, discrimination, and federal exclusion.','The Chinese Exclusion Act racialized labor policy and restricted a migrant group that western employers had previously recruited.','Chinese communities, anti-Chinese organizers, and federal lawmakers','Communities resisted exclusion while organizers and lawmakers converted prejudice into policy.','Chinese Exclusion Act','The 1882 United States law barring most Chinese labor immigration.',['Anti-Chinese campaigns blamed migrants for wage competition and economic insecurity.','Congress enacted the Chinese Exclusion Act in 1882.'],'Explain how economic claims and racial ideology interacted to produce exclusion.','AMSCO AP World History, Unit 6, Topic 6.7'),
 ];
 
+const expectedCausalEdges = new Map([
+  ['apwh-u6-berlin-industrial-rivalry-rationales->apwh-u6-berlin-conference-effective-occupation','Industrial demand, nationalism, and interstate rivalry intensified competing claims, prompting European powers to regulate their competition at Berlin.'],
+  ['apwh-u6-berlin-conference-effective-occupation->apwh-u6-berlin-borders-rivalry-consequences','Rules recognizing effective occupation accelerated territorial claims whose imposed borders divided communities, joined rivals, and preserved imperial competition.'],
+  ['apwh-u6-lagos-industrial-palm-oil-demand->apwh-u6-lagos-treaty-trade-political-control','Sustained British demand for palm oil increased the value of controlling trade terms, turning negotiated exchange into pressure for political control.'],
+  ['apwh-u6-lagos-treaty-trade-political-control->apwh-u6-lagos-export-economy-dependence','British political control narrowed African bargaining power and redirected transport and production toward export commodities and overseas markets.'],
+  ['apwh-u6-congo-quinine-steamship-access->apwh-u6-congo-leopold-private-colony','Quinine and more efficient steamships lowered health and transport barriers, enabling Leopold to extend a private colonial claim into the Congo interior.'],
+  ['apwh-u6-congo-leopold-private-colony->apwh-u6-congo-forced-rubber-demographic-catastrophe','Leopold’s private ownership tied official authority to personal extraction, producing violent rubber quotas, hostage-taking, and demographic catastrophe.'],
+  ['apwh-u6-delhi-company-rule-rebellion->apwh-u6-delhi-crown-rule-economic-restructuring','The 1857 rebellion exposed the instability of Company rule, prompting Crown government and a more centralized imperial infrastructure after 1858.'],
+  ['apwh-u6-delhi-crown-rule-economic-restructuring->apwh-u6-delhi-indenture-labor-migration','Colonial transport, recruiting institutions, and plantation demand enabled contractors to move Indian workers abroad under fixed-term indentures.'],
+  ['apwh-u6-guangzhou-trade-imbalance-opium->apwh-u6-guangzhou-opium-war-unequal-treaty','Qing suppression of the opium trade threatened British commercial interests, prompting gunboat war backed by industrial naval power.'],
+  ['apwh-u6-guangzhou-opium-war-unequal-treaty->apwh-u6-guangzhou-treaty-ports-spheres','British military victory forced unequal treaties that opened ports and legal privileges, enabling wider foreign spheres of influence without full annexation.'],
+  ['apwh-u6-adwa-italian-expansion-pressure->apwh-u6-adwa-ethiopian-military-resistance','Italy’s protectorate claim and invasion prompted Menelik II and Empress Taytu to mobilize Ethiopian diplomacy, supplies, weapons, and troops.'],
+  ['apwh-u6-adwa-ethiopian-military-resistance->apwh-u6-adwa-independence-comparative-outcome','Organized Ethiopian mobilization produced the decisive 1896 victory at Adwa, forcing Italy to recognize continued Ethiopian sovereignty.'],
+  ['apwh-u6-suez-industrial-trade-route->apwh-u6-suez-canal-labor-construction','Demand for a shorter Europe–Asia steam route mobilized Egyptian authority, a French-led company, finance, and coerced Egyptian labor to construct the canal.'],
+  ['apwh-u6-suez-canal-labor-construction->apwh-u6-suez-debt-strategic-control','Construction costs and later borrowing deepened Egyptian debt, enabling British share purchase and strategic occupation of the canal route.'],
+  ['apwh-u6-wounded-knee-settler-land-expansion->apwh-u6-wounded-knee-ghost-dance-resistance','Removal, reservation, and allotment policies threatened Indigenous land and lifeways, encouraging a religious movement promising renewal and restoration.'],
+  ['apwh-u6-wounded-knee-ghost-dance-resistance->apwh-u6-wounded-knee-massacre-dispossession','Federal officials treated the Ghost Dance as a military threat, producing armed intervention and the massacre of Lakota families at Wounded Knee.'],
+  ['apwh-u6-buenos-aires-export-growth-labor-demand->apwh-u6-buenos-aires-european-migration','Export agriculture, railways, and port growth created labor demand that Argentine recruitment policies used to attract European migrants.'],
+  ['apwh-u6-buenos-aires-european-migration->apwh-u6-buenos-aires-urban-growth-land-inequality','Large-scale immigration supplied workers and expanded Buenos Aires, while concentrated estates kept land and export wealth unequally distributed.'],
+  ['apwh-u6-san-francisco-railroad-labor-demand->apwh-u6-san-francisco-chinese-migration-community','Railroad recruitment and western labor demand drew Chinese migrants who then built durable family, commercial, and mutual-aid networks.'],
+  ['apwh-u6-san-francisco-chinese-migration-community->apwh-u6-san-francisco-exclusion-racialization','Durable Chinese communities became targets when economic competition and racial politics converted prejudice into violence and federal exclusion.'],
+  ['apwh-u6-lagos-industrial-palm-oil-demand->apwh-u6-berlin-industrial-rivalry-rationales','West African palm oil supplied industrial production, so recurring factory demand for commodities contributed to the economic rivalry and imperial rationales represented at Berlin.'],
+  ['apwh-u6-berlin-conference-effective-occupation->apwh-u6-congo-leopold-private-colony','Berlin rules recognizing effective occupation legitimized competing territorial claims and enabled international recognition of Leopold’s private Congo regime.'],
+  ['apwh-u6-suez-industrial-trade-route->apwh-u6-delhi-crown-rule-economic-restructuring','The shorter Suez route increased India’s strategic and commercial value to Britain, supporting tighter Crown control and infrastructure serving imperial movement and exports.'],
+]);
+
+const expectedRelatedPairs = new Map([
+  ['apwh-u6-delhi-crown-rule-economic-restructuring|apwh-u6-guangzhou-treaty-ports-spheres','Compare British direct rule and infrastructure in India with treaty-port privileges and spheres of influence in China, where foreign powers constrained sovereignty without full territorial colonization.'],
+  ['apwh-u6-congo-forced-rubber-demographic-catastrophe|apwh-u6-delhi-indenture-labor-migration','Compare Congo rubber quotas enforced by hostage-taking and mutilation with Indian indenture under fixed-term legal contracts; both were coercive, but their legal statuses and degrees of coercion were not equivalent.'],
+  ['apwh-u6-adwa-independence-comparative-outcome|apwh-u6-wounded-knee-massacre-dispossession','Compare Ethiopia’s organized victory and retained sovereignty at Adwa with the violent suppression and consolidated dispossession of Lakota people at Wounded Knee.'],
+  ['apwh-u6-buenos-aires-european-migration|apwh-u6-san-francisco-exclusion-racialization','Compare European migration actively encouraged by Argentina with Chinese migration increasingly racialized and excluded by the United States.'],
+  ['apwh-u6-congo-leopold-private-colony|apwh-u6-lagos-treaty-trade-political-control','Compare British treaty-based commercial expansion that narrowed West African political agency with Leopold’s personally owned Congo Free State and its private-colony rule.'],
+]);
+
+const expectedUnitCards = {
+  context: {
+    id:'apwh-u6-context-industry-imperial-pressure', kind:'context', role:'Unit 6 Context Card',
+    title:'From Industrial Capacity to Imperial Pressure',
+    examSkills:['Contextualization','Causation'],
+    summary:'Unit 5 industrialization concentrated productive and military power while creating recurring demand for raw materials, markets, workers, and dependable transport routes. Unit 6 examines how states and firms converted those capabilities and pressures into territorial, treaty, financial, and settler control, while local communities retained agency and resisted in different ways.',
+    prompt:'Which Unit 5 changes made overseas control more feasible and more valuable to industrial states?',
+    takeaways:[
+      'Industrial weapons, steam transport, and medicine increased the reach of states and firms.',
+      'Factories required recurring supplies and markets rather than occasional luxury trade.',
+      'Expansion depended on local conditions and choices as well as European capabilities.',
+    ],
+  },
+  synthesis: {
+    id:'apwh-u6-synthesis-imperial-systems-global-conflict', kind:'synthesis', role:'Unit 6 Synthesis Card',
+    title:'From Imperial Systems to Global Conflict',
+    examSkills:['Causation','CCOT'],
+    summary:'Imperial systems placed industrial states\' resources, markets, routes, labor supplies, and security interests outside their borders. Competing claims increasingly overlapped, while colonial boundaries, racial hierarchies, indigenous resistance, and nationalist organization created unresolved pressures. Unit 7 follows how those structures contributed to global wars, mass mobilization, and mass violence.',
+    prompt:'How did Unit 6 make a conflict in one region capable of activating states, resources, and populations across the world?',
+    takeaways:[
+      'Industrial states treated distant ports, mines, and routes as national security interests.',
+      'Imperial rivalry and artificial borders carried unresolved conflicts into the twentieth century.',
+      'Colonized peoples developed resistance and nationalist organizations that outlasted imperial rule.',
+    ],
+  },
+};
+
+const expectedLedgerRows = [
+  ['apwh-u6-berlin-industrial-rivalry-rationales','6.1, 6.8','world-event-29-1','AMSCO AP World History, Unit 6, Topics 6.1 and 6.8','Industrial states and imperial advocates; factory demand, nationalism, and interstate rivalry interacted to encourage imperial expansion; Berlin represents European competition rather than one universal motive.'],
+  ['apwh-u6-berlin-conference-effective-occupation','6.2','world-event-29-1','AMSCO AP World History, Unit 6, Topic 6.2','Otto von Bismarck and European delegates; diplomacy regulated competing claims through effective occupation; no Africans participated and the conference did not itself complete every conquest.'],
+  ['apwh-u6-berlin-borders-rivalry-consequences','6.2, 6.8','world-event-29-1','AMSCO AP World History, Unit 6, Topics 6.2 and 6.8','European colonial officials and African communities; imposed borders divided some communities and joined rivals while preserving imperial competition; Berlin anchors a continent-wide partition process.'],
+  ['apwh-u6-lagos-industrial-palm-oil-demand','6.1, 6.4','world-event-89-0','AMSCO AP World History, Unit 6, Topics 6.1 and 6.4','West African producers and British manufacturers; recurring factory demand expanded palm-oil exports; Lagos anchors wider West African trade in which Africans retained economic agency.'],
+  ['apwh-u6-lagos-treaty-trade-political-control','6.2, 6.5','world-event-89-0','AMSCO AP World History, Unit 6, Topics 6.2 and 6.5','King Jaja of Opobo and British officials; treaty trade became an opening for coercive political control as competition intensified; Lagos represents a wider Nigerian and West African process.'],
+  ['apwh-u6-lagos-export-economy-dependence','6.4, 6.5','world-event-89-0','AMSCO AP World History, Unit 6, Topics 6.4 and 6.5','African farmers, merchants, and colonial officials; colonial transport and rules favored narrow export commodities and foreign prices; dependence did not erase African bargaining, adaptation, or resistance.'],
+  ['apwh-u6-congo-quinine-steamship-access','6.2','world-event-91-0','AMSCO AP World History, Unit 6, Topic 6.2','European explorers, merchants, and African river communities; quinine and efficient steamships lowered health and transport barriers; Kinshasa anchors Congo Basin penetration and technology alone did not cause conquest.'],
+  ['apwh-u6-congo-leopold-private-colony','6.1, 6.2','world-event-91-0','AMSCO AP World History, Unit 6, Topics 6.1 and 6.2','King Leopold II and Congolese communities; international recognition enabled Leopold\'s personally owned Congo Free State; before 1908 it was not an ordinary Belgian state colony.'],
+  ['apwh-u6-congo-forced-rubber-demographic-catastrophe','6.4, 6.5','world-event-91-0','AMSCO AP World History, Unit 6, Topics 6.4 and 6.5','Congolese laborers and Leopold\'s agents; hostage-taking, mutilation, and killing enforced rubber and ivory quotas; Kinshasa represents coercive extraction across the Congo Free State.'],
+  ['apwh-u6-delhi-company-rule-rebellion','6.2, 6.3','world-event-6-2','AMSCO AP World History, Unit 6, Topics 6.2 and 6.3','Indian sepoys, rulers, civilians, and Company officials; military, religious, and political grievances combined in the 1857 rebellion; Delhi anchors a wider uprising rather than a cartridge-only cause.'],
+  ['apwh-u6-delhi-crown-rule-economic-restructuring','6.4, 6.5','world-event-6-2','AMSCO AP World History, Unit 6, Topics 6.4 and 6.5','British colonial officials and Indian farmers and workers; Crown railways and cash crops served imperial troops and exports while also moving local people; Delhi represents direct rule across British India.'],
+  ['apwh-u6-delhi-indenture-labor-migration','6.6, 6.7','world-event-6-2','AMSCO AP World History, Unit 6, Topics 6.6 and 6.7','Indian indentured laborers and colonial recruiters; abolition-era plantation demand and recruitment moved workers under coercive fixed-term contracts; indenture was not legally identical to chattel slavery.'],
+  ['apwh-u6-guangzhou-trade-imbalance-opium','6.5','world-event-15-0','AMSCO AP World History, Unit 6, Topic 6.5','British merchants, Indian producers, and Qing officials; Indian opium reversed Britain\'s silver outflow and pressured Qing China; Canton is the historical English name for Guangzhou.'],
+  ['apwh-u6-guangzhou-opium-war-unequal-treaty','6.2, 6.5','world-event-15-0','AMSCO AP World History, Unit 6, Topics 6.2 and 6.5','Lin Zexu, Qing forces, and British forces; industrial naval disparity converted opium enforcement into British victory and imposed concessions; Guangzhou anchors the opening conflict, not every battle.'],
+  ['apwh-u6-guangzhou-treaty-ports-spheres','6.5, 6.8','world-event-15-0','AMSCO AP World History, Unit 6, Topics 6.5 and 6.8','Qing officials, foreign merchants, and treaty-port residents; unequal treaties created ports, extraterritorial privileges, and spheres; foreign powers constrained sovereignty without fully colonizing China.'],
+  ['apwh-u6-adwa-italian-expansion-pressure','6.1, 6.2','world-event-80-0','AMSCO AP World History, Unit 6, Topics 6.1 and 6.2','Menelik II and Italian officials; a disputed treaty and Italian protectorate claim produced pressure while Ethiopian diplomacy and arms shaped resistance; Adwa anchors the wider 1895–1896 war.'],
+  ['apwh-u6-adwa-ethiopian-military-resistance','6.3','world-event-80-0','AMSCO AP World History, Unit 6, Topic 6.3','Menelik II, Empress Taytu, and Ethiopian forces; organized mobilization and supply enabled decisive victory; the campaign began in 1895 but the Battle of Adwa occurred in 1896.'],
+  ['apwh-u6-adwa-independence-comparative-outcome','6.3, 6.8','world-event-80-0','AMSCO AP World History, Unit 6, Topics 6.3 and 6.8','Menelik II and the Ethiopian state; battlefield victory forced recognition of sovereignty; retained independence was exceptional and does not imply that all African resistance succeeded.'],
+  ['apwh-u6-suez-industrial-trade-route','6.1, 6.4','world-event-88-0','AMSCO AP World History, Unit 6, Topics 6.1 and 6.4','Ferdinand de Lesseps, Egyptian rulers, and maritime merchants; the canal shortened Europe–Asia steam travel and increased the route\'s commercial value; Suez represents a global transport corridor.'],
+  ['apwh-u6-suez-canal-labor-construction','6.2, 6.4','world-event-88-0','AMSCO AP World History, Unit 6, Topics 6.2 and 6.4','Egyptian corvée workers and the Suez Canal Company; a French-led company used coerced Egyptian labor and finance to build the canal; it was not originally a British project.'],
+  ['apwh-u6-suez-debt-strategic-control','6.2, 6.5','world-event-88-0','AMSCO AP World History, Unit 6, Topics 6.2 and 6.5','Isma\'il Pasha, British investors, and British forces; debt enabled share purchase and occupation to protect the route to India; Suez anchors wider British control in Egypt.'],
+  ['apwh-u6-wounded-knee-settler-land-expansion','6.2','world-event-67-0','AMSCO AP World History, Unit 6, Topic 6.2','Indigenous nations, United States settlers, and federal officials; removal, reservation, and allotment transferred land; Wounded Knee is a representative anchor for continental dispossession.'],
+  ['apwh-u6-wounded-knee-ghost-dance-resistance','6.3','world-event-67-0','AMSCO AP World History, Unit 6, Topic 6.3','Wovoka and Indigenous Ghost Dance participants; religious teaching, dance, and song sustained cultural resistance and promised renewal; it was not simply a military uprising.'],
+  ['apwh-u6-wounded-knee-massacre-dispossession','6.3, 6.8','world-event-67-0','AMSCO AP World History, Unit 6, Topics 6.3 and 6.8','Lakota families and the Seventh Cavalry; federal fear and disarmament produced a massacre that consolidated dispossession; the local killing represents a wider settler-colonial process.'],
+  ['apwh-u6-buenos-aires-export-growth-labor-demand','6.4, 6.6','world-event-53-1','AMSCO AP World History, Unit 6, Topics 6.4 and 6.6','Argentine landowners, railway workers, and export merchants; railways, refrigerated shipping, and overseas demand expanded exports and labor demand; Buenos Aires anchors wider Argentine production.'],
+  ['apwh-u6-buenos-aires-european-migration','6.6','world-event-53-1','AMSCO AP World History, Unit 6, Topic 6.6','European migrants and Argentine officials; state recruitment and employment opportunities attracted immigration; government policy shaped movement rather than an unplanned demographic tide.'],
+  ['apwh-u6-buenos-aires-urban-growth-land-inequality','6.7','world-event-53-1','AMSCO AP World History, Unit 6, Topic 6.7','Immigrant workers and latifundia owners; migration and exports expanded Buenos Aires while concentrated estates preserved inequality; migration did not make every newcomer permanently prosperous.'],
+  ['apwh-u6-san-francisco-railroad-labor-demand','6.6','world-event-70-0','AMSCO AP World History, Unit 6, Topic 6.6','Chinese railroad workers and railroad companies; recruitment for dangerous western railroad labor drove transpacific movement; Promontory supplies rail evidence while San Francisco anchors the wider process.'],
+  ['apwh-u6-san-francisco-chinese-migration-community','6.6, 6.7','world-event-70-0','AMSCO AP World History, Unit 6, Topics 6.6 and 6.7','Chinese migrants and community associations; work, chain migration, and mutual aid produced durable communities; San Francisco represents Chinese settlement across the wider American West.'],
+  ['apwh-u6-san-francisco-exclusion-racialization','6.7','world-event-70-0','AMSCO AP World History, Unit 6, Topic 6.7','Chinese communities, anti-Chinese organizers, and federal lawmakers; economic competition and racial politics converted recruitment into violence and exclusion; San Francisco anchors a wider United States policy.'],
+];
+
+const backslashRunBefore=(value,index)=>{let backslashes=0;for(let cursor=index-1;cursor>=0&&value[cursor]==='\\';cursor-=1)backslashes+=1;return backslashes;};
+const parseMarkdownRowCells=row=>{
+  if (!row.startsWith('|')||!row.endsWith('|')||backslashRunBefore(row,row.length-1)%2===1) failLedger('row must start and end with pipe delimiters');
+  const cells=[]; let cell='';
+  for(let index=1;index<row.length;index+=1){const character=row[index];if(character!=='|'){cell+=character;continue;}const backslashes=backslashRunBefore(row,index);if(backslashes)cell=`${cell.slice(0,-backslashes)}${'\\'.repeat(Math.floor(backslashes/2))}`;if(backslashes%2===1){cell+='|';continue;}cells.push(cell.trim());cell='';}
+  return cells;
+};
+const parseLedgerRows=source=>{
+  if(!source.startsWith(ledgerIntroduction))failLedger('missing canonical introduction');
+  const tablePrefix=`${ledgerIntroduction}\n\n${ledgerHeader}\n${ledgerSeparator}\n`;
+  if(!source.startsWith(tablePrefix))failLedger('table header must immediately follow canonical introduction');
+  const lines=source.split('\n');const headerIndex=ledgerIntroduction.split('\n').length+1;const expectedIds=new Set(expectedLedgerRows.map(row=>row[0]));const rows=[];let tableEnd=headerIndex+2;
+  for(;tableEnd<lines.length;tableEnd+=1){const raw=lines[tableEnd];if(!raw)break;const cells=parseMarkdownRowCells(raw);if(cells.length!==5)failLedger('row must contain exactly five columns');const idMatch=cells[0].match(/^`(apwh-u6-[a-z0-9]+(?:-[a-z0-9]+)*)`$/);if(!idMatch)failLedger(`malformed Stable ID cell ${cells[0]}`);if(!expectedIds.has(idMatch[1]))failLedger(`unexpected Stable ID ${idMatch[1]}`);const eventMatch=cells[2].match(/^`([^`]+)`$/);if(!eventMatch)failLedger(`malformed Main event cell ${cells[2]}`);if(/\b(?:p|pp)\.\s*\d+/i.test(cells[3]))failLedger('unverified page number');rows.push([idMatch[1],cells[1],eventMatch[1],cells[3],cells[4]]);}
+  if(lines.slice(tableEnd).some(line=>line.trim()))failLedger('unexpected trailing content');
+  if(rows.length!==expectedLedgerRows.length)failLedger(`expected exactly ${expectedLedgerRows.length} data rows`);
+  for(let index=0;index<expectedLedgerRows.length;index+=1)if(JSON.stringify(rows[index])!==JSON.stringify(expectedLedgerRows[index]))failLedger(`row ${index+1} does not match the canonical record order and fields`);
+  return rows;
+};
+
 const manifestOf = record => [record.id,record.locationNumber,record.sequence,record.title,record.dateLabel,record.startYear,record.endYear,record.mainEventKey,[...record.topicCodes],[...record.themeIds],[...record.examSkills]];
 const contentOf = record => ({id:record.id,summary:record.summary,significance:record.significance,keyPeople:Array.from(record.keyPeople,value=>({...value})),keyTerms:Array.from(record.keyTerms,value=>({...value})),evidence:Array.from(record.evidence),examConnection:record.examConnection,source:{...record.source}});
 
@@ -147,7 +266,9 @@ test('matches the established API surface, descriptors, comparator, and lookup s
   assert.equal(api.locationName('missing'),null); assert.equal(api.getByLocation('missing').length,0);
   assert.notEqual(api.getByLocation('29'),api.getByLocation('29'));
   const copy=api.getByLocation('29'); copy.pop(); assert.equal(api.getByLocation('29').length,3);
-  assert.deepEqual(JSON.parse(JSON.stringify(api.unitCards)),{}); assert.equal(api.getUnitCard('context'),null); assert.equal(api.getUnitCard(null),null);
+  assert.deepEqual(JSON.parse(JSON.stringify(api.unitCards)),expectedUnitCards);
+  assert.equal(api.getUnitCard('context'),api.unitCards.context); assert.equal(api.getUnitCard('synthesis'),api.unitCards.synthesis);
+  for (const kind of ['toString','constructor','__proto__','missing',null,undefined]) assert.equal(api.getUnitCard(kind),null);
 });
 
 test('deep-freezes all published records, graph containers, cards, and the global descriptor', () => {
@@ -157,10 +278,7 @@ test('deep-freezes all published records, graph containers, cards, and the globa
   const seen=new Set();
   const assertDeepFrozen=value=>{ if (value===null||typeof value!=='object'||seen.has(value)) return; seen.add(value); assert.equal(Object.isFrozen(value),true); for (const key of Reflect.ownKeys(value)) assertDeepFrozen(value[key]); };
   assertDeepFrozen(api);
-  for (const record of api.records) {
-    assert.deepEqual([...record.causeStudyPointIds],[]); assert.deepEqual([...record.effectStudyPointIds],[]); assert.deepEqual([...record.relatedStudyPointIds],[]);
-    assert.deepEqual({...record.connectionNotes},{});
-  }
+  for (const card of Object.values(api.unitCards)) { assert.equal(Object.isFrozen(card),true); assert.equal(Object.isFrozen(card.examSkills),true); assert.equal(Object.isFrozen(card.takeaways),true); }
 });
 
 test('sorts every defensive location lookup with the shared comparator', () => {
@@ -262,37 +380,41 @@ const mutateConnections=(label,statement)=>{
   const malformed=dataModuleSource.replace(/(\n\s*validateConnectionShapes\(\);)/,`\n  ${statement}$1`);
   assert.notEqual(malformed,dataModuleSource,`${label} fixture mutation`); return malformed;
 };
-test('rejects a valid-looking reciprocal edge and notes because the Task 2 graph must remain empty',()=>{
-  const source='apwh-u6-berlin-industrial-rivalry-rationales'; const target='apwh-u6-berlin-conference-effective-occupation';
-  const statement=`{const left=CONNECTION_DATA.get('${source}'),right=CONNECTION_DATA.get('${target}'),note='English mechanism note.'; left.effectStudyPointIds.push('${target}'); right.causeStudyPointIds.push('${source}'); left.connectionNotes['${target}']=note; right.connectionNotes['${source}']=note;}`;
-  assert.throws(()=>evaluate(mutateConnections('nonempty checkpoint graph',statement)),error=>{assert.match(error.message,/Invalid Unit 6/);assert.match(error.message,new RegExp(source));assert.match(error.message,/must be empty for the Task 2 checkpoint/);return true;});
+test('publishes exact causal chains and related comparisons with reciprocal mechanism notes',()=>{
+  const api=evaluate(); const causal=new Map(); const related=new Map();
+  const reciprocals={causeStudyPointIds:'effectStudyPointIds',effectStudyPointIds:'causeStudyPointIds',relatedStudyPointIds:'relatedStudyPointIds'};
+  for(const record of api.records){const seen=new Set();for(const [category,reciprocal] of Object.entries(reciprocals)){assert.equal(new Set(record[category]).size,record[category].length,`${record.id} ${category} duplicate`);for(const targetId of record[category]){assert.notEqual(targetId,record.id);assert.equal(seen.has(targetId),false,`${record.id} cross-category ${targetId}`);seen.add(targetId);const target=api.getById(targetId);assert.ok(target);assert.ok(target[reciprocal].includes(record.id));assert.equal(target.connectionNotes[record.id],record.connectionNotes[targetId]);if(category==='effectStudyPointIds')causal.set(`${record.id}->${targetId}`,record.connectionNotes[targetId]);if(category==='relatedStudyPointIds')related.set([record.id,targetId].sort().join('|'),record.connectionNotes[targetId]);}}assert.deepEqual(Object.keys(record.connectionNotes).sort(),[...seen].sort());}
+  assert.equal(causal.size,23); assert.equal(related.size,5); assert.deepEqual(causal,expectedCausalEdges); assert.deepEqual(related,expectedRelatedPairs);
+  for(const [number] of expectedLocations){const local=api.getByLocation(number);for(let index=0;index<2;index+=1){assert.ok(local[index].effectStudyPointIds.includes(local[index+1].id));assert.ok(local[index+1].causeStudyPointIds.includes(local[index].id));}}
 });
 
-test('rejects a deleted manifest entry in the checkpoint connection Map safely',()=>{
+test('rejects a deleted manifest entry in the connection Map safely',()=>{
   const id='apwh-u6-berlin-industrial-rivalry-rationales';
   assert.throws(()=>evaluate(mutateConnections('missing connection Map entry',`CONNECTION_DATA.delete('${id}');`)),error=>{assert.match(error.message,/Invalid Unit 6/);assert.match(error.message,new RegExp(id));assert.match(error.message,/missing connection data/);return true;});
 });
 
-test('rejects an extra entry in the checkpoint connection Map safely',()=>{
+test('rejects an extra entry in the connection Map safely',()=>{
   const id='apwh-u6-extra';
   const statement=`CONNECTION_DATA.set('${id}',{causeStudyPointIds:[],effectStudyPointIds:[],relatedStudyPointIds:[],connectionNotes:{}});`;
   assert.throws(()=>evaluate(mutateConnections('extra connection Map entry',statement)),error=>{assert.match(error.message,/Invalid Unit 6/);assert.match(error.message,new RegExp(id));assert.match(error.message,/extra connection data/);return true;});
 });
 
-test('rejects a non-Map checkpoint connection container safely',()=>{
+test('rejects a non-Map connection container safely',()=>{
   assert.throws(()=>evaluate(mutateConnections('non-Map connection container','CONNECTION_DATA={};')),error=>{assert.match(error.message,/Invalid Unit 6/);assert.match(error.message,/connection data must be an ordinary local Map/);return true;});
 });
 
-test('rejects unresolved, self, duplicate, malformed, and non-ordinary checkpoint graph data',()=>{
+test('rejects unresolved, self, duplicate, cross-category, nonreciprocal, bad-note, and non-ordinary graph data',()=>{
   const id='apwh-u6-berlin-industrial-rivalry-rationales';
   const cases=[
     [`CONNECTION_DATA.get('${id}').effectStudyPointIds.push('apwh-u6-missing');`,/unresolved connection apwh-u6-missing/],
     [`CONNECTION_DATA.get('${id}').effectStudyPointIds.push('${id}');`,/self connection/],
-    [`CONNECTION_DATA.get('${id}').effectStudyPointIds.push('apwh-u6-berlin-conference-effective-occupation','apwh-u6-berlin-conference-effective-occupation');`,/duplicate connection/],
+    [`CONNECTION_DATA.get('${id}').effectStudyPointIds.push('apwh-u6-berlin-conference-effective-occupation');`,/duplicate connection/],
+    [`CONNECTION_DATA.get('${id}').relatedStudyPointIds.push('apwh-u6-berlin-conference-effective-occupation');`,/cross-category connection/],
+    [`CONNECTION_DATA.get('apwh-u6-berlin-conference-effective-occupation').causeStudyPointIds=[];`,/nonreciprocal/],
+    [`CONNECTION_DATA.get('${id}').connectionNotes['apwh-u6-berlin-conference-effective-occupation']='This happened before that.'; CONNECTION_DATA.get('apwh-u6-berlin-conference-effective-occupation').connectionNotes['${id}']='This happened before that.';`,/causal connection note must name a mechanism/],
     [`CONNECTION_DATA.get('${id}').effectStudyPointIds.extra='English extra.';`,/effectStudyPointIds must be an ordinary dense array/],
     [`CONNECTION_DATA.get('${id}').effectStudyPointIds[Symbol('extra')]='English extra.';`,/effectStudyPointIds must be an ordinary dense array/],
-    [`{const values=CONNECTION_DATA.get('${id}').effectStudyPointIds; Object.defineProperty(values,'0',{enumerable:true,configurable:true,get(){return 'apwh-u6-berlin-conference-effective-occupation';}});}`,/effectStudyPointIds must be an ordinary dense array/],
-    [`{const values=CONNECTION_DATA.get('${id}').effectStudyPointIds; values.push('apwh-u6-berlin-conference-effective-occupation'); delete values[0];}`,/effectStudyPointIds must be an ordinary dense array/],
+    [`{const values=CONNECTION_DATA.get('${id}').effectStudyPointIds,value=values[0]; Object.defineProperty(values,'0',{enumerable:true,configurable:true,get(){return value;}});}`,/effectStudyPointIds must be an ordinary dense array/],
     [`Object.setPrototypeOf(CONNECTION_DATA.get('${id}').relatedStudyPointIds,Object.create(Array.prototype));`,/relatedStudyPointIds must be an ordinary dense array/],
     [`CONNECTION_DATA.get('${id}').connectionNotes[Symbol('extra')]='English note.';`,/extra connection note key Symbol\(extra\)/],
     [`Object.defineProperty(CONNECTION_DATA.get('${id}'),'connectionNotes',{enumerable:false});`,/malformed connection structure/],
@@ -305,7 +427,34 @@ const mutateCards=(label,statement)=>{
   const malformed=dataModuleSource.replace(/(\n\s*validateUnitCards\(UNIT_CARD_LIST\);)/,`\n  ${statement}$1`);
   assert.notEqual(malformed,dataModuleSource,`${label} fixture mutation`); return malformed;
 };
-test('rejects null and non-ordinary checkpoint card containers',()=>{
-  const cases=[['UNIT_CARD_LIST=null;',/cards must be an array/],["UNIT_CARD_LIST[Symbol('extra')]='English extra.';",/cards must be an ordinary dense array/],["UNIT_CARD_LIST.extra='English extra.';",/cards must be an ordinary dense array/],['Object.setPrototypeOf(UNIT_CARD_LIST,Object.create(Array.prototype));',/cards must be an ordinary dense array/],["Object.defineProperty(UNIT_CARD_LIST,'0',{enumerable:false,configurable:true,writable:true,value:{}});",/cards must be an ordinary dense array/]];
+test('publishes exact deeply frozen Unit 6 cards with defensive lookup semantics',()=>{
+  const api=evaluate(); assert.deepEqual(JSON.parse(JSON.stringify(api.unitCards)),expectedUnitCards);
+  for(const kind of ['context','synthesis']){const card=api.getUnitCard(kind);assert.equal(card,api.unitCards[kind]);assert.equal(Object.isFrozen(card),true);assert.equal(Object.isFrozen(card.examSkills),true);assert.equal(Object.isFrozen(card.takeaways),true);}
+  assert.throws(()=>api.getUnitCard('context').takeaways.pop());
+});
+
+test('rejects malformed, null, extra-field, and wrong-set Unit 6 cards',()=>{
+  const cases=[['UNIT_CARD_LIST=null;',/cards must be an array/],["UNIT_CARD_LIST[Symbol('extra')]='English extra.';",/cards must be an ordinary dense array/],["UNIT_CARD_LIST.extra='English extra.';",/cards must be an ordinary dense array/],['Object.setPrototypeOf(UNIT_CARD_LIST,Object.create(Array.prototype));',/cards must be an ordinary dense array/],["UNIT_CARD_LIST[0].role='';",/missing role/],["UNIT_CARD_LIST[0].kind='wrong';",/invalid kind wrong/],["UNIT_CARD_LIST[1].kind='context';",/duplicate kind context/],["UNIT_CARD_LIST[1].id=UNIT_CARD_LIST[0].id;",/duplicate card ID/],["UNIT_CARD_LIST[0].id='apwh-u5-context-wrong-unit';",/invalid stable ID/],["UNIT_CARD_LIST[0].examSkills='Causation';",/examSkills must be an array/],["UNIT_CARD_LIST[0].examSkills=['Recall'];",/invalid examSkill Recall/],["UNIT_CARD_LIST[0].takeaways.pop();",/takeaways must contain exactly three items/],["UNIT_CARD_LIST[0].extra='field';",/exactly the approved fields/],["UNIT_CARD_LIST.pop();",/expected exactly context and synthesis/]];
   for (const [statement,message] of cases) assert.throws(()=>evaluate(mutateCards('bad cards',statement)),error=>{assert.match(error.message,/Invalid Unit 6/);assert.match(error.message,message);return true;});
+});
+
+test('locks the canonical introduction and all five source-ledger columns for exactly thirty records',()=>{
+  assert.equal(ledgerSource.startsWith(ledgerIntroduction),true); const rows=parseLedgerRows(ledgerSource); assert.deepEqual(rows,expectedLedgerRows); assert.equal(new Set(rows.map(row=>row[0])).size,30);
+  for(let index=0;index<rows.length;index+=1){const manifest=expectedManifest[index];assert.equal(rows[index][0],manifest[0]);assert.equal(rows[index][1],manifest[8].join(', '));assert.equal(rows[index][2],manifest[7]);assert.equal(rows[index][3],expectedRecordContent[index].source.locator);}
+});
+
+test('rejects source-ledger structural garbage, missing rows, extra columns, order drift, vague citations, page numbers, and trailing content',()=>{
+  const firstRow=ledgerSource.split('\n').find(line=>line.includes('`apwh-u6-berlin-industrial-rivalry-rationales`')); const secondRow=ledgerSource.split('\n').find(line=>line.includes('`apwh-u6-berlin-conference-effective-occupation`')); const lastRow=ledgerSource.split('\n').find(line=>line.includes('`apwh-u6-san-francisco-exclusion-racialization`'));
+  const cases=[
+    [ledgerSource.replace(`${ledgerIntroduction}\n\n${ledgerHeader}`,`${ledgerIntroduction}\n\nInserted prose.\n\n${ledgerHeader}`),/table header must immediately follow canonical introduction/],
+    [ledgerSource.replace(firstRow,`${firstRow} trailing garbage`),/row must start and end with pipe delimiters/],
+    [ledgerSource.replace(firstRow,`${firstRow?.replace(/ \|$/,' | extra |')}`),/row must contain exactly five columns/],
+    [ledgerSource.replace(lastRow,''),/expected exactly 30 data rows/],
+    [ledgerSource.replace(`${firstRow}\n${secondRow}`,`${secondRow}\n${firstRow}`),/row 1 does not match the canonical record order and fields/],
+    [ledgerSource.replace('AMSCO AP World History, Unit 6, Topics 6.1 and 6.8','AMSCO AP World History, Unit 6'),/row 1 does not match the canonical record order and fields/],
+    [ledgerSource.replace('AMSCO AP World History, Unit 6, Topics 6.1 and 6.8','AMSCO AP World History, Unit 6, Topics 6.1 and 6.8, p. 10'),/unverified page number/],
+    [ledgerSource.replace('`world-event-29-1`','world-event-29-1'),/malformed Main event cell/],
+    [`${ledgerSource}\nTrailing garbage`,/unexpected trailing content/],
+  ];
+  for(const [source,message] of cases){assert.notEqual(source,ledgerSource);assert.throws(()=>parseLedgerRows(source),message);}
 });
