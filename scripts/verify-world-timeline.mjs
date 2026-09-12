@@ -3482,6 +3482,10 @@ async function assertUnit6StudyView(view, fixture, label, canonicalFrame = null)
       `${label} row ${index + 1} must keep exactly one expanded row`);
     assert.equal(await view.locator('[data-study-event][aria-current="true"]').count(), 1,
       `${label} row ${index + 1} must keep exactly one current row`);
+    assert.equal(await rows.nth(index).getAttribute('aria-expanded'), 'true',
+      `${label} row ${index + 1} clicked toggle must expose aria-expanded=true`);
+    assert.equal(await rows.nth(index).getAttribute('aria-current'), 'true',
+      `${label} row ${index + 1} clicked toggle must expose aria-current=true`);
     assert.equal(await rows.nth(index).evaluate(element => document.activeElement === element), true,
       `${label} row ${index + 1} activation must retain focus`);
     if (canonicalFrame) {
@@ -3522,6 +3526,10 @@ async function assertUnit6CanonicalStudyState(context, fixture, studyId, depth, 
       period: window.__mapFilter.getState().period,
       selectedAnchor: timeline.selectedAnchor && { num: timeline.selectedAnchor.num, region: timeline.selectedAnchor.region },
       selectedEventKey: timeline.selectedEventKey,
+      currentEventKeys: [...document.querySelectorAll('.world-timeline-card[aria-current="step"]')]
+        .map(card => card.dataset.eventKey),
+      selectedMapPins: [...document.querySelectorAll('.pin-group.timeline-selected')]
+        .map(group => group.querySelector('text')?.textContent.trim()).filter(Boolean).sort(),
       unitId: state.unitId,
       studyId: state.studyId,
       connectionDepth: state.connectionDepth,
@@ -3535,6 +3543,8 @@ async function assertUnit6CanonicalStudyState(context, fixture, studyId, depth, 
     period: 'u6',
     selectedAnchor: { num: fixture.number, region: fixture.region },
     selectedEventKey: fixture.mainEventKey,
+    currentEventKeys: [fixture.mainEventKey],
+    selectedMapPins: [fixture.number],
     unitId: 'u6', studyId, connectionDepth: depth,
     viewNumber: fixture.number, viewUnit: 'u6', detailId: studyId, detailCount: 1,
   }, `${label} must synchronize canonical Unit 6 study, Timeline, and map state`);
@@ -3697,15 +3707,11 @@ async function assertUnit6PeriodCleanup(page, frame, surface, nextUnit) {
   await followUnit5StudyConnection(opened.view, jump.sourceId, jump.targetId, jump.groupLabel, label);
   if (surface === 'standalone') await page.evaluate(unit => window.__mapFilter.setPeriod(unit), nextUnit);
   else await page.locator('#hostPeriod').selectOption(nextUnit);
-  await canonical.locator('body').evaluate((body, unit) => new Promise(resolve => {
-    const done = () => window.__mapFilter.getState().period === unit
-      && !document.querySelector('#eventPanel [data-location-study-view]');
-    if (done()) return resolve();
-    const observer = new MutationObserver(() => {
-      if (done()) { observer.disconnect(); resolve(); }
-    });
-    observer.observe(document.querySelector('#eventPanel'), { childList: true, subtree: true });
-  }), nextUnit);
+  await canonical.locator('#eventPanel [data-location-study-view]').waitFor({
+    state: 'detached', timeout: 5_000,
+  });
+  assert.equal(await canonical.locator('body').evaluate(() => window.__mapFilter.getState().period), nextUnit,
+    `${label} must select ${nextUnit} before clearing the Unit 6 study DOM`);
   if (surface === 'homepage') {
     await page.waitForFunction(() => !document.querySelector('#home-events [data-location-study-view]'));
   }
@@ -3733,7 +3739,10 @@ async function assertUnit6KabulOrdinaryOnly(page, frame, surface) {
     await page.waitForFunction(() => document.querySelector('#home-events .city-name')?.textContent.trim() === 'Kabul');
   }
   const panel = surface === 'standalone' ? page.locator('#eventPanel') : page.locator('#home-events');
-  await expectVisible(panel.locator('.event-list > .event-card'), `${label} must show ordinary detail`);
+  const ordinaryCards = panel.locator('.event-list > .event-card');
+  await expectVisible(ordinaryCards, `${label} must show ordinary detail`);
+  assert.equal(await ordinaryCards.count(), 1,
+    `${label} must expose exactly one ordinary event card for the exact Kabul event`);
   assert.equal((await panel.locator('.event-head .city-name').textContent()).trim(), fixture.city,
     `${label} must render Kabul heading`);
   assert.equal((await panel.locator('.event-list > .event-card .ec-yr').textContent()).trim(), fixture.date,
