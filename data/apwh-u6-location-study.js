@@ -310,13 +310,18 @@ P('apwh-u6-san-francisco-exclusion-racialization','Economic competition and raci
   const validateConnectionShapes=()=>{
     validateConnectionDataMap();
     const keys=['causeStudyPointIds','connectionNotes','effectStudyPointIds','relatedStudyPointIds'];
+    const connectionCategories=['causeStudyPointIds','effectStudyPointIds','relatedStudyPointIds'];
+    // Validate every node before following any edge. Otherwise a malformed later
+    // target could leak a native TypeError while an earlier node checks reciprocity.
     for (const [id,connections] of CONNECTION_DATA) {
       if (!plainObject(connections)||!hasExactOwnEnumerableDataFields(connections,keys)) fail(id,'malformed connection structure');
-      for (const category of ['causeStudyPointIds','effectStudyPointIds','relatedStudyPointIds']) if (!ordinaryDenseArray(connections[category])) fail(id,`${category} must be an ordinary dense array`);
+      for (const category of connectionCategories) if (!ordinaryDenseArray(connections[category])) fail(id,`${category} must be an ordinary dense array`);
       if (!plainObject(connections.connectionNotes)) fail(id,'connectionNotes must be a plain object');
+    }
+    for (const [id,connections] of CONNECTION_DATA) {
       const categories=new Map(); const linked=[];
       const reciprocals={causeStudyPointIds:'effectStudyPointIds',effectStudyPointIds:'causeStudyPointIds',relatedStudyPointIds:'relatedStudyPointIds'};
-      for (const category of ['causeStudyPointIds','effectStudyPointIds','relatedStudyPointIds']) {
+      for (const category of connectionCategories) {
         for (const targetId of connections[category]) {
           if (targetId===id) fail(id,`self connection in ${category}`);
           if (connections[category].indexOf(targetId)!==connections[category].lastIndexOf(targetId)) fail(id,`duplicate connection in ${category} to ${describe(targetId)}`);
@@ -331,7 +336,7 @@ P('apwh-u6-san-francisco-exclusion-racialization','Economic competition and raci
       const extra=noteKeys.find(key=>typeof key!=='string'||!linked.includes(key));
       if (extra!==undefined) fail(id,`extra connection note key ${describe(extra)}`);
       if (!hasExactOwnEnumerableDataFields(connections.connectionNotes,[...new Set(linked)])) fail(id,'connectionNotes must contain ordinary enumerable data fields');
-      for (const category of ['causeStudyPointIds','effectStudyPointIds','relatedStudyPointIds']) {
+      for (const category of connectionCategories) {
         for (const targetId of connections[category]) {
           const note=connections.connectionNotes[targetId]; const target=CONNECTION_DATA.get(targetId);
           if (!english(note)) fail(id,`non-English connection note for ${targetId}`);

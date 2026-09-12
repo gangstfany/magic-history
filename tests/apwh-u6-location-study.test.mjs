@@ -403,6 +403,17 @@ test('rejects a non-Map connection container safely',()=>{
   assert.throws(()=>evaluate(mutateConnections('non-Map connection container','CONNECTION_DATA={};')),error=>{assert.match(error.message,/Invalid Unit 6/);assert.match(error.message,/connection data must be an ordinary local Map/);return true;});
 });
 
+test('rejects a malformed referenced connection target with a controlled diagnostic',()=>{
+  const id='apwh-u6-berlin-conference-effective-occupation';
+  const statement=`CONNECTION_DATA.set('${id}',{});`;
+  assert.throws(()=>evaluate(mutateConnections('malformed referenced connection target',statement)),error=>{
+    assert.match(error.message,/Invalid Unit 6/);
+    assert.match(error.message,new RegExp(id));
+    assert.match(error.message,/malformed connection structure/);
+    return true;
+  });
+});
+
 test('rejects unresolved, self, duplicate, cross-category, nonreciprocal, bad-note, and non-ordinary graph data',()=>{
   const id='apwh-u6-berlin-industrial-rivalry-rationales';
   const cases=[
