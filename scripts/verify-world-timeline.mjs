@@ -412,13 +412,14 @@ function verifyUnit5Fixture(worldMapSource) {
 }
 
 function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePageSource) {
-  const scriptTag = '<script src="data/apwh-u5-location-study.js"></script>';
+  const unit5ScriptTag = '<script src="data/apwh-u5-location-study.js"></script>';
+  const unit6ScriptTag = '<script src="data/apwh-u6-location-study.js"></script>';
   const pageLogicStart = '<script>\n(function () {';
   for (const [label, source] of [
     ['world-map.html', worldMapSource],
     ['index.html', homePageSource],
   ]) {
-    for (const unit of [4, 5]) {
+    for (const unit of [4, 5, 6]) {
       const registeredScriptTag = `<script src="data/apwh-u${unit}-location-study.js"></script>`;
       assert.equal(source.split(registeredScriptTag).length - 1, 1,
         `${label} must load the Unit ${unit} location-study data script exactly once`);
@@ -428,8 +429,12 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
   }
 
   assert.ok(worldMapSource.indexOf('<script src="data/apwh-u4-location-study.js"></script>')
-    < worldMapSource.indexOf(scriptTag),
+    < worldMapSource.indexOf(unit5ScriptTag),
   'world-map.html must load Unit 5 location-study data after the Unit 4 data script');
+  assert.ok(worldMapSource.indexOf(unit5ScriptTag) < worldMapSource.indexOf(unit6ScriptTag),
+    'world-map.html must load Unit 6 location-study data after the Unit 5 data script');
+  assert.ok(homePageSource.indexOf(unit5ScriptTag) < homePageSource.indexOf(unit6ScriptTag),
+    'index.html must load Unit 6 location-study data after the Unit 5 data script');
 
   const expectedLocationRegistry = `const LOCATION_STUDY_GLOBAL_BY_UNIT = Object.freeze({
     u1: 'APWH_U1_LOCATION_STUDY',
@@ -437,6 +442,7 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
     u3: 'APWH_U3_LOCATION_STUDY',
     u4: 'APWH_U4_LOCATION_STUDY',
     u5: 'APWH_U5_LOCATION_STUDY',
+    u6: 'APWH_U6_LOCATION_STUDY',
   });`;
   const expectedHomeRegistry = `const HOME_STUDY_GLOBAL_BY_UNIT = Object.freeze({
     u1: 'APWH_U1_LOCATION_STUDY',
@@ -444,13 +450,14 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
     u3: 'APWH_U3_LOCATION_STUDY',
     u4: 'APWH_U4_LOCATION_STUDY',
     u5: 'APWH_U5_LOCATION_STUDY',
+    u6: 'APWH_U6_LOCATION_STUDY',
   });`;
   const extractRegistry = (source, name) => source.match(
     new RegExp(`const ${name} = Object\\.freeze\\(\\{[\\s\\S]*?\\n  \\}\\);`))?.[0];
   assert.equal(extractRegistry(worldMapSource, 'LOCATION_STUDY_GLOBAL_BY_UNIT'), expectedLocationRegistry,
-    'world-map.html must expose the exact Unit 1–5 location-study registry');
+    'world-map.html must expose the exact Unit 1–6 location-study registry');
   assert.equal(extractRegistry(homePageSource, 'HOME_STUDY_GLOBAL_BY_UNIT'), expectedHomeRegistry,
-    'index.html must expose the exact Unit 1–5 location-study registry');
+    'index.html must expose the exact Unit 1–6 location-study registry');
 }
 
 async function importFirst(candidates) {
@@ -4801,6 +4808,13 @@ async function verifyTimeline(page, port) {
   await verifyStandaloneUnit3StudyContract(page);
   await verifyStandaloneUnit4StudyContract(page);
   await verifyStandaloneUnit5StudyContract(page);
+
+  await page.evaluate(() => {
+    window.__mapFilter.setPeriod('u6');
+    window.__mapFilter.openHit('91', 'africa', 'world-event-91-0');
+  });
+  await expectVisible(page.locator('#eventPanel [data-location-study-open="91"]'),
+    'Unit 6 Congo must expose a location-study entry');
 }
 
 async function verifyLearningShell(page, port) {
