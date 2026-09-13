@@ -4048,22 +4048,62 @@ async function assertUnit7StalingradOrdinaryOnly(page, frame, surface) {
   await assertUnit7TimelineState(canonical, UNIT_7_STALINGRAD, label);
 }
 
+async function normalizeUnit7FilterSurface(page, frame, surface, label) {
+  const canonical = surface === 'standalone' ? page : frame;
+  if (surface === 'homepage') await page.locator('.map-card-head [data-learning-view="map"]').click();
+  await canonical.locator('body').evaluate(() => {
+    window.__mapFilter.reset();
+    window.__mapFilter.setLearningView('map');
+    window.__mapFilter.setPeriod('u7');
+    window.__mapFilter.setQuery('');
+    for (const category of window.__mapFilter.getCats()) {
+      if (!window.__mapFilter.getState().cats.has(category.abbr)) window.__mapFilter.toggleCat(category.abbr);
+    }
+    document.querySelector('.region-path[aria-pressed="true"]')?.dispatchEvent(
+      new MouseEvent('click', { bubbles: true }));
+  });
+  if (surface === 'standalone') {
+    await page.waitForFunction(() => {
+      const state = window.__mapFilter.getState();
+      return state.period === 'u7' && state.query === '' && state.region === null
+        && state.cats.size === window.__mapFilter.getCats().length;
+    });
+  } else {
+    await page.waitForFunction(() => {
+      const win = document.querySelector('#worldMapFrame')?.contentWindow;
+      const state = win?.__mapFilter?.getState();
+      const allCats = win?.__mapFilter?.getCats().length;
+      const hostCats = [...document.querySelectorAll('#hostCats [data-cat][aria-pressed="true"]')].length;
+      return state?.period === 'u7' && state.query === '' && state.region === null
+        && state.cats.size === allCats && document.querySelector('#hostPeriod')?.value === 'u7'
+        && document.querySelector('#hostSearch')?.value === '' && hostCats === allCats;
+    });
+  }
+  const normalized = await unit5FilterState(canonical);
+  assert.deepEqual(normalized, {
+    query: '', cats: normalized.allCats, allCats: normalized.allCats,
+    period: 'u7', region: null, pressedRegions: [],
+  }, `${label} must begin from a normalized canonical Unit 7 filter state`);
+}
+
 async function prepareUnit7DepthTwoFilters(page, frame, surface, fixture) {
   const canonical = surface === 'standalone' ? page : frame;
+  await normalizeUnit7FilterSurface(page, frame, surface, `${surface} Unit 7 connection stack`);
   const title = await canonical.locator('body').evaluate((body, key) =>
     window.getTimelineState().visibleEvents.find(event => event.key === key)?.titleEn || null, fixture.mainEventKey);
   assert.ok(title, `${surface} Unit 7 connection stack must resolve the source Timeline title`);
   if (surface === 'standalone') {
-    await page.evaluate(({ title, region }) => {
-      window.__mapFilter.setLearningView('map'); window.__mapFilter.setPeriod('u7');
-      window.__mapFilter.setQuery(title);
+    await page.evaluate(({ title }) => window.__mapFilter.setQuery(title), { title });
+    await page.waitForFunction(eventKey => document.querySelector(
+      `.event-card.is-result[data-event-key="${CSS.escape(eventKey)}"]`), fixture.mainEventKey);
+    await page.evaluate(({ region }) => {
       const categories = window.__mapFilter.getCats();
       const sourceCategory = document.querySelector('.event-card.is-result .ec-cat')?.textContent || '';
       const excluded = categories.find(category => !sourceCategory.includes(category.full));
       if (!excluded) throw new Error('Unit 7 stack could not derive an excluded category');
       window.__mapFilter.toggleCat(excluded.abbr);
       document.querySelector(`.region-path[data-region="${region}"]`)?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    }, { title, region: fixture.region });
+    }, { region: fixture.region });
   } else {
     await page.locator('.map-card-head [data-learning-view="map"]').click();
     await page.locator('#hostPeriod').selectOption('u7');
