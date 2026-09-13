@@ -3917,6 +3917,12 @@ async function openUnit7OrdinaryEvent(page, frame, surface, fixture, label, { pr
     const result = page.locator(`#home-events .event-card.is-result[data-event-key="${fixture.mainEventKey}"]`);
     await result.waitFor({ state: 'visible' });
     await result.click();
+    await page.waitForFunction(({ number, eventKey }) => {
+      const panel = document.querySelector('#home-events');
+      return document.querySelector('#hostPeriod')?.value === 'u7'
+        && Boolean(panel?.querySelector(
+          `[data-location-study-open="${number}"][data-location-study-event-key="${eventKey}"]`));
+    }, { number: fixture.number, eventKey: fixture.mainEventKey });
   }
   await assertUnit7TimelineState(canonical, fixture, `${label} ordinary event`);
   const panel = surface === 'standalone' ? page.locator('#eventPanel') : page.locator('#home-events');
