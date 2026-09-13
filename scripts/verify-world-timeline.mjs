@@ -3902,7 +3902,7 @@ async function openUnit7OrdinaryEvent(page, frame, surface, fixture, label, { pr
         if ((await button.getAttribute('aria-pressed')) !== 'true') await button.click();
       }
       await themeToggle.click();
-      const activeRegion = frame.locator('.region-path[aria-pressed="true"]');
+      const activeRegion = frame.locator('.region-path[role="button"][aria-pressed="true"]');
       if (await activeRegion.count()) await activeRegion.evaluate(node =>
         node.dispatchEvent(new MouseEvent('click', { bubbles: true })));
       await page.waitForFunction(expected => {
@@ -4040,6 +4040,13 @@ async function assertUnit7StalingradOrdinaryOnly(page, frame, surface) {
     await page.locator('#hostPeriod').selectOption('u7');
     await page.locator('#hostSearch').fill(UNIT_7_STALINGRAD.title);
     await page.locator(`#home-events .event-card.is-result[data-event-key="${UNIT_7_STALINGRAD.mainEventKey}"]`).click();
+    await page.waitForFunction(({ city }) => {
+      const panel = document.querySelector('#home-events');
+      return document.querySelector('#hostPeriod')?.value === 'u7'
+        && panel?.querySelector('.event-head .city-name')?.textContent.trim() === city
+        && panel.querySelector('.event-list > .event-card .ec-trig .hl')?.textContent.includes('Stalingrad')
+        && !panel.querySelector('[data-location-study-open]');
+    }, { city: UNIT_7_STALINGRAD.city });
   }
   const panel = surface === 'standalone' ? page.locator('#eventPanel') : page.locator('#home-events');
   await expectVisible(panel.locator('.event-list > .event-card'), `${label} must show ordinary detail`);
@@ -4059,7 +4066,7 @@ async function normalizeUnit7FilterSurface(page, frame, surface, label) {
     for (const category of window.__mapFilter.getCats()) {
       if (!window.__mapFilter.getState().cats.has(category.abbr)) window.__mapFilter.toggleCat(category.abbr);
     }
-    document.querySelector('.region-path[aria-pressed="true"]')?.dispatchEvent(
+    document.querySelector('.region-path[role="button"][aria-pressed="true"]')?.dispatchEvent(
       new MouseEvent('click', { bubbles: true }));
   });
   if (surface === 'standalone') {
@@ -4102,7 +4109,8 @@ async function prepareUnit7DepthTwoFilters(page, frame, surface, fixture) {
       const excluded = categories.find(category => !sourceCategory.includes(category.full));
       if (!excluded) throw new Error('Unit 7 stack could not derive an excluded category');
       window.__mapFilter.toggleCat(excluded.abbr);
-      document.querySelector(`.region-path[data-region="${region}"]`)?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      document.querySelector(`.region-path[data-region="${region}"][role="button"]`)
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     }, { region: fixture.region });
   } else {
     await page.locator('.map-card-head [data-learning-view="map"]').click();
@@ -4118,7 +4126,7 @@ async function prepareUnit7DepthTwoFilters(page, frame, surface, fixture) {
     if ((await themeToggle.getAttribute('aria-expanded')) !== 'true') await themeToggle.click();
     await page.locator(`#hostCats [data-cat="${excluded.abbr}"]`).click();
     await themeToggle.click();
-    await frame.locator(`.region-path[data-region="${fixture.region}"]`).evaluate(node =>
+    await frame.locator(`.region-path[data-region="${fixture.region}"][role="button"]`).evaluate(node =>
       node.dispatchEvent(new MouseEvent('click', { bubbles: true })));
   }
   const state = await unit5FilterState(canonical);
@@ -4169,21 +4177,7 @@ async function verifyUnit7DepthTwoNavigation(page, frame, surface) {
 async function verifyUnit7KeyboardAndResponsive(page, frame, surface) {
   const fixture = UNIT_7_STUDY_VIEWS.find(item => item.number === '84');
   const label = `${surface} Unit 7 keyboard and narrow Cairo contract`;
-  const canonical = surface === 'standalone' ? page : frame;
-  await canonical.locator('body').evaluate(() => {
-    window.__mapFilter.reset(); window.__mapFilter.setLearningView('map');
-    window.__mapFilter.setPeriod('u7'); window.__mapFilter.setQuery('');
-    const state = window.__mapFilter.getState();
-    for (const category of window.__mapFilter.getCats()) {
-      if (!state.cats.has(category.abbr)) window.__mapFilter.toggleCat(category.abbr);
-    }
-    document.querySelector('.region-path[aria-pressed="true"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-  });
-  await canonical.waitForFunction(() => {
-    const state = window.__mapFilter.getState();
-    return state.period === 'u7' && state.query === '' && state.region === null
-      && state.cats.size === window.__mapFilter.getCats().length;
-  }, null, { timeout: 5_000 });
+  await normalizeUnit7FilterSurface(page, frame, surface, label);
   const opened = await openUnit7OrdinaryEvent(page, frame, surface, fixture, label);
   await opened.entry.focus();
   await opened.entry.press('Enter');
@@ -4207,15 +4201,19 @@ async function verifyUnit7KeyboardAndResponsive(page, frame, surface) {
   await expectVisible(opened.entry, `${label} keyboard Enter must activate outer Back`);
   const originalViewport = page.viewportSize();
   await page.setViewportSize({ width: 360, height: 700 });
-  const narrow = await openUnit7Study(page, frame, surface, fixture, `${label} narrow`);
+  await normalizeUnit7FilterSurface(page, frame, surface, `${label} narrow Timeline`);
   const viewport = surface === 'standalone' ? page : frame;
-  const geometry = await viewport.locator('body').evaluate(() => ({
-    documentScroll: document.documentElement.scrollWidth, documentClient: document.documentElement.clientWidth,
+  const timelineGeometry = await viewport.locator('body').evaluate(() => ({
     timelineScroll: document.querySelector('.world-timeline-track')?.scrollWidth || 0,
     timelineClient: document.querySelector('.world-timeline-track')?.clientWidth || 0,
   }));
+  assert.ok(timelineGeometry.timelineScroll > timelineGeometry.timelineClient,
+    `${label} Timeline must remain horizontally scrollable: ${JSON.stringify(timelineGeometry)}`);
+  const narrow = await openUnit7Study(page, frame, surface, fixture, `${label} narrow`);
+  const geometry = await viewport.locator('body').evaluate(() => ({
+    documentScroll: document.documentElement.scrollWidth, documentClient: document.documentElement.clientWidth,
+  }));
   assert.ok(geometry.documentScroll <= geometry.documentClient + 1, `${label} narrow view must not create document overflow: ${JSON.stringify(geometry)}`);
-  assert.ok(geometry.timelineScroll > geometry.timelineClient, `${label} Timeline must remain horizontally scrollable: ${JSON.stringify(geometry)}`);
   await narrow.view.locator(`[data-location-study-back="${fixture.number}"]`).click();
   if (originalViewport) await page.setViewportSize(originalViewport);
 }
