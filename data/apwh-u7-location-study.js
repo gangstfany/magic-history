@@ -5,6 +5,7 @@
   const TOPICS=new Set(['7.1','7.2','7.3','7.4','7.5','7.6','7.7','7.8','7.9']);
   const THEMES=new Set(['GOV','ECN','CDI','SIO','TEC','ENV']);
   const SKILLS=new Set(['Causation','Comparison','CCOT','Contextualization']);
+  const STABLE_ID=/^apwh-u7-[a-z0-9]+(?:-[a-z0-9]+)*$/;
   const LOCATION_NUMBERS=Object.freeze(['108','30','46','25','24','18','29','10','84','106']);
   const LOCATIONS=Object.freeze({'108':'Imperial Rivalry in East Asia · Mukden / Shenyang','30':'World War I Origins · Sarajevo','46':'Industrialized Total War · Verdun','25':'Russian Revolution · St. Petersburg / Petrograd','24':'Postwar Settlement · Paris','18':'Ottoman Nationalism & Genocide · Istanbul','29':'Nazi Rule & Holocaust · Berlin','10':'War in China & Mass Violence · Nanjing','84':'Colonial Resources & North African War · Cairo / El Alamein','106':'Pacific War · Pearl Harbor'});
   const BINDINGS=Object.freeze({'108':'world-event-108-0','30':'world-event-30-0','46':'world-event-46-0','25':'world-event-25-1','24':'world-event-24-7','18':'world-event-18-2','29':'world-event-29-5','10':'world-event-10-2','84':'world-event-84-1','106':'world-event-106-0'});
@@ -61,8 +62,9 @@ P('apwh-u7-pearl-harbor-pacific-war-surrender','The Pacific War brought island-h
   const data=(descriptor,{enumerable,configurable,writable})=>descriptor!==undefined&&Object.prototype.hasOwnProperty.call(descriptor,'value')&&descriptor.enumerable===enumerable&&descriptor.configurable===configurable&&descriptor.writable===writable;
   const dense=value=>{if(!Array.isArray(value)||Object.getPrototypeOf(value)!==Array.prototype)return false;const descriptors=Object.getOwnPropertyDescriptors(value),length=descriptors.length;if(!data(length,{enumerable:false,configurable:false,writable:true})||!Number.isSafeInteger(length.value)||length.value<0)return false;const keys=Reflect.ownKeys(descriptors),indexes=Array.from({length:length.value},(_,i)=>String(i));return keys.length===indexes.length+1&&indexes.every(index=>data(descriptors[index],{enumerable:true,configurable:true,writable:true}));};
   const exact=(value,keys)=>plain(value)&&Reflect.ownKeys(value).length===keys.length&&keys.every(key=>{const descriptor=Object.getOwnPropertyDescriptor(value,key);return descriptor&&Object.prototype.hasOwnProperty.call(descriptor,'value')&&descriptor.enumerable&&descriptor.configurable&&descriptor.writable;});
+  const registryShape=(value,keys)=>{try{if(!plain(value))return false;const descriptors=Object.getOwnPropertyDescriptors(value),ownKeys=Reflect.ownKeys(descriptors);return ownKeys.length===keys.length&&ownKeys.every(key=>typeof key==='string'&&keys.includes(key))&&keys.every(key=>{const descriptor=descriptors[key];return descriptor&&Object.prototype.hasOwnProperty.call(descriptor,'value')&&descriptor.enumerable;});}catch{return false;}};
   const values=(id,value,allowed,field,singular)=>{if(!dense(value)||!value.length)fail(id,`missing ${field}`);if(field==='examSkills'&&value.length>2)fail(id,'too many examSkills');const seen=new Set();for(const item of value){if(!allowed.has(item))fail(id,`invalid ${singular} ${String(item)}`);if(seen.has(item))fail(id,`duplicate ${singular} ${String(item)}`);seen.add(item);}};
-  const validateLocations=()=>{if(LOCATION_NUMBERS.length!==CANONICAL.length||LOCATION_NUMBERS.some((n,i)=>n!==CANONICAL[i][0])||Object.keys(LOCATIONS).length!==10||Object.keys(BINDINGS).length!==10)throw new Error('Invalid Unit 7 locations (locations): location registry must contain exactly the ordered locationNumbers');for(const [number,name,binding] of CANONICAL){if(!english(LOCATIONS[number]))throw new Error(`Invalid Unit 7 locations (locations): location ${number} must have a nonempty English name`);if(LOCATIONS[number]!==name)throw new Error(`Invalid Unit 7 locations (locations): location ${number} does not match its canonical name`);if(BINDINGS[number]!==binding)throw new Error(`Invalid Unit 7 locations (locations): location ${number} has invalid main-event binding`);}};
+  const validateLocations=()=>{const numbers=CANONICAL.map(entry=>entry[0]);if(LOCATION_NUMBERS.length!==numbers.length||LOCATION_NUMBERS.some((number,index)=>number!==numbers[index])||!registryShape(LOCATIONS,numbers)||!registryShape(BINDINGS,numbers))throw new Error('Invalid Unit 7 locations (locations): location registry must contain exactly the ordered locationNumbers');for(const [number,name,binding] of CANONICAL){if(!english(LOCATIONS[number]))throw new Error('Invalid Unit 7 locations (locations): location '+number+' must have a nonempty English name');if(LOCATIONS[number]!==name)throw new Error('Invalid Unit 7 locations (locations): location '+number+' does not match its canonical name');if(BINDINGS[number]!==binding)throw new Error('Invalid Unit 7 locations (locations): location '+number+' has invalid main-event binding');}};
   const validate=()=>{
     validateLocations();
     if(!dense(STUDY_MANIFEST))fail('(manifest)','manifest must be an ordinary dense array');
@@ -75,13 +77,14 @@ P('apwh-u7-pearl-harbor-pacific-war-surrender','The Pacific War brought island-h
       const diagnosticId=typeof rawId==='string'?rawId:'(missing ID)';
       if(!exact(record,['id','summary','significance','keyPeople','keyTerms','evidence','examConnection','source']))fail(diagnosticId,'raw record must contain exactly approved ordinary data fields');
       if(typeof rawId!=='string'||!rawId.trim())fail(diagnosticId,'raw record ID must be a nonempty string');
+      if(!STABLE_ID.test(rawId))fail(rawId,'invalid stable ID');
       if(raw.has(rawId))fail(rawId,'duplicate raw record ID');
       raw.set(rawId,record);
     }
     for(const row of STUDY_MANIFEST){
       if(!dense(row)||row.length!==11)fail('(manifest)','manifest row must be an ordinary dense eleven-field array');
       const [id,location,sequence,title,label,start,end,event,topics,themes,skills]=row;
-      if(typeof id!=='string'||!/^apwh-u7-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id))fail(typeof id==='string'?id:'(manifest)','invalid stable ID');
+      if(typeof id!=='string'||!STABLE_ID.test(id))fail(typeof id==='string'?id:'(manifest)','invalid stable ID');
       if(ids.has(id))fail(id,'duplicate record ID');
       ids.add(id);
       if(!LOCATION_NUMBERS.includes(location)||event!==BINDINGS[location])fail(id,'invalid mainEventKey');

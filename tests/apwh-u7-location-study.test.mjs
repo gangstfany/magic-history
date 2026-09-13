@@ -26,7 +26,7 @@ const records=[
 ['apwh-u7-pearl-harbor-resource-dependence-sanctions','106',1,'Resource Dependence and Sanctions','1937–1941',1937,1941,['7.6'],['ECN','GOV'],['Causation']],['apwh-u7-pearl-harbor-attack-global-war','106',2,'Pearl Harbor and a Truly Global War','1941',1941,1941,['7.6','7.7'],['GOV'],['Causation']],['apwh-u7-pearl-harbor-pacific-war-surrender','106',3,'Pacific War, Atomic Bombs, and Surrender','1941–1945',1941,1945,['7.7','7.9'],['GOV','TEC','SIO'],['Causation','CCOT']],
 ];
 
-test('publishes the exact frozen Unit 7 record manifest and deferred Task 3 containers',()=>{
+test('publishes the exact frozen Unit 7 record manifest, digest, and deferred Task 3 containers',()=>{
   assert.ok(source,`Expected ${moduleUrl.pathname} to exist`); const api=evaluate();
   assert.deepEqual(Object.keys(api),['unitId','unitNumber','connectionTimelineMode','locationNumbers','records','unitCards','compareRecords','getById','getByLocation','locationName','getUnitCard']);
   assert.equal(api.unitId,'u7');assert.equal(api.unitNumber,7);assert.equal(api.connectionTimelineMode,'main-event');assert.equal(Object.isFrozen(api),true);assert.equal(Object.isFrozen(api.records),true);
@@ -40,10 +40,6 @@ test('publishes the exact frozen Unit 7 record manifest and deferred Task 3 cont
 });
 test('provides defensive lookups and refuses duplicate globals',()=>{const api=evaluate();for(const [number,name,binding] of locations){assert.equal(api.locationName(number),name);const local=api.getByLocation(number);assert.equal(local.length,3);assert.ok(local.every(record=>record.mainEventKey===binding));local.pop();assert.equal(api.getByLocation(number).length,3);}assert.equal(api.getById('nope'),null);assert.equal(api.locationName('nope'),null);assert.deepEqual(Array.from(api.getByLocation('nope')),[]);assert.throws(()=>evaluate(source,{APWH_U7_LOCATION_STUDY:{}}),/Invalid Unit 7 global APWH_U7_LOCATION_STUDY: refusing to overwrite existing value/);});
 
-test('locks the complete learner-content fields for all thirty records',()=>{
-  const api=evaluate();const fields=api.records.map(({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source})=>({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source}));
-  assert.equal(fields.length,30);assert.equal(createHash('sha256').update(JSON.stringify(fields)).digest('hex'),'6ae75dabdb34986af2925b5e11576109ec6c0b772d19c7a63181e91bdd2b4165');
-});
 const assertInvalid=(code,rule)=>assert.throws(()=>evaluate(code),error=>{assert.match(error.message,/Invalid Unit 7/);assert.match(error.message,rule);return true;});
 const replace=(search,replacement)=>{const code=source.replace(search,replacement);assert.notEqual(code,source,`fixture mutation: ${search}`);return code;};
 test('rejects manifest taxonomy, identity, sequence, event, and date drift with controlled diagnostics',()=>{
@@ -81,6 +77,10 @@ test('rejects malformed learner content and raw record shapes before publication
   assertInvalid(replace('validate();',"STUDY_MANIFEST[0][6]=Symbol('bad');validate();"),/invalid dateLabel/);
   assertInvalid(replace('validate();',"STUDY_MANIFEST[0][0]=Symbol('bad');validate();"),/invalid stable ID/);
   assertInvalid(replace('validate();',"Object.defineProperty(RAW_RECORDS[0],'id',{get(){throw new Error('id accessor leaked');},enumerable:true,configurable:true});validate();"),/raw record must contain exactly/);
+  for(const id of ['apwh-u7-invalid_raw_id','apush-u7-wrong-prefix']){
+    const malformed=replace('validate();',`RAW_RECORDS[0].id='${id}';validate();`);
+    assert.throws(()=>evaluate(malformed),error=>{assert.match(error.message,/Invalid Unit 7/);assert.match(error.message,new RegExp(id));assert.match(error.message,/invalid stable ID/);return true;});
+  }
 });
 test('rejects registry drift and preserves immutable descriptors and comparator behavior',()=>{
   assertInvalid(replace("'106':'Pacific War · Pearl Harbor'","'106':'Pacific War · Pearl Harbor','999':'Extra'"),/location registry/);
@@ -89,4 +89,20 @@ test('rejects registry drift and preserves immutable descriptors and comparator 
   assertInvalid(replace("['apwh-u7-mukden-league-failure-further-expansion'","['apwh-u7-extra','108',3,'Extra','1931',1931,1931,'world-event-108-0',['7.6'],['GOV'],['Causation']],\n['apwh-u7-mukden-league-failure-further-expansion'"),/expected exactly 30 records|exactly three records/);
   const api=evaluate();const descriptor=Object.getOwnPropertyDescriptor(evaluateSandbox(source),'APWH_U7_LOCATION_STUDY');assert.deepEqual({enumerable:descriptor.enumerable,configurable:descriptor.configurable,writable:descriptor.writable},{enumerable:true,configurable:false,writable:false});assert.equal(api.compareRecords({sequence:1,startYear:1900,endYear:1901,id:'b'},{sequence:1,startYear:1900,endYear:1901,id:'a'})>0,true);
 });
-nodeTest('APWH Unit 7 location-study contract',()=>{for(const [name,check] of checks){try{check();}catch(error){error.message=`${name}: ${error.message}`;throw error;}}});
+test('deep-freezes the complete Unit 7 API graph and exercises comparator tie-breakers',()=>{
+  const sandbox=evaluateSandbox();const api=sandbox.APWH_U7_LOCATION_STUDY;const descriptor=Object.getOwnPropertyDescriptor(sandbox,'APWH_U7_LOCATION_STUDY');
+  assert.deepEqual({enumerable:descriptor.enumerable,configurable:descriptor.configurable,writable:descriptor.writable},{enumerable:true,configurable:false,writable:false});
+  assert.equal(api.getById(api.records[0].id),api.records[0]);
+  const rows=[{sequence:2,startYear:1,endYear:1,id:'z'},{sequence:1,startYear:3,endYear:1,id:'z'},{sequence:1,startYear:2,endYear:3,id:'z'},{sequence:1,startYear:2,endYear:2,id:'z'},{sequence:1,startYear:2,endYear:2,id:'a'}];rows.sort(api.compareRecords);assert.deepEqual(rows.map(record=>[record.sequence,record.startYear,record.endYear,record.id]),[[1,2,2,'a'],[1,2,2,'z'],[1,2,3,'z'],[1,3,1,'z'],[2,1,1,'z']]);
+  const seen=new Set();const assertDeepFrozen=value=>{if(value===null||typeof value!=='object'||seen.has(value))return;seen.add(value);assert.equal(Object.isFrozen(value),true);for(const key of Reflect.ownKeys(value))assertDeepFrozen(value[key]);};assertDeepFrozen(api);
+});
+for(const [label,search,replacement] of [
+  ['null locations',"const LOCATIONS=Object.freeze({","const LOCATIONS=Object.freeze(null); const UNUSED_LOCATIONS=Object.freeze({"],
+  ['null bindings',"const BINDINGS=Object.freeze({","const BINDINGS=Object.freeze(null); const UNUSED_BINDINGS=Object.freeze({"],
+  ['accessor locations',"'108':'Imperial Rivalry in East Asia · Mukden / Shenyang'","get '108'(){throw new Error('location accessor leaked');}"],
+  ['accessor bindings',"'108':'world-event-108-0'","get '108'(){throw new Error('binding accessor leaked');}"],
+]) test(`rejects ${label} registry shape with controlled diagnostics`,()=>{const malformed=replace(search,replacement);assert.throws(()=>evaluate(malformed),error=>{assert.match(error.message,/Invalid Unit 7/);assert.match(error.message,/location registry/);return true;});});
+let asyncCheckComplete=false;
+test('supports asynchronous checks',()=>new Promise(resolve=>setTimeout(()=>{asyncCheckComplete=true;resolve();},0)));
+test('runs checks sequentially after awaiting thenables',()=>assert.equal(asyncCheckComplete,true));
+nodeTest('APWH Unit 7 location-study contract',async()=>{for(const [name,check] of checks){try{const result=check();if(result&&typeof result.then==='function')await result;}catch(error){error.message=`${name}: ${error.message}`;throw error;}}});
