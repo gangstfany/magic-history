@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import nodeTest from 'node:test';
 import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import vm from 'node:vm';
@@ -8,6 +8,8 @@ const moduleUrl=new URL('../data/apwh-u7-location-study.js',import.meta.url);
 const source=existsSync(moduleUrl)?readFileSync(moduleUrl,'utf8'):'';
 const evaluateSandbox=(code=source,seed={})=>{const sandbox={...seed};sandbox.window=sandbox;vm.runInNewContext(code,sandbox);return sandbox;};
 const evaluate=(code=source,seed={})=>evaluateSandbox(code,seed).APWH_U7_LOCATION_STUDY;
+const checks=[];
+const test=(name,fn)=>checks.push([name,fn]);
 const locations=[
 ['108','Imperial Rivalry in East Asia · Mukden / Shenyang','world-event-108-0'],['30','World War I Origins · Sarajevo','world-event-30-0'],['46','Industrialized Total War · Verdun','world-event-46-0'],['25','Russian Revolution · St. Petersburg / Petrograd','world-event-25-1'],['24','Postwar Settlement · Paris','world-event-24-7'],['18','Ottoman Nationalism & Genocide · Istanbul','world-event-18-2'],['29','Nazi Rule & Holocaust · Berlin','world-event-29-5'],['10','War in China & Mass Violence · Nanjing','world-event-10-2'],['84','Colonial Resources & North African War · Cairo / El Alamein','world-event-84-1'],['106','Pacific War · Pearl Harbor','world-event-106-0'],
 ];
@@ -83,3 +85,4 @@ test('rejects registry drift and preserves immutable descriptors and comparator 
   assertInvalid(replace("['apwh-u7-mukden-league-failure-further-expansion'","['apwh-u7-extra','108',3,'Extra','1931',1931,1931,'world-event-108-0',['7.6'],['GOV'],['Causation']],\n['apwh-u7-mukden-league-failure-further-expansion'"),/expected exactly 30 records|exactly three records/);
   const api=evaluate();const descriptor=Object.getOwnPropertyDescriptor(evaluateSandbox(source),'APWH_U7_LOCATION_STUDY');assert.deepEqual({enumerable:descriptor.enumerable,configurable:descriptor.configurable,writable:descriptor.writable},{enumerable:true,configurable:false,writable:false});assert.equal(api.compareRecords({sequence:1,startYear:1900,endYear:1901,id:'b'},{sequence:1,startYear:1900,endYear:1901,id:'a'})>0,true);
 });
+nodeTest('APWH Unit 7 location-study contract',()=>{for(const [name,check] of checks){try{check();}catch(error){error.message=`${name}: ${error.message}`;throw error;}}});
