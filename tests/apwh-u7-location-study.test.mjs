@@ -1,16 +1,37 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { existsSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 
-test('publishes APWH Unit 7 location study metadata', () => {
-  const moduleUrl = new URL('../data/apwh-u7-location-study.js', import.meta.url);
-  assert.ok(existsSync(moduleUrl), `Expected ${moduleUrl.pathname} to exist`);
+const moduleUrl=new URL('../data/apwh-u7-location-study.js',import.meta.url);
+const source=existsSync(moduleUrl)?readFileSync(moduleUrl,'utf8'):'';
+const evaluate=(code=source,seed={})=>{const sandbox={...seed};sandbox.window=sandbox;vm.runInNewContext(code,sandbox);return sandbox.APWH_U7_LOCATION_STUDY;};
+const locations=[
+['108','Imperial Rivalry in East Asia · Mukden / Shenyang','world-event-108-0'],['30','World War I Origins · Sarajevo','world-event-30-0'],['46','Industrialized Total War · Verdun','world-event-46-0'],['25','Russian Revolution · St. Petersburg / Petrograd','world-event-25-1'],['24','Postwar Settlement · Paris','world-event-24-7'],['18','Ottoman Nationalism & Genocide · Istanbul','world-event-18-2'],['29','Nazi Rule & Holocaust · Berlin','world-event-29-5'],['10','War in China & Mass Violence · Nanjing','world-event-10-2'],['84','Colonial Resources & North African War · Cairo / El Alamein','world-event-84-1'],['106','Pacific War · Pearl Harbor','world-event-106-0'],
+];
+const records=[
+['apwh-u7-mukden-russo-japanese-war-shifting-power','108',1,'Russo-Japanese War and Shifting Power','1904–1905',1904,1905,['7.1','7.9'],['GOV','CDI'],['Causation','CCOT']],['apwh-u7-mukden-incident-resource-expansion','108',2,'Manchurian Incident and Resource Expansion','1931',1931,1931,['7.6'],['GOV','ECN'],['Causation']],['apwh-u7-mukden-league-failure-further-expansion','108',3,'Collective-Security Failure and Further Expansion','1931–1937',1931,1937,['7.5','7.6','7.9'],['GOV'],['Causation','CCOT']],
+['apwh-u7-sarajevo-balkan-nationalism-imperial-rivalry','30',1,'Balkan Nationalism and Imperial Rivalry','1878–1914',1878,1914,['7.2'],['GOV','CDI'],['Contextualization','Causation']],['apwh-u7-sarajevo-assassination-july-crisis','30',2,'Assassination and the July Crisis','1914',1914,1914,['7.2'],['GOV'],['Causation']],['apwh-u7-sarajevo-alliances-mobilization-global-war','30',3,'Alliances, Mobilization, and Global War','1914',1914,1914,['7.2','7.9'],['GOV'],['Causation','CCOT']],
+['apwh-u7-verdun-industrial-weapons-mass-production','46',1,'Industrial Weapons and Mass Production','1914–1916',1914,1916,['7.3'],['TEC','ECN'],['Causation']],['apwh-u7-verdun-trench-warfare-attrition','46',2,'Trench Warfare and Attrition','1916',1916,1916,['7.3'],['TEC','SIO'],['Causation']],['apwh-u7-verdun-total-war-mobilization','46',3,'Total War and Whole-Society Mobilization','1914–1918',1914,1918,['7.3','7.9'],['ECN','SIO','GOV'],['Causation','CCOT']],
+['apwh-u7-petrograd-wartime-shortages-tsarist-failure','25',1,'Wartime Shortages and Tsarist Failure','1914–1917',1914,1917,['7.1','7.4'],['SIO','ECN','GOV'],['Contextualization','Causation']],['apwh-u7-petrograd-february-october-revolutions','25',2,'February and October Revolutions','1917',1917,1917,['7.1'],['GOV','SIO'],['Causation']],['apwh-u7-petrograd-bolshevik-regime-war-exit','25',3,'Bolshevik Rule and Exit from the War','1917–1922',1917,1922,['7.1','7.4'],['GOV','ECN'],['Causation','CCOT']],
+['apwh-u7-paris-self-determination-promises','24',1,'Promises of Self-Determination','1918–1919',1918,1919,['7.5'],['GOV','CDI'],['Contextualization','Comparison']],['apwh-u7-paris-versailles-punitive-settlement','24',2,'Versailles and the Punitive Settlement','1919',1919,1919,['7.5','7.9'],['GOV'],['Causation']],['apwh-u7-paris-mandates-unresolved-contradictions','24',3,'Mandates and Unresolved Contradictions','1919–1939',1919,1939,['7.5','7.6'],['GOV','CDI'],['Causation','CCOT']],
+['apwh-u7-istanbul-young-turks-turkification','18',1,'Young Turks and Turkification','1908–1914',1908,1914,['7.1','7.8'],['CDI','GOV'],['Contextualization','Causation']],['apwh-u7-istanbul-wartime-accusations-deportation','18',2,'Wartime Accusations and Deportation','1915',1915,1915,['7.8'],['GOV','SIO'],['Causation']],['apwh-u7-istanbul-armenian-genocide','18',3,'Armenian Genocide','1915–1920',1915,1920,['7.8','7.9'],['GOV','SIO'],['Causation','Comparison']],
+['apwh-u7-berlin-depression-weimar-crisis','29',1,'Depression and the Weimar Crisis','1929–1933',1929,1933,['7.4','7.6'],['ECN','GOV'],['Causation']],['apwh-u7-berlin-nazi-takeover-citizenship-stripping','29',2,'Nazi Takeover and Citizenship Stripping','1933–1935',1933,1935,['7.6','7.8'],['GOV','SIO'],['Causation']],['apwh-u7-berlin-holocaust-bureaucratic-genocide','29',3,'Holocaust and Bureaucratic Genocide','1941–1945',1941,1945,['7.8','7.9'],['GOV','SIO','TEC'],['Causation','Comparison']],
+['apwh-u7-nanjing-revolution-state-fragmentation','10',1,'Revolution and State Fragmentation','1912–1927',1912,1927,['7.1'],['GOV'],['Causation','CCOT']],['apwh-u7-nanjing-full-scale-japanese-invasion','10',2,'Full-Scale Japanese Invasion','1937',1937,1937,['7.6','7.7'],['GOV'],['Causation']],['apwh-u7-nanjing-massacre-civilian-violence','10',3,'Nanjing Massacre and Civilian Violence','1937–1938',1937,1938,['7.8'],['GOV','SIO'],['Causation','Comparison']],
+['apwh-u7-cairo-cotton-suez-strategic-resources','84',1,'Cotton, Suez, and Strategic Resources','1869–1939',1869,1939,['7.2','7.7'],['ECN','GOV','TEC'],['Contextualization','Causation']],['apwh-u7-cairo-colonial-mobilization-total-war','84',2,'Colonial Mobilization in Total War','1914–1945',1914,1945,['7.3','7.7'],['GOV','ECN','SIO'],['Causation']],['apwh-u7-cairo-el-alamein-global-routes','84',3,'El Alamein and the Defense of Global Routes','1942',1942,1942,['7.7','7.9'],['GOV','TEC'],['Causation','CCOT']],
+['apwh-u7-pearl-harbor-resource-dependence-sanctions','106',1,'Resource Dependence and Sanctions','1937–1941',1937,1941,['7.6'],['ECN','GOV'],['Causation']],['apwh-u7-pearl-harbor-attack-global-war','106',2,'Pearl Harbor and a Truly Global War','1941',1941,1941,['7.6','7.7'],['GOV'],['Causation']],['apwh-u7-pearl-harbor-pacific-war-surrender','106',3,'Pacific War, Atomic Bombs, and Surrender','1941–1945',1941,1945,['7.7','7.9'],['GOV','TEC','SIO'],['Causation','CCOT']],
+];
 
-  const sandbox = {};
-  sandbox.window = sandbox;
-  vm.runInNewContext(readFileSync(moduleUrl, 'utf8'), sandbox);
-
-  assert.equal(sandbox.APWH_U7_LOCATION_STUDY.unitId, 'u7');
-  assert.equal(sandbox.APWH_U7_LOCATION_STUDY.unitNumber, 7);
+test('publishes the exact frozen Unit 7 record manifest and deferred Task 3 containers',()=>{
+  assert.ok(source,`Expected ${moduleUrl.pathname} to exist`); const api=evaluate();
+  assert.deepEqual(Object.keys(api),['unitId','unitNumber','connectionTimelineMode','locationNumbers','records','unitCards','compareRecords','getById','getByLocation','locationName','getUnitCard']);
+  assert.equal(api.unitId,'u7');assert.equal(api.unitNumber,7);assert.equal(api.connectionTimelineMode,'main-event');assert.equal(Object.isFrozen(api),true);assert.equal(Object.isFrozen(api.records),true);
+  assert.deepEqual(Array.from(api.locationNumbers),locations.map(location=>location[0]));
+  assert.deepEqual(JSON.parse(JSON.stringify(api.records.map(record=>[record.id,record.locationNumber,record.sequence,record.title,record.dateLabel,record.startYear,record.endYear,record.topicCodes,record.themeIds,record.examSkills]))),records);
+  const learnerContent=api.records.map(({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source})=>({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source}));
+  assert.equal(createHash('sha256').update(JSON.stringify(learnerContent)).digest('hex'),'87db37ab965f3bc44841f640ed0714544a0f48e09d5c18d64015a9d432f338a0');
+  for(const record of api.records){assert.ok(record.summary);assert.ok(record.significance);assert.ok(record.keyPeople.length);assert.ok(record.keyTerms.length);assert.ok(record.evidence.length>=2);assert.ok(record.examConnection);assert.equal(record.source.id,'amsco-apwh-u7');assert.match(record.source.locator,/AMSCO AP World History, Unit 7, Topic/);assert.deepEqual(Array.from(record.causeStudyPointIds),[]);assert.deepEqual(Array.from(record.effectStudyPointIds),[]);assert.deepEqual(Array.from(record.relatedStudyPointIds),[]);assert.deepEqual(JSON.parse(JSON.stringify(record.connectionNotes)),{});assert.equal(Object.isFrozen(record),true);}
+  assert.deepEqual(JSON.parse(JSON.stringify(api.unitCards)),{});assert.equal(api.getUnitCard('context'),null);
 });
+test('provides defensive lookups and refuses duplicate globals',()=>{const api=evaluate();for(const [number,name] of locations){assert.equal(api.locationName(number),name);const local=api.getByLocation(number);assert.equal(local.length,3);local.pop();assert.equal(api.getByLocation(number).length,3);}assert.equal(api.getById('nope'),null);assert.equal(api.locationName('nope'),null);assert.deepEqual(Array.from(api.getByLocation('nope')),[]);assert.throws(()=>evaluate(source,{APWH_U7_LOCATION_STUDY:{}}),/Invalid Unit 7 global APWH_U7_LOCATION_STUDY: refusing to overwrite existing value/);});
