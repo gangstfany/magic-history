@@ -5,7 +5,9 @@ import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 
 const moduleUrl=new URL('../data/apwh-u7-location-study.js',import.meta.url);
+const ledgerUrl=new URL('../docs/data-sources/apwh-u7-location-study-source-ledger.md',import.meta.url);
 const source=existsSync(moduleUrl)?readFileSync(moduleUrl,'utf8'):'';
+const ledger=existsSync(ledgerUrl)?readFileSync(ledgerUrl,'utf8'):'';
 const evaluateSandbox=(code=source,seed={})=>{const sandbox={...seed};sandbox.window=sandbox;vm.runInNewContext(code,sandbox);return sandbox;};
 const evaluate=(code=source,seed={})=>evaluateSandbox(code,seed).APWH_U7_LOCATION_STUDY;
 const checks=[];
@@ -26,7 +28,7 @@ const records=[
 ['apwh-u7-pearl-harbor-resource-dependence-sanctions','106',1,'Resource Dependence and Sanctions','1937–1941',1937,1941,['7.6'],['ECN','GOV'],['Causation']],['apwh-u7-pearl-harbor-attack-global-war','106',2,'Pearl Harbor and a Truly Global War','1941',1941,1941,['7.6','7.7'],['GOV'],['Causation']],['apwh-u7-pearl-harbor-pacific-war-surrender','106',3,'Pacific War, Atomic Bombs, and Surrender','1941–1945',1941,1945,['7.7','7.9'],['GOV','TEC','SIO'],['Causation','CCOT']],
 ];
 
-test('publishes the exact frozen Unit 7 record manifest, digest, and deferred Task 3 containers',()=>{
+test('publishes the exact frozen Unit 7 record manifest, digest, and Task 3 graph containers',()=>{
   assert.ok(source,`Expected ${moduleUrl.pathname} to exist`); const api=evaluate();
   assert.deepEqual(Object.keys(api),['unitId','unitNumber','connectionTimelineMode','locationNumbers','records','unitCards','compareRecords','getById','getByLocation','locationName','getUnitCard']);
   assert.equal(api.unitId,'u7');assert.equal(api.unitNumber,7);assert.equal(api.connectionTimelineMode,'main-event');assert.equal(Object.isFrozen(api),true);assert.equal(Object.isFrozen(api.records),true);
@@ -35,8 +37,7 @@ test('publishes the exact frozen Unit 7 record manifest, digest, and deferred Ta
   assert.deepEqual(Array.from(api.records,record=>record.mainEventKey),records.map(record=>locations.find(location=>location[0]===record[1])[2]));
   const learnerContent=api.records.map(({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source})=>({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source}));
   assert.equal(createHash('sha256').update(JSON.stringify(learnerContent)).digest('hex'),'6ae75dabdb34986af2925b5e11576109ec6c0b772d19c7a63181e91bdd2b4165');
-  for(const record of api.records){assert.ok(record.summary);assert.ok(record.significance);assert.ok(record.keyPeople.length);assert.ok(record.keyTerms.length);assert.ok(record.evidence.length>=2);assert.ok(record.examConnection);assert.equal(record.source.id,'amsco-apwh-u7');assert.match(record.source.locator,/AMSCO AP World History, Unit 7, Topic/);assert.deepEqual(Array.from(record.causeStudyPointIds),[]);assert.deepEqual(Array.from(record.effectStudyPointIds),[]);assert.deepEqual(Array.from(record.relatedStudyPointIds),[]);assert.deepEqual(JSON.parse(JSON.stringify(record.connectionNotes)),{});assert.equal(Object.isFrozen(record),true);}
-  assert.deepEqual(JSON.parse(JSON.stringify(api.unitCards)),{});assert.equal(api.getUnitCard('context'),null);
+  for(const record of api.records){assert.ok(record.summary);assert.ok(record.significance);assert.ok(record.keyPeople.length);assert.ok(record.keyTerms.length);assert.ok(record.evidence.length>=2);assert.ok(record.examConnection);assert.equal(record.source.id,'amsco-apwh-u7');assert.match(record.source.locator,/AMSCO AP World History, Unit 7, Topic/);assert.equal(Object.isFrozen(record),true);}
 });
 test('provides defensive lookups and refuses duplicate globals',()=>{const api=evaluate();for(const [number,name,binding] of locations){assert.equal(api.locationName(number),name);const local=api.getByLocation(number);assert.equal(local.length,3);assert.ok(local.every(record=>record.mainEventKey===binding));local.pop();assert.equal(api.getByLocation(number).length,3);}assert.equal(api.getById('nope'),null);assert.equal(api.locationName('nope'),null);assert.deepEqual(Array.from(api.getByLocation('nope')),[]);assert.throws(()=>evaluate(source,{APWH_U7_LOCATION_STUDY:{}}),/Invalid Unit 7 global APWH_U7_LOCATION_STUDY: refusing to overwrite existing value/);});
 
@@ -102,6 +103,70 @@ for(const [label,search,replacement] of [
   ['accessor locations',"'108':'Imperial Rivalry in East Asia · Mukden / Shenyang'","get '108'(){throw new Error('location accessor leaked');}"],
   ['accessor bindings',"'108':'world-event-108-0'","get '108'(){throw new Error('binding accessor leaked');}"],
 ]) test(`rejects ${label} registry shape with controlled diagnostics`,()=>{const malformed=replace(search,replacement);assert.throws(()=>evaluate(malformed),error=>{assert.match(error.message,/Invalid Unit 7/);assert.match(error.message,/location registry/);return true;});});
+const localCausalPairs=locations.flatMap(([location])=>records.filter(record=>record[1]===location).sort((a,b)=>a[2]-b[2]).slice(0,2).map((record,index)=>[record[0],records.filter(candidate=>candidate[1]===location).sort((a,b)=>a[2]-b[2])[index+1][0]]));
+const crossCausalPairs=[
+  ['apwh-u7-sarajevo-alliances-mobilization-global-war','apwh-u7-verdun-industrial-weapons-mass-production'],
+  ['apwh-u7-verdun-total-war-mobilization','apwh-u7-petrograd-wartime-shortages-tsarist-failure'],
+  ['apwh-u7-paris-versailles-punitive-settlement','apwh-u7-berlin-depression-weimar-crisis'],
+  ['apwh-u7-mukden-league-failure-further-expansion','apwh-u7-nanjing-full-scale-japanese-invasion'],
+  ['apwh-u7-nanjing-full-scale-japanese-invasion','apwh-u7-pearl-harbor-resource-dependence-sanctions'],
+];
+const relatedPairs=[
+  ['apwh-u7-istanbul-armenian-genocide','apwh-u7-berlin-holocaust-bureaucratic-genocide','Both were state-directed mass atrocities, but they differed in targets, chronology, institutions, and wartime setting; this comparison does not treat the Armenian Genocide and Holocaust as equivalent.'],
+  ['apwh-u7-nanjing-massacre-civilian-violence','apwh-u7-berlin-holocaust-bureaucratic-genocide','Both involved mass violence against civilians, but they differed in purposes, organization, duration, and mechanisms; this comparison does not treat the Nanjing Massacre and Holocaust as equivalent.'],
+  ['apwh-u7-verdun-total-war-mobilization','apwh-u7-cairo-colonial-mobilization-total-war','Compare metropolitan total-war mobilization with colonial mobilization, including how imperial states drew labor, resources, and people from unequal settings.'],
+  ['apwh-u7-mukden-league-failure-further-expansion','apwh-u7-paris-mandates-unresolved-contradictions','Compare collective-security design with enforcement failure: League mandates preserved imperial oversight while the League failed to stop aggression in Manchuria.'],
+  ['apwh-u7-petrograd-february-october-revolutions','apwh-u7-berlin-nazi-takeover-citizenship-stripping','Compare a communist revolution with a fascist takeover by examining their different ideologies, political coalitions, and changes to citizenship.'],
+  ['apwh-u7-sarajevo-alliances-mobilization-global-war','apwh-u7-pearl-harbor-attack-global-war','Compare two limited attacks that became global wars through pre-existing international structures: alliances and empires in 1914, and alliance commitments and global conflict in 1941.'],
+];
+test('builds the exact directed causal graph and reciprocal comparison graph',()=>{
+  const api=evaluate(),byId=new Map(api.records.map(record=>[record.id,record]));
+  const causalPairs=api.records.flatMap(record=>record.effectStudyPointIds.map(target=>[record.id,target]));
+  assert.deepEqual(JSON.parse(JSON.stringify(causalPairs.map(pair=>pair.join('|')).sort())),[...localCausalPairs,...crossCausalPairs].map(pair=>pair.join('|')).sort());
+  assert.equal(causalPairs.length,25);assert.equal(new Set(causalPairs.map(pair=>pair.join('|'))).size,25);
+  for(const [sourceId,targetId] of causalPairs){const sourceRecord=byId.get(sourceId),targetRecord=byId.get(targetId);assert.ok(sourceRecord&&targetRecord);assert.notEqual(sourceId,targetId);assert.ok(sourceRecord.connectionNotes[targetId].length>20);assert.match(sourceRecord.connectionNotes[targetId],/(because|through|by |enabl|creat|weaken|mobiliz|link|contribut|produc|strain|intensif|activat|requir|sustain|narrow|compound|place|made|suppl|gave|turn|shap)/i);assert.ok(targetRecord.causeStudyPointIds.includes(sourceId));}
+  for(const [left,right,note] of relatedPairs){const leftRecord=byId.get(left),rightRecord=byId.get(right);assert.ok(leftRecord.relatedStudyPointIds.includes(right));assert.ok(rightRecord.relatedStudyPointIds.includes(left));assert.equal(leftRecord.connectionNotes[right],note);assert.equal(rightRecord.connectionNotes[left],note);}
+  assert.equal(api.records.reduce((total,record)=>total+record.relatedStudyPointIds.length,0),12);
+});
+test('validates graph connections before publication and resists ordinary-shape attacks',()=>{
+  const firstPair="['apwh-u7-mukden-russo-japanese-war-shifting-power','apwh-u7-mukden-incident-resource-expansion'";
+  assertInvalid(replace('const CONNECTIONS={','const CONNECTIONS=null; const UNUSED_CONNECTIONS={'),/connections must contain exactly/);
+  assertInvalid(replace(firstPair,"['missing','apwh-u7-mukden-incident-resource-expansion'"),/unresolved connection/);
+  assertInvalid(replace(firstPair,"['apwh-u7-mukden-russo-japanese-war-shifting-power','apwh-u7-mukden-russo-japanese-war-shifting-power'"),/self connection/);
+  assertInvalid(replace('causal:[',"causal:[['apwh-u7-mukden-russo-japanese-war-shifting-power','apwh-u7-mukden-incident-resource-expansion'],"),/connection row/);
+  assertInvalid(replace('causal:[',"causal:[['apwh-u7-mukden-russo-japanese-war-shifting-power','apwh-u7-mukden-incident-resource-expansion','note','extra'],"),/connection row/);
+  assertInvalid(replace('causal:[',"causal:[['apwh-u7-mukden-russo-japanese-war-shifting-power','apwh-u7-mukden-incident-resource-expansion','duplicate'],"),/duplicate causal connection/);
+  assertInvalid(replace('related:[',"related:[['apwh-u7-mukden-russo-japanese-war-shifting-power','apwh-u7-mukden-incident-resource-expansion','cross category'],"),/cross-category connection/);
+  assertInvalid(replace('Japan’s earlier regional victory strengthened military confidence and strategic interest in Manchuria, helping create conditions officers used to justify expansion in 1931.',''),/connection note/);
+  assertInvalid(replace('Both were state-directed mass atrocities, but they differed in targets, chronology, institutions, and wartime setting; this comparison does not treat the Armenian Genocide and Holocaust as equivalent.','mismatched note'),/nonreciprocal related connection/);
+  assertInvalid(replace('validate();',"Object.defineProperty(CONNECTIONS.causal,'0',{enumerable:false});validate();"),/connections must be an ordinary dense array/);
+});
+test('can validate the complete graph and card manifests twice without mutating them',()=>{
+  const twice=replace('validate();','validate();validate();');assert.equal(evaluate(twice).records.length,30);
+});
+const expectedCards={
+  context:{id:'apwh-u7-context-imperial-rivalry-global-war',kind:'context',role:'Unit 7 Context Card',title:'From Imperial Rivalry to Global War',skills:['Contextualization','Causation'],summary:'Unit 6 imperial expansion gave industrial states overlapping claims, overseas commitments, strategic routes, and recurring security disputes. Nationalism and military planning turned those rivalries into a system in which a regional crisis could mobilize empires, colonial resources, and populations across the world.',prompt:'Which Unit 6 structures made a regional crisis capable of becoming a global war?',takeaways:['Industrial states defended distant routes, markets, and colonies as national security interests.','Alliance commitments and mobilization plans converted diplomatic delay into military risk.','Empires drew colonial soldiers, labor, materials, and territories into wars begun elsewhere.']},
+  synthesis:{id:'apwh-u7-synthesis-allied-victory-bipolar-world',kind:'synthesis',role:'Unit 7 Synthesis Card',title:'From Allied Victory to a Bipolar World',skills:['Causation','CCOT'],summary:'The defeat of the Axis powers weakened European empires, elevated the United States and Soviet Union, encouraged anticolonial demands, and created institutions intended to manage a world divided by ideology and nuclear power. Unit 8 follows how wartime cooperation gave way to Cold War rivalry and decolonization.',prompt:'How did the outcomes of World War II create both superpower rivalry and new opportunities for decolonization?',takeaways:['The United States and Soviet Union emerged with unmatched military and political influence.','European imperial states survived the war with reduced resources and legitimacy.','The United Nations and nuclear weapons changed how states pursued security after 1945.']},
+};
+test('publishes exact immutable Unit 7 context and synthesis cards',()=>{
+  const api=evaluate();assert.deepEqual(JSON.parse(JSON.stringify(api.unitCards)),expectedCards);for(const [kind,card] of Object.entries(expectedCards)){assert.equal(api.getUnitCard(kind),api.unitCards[kind]);assert.equal(api.getUnitCard(card.id),api.unitCards[kind]);}assert.equal(api.getUnitCard('missing'),null);assert.equal(Object.isFrozen(api.unitCards),true);
+});
+test('rejects malformed Unit 7 cards before publishing them',()=>{
+  assertInvalid(replace("const CARD_KEYS=['context','synthesis']","const CARD_KEYS=['context']"),/unit cards must contain exactly/);
+  assertInvalid(replace("kind:'context'","kind:'synthesis'"),/card kind/);
+  assertInvalid(replace("role:'Unit 7 Context Card'","role:''"),/card role/);
+  assertInvalid(replace("skills:['Contextualization','Causation']","skills:['Causation','Causation']"),/card skills/);
+  assertInvalid(replace('validate();',"Object.defineProperty(UNIT_CARD_MANIFEST.context.takeaways,'0',{enumerable:false});validate();"),/card takeaways/);
+});
+test('keeps the ordered source ledger structurally complete and locator-specific',()=>{
+  const intro='# APWH Unit 7 Location Study Source Ledger\n\nThe learner records use edition-neutral locators in AMSCO AP World History Unit 7 and the College Board framework effective Fall 2026. Map pins are representative anchors; a named city does not imply that every regional process occurred only there. Comparisons among mass atrocities identify mechanisms without treating distinct cases as equivalent.\n\n';
+  assert.ok(ledger.startsWith(intro));const lines=ledger.trimEnd().split('\n');assert.equal(lines[4],'| Stable ID | AP topic assignment | Main event | Source locator | Claims covered |');assert.equal(lines[5],'| --- | --- | --- | --- | --- |');const rows=lines.slice(6);assert.equal(rows.length,30);const ids=rows.map(row=>row.split('|')[1].trim());assert.deepEqual(ids,records.map(record=>record[0]));for(const row of rows){const cells=row.split('|').slice(1,-1).map(cell=>cell.trim());assert.equal(cells.length,5);assert.match(cells[1],/^7\.[1-9](, 7\.[1-9])*$/);assert.match(cells[3],/^AMSCO AP World History, Unit 7, Topics? 7\.[1-9]/);assert.doesNotMatch(cells[3],/(page|p\.\s*\d|whole book|chapter)/i);assert.ok(cells[4].length>=45);}
+  assert.ok(ledger.includes('does not treat the Armenian Genocide and Holocaust as equivalent'));
+});
+test('rejects source-ledger structural, vague-locator, page-number, and trailing-garbage regressions',()=>{
+  const valid=ledger.trimEnd(),isValid=candidate=>{const lines=candidate.split('\n'),rows=lines.slice(6);return lines.length===36&&lines[4]==='| Stable ID | AP topic assignment | Main event | Source locator | Claims covered |'&&lines[5]==='| --- | --- | --- | --- | --- |'&&rows.length===30&&rows.every(row=>{const cells=row.split('|').slice(1,-1).map(cell=>cell.trim());return cells.length===5&&/^AMSCO AP World History, Unit 7, Topics? 7\.[1-9]/.test(cells[3])&&!/(page|p\.\s*\d|whole book|chapter)/i.test(cells[3]);});};
+  assert.equal(isValid(valid),true);const invalid=[valid.replace('| Main event |','| Event |'),valid.replace('AMSCO AP World History, Unit 7, Topics','AMSCO'),valid.replace('AMSCO AP World History, Unit 7, Topics','AMSCO AP World History, Unit 7, Topics p. 12'),`${valid}\ntrailing garbage`];for(const candidate of invalid){assert.notEqual(candidate,valid);assert.equal(isValid(candidate),false);}
+});
 let asyncCheckComplete=false;
 test('supports asynchronous checks',()=>new Promise(resolve=>setTimeout(()=>{asyncCheckComplete=true;resolve();},0)));
 test('runs checks sequentially after awaiting thenables',()=>assert.equal(asyncCheckComplete,true));
