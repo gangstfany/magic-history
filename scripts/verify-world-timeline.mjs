@@ -479,12 +479,13 @@ function verifyUnit5Fixture(worldMapSource) {
 function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePageSource) {
   const unit5ScriptTag = '<script src="data/apwh-u5-location-study.js"></script>';
   const unit6ScriptTag = '<script src="data/apwh-u6-location-study.js"></script>';
+  const unit7ScriptTag = '<script src="data/apwh-u7-location-study.js"></script>';
   const pageLogicStart = '<script>\n(function () {';
   for (const [label, source] of [
     ['world-map.html', worldMapSource],
     ['index.html', homePageSource],
   ]) {
-    for (const unit of [4, 5, 6]) {
+    for (const unit of [4, 5, 6, 7]) {
       const registeredScriptTag = `<script src="data/apwh-u${unit}-location-study.js"></script>`;
       assert.equal(source.split(registeredScriptTag).length - 1, 1,
         `${label} must load the Unit ${unit} location-study data script exactly once`);
@@ -500,6 +501,10 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
     'world-map.html must load Unit 6 location-study data after the Unit 5 data script');
   assert.ok(homePageSource.indexOf(unit5ScriptTag) < homePageSource.indexOf(unit6ScriptTag),
     'index.html must load Unit 6 location-study data after the Unit 5 data script');
+  assert.ok(worldMapSource.indexOf(unit6ScriptTag) < worldMapSource.indexOf(unit7ScriptTag),
+    'world-map.html must load Unit 7 location-study data after the Unit 6 data script');
+  assert.ok(homePageSource.indexOf(unit6ScriptTag) < homePageSource.indexOf(unit7ScriptTag),
+    'index.html must load Unit 7 location-study data after the Unit 6 data script');
 
   const expectedLocationRegistry = `const LOCATION_STUDY_GLOBAL_BY_UNIT = Object.freeze({
     u1: 'APWH_U1_LOCATION_STUDY',
@@ -508,6 +513,7 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
     u4: 'APWH_U4_LOCATION_STUDY',
     u5: 'APWH_U5_LOCATION_STUDY',
     u6: 'APWH_U6_LOCATION_STUDY',
+    u7: 'APWH_U7_LOCATION_STUDY',
   });`;
   const expectedHomeRegistry = `const HOME_STUDY_GLOBAL_BY_UNIT = Object.freeze({
     u1: 'APWH_U1_LOCATION_STUDY',
@@ -516,6 +522,7 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
     u4: 'APWH_U4_LOCATION_STUDY',
     u5: 'APWH_U5_LOCATION_STUDY',
     u6: 'APWH_U6_LOCATION_STUDY',
+    u7: 'APWH_U7_LOCATION_STUDY',
   });`;
   const extractRegistry = (source, name) => source.match(
     new RegExp(`const ${name} = Object\\.freeze\\(\\{[\\s\\S]*?\\n  \\}\\);`))?.[0];
@@ -7224,6 +7231,20 @@ async function verifyHomeLearningShell(page, port) {
   await verifyHomepageUnit6StudyContract(page, frame);
 }
 
+async function verifyUnit7StandaloneSarajevoSmoke(page, port) {
+  await page.goto(`http://127.0.0.1:${port}/world-map.html`, { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    window.__mapFilter.reset();
+    window.__mapFilter.setLearningView('map');
+    window.__mapFilter.setPeriod('u7');
+    window.__mapFilter.openHit('30', 'europe', 'world-event-30-0');
+  });
+  const entry = page.locator('#eventPanel [data-location-study-open="30"]');
+  await entry.waitFor({ state: 'visible' });
+  await expectVisible(entry,
+    'standalone Unit 7 Sarajevo must expose its location-study entry');
+}
+
 export async function verifyBrowser() {
   await stat(PAGE_FILE);
   await stat(HOME_PAGE_FILE);
@@ -7247,6 +7268,7 @@ export async function verifyBrowser() {
     const page = await browser.newPage({ viewport: { width: 900, height: 700 } });
     try {
       await verifyTimeline(page, port);
+      await verifyUnit7StandaloneSarajevoSmoke(page, port);
       await verifyLearningShell(page, port);
       await verifyHomeLearningShell(page, port);
     } finally {
