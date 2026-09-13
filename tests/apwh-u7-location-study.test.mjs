@@ -30,16 +30,17 @@ test('publishes the exact frozen Unit 7 record manifest and deferred Task 3 cont
   assert.equal(api.unitId,'u7');assert.equal(api.unitNumber,7);assert.equal(api.connectionTimelineMode,'main-event');assert.equal(Object.isFrozen(api),true);assert.equal(Object.isFrozen(api.records),true);
   assert.deepEqual(Array.from(api.locationNumbers),locations.map(location=>location[0]));
   assert.deepEqual(JSON.parse(JSON.stringify(api.records.map(record=>[record.id,record.locationNumber,record.sequence,record.title,record.dateLabel,record.startYear,record.endYear,record.topicCodes,record.themeIds,record.examSkills]))),records);
+  assert.deepEqual(Array.from(api.records,record=>record.mainEventKey),records.map(record=>locations.find(location=>location[0]===record[1])[2]));
   const learnerContent=api.records.map(({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source})=>({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source}));
-  assert.equal(createHash('sha256').update(JSON.stringify(learnerContent)).digest('hex'),'87db37ab965f3bc44841f640ed0714544a0f48e09d5c18d64015a9d432f338a0');
+  assert.equal(createHash('sha256').update(JSON.stringify(learnerContent)).digest('hex'),'6ae75dabdb34986af2925b5e11576109ec6c0b772d19c7a63181e91bdd2b4165');
   for(const record of api.records){assert.ok(record.summary);assert.ok(record.significance);assert.ok(record.keyPeople.length);assert.ok(record.keyTerms.length);assert.ok(record.evidence.length>=2);assert.ok(record.examConnection);assert.equal(record.source.id,'amsco-apwh-u7');assert.match(record.source.locator,/AMSCO AP World History, Unit 7, Topic/);assert.deepEqual(Array.from(record.causeStudyPointIds),[]);assert.deepEqual(Array.from(record.effectStudyPointIds),[]);assert.deepEqual(Array.from(record.relatedStudyPointIds),[]);assert.deepEqual(JSON.parse(JSON.stringify(record.connectionNotes)),{});assert.equal(Object.isFrozen(record),true);}
   assert.deepEqual(JSON.parse(JSON.stringify(api.unitCards)),{});assert.equal(api.getUnitCard('context'),null);
 });
-test('provides defensive lookups and refuses duplicate globals',()=>{const api=evaluate();for(const [number,name] of locations){assert.equal(api.locationName(number),name);const local=api.getByLocation(number);assert.equal(local.length,3);local.pop();assert.equal(api.getByLocation(number).length,3);}assert.equal(api.getById('nope'),null);assert.equal(api.locationName('nope'),null);assert.deepEqual(Array.from(api.getByLocation('nope')),[]);assert.throws(()=>evaluate(source,{APWH_U7_LOCATION_STUDY:{}}),/Invalid Unit 7 global APWH_U7_LOCATION_STUDY: refusing to overwrite existing value/);});
+test('provides defensive lookups and refuses duplicate globals',()=>{const api=evaluate();for(const [number,name,binding] of locations){assert.equal(api.locationName(number),name);const local=api.getByLocation(number);assert.equal(local.length,3);assert.ok(local.every(record=>record.mainEventKey===binding));local.pop();assert.equal(api.getByLocation(number).length,3);}assert.equal(api.getById('nope'),null);assert.equal(api.locationName('nope'),null);assert.deepEqual(Array.from(api.getByLocation('nope')),[]);assert.throws(()=>evaluate(source,{APWH_U7_LOCATION_STUDY:{}}),/Invalid Unit 7 global APWH_U7_LOCATION_STUDY: refusing to overwrite existing value/);});
 
 test('locks the complete learner-content fields for all thirty records',()=>{
   const api=evaluate();const fields=api.records.map(({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source})=>({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source}));
-  assert.equal(fields.length,30);assert.equal(createHash('sha256').update(JSON.stringify(fields)).digest('hex'),'87db37ab965f3bc44841f640ed0714544a0f48e09d5c18d64015a9d432f338a0');
+  assert.equal(fields.length,30);assert.equal(createHash('sha256').update(JSON.stringify(fields)).digest('hex'),'6ae75dabdb34986af2925b5e11576109ec6c0b772d19c7a63181e91bdd2b4165');
 });
 const assertInvalid=(code,rule)=>assert.throws(()=>evaluate(code),error=>{assert.match(error.message,/Invalid Unit 7/);assert.match(error.message,rule);return true;});
 const replace=(search,replacement)=>{const code=source.replace(search,replacement);assert.notEqual(code,source,`fixture mutation: ${search}`);return code;};
@@ -70,6 +71,10 @@ test('rejects malformed learner content and raw record shapes before publication
   assertInvalid(replace("const RAW_RECORDS=[","const RAW_RECORDS=null; const UNUSED_RAW_RECORDS=["),/raw records must be an ordinary dense array/);
   assertInvalid(replace("source:{id:'amsco-apwh-u7',locator}","source:{id:'amsco-apwh-u7',locator,extra:true}"),/source/);
   assertInvalid(replace("source:{id:'amsco-apwh-u7',locator}});","source:{id:'amsco-apwh-u7',locator},extra:true});"),/raw record must contain exactly/);
+  assertInvalid(replace("'Japan defeated Russia in a 1904–1905 war over influence in Manchuria and Korea.'","'Japan 帝国主义'"),/summary/);
+  assertInvalid(replace('validate();',"Object.defineProperty(RAW_RECORDS[0].evidence,'0',{enumerable:false});validate();"),/malformed evidence/);
+  assertInvalid(replace('validate();',"STUDY_MANIFEST[0][10].push('Comparison');validate();"),/too many examSkills/);
+  assertInvalid(replace('validate();',"STUDY_MANIFEST[0][4]=Symbol('bad');validate();"),/invalid dateLabel/);
 });
 test('rejects registry drift and preserves immutable descriptors and comparator behavior',()=>{
   assertInvalid(replace("'106':'Pacific War · Pearl Harbor'","'106':'Pacific War · Pearl Harbor','999':'Extra'"),/location registry/);
