@@ -527,9 +527,9 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
   const extractRegistry = (source, name) => source.match(
     new RegExp(`const ${name} = Object\\.freeze\\(\\{[\\s\\S]*?\\n  \\}\\);`))?.[0];
   assert.equal(extractRegistry(worldMapSource, 'LOCATION_STUDY_GLOBAL_BY_UNIT'), expectedLocationRegistry,
-    'world-map.html must expose the exact Unit 1–6 location-study registry');
+    'world-map.html must expose the exact Unit 1–7 location-study registry');
   assert.equal(extractRegistry(homePageSource, 'HOME_STUDY_GLOBAL_BY_UNIT'), expectedHomeRegistry,
-    'index.html must expose the exact Unit 1–6 location-study registry');
+    'index.html must expose the exact Unit 1–7 location-study registry');
 }
 
 async function importFirst(candidates) {
@@ -7240,9 +7240,11 @@ async function verifyUnit7StandaloneSarajevoSmoke(page, port) {
     window.__mapFilter.openHit('30', 'europe', 'world-event-30-0');
   });
   const entry = page.locator('#eventPanel [data-location-study-open="30"]');
-  await entry.waitFor({ state: 'visible' });
-  await expectVisible(entry,
-    'standalone Unit 7 Sarajevo must expose its location-study entry');
+  try {
+    await entry.waitFor({ state: 'visible' });
+  } catch (error) {
+    throw new Error('standalone Unit 7 Sarajevo must expose its location-study entry', { cause: error });
+  }
 }
 
 export async function verifyBrowser() {
