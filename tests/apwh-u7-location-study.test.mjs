@@ -77,6 +77,10 @@ test('rejects malformed learner content and raw record shapes before publication
   assertInvalid(replace('validate();',"Object.defineProperty(RAW_RECORDS[0].evidence,'0',{enumerable:false});validate();"),/malformed evidence/);
   assertInvalid(replace('validate();',"STUDY_MANIFEST[0][10].push('Comparison');validate();"),/too many examSkills/);
   assertInvalid(replace('validate();',"STUDY_MANIFEST[0][4]=Symbol('bad');validate();"),/invalid dateLabel/);
+  assertInvalid(replace('validate();',"STUDY_MANIFEST[0][5]=Symbol('bad');validate();"),/invalid dateLabel/);
+  assertInvalid(replace('validate();',"STUDY_MANIFEST[0][6]=Symbol('bad');validate();"),/invalid dateLabel/);
+  assertInvalid(replace('validate();',"STUDY_MANIFEST[0][0]=Symbol('bad');validate();"),/invalid stable ID/);
+  assertInvalid(replace('validate();',"Object.defineProperty(RAW_RECORDS[0],'id',{get(){throw new Error('id accessor leaked');},enumerable:true,configurable:true});validate();"),/raw record must contain exactly/);
 });
 test('rejects registry drift and preserves immutable descriptors and comparator behavior',()=>{
   assertInvalid(replace("'106':'Pacific War · Pearl Harbor'","'106':'Pacific War · Pearl Harbor','999':'Extra'"),/location registry/);

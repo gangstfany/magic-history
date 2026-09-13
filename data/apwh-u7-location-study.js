@@ -55,7 +55,7 @@ P('apwh-u7-pearl-harbor-resource-dependence-sanctions','Japan’s war in China i
 P('apwh-u7-pearl-harbor-attack-global-war','Japan attacked the U.S. Pacific Fleet at Pearl Harbor on 7 December 1941, bringing the United States into the war; Germany then declared war on the United States.','The attack and Germany’s declaration accelerated the transformation of overlapping conflicts into a truly global war.','Japanese naval forces, U.S. personnel, and German leaders','Japanese forces attacked while U.S. personnel defended the base and Germany widened the conflict.','Pearl Harbor attack','Japan’s 1941 surprise attack on the U.S. naval base in Hawaii.',['More than 2,400 Americans were killed in the attack.','Germany declared war on the United States on 11 December 1941.'],'Explain how Pearl Harbor and Germany’s declaration changed the participants and scale of World War II.',L(['7.6','7.7'])),
 P('apwh-u7-pearl-harbor-pacific-war-surrender','The Pacific War brought island-hopping campaigns and vast military and civilian destruction; atomic bombings, Soviet entry, and Japanese decisions preceded surrender in 1945.','Civilian consequences and continuing debate over atomic bombing belong in analysis, without reducing surrender to one cause.','Japanese civilians, U.S. leaders, and Soviet leaders','Civilians bore war effects while governments made decisions affecting island warfare and surrender.','island hopping','An Allied Pacific strategy of seizing selected islands to move closer to Japan.',['Island-hopping campaigns bypassed some Japanese-held islands.','Atomic bombs were used on Hiroshima and Nagasaki in August 1945.','Japan announced surrender after Soviet entry and the bombings.'],'Evaluate island warfare and multiple causes of surrender while addressing civilian consequences and debate.',L(['7.7','7.9'])),
   ];
-  const fail=(id,rule)=>{throw new Error(`Invalid Unit 7 study record ${id||'(missing ID)'}: ${rule}`);};
+  const fail=(id,rule)=>{throw new Error(`Invalid Unit 7 study record ${typeof id==='string'?id:'(missing ID)'}: ${rule}`);};
   const english=value=>{if(typeof value!=='string'||!value.trim())return false;const letters=value.match(/\p{Letter}/gu)||[];return letters.length>0&&letters.every(letter=>/\p{Script=Latin}/u.test(letter));};
   const plain=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)&&Object.getPrototypeOf(value)===Object.prototype;
   const data=(descriptor,{enumerable,configurable,writable})=>descriptor!==undefined&&Object.prototype.hasOwnProperty.call(descriptor,'value')&&descriptor.enumerable===enumerable&&descriptor.configurable===configurable&&descriptor.writable===writable;
@@ -63,7 +63,48 @@ P('apwh-u7-pearl-harbor-pacific-war-surrender','The Pacific War brought island-h
   const exact=(value,keys)=>plain(value)&&Reflect.ownKeys(value).length===keys.length&&keys.every(key=>{const descriptor=Object.getOwnPropertyDescriptor(value,key);return descriptor&&Object.prototype.hasOwnProperty.call(descriptor,'value')&&descriptor.enumerable&&descriptor.configurable&&descriptor.writable;});
   const values=(id,value,allowed,field,singular)=>{if(!dense(value)||!value.length)fail(id,`missing ${field}`);if(field==='examSkills'&&value.length>2)fail(id,'too many examSkills');const seen=new Set();for(const item of value){if(!allowed.has(item))fail(id,`invalid ${singular} ${String(item)}`);if(seen.has(item))fail(id,`duplicate ${singular} ${String(item)}`);seen.add(item);}};
   const validateLocations=()=>{if(LOCATION_NUMBERS.length!==CANONICAL.length||LOCATION_NUMBERS.some((n,i)=>n!==CANONICAL[i][0])||Object.keys(LOCATIONS).length!==10||Object.keys(BINDINGS).length!==10)throw new Error('Invalid Unit 7 locations (locations): location registry must contain exactly the ordered locationNumbers');for(const [number,name,binding] of CANONICAL){if(!english(LOCATIONS[number]))throw new Error(`Invalid Unit 7 locations (locations): location ${number} must have a nonempty English name`);if(LOCATIONS[number]!==name)throw new Error(`Invalid Unit 7 locations (locations): location ${number} does not match its canonical name`);if(BINDINGS[number]!==binding)throw new Error(`Invalid Unit 7 locations (locations): location ${number} has invalid main-event binding`);}};
-  const validate=()=>{validateLocations();if(!dense(STUDY_MANIFEST))fail('(manifest)','manifest must be an ordinary dense array');if(!dense(RAW_RECORDS))fail('(missing ID)','raw records must be an ordinary dense array');if(STUDY_MANIFEST.length!==30||RAW_RECORDS.length!==30)fail('(manifest)','expected exactly 30 records');const raw=new Map(),ids=new Set(),covered=new Set();for(const record of RAW_RECORDS){if(!exact(record,['id','summary','significance','keyPeople','keyTerms','evidence','examConnection','source']))fail(record?.id||'(missing ID)','raw record must contain exactly approved ordinary data fields');if(raw.has(record.id))fail(record.id,'duplicate raw record ID');raw.set(record.id,record);}for(const row of STUDY_MANIFEST){if(!dense(row)||row.length!==11)fail('(manifest)','manifest row must be an ordinary dense eleven-field array');const [id,location,sequence,title,label,start,end,event,topics,themes,skills]=row;if(!/^apwh-u7-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id))fail(id,'invalid stable ID');if(ids.has(id))fail(id,'duplicate record ID');ids.add(id);if(!LOCATION_NUMBERS.includes(location)||event!==BINDINGS[location])fail(id,'invalid mainEventKey');if(![1,2,3].includes(sequence))fail(id,'invalid sequence');if(!english(title)||typeof label!=='string'||!/^\d{4}(?:–\d{4})?$/.test(label)||start>end||Number(label.slice(0,4))!==start||Number(label.slice(-4))!==end)fail(id,'invalid dateLabel');values(id,topics,TOPICS,'topicCodes','topicCode');values(id,themes,THEMES,'themeIds','themeId');values(id,skills,SKILLS,'examSkills','examSkill');topics.forEach(topic=>covered.add(topic));const record=raw.get(id);if(!record)fail(id,'missing raw record');for(const field of ['summary','significance','examConnection'])if(!english(record[field]))fail(id,`${field} must be a nonempty English string`);if(!dense(record.keyPeople)||!record.keyPeople.length||record.keyPeople.some(person=>!exact(person,['name','role'])||!english(person.name)||!english(person.role)))fail(id,'malformed keyPeople');if(!dense(record.keyTerms)||!record.keyTerms.length||record.keyTerms.some(term=>!exact(term,['term','explanation'])||!english(term.term)||!english(term.explanation)))fail(id,'malformed keyTerms');if(!dense(record.evidence)||record.evidence.length<2||record.evidence.some(item=>!english(item)))fail(id,'malformed evidence');if(!exact(record.source,['id','locator'])||record.source.id!=='amsco-apwh-u7'||record.source.locator!==L(topics))fail(id,'malformed source');}if(covered.size!==9)fail('(manifest)','topicCodes must cover exactly 7.1 through 7.9');for(const location of LOCATION_NUMBERS){const local=STUDY_MANIFEST.filter(row=>row[1]===location);if(local.length!==3||new Set(local.map(row=>row[2])).size!==3)fail(`(location ${location})`,'location must contain exactly three records');}};
+  const validate=()=>{
+    validateLocations();
+    if(!dense(STUDY_MANIFEST))fail('(manifest)','manifest must be an ordinary dense array');
+    if(!dense(RAW_RECORDS))fail('(missing ID)','raw records must be an ordinary dense array');
+    if(STUDY_MANIFEST.length!==30||RAW_RECORDS.length!==30)fail('(manifest)','expected exactly 30 records');
+    const raw=new Map(),ids=new Set(),covered=new Set();
+    for(const record of RAW_RECORDS){
+      const idDescriptor=plain(record)?Object.getOwnPropertyDescriptor(record,'id'):undefined;
+      const rawId=data(idDescriptor,{enumerable:true,configurable:true,writable:true})?idDescriptor.value:undefined;
+      const diagnosticId=typeof rawId==='string'?rawId:'(missing ID)';
+      if(!exact(record,['id','summary','significance','keyPeople','keyTerms','evidence','examConnection','source']))fail(diagnosticId,'raw record must contain exactly approved ordinary data fields');
+      if(typeof rawId!=='string'||!rawId.trim())fail(diagnosticId,'raw record ID must be a nonempty string');
+      if(raw.has(rawId))fail(rawId,'duplicate raw record ID');
+      raw.set(rawId,record);
+    }
+    for(const row of STUDY_MANIFEST){
+      if(!dense(row)||row.length!==11)fail('(manifest)','manifest row must be an ordinary dense eleven-field array');
+      const [id,location,sequence,title,label,start,end,event,topics,themes,skills]=row;
+      if(typeof id!=='string'||!/^apwh-u7-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id))fail(typeof id==='string'?id:'(manifest)','invalid stable ID');
+      if(ids.has(id))fail(id,'duplicate record ID');
+      ids.add(id);
+      if(!LOCATION_NUMBERS.includes(location)||event!==BINDINGS[location])fail(id,'invalid mainEventKey');
+      if(![1,2,3].includes(sequence))fail(id,'invalid sequence');
+      if(!english(title)||typeof label!=='string'||!/^\d{4}(?:–\d{4})?$/.test(label)||typeof start!=='number'||typeof end!=='number'||!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start>end||Number(label.slice(0,4))!==start||Number(label.slice(-4))!==end)fail(id,'invalid dateLabel');
+      values(id,topics,TOPICS,'topicCodes','topicCode');
+      values(id,themes,THEMES,'themeIds','themeId');
+      values(id,skills,SKILLS,'examSkills','examSkill');
+      topics.forEach(topic=>covered.add(topic));
+      const record=raw.get(id);
+      if(!record)fail(id,'missing raw record');
+      for(const field of ['summary','significance','examConnection'])if(!english(record[field]))fail(id,field+' must be a nonempty English string');
+      if(!dense(record.keyPeople)||!record.keyPeople.length||record.keyPeople.some(person=>!exact(person,['name','role'])||!english(person.name)||!english(person.role)))fail(id,'malformed keyPeople');
+      if(!dense(record.keyTerms)||!record.keyTerms.length||record.keyTerms.some(term=>!exact(term,['term','explanation'])||!english(term.term)||!english(term.explanation)))fail(id,'malformed keyTerms');
+      if(!dense(record.evidence)||record.evidence.length<2||record.evidence.some(item=>!english(item)))fail(id,'malformed evidence');
+      if(!exact(record.source,['id','locator'])||record.source.id!=='amsco-apwh-u7'||record.source.locator!==L(topics))fail(id,'malformed source');
+    }
+    if(covered.size!==9)fail('(manifest)','topicCodes must cover exactly 7.1 through 7.9');
+    for(const location of LOCATION_NUMBERS){
+      const local=STUDY_MANIFEST.filter(row=>row[1]===location);
+      if(local.length!==3||new Set(local.map(row=>row[2])).size!==3)fail('(location '+location+')','location must contain exactly three records');
+    }
+  };
   validate();
   const byRawId=new Map(RAW_RECORDS.map(record=>[record.id,record]));
   const freezeRecord=row=>{const [id,locationNumber,sequence,title,dateLabel,startYear,endYear,mainEventKey,topicCodes,themeIds,examSkills]=row;const raw=byRawId.get(id);return Object.freeze({...raw,locationNumber,sequence,title,dateLabel,startYear,endYear,mainEventKey,topicCodes:Object.freeze([...topicCodes]),themeIds:Object.freeze([...themeIds]),examSkills:Object.freeze([...examSkills]),causeStudyPointIds:Object.freeze([]),effectStudyPointIds:Object.freeze([]),relatedStudyPointIds:Object.freeze([]),connectionNotes:Object.freeze({}),keyPeople:Object.freeze(raw.keyPeople.map(person=>Object.freeze({...person}))),keyTerms:Object.freeze(raw.keyTerms.map(term=>Object.freeze({...term}))),evidence:Object.freeze([...raw.evidence]),source:Object.freeze({...raw.source})});};
