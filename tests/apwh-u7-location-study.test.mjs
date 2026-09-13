@@ -6,7 +6,8 @@ import vm from 'node:vm';
 
 const moduleUrl=new URL('../data/apwh-u7-location-study.js',import.meta.url);
 const source=existsSync(moduleUrl)?readFileSync(moduleUrl,'utf8'):'';
-const evaluate=(code=source,seed={})=>{const sandbox={...seed};sandbox.window=sandbox;vm.runInNewContext(code,sandbox);return sandbox.APWH_U7_LOCATION_STUDY;};
+const evaluateSandbox=(code=source,seed={})=>{const sandbox={...seed};sandbox.window=sandbox;vm.runInNewContext(code,sandbox);return sandbox;};
+const evaluate=(code=source,seed={})=>evaluateSandbox(code,seed).APWH_U7_LOCATION_STUDY;
 const locations=[
 ['108','Imperial Rivalry in East Asia · Mukden / Shenyang','world-event-108-0'],['30','World War I Origins · Sarajevo','world-event-30-0'],['46','Industrialized Total War · Verdun','world-event-46-0'],['25','Russian Revolution · St. Petersburg / Petrograd','world-event-25-1'],['24','Postwar Settlement · Paris','world-event-24-7'],['18','Ottoman Nationalism & Genocide · Istanbul','world-event-18-2'],['29','Nazi Rule & Holocaust · Berlin','world-event-29-5'],['10','War in China & Mass Violence · Nanjing','world-event-10-2'],['84','Colonial Resources & North African War · Cairo / El Alamein','world-event-84-1'],['106','Pacific War · Pearl Harbor','world-event-106-0'],
 ];
@@ -35,3 +36,45 @@ test('publishes the exact frozen Unit 7 record manifest and deferred Task 3 cont
   assert.deepEqual(JSON.parse(JSON.stringify(api.unitCards)),{});assert.equal(api.getUnitCard('context'),null);
 });
 test('provides defensive lookups and refuses duplicate globals',()=>{const api=evaluate();for(const [number,name] of locations){assert.equal(api.locationName(number),name);const local=api.getByLocation(number);assert.equal(local.length,3);local.pop();assert.equal(api.getByLocation(number).length,3);}assert.equal(api.getById('nope'),null);assert.equal(api.locationName('nope'),null);assert.deepEqual(Array.from(api.getByLocation('nope')),[]);assert.throws(()=>evaluate(source,{APWH_U7_LOCATION_STUDY:{}}),/Invalid Unit 7 global APWH_U7_LOCATION_STUDY: refusing to overwrite existing value/);});
+
+test('locks the complete learner-content fields for all thirty records',()=>{
+  const api=evaluate();const fields=api.records.map(({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source})=>({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source}));
+  assert.equal(fields.length,30);assert.equal(createHash('sha256').update(JSON.stringify(fields)).digest('hex'),'87db37ab965f3bc44841f640ed0714544a0f48e09d5c18d64015a9d432f338a0');
+});
+const assertInvalid=(code,rule)=>assert.throws(()=>evaluate(code),error=>{assert.match(error.message,/Invalid Unit 7/);assert.match(error.message,rule);return true;});
+const replace=(search,replacement)=>{const code=source.replace(search,replacement);assert.notEqual(code,source,`fixture mutation: ${search}`);return code;};
+test('rejects manifest taxonomy, identity, sequence, event, and date drift with controlled diagnostics',()=>{
+  assertInvalid(replace("'world-event-108-0',['7.1','7.9']","'world-event-108-9',['7.1','7.9']"),/mainEventKey/);
+  assertInvalid(replace("'apwh-u7-mukden-incident-resource-expansion','108',2","'apwh-u7-mukden-incident-resource-expansion','108',1"),/exactly three records|duplicate sequence/);
+  assertInvalid(replace("'apwh-u7-mukden-incident-resource-expansion','108',2","'apwh-u7-mukden-russo-japanese-war-shifting-power','108',2"),/duplicate record ID/);
+  assertInvalid(replace("'1931',1931,1931","'19310',1931,1931"),/invalid dateLabel/);
+  assertInvalid(replace("'1931',1931,1931","'1932',1931,1931"),/invalid dateLabel/);
+  assertInvalid(replace("['7.6'],['GOV','ECN']","[],['GOV','ECN']"),/missing topicCodes/);
+  assertInvalid(replace("['7.6'],['GOV','ECN']","['7.0'],['GOV','ECN']"),/invalid topicCode/);
+  assertInvalid(replace("['7.6'],['GOV','ECN']","['7.6','7.6'],['GOV','ECN']"),/duplicate topicCode/);
+  assertInvalid(replace("['GOV','ECN'],['Causation']","[],['Causation']"),/missing themeIds/);
+  assertInvalid(replace("['GOV','ECN'],['Causation']","['WAR'],['Causation']"),/invalid themeId/);
+  assertInvalid(replace("['GOV','ECN'],['Causation']","['GOV','GOV'],['Causation']"),/duplicate themeId/);
+  assertInvalid(replace("['GOV','ECN'],['Causation']","['GOV','ECN'],[]"),/missing examSkills/);
+  assertInvalid(replace("['GOV','ECN'],['Causation']","['GOV','ECN'],['Recall']"),/invalid examSkill/);
+  assertInvalid(replace("['GOV','ECN'],['Causation']","['GOV','ECN'],['Causation','Causation']"),/duplicate examSkill/);
+});
+test('rejects malformed learner content and raw record shapes before publication',()=>{
+  assertInvalid(replace("'Japan defeated Russia in a 1904–1905 war over influence in Manchuria and Korea.'","''"),/summary/);
+  assertInvalid(replace("'Japan defeated Russia in a 1904–1905 war over influence in Manchuria and Korea.'",'42'),/summary/);
+  assertInvalid(replace("'The result shifted regional power and challenged assumptions that European empires would always prevail.'","'帝国主义'"),/significance/);
+  assertInvalid(replace("'Japanese and Russian governments','Competed for influence in Manchuria and Korea.'","'','Competed for influence in Manchuria and Korea.'"),/keyPeople/);
+  assertInvalid(replace("'Russo-Japanese War','A 1904–1905 conflict in which Japan defeated Russia over imperial interests in Northeast Asia.'","'Russo-Japanese War',''"),/keyTerms/);
+  assertInvalid(replace("['Japanese forces defeated Russian forces in 1905.','The Treaty of Portsmouth ended the war and recognized Japanese gains.']","['Only one statement.']"),/evidence/);
+  assertInvalid(replace("source:{id:'amsco-apwh-u7',locator}","source:{id:'wrong',locator}"),/source/);
+  assertInvalid(replace("const RAW_RECORDS=[","const RAW_RECORDS=null; const UNUSED_RAW_RECORDS=["),/raw records must be an ordinary dense array/);
+  assertInvalid(replace("source:{id:'amsco-apwh-u7',locator}","source:{id:'amsco-apwh-u7',locator,extra:true}"),/source/);
+  assertInvalid(replace("source:{id:'amsco-apwh-u7',locator}});","source:{id:'amsco-apwh-u7',locator},extra:true});"),/raw record must contain exactly/);
+});
+test('rejects registry drift and preserves immutable descriptors and comparator behavior',()=>{
+  assertInvalid(replace("'106':'Pacific War · Pearl Harbor'","'106':'Pacific War · Pearl Harbor','999':'Extra'"),/location registry/);
+  assertInvalid(replace("'108':'Imperial Rivalry in East Asia · Mukden / Shenyang'","'108':''"),/nonempty English name/);
+  assertInvalid(replace("'108':'world-event-108-0'","'108':'world-event-108-9'"),/invalid main-event binding/);
+  assertInvalid(replace("['apwh-u7-mukden-league-failure-further-expansion'","['apwh-u7-extra','108',3,'Extra','1931',1931,1931,'world-event-108-0',['7.6'],['GOV'],['Causation']],\n['apwh-u7-mukden-league-failure-further-expansion'"),/expected exactly 30 records|exactly three records/);
+  const api=evaluate();const descriptor=Object.getOwnPropertyDescriptor(evaluateSandbox(source),'APWH_U7_LOCATION_STUDY');assert.deepEqual({enumerable:descriptor.enumerable,configurable:descriptor.configurable,writable:descriptor.writable},{enumerable:true,configurable:false,writable:false});assert.equal(api.compareRecords({sequence:1,startYear:1900,endYear:1901,id:'b'},{sequence:1,startYear:1900,endYear:1901,id:'a'})>0,true);
+});
