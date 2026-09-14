@@ -97,7 +97,7 @@ Main-event bindings are stable entry points. A study point may cover a national 
 | India / Delhi | `apwh-u8-delhi-five-year-plans-mixed-economy` | `Five-Year Plans and a Mixed Economy` | `1951–1991` | 8.6, 8.9 | consequence |
 | Algeria / Algiers | `apwh-u8-algiers-settler-colonialism-blocked-reform` | `Settler Colonialism and Blocked Reform` | `1945–1954` | 8.5 | condition |
 | Algeria / Algiers | `apwh-u8-algiers-fln-war-counterinsurgency` | `FLN War and French Counterinsurgency` | `1954–1962` | 8.5, 8.7 | mechanism |
-| Algeria / Algiers | `apwh-u8-algiers-independence-exodus-new-state` | `Independence, Exodus, and the New State` | `1962 onward` | 8.6, 8.9 | consequence |
+| Algeria / Algiers | `apwh-u8-algiers-independence-exodus-new-state` | `Independence, Exodus, and the New State` | `1962` | 8.6, 8.9 | consequence |
 | Ghana / Accra | `apwh-u8-accra-mass-nationalism-colonial-pressure` | `Mass Nationalism and Colonial Pressure` | `1947–1951` | 8.5 | condition |
 | Ghana / Accra | `apwh-u8-accra-negotiated-independence` | `Negotiated Independence` | `1951–1957` | 8.5 | mechanism |
 | Ghana / Accra | `apwh-u8-accra-panafricanism-nonaligned-state-building` | `Pan-Africanism, Nonalignment, and State Building` | `1957–1966` | 8.6, 8.9 | consequence |
@@ -108,7 +108,7 @@ Main-event bindings are stable entry points. A study point may cover a national 
 | Iran / Tehran | `apwh-u8-tehran-coup-shah-authoritarian-alignment` | `The 1953 Coup and the Shah's Alignment` | `1953–1963` | 8.2, 8.6 | mechanism |
 | Iran / Tehran | `apwh-u8-tehran-white-revolution-islamic-revolution` | `White Revolution and the 1979 Islamic Revolution` | `1963–1979` | 8.6, 8.7, 8.9 | consequence |
 | South Africa / Johannesburg | `apwh-u8-johannesburg-apartheid-legal-order` | `Apartheid as a Legal Order` | `1948–1960` | 8.7 | condition |
-| South Africa / Johannesburg | `apwh-u8-johannesburg-resistance-repression` | `Organized Resistance and State Repression` | `1950s–1980s` | 8.7 | mechanism |
+| South Africa / Johannesburg | `apwh-u8-johannesburg-resistance-repression` | `Organized Resistance and State Repression` | `1950–1989` | 8.7 | mechanism |
 | South Africa / Johannesburg | `apwh-u8-johannesburg-pressure-negotiation-democratic-transition` | `International Pressure, Negotiation, and Democratic Transition` | `1985–1994` | 8.7, 8.9 | consequence |
 
 Every record must provide one or two approved Exam Skills, valid AP themes, a concise summary, significance, actors, explained terms, at least two evidence statements, an actionable Exam Connection, and a reproducible source locator. Date ranges may overlap when the study point distinguishes a mechanism from its broader conditions or consequences.
