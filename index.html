@@ -1142,6 +1142,11 @@ nav.topnav {
       if (!win || !win.__mapFilter) return;
       const studyConnection = e.target.closest('[data-study-connection]');
       if (studyConnection && win.__mapFilter.openLocationStudyConnection) {
+        const disclosure = studyConnection.closest('details[data-study-id][data-study-disclosure]');
+        if (disclosure && win.__mapFilter.setLocationStudyDisclosure) {
+          win.__mapFilter.setLocationStudyDisclosure(disclosure.dataset.studyId,
+            disclosure.dataset.studyDisclosure, disclosure.open);
+        }
         if (win.__mapFilter.openLocationStudyConnection(studyConnection.dataset.studyConnection,
           { scrollTop: homeEvents.scrollTop })) {
           syncHomeEvents();

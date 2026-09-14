@@ -5426,10 +5426,10 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const syncTimeline = api.connectionTimelineMode === 'main-event';
     const targetTimeline = locationStudyTimelineBinding(target);
     if (syncTimeline && (!targetTimeline || typeof revealLocationStudyTimelineEvent !== 'function')) return false;
-    const disclosurePrefix = `${source.id}:`;
-    const openDisclosures = Object.freeze([...locationStudyState.openDisclosures]
-      .filter(stateKey => stateKey.startsWith(disclosurePrefix))
-      .map(stateKey => stateKey.slice(disclosurePrefix.length)));
+    const openDisclosures = Object.freeze([...eventPanel.querySelectorAll(
+      `details[data-study-id="${CSS.escape(source.id)}"][data-study-disclosure][open]`,
+    )].map(disclosure => disclosure.dataset.studyDisclosure)
+      .filter(key => STUDY_DISCLOSURE_KEYS.has(key)));
     const filterSnapshot = syncTimeline
       ? revealLocationStudyTimelineEvent(targetTimeline.event, targetTimeline.anchor) : null;
     const frame = Object.freeze({
