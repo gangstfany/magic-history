@@ -1,19 +1,17 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import { existsSync, readFileSync } from 'node:fs';
-import vm from 'node:vm';
-
-const moduleUrl=new URL('../data/apwh-u8-location-study.js',import.meta.url);
-const source=existsSync(moduleUrl)?readFileSync(moduleUrl,'utf8'):'';
-const evaluateSandbox=(code=source,seed={})=>{const sandbox={...seed};sandbox.window=sandbox;vm.runInNewContext(code,sandbox);return sandbox;};
-const evaluate=(code=source,seed={})=>evaluateSandbox(code,seed).APWH_U8_LOCATION_STUDY;
-const expectedLocations=new Map([
-  ['29','Cold War Division · Germany / Berlin'],['40','Soviet Power & Collapse · Soviet Union / Moscow'],['5','Communist Revolution & Transformation · China / Beijing'],['16','Decolonization & Proxy War · Vietnam / Saigon'],['6','Independence, Nonalignment & Development · India / Delhi'],['79','Settler Colonialism & Armed Decolonization · Algeria / Algiers'],['81','Negotiated Independence & Pan-Africanism · Ghana / Accra'],['55','Revolution & Nuclear Brinkmanship · Cuba / Havana'],['21','Oil, Intervention & Revolution · Iran / Tehran'],['82','Apartheid & Democratic Transition · South Africa / Johannesburg'],
-]);
-const expectedBindings=new Map([
-  ['29','world-event-29-8'],['40','world-event-40-3'],['5','world-event-5-5'],['16','world-event-16-0'],['6','world-event-6-3'],['79','world-event-79-1'],['81','world-event-81-0'],['55','world-event-55-2'],['21','world-event-21-1'],['82','world-event-82-0'],
-]);
-const expectedManifest=[
+(function publishUnit8LocationStudy(root) {
+  'use strict';
+  if (Object.prototype.hasOwnProperty.call(root,'APWH_U8_LOCATION_STUDY')) throw new Error('Invalid Unit 8 global APWH_U8_LOCATION_STUDY: refusing to overwrite existing value');
+  const UNIT_ID='u8', UNIT_NUMBER=8;
+  const VALID_TOPIC_CODES=new Set(['8.1','8.2','8.3','8.4','8.5','8.6','8.7','8.8','8.9']);
+  const VALID_THEME_IDS=new Set(['GOV','ECN','CDI','SIO','TEC','ENV']);
+  const VALID_EXAM_SKILLS=new Set(['Causation','Comparison','CCOT','Contextualization']);
+  const SOURCE_ID='amsco-apwh-u8';
+  const STABLE_ID=/^apwh-u8-[a-z0-9]+(?:-[a-z0-9]+)*$/;
+  const LOCATION_NUMBERS=Object.freeze(['29','40','5','16','6','79','81','55','21','82']);
+  const LOCATIONS=Object.freeze({'29':'Cold War Division · Germany / Berlin','40':'Soviet Power & Collapse · Soviet Union / Moscow','5':'Communist Revolution & Transformation · China / Beijing','16':'Decolonization & Proxy War · Vietnam / Saigon','6':'Independence, Nonalignment & Development · India / Delhi','79':'Settler Colonialism & Armed Decolonization · Algeria / Algiers','81':'Negotiated Independence & Pan-Africanism · Ghana / Accra','55':'Revolution & Nuclear Brinkmanship · Cuba / Havana','21':'Oil, Intervention & Revolution · Iran / Tehran','82':'Apartheid & Democratic Transition · South Africa / Johannesburg'});
+  const BINDINGS=Object.freeze({'29':'world-event-29-8','40':'world-event-40-3','5':'world-event-5-5','16':'world-event-16-0','6':'world-event-6-3','79':'world-event-79-1','81':'world-event-81-0','55':'world-event-55-2','21':'world-event-21-1','82':'world-event-82-0'});
+  const CANONICAL=Object.freeze([['29','Cold War Division · Germany / Berlin','world-event-29-8'],['40','Soviet Power & Collapse · Soviet Union / Moscow','world-event-40-3'],['5','Communist Revolution & Transformation · China / Beijing','world-event-5-5'],['16','Decolonization & Proxy War · Vietnam / Saigon','world-event-16-0'],['6','Independence, Nonalignment & Development · India / Delhi','world-event-6-3'],['79','Settler Colonialism & Armed Decolonization · Algeria / Algiers','world-event-79-1'],['81','Negotiated Independence & Pan-Africanism · Ghana / Accra','world-event-81-0'],['55','Revolution & Nuclear Brinkmanship · Cuba / Havana','world-event-55-2'],['21','Oil, Intervention & Revolution · Iran / Tehran','world-event-21-1'],['82','Apartheid & Democratic Transition · South Africa / Johannesburg','world-event-82-0']]);
+  const STUDY_MANIFEST=[
 ['apwh-u8-berlin-occupation-ideological-division','29',1,'Occupation Zones and Ideological Division','1945–1948',1945,1948,'world-event-29-8',['8.1','8.2'],['GOV','CDI'],['Contextualization','Causation']],
 ['apwh-u8-berlin-blockade-airlift-two-germanies','29',2,'Blockade, Airlift, and Two Germanies','1948–1949',1948,1949,'world-event-29-8',['8.2','8.3'],['GOV','TEC'],['Causation']],
 ['apwh-u8-berlin-wall-nonintervention-reunification','29',3,'Berlin Wall, Soviet Nonintervention, and Reunification','1961–1990',1961,1990,'world-event-29-8',['8.2','8.8','8.9'],['GOV','CDI'],['Causation','CCOT']],
@@ -44,11 +42,10 @@ const expectedManifest=[
 ['apwh-u8-johannesburg-apartheid-legal-order','82',1,'Apartheid as a Legal Order','1948–1960',1948,1960,'world-event-82-0',['8.7'],['GOV','SIO'],['Contextualization','Causation']],
 ['apwh-u8-johannesburg-resistance-repression','82',2,'Organized Resistance and State Repression','1950–1989',1950,1989,'world-event-82-0',['8.7'],['GOV','SIO'],['Causation']],
 ['apwh-u8-johannesburg-pressure-negotiation-democratic-transition','82',3,'International Pressure, Negotiation, and Democratic Transition','1985–1994',1985,1994,'world-event-82-0',['8.7','8.9'],['GOV','SIO'],['Causation','CCOT']],
-];
-const P=(id,summary,significance,person,role,term,explanation,evidence,examConnection,locator)=>({id,summary,significance,keyPeople:[{name:person,role}],keyTerms:[{term,explanation}],evidence,examConnection,source:{id:'amsco-apwh-u8',locator}});
-const L=topics=>`AMSCO AP World History, Unit 8, ${topics.length===1?'Topic':'Topics'} ${topics.length===1?topics[0]:topics.length===2?topics.join(' and '):`${topics.slice(0,-1).join(', ')}, and ${topics.at(-1)}`}`;
-const expectedContent=[
-// Exact literal learner-content fixtures are intentionally independent of the production module.
+  ];
+  const P=(id,summary,significance,person,role,term,explanation,evidence,examConnection,locator)=>({id,summary,significance,keyPeople:[{name:person,role}],keyTerms:[{term,explanation}],evidence,examConnection,source:{id:'amsco-apwh-u8',locator}});
+  const L=topics=>`AMSCO AP World History, Unit 8, ${topics.length===1?'Topic':'Topics'} ${topics.length===1?topics[0]:topics.length===2?topics.join(' and '):`${topics.slice(0,-1).join(', ')}, and ${topics.at(-1)}`}`;
+  const RAW_RECORDS=[
 P('apwh-u8-berlin-occupation-ideological-division','Allied occupation divided Germany and Berlin into zones as wartime cooperation gave way to competing political and economic systems.','Broad Soviet security aims help explain the eastern buffer, while specific choices over German recovery and currency reform produced distinct confrontations.','Allied occupation authorities','Administered separate zones and promoted rival postwar orders.','occupation zones','Areas of Germany and Berlin administered by the victorious Allied powers after World War II.',['Germany and Berlin were each divided among American, British, French, and Soviet authorities.','Western zones moved toward economic coordination and currency reform in 1948.'],'Contextualize the Cold War by separating broad Soviet security aims from the specific decisions that triggered the Berlin blockade.',L(['8.1','8.2'])),
 P('apwh-u8-berlin-blockade-airlift-two-germanies','The Soviet Union blockaded western land access to Berlin, and the Western Allies supplied the city by air before two German states emerged.','The crisis tested containment without direct superpower war and hardened the political division of Germany.','Joseph Stalin and Western Allied leaders','Made blockade, airlift, and occupation-policy decisions during the crisis.','Berlin Airlift','The Western air supply operation that sustained West Berlin during the Soviet blockade.',['The blockade restricted western land access from June 1948 to May 1949.','American and British aircraft delivered food and fuel to West Berlin.'],'Explain how the blockade and airlift caused political consolidation while distinguishing them from general Soviet security policy.',L(['8.2','8.3'])),
 P('apwh-u8-berlin-wall-nonintervention-reunification','East Germany built the Berlin Wall to restrict emigration; decades later Soviet nonintervention allowed peaceful pressure and diplomacy to culminate in reunification.','The Wall embodied Cold War division, while its opening and reunification demonstrate change in Soviet coercive policy.','Mikhail Gorbachev and German political leaders','Accepted negotiations and refrained from a Soviet military intervention against political change.','Berlin Wall','The fortified barrier erected in 1961 that divided East and West Berlin until 1989.',['East German authorities erected the Wall in August 1961.','Germany formally reunified in October 1990 after the Wall opened in 1989.'],'Trace continuity and change from coercive division to Soviet nonintervention and negotiated reunification.',L(['8.2','8.8','8.9'])),
@@ -79,95 +76,95 @@ P('apwh-u8-tehran-white-revolution-islamic-revolution','The shah’s White Revol
 P('apwh-u8-johannesburg-apartheid-legal-order','South Africa’s government built apartheid through laws regulating racial classification, residence, movement, work, and political rights.','Apartheid was an administered state system rather than only private prejudice; Johannesburg is a representative national anchor.','National Party government','Codified and enforced racial separation and white political supremacy.','apartheid','The legally enforced system of racial classification, segregation, and white minority rule in South Africa.',['The Population Registration Act classified people by race in 1950.','Pass laws and the Group Areas Act restricted movement and residence.'],'Contextualize apartheid through legal and administrative mechanisms, noting that Johannesburg is a representative national anchor.',L(['8.7'])),
 P('apwh-u8-johannesburg-resistance-repression','The ANC and allied movements used protest, labor action, civic organization, and later armed struggle while the state answered with bans, arrests, and violence.','Resistance changed form under repression and remained rooted in organized African political agency.','African National Congress activists','Organized campaigns against apartheid despite banning, imprisonment, and state violence.','Defiance Campaign','The 1952 mass campaign of deliberate noncompliance with apartheid laws.',['The ANC helped organize the Defiance Campaign in 1952.','Police killed protesters at Sharpeville in 1960, and the government banned the ANC.'],'Trace continuity and change across nonviolent protest, labor and civic action, armed struggle, and repression.',L(['8.7'])),
 P('apwh-u8-johannesburg-pressure-negotiation-democratic-transition','Labor and civic mobilization, international sanctions, economic pressure, and negotiations weakened apartheid and produced democratic elections.','Transition resulted from interacting internal and external pressures plus political bargaining, not from one leader acting alone.','Nelson Mandela and F. W. de Klerk','Negotiated the dismantling of apartheid and a democratic constitutional transition.','democratic transition','The negotiated replacement of apartheid rule with universal-suffrage government.',['International sanctions and divestment increased pressure during the 1980s.','Nelson Mandela was released in 1990 and South Africa held multiracial elections in 1994.'],'Explain the 1994 transition through labor, civic action, sanctions, negotiation, and leadership without making any one factor sufficient.',L(['8.7','8.9'])),
-];
+  ];
 
-const clone=value=>JSON.parse(JSON.stringify(value));
-const replace=(search,replacement)=>{const code=source.replace(search,replacement);assert.notEqual(code,source,`fixture mutation: ${search}`);return code;};
-const assertInvalid=(code,rule)=>assert.throws(()=>evaluate(code),error=>{assert.match(error.message,/Invalid Unit 8/);assert.match(error.message,rule);assert.notEqual(error.name,'TypeError');return true;});
+  const CONNECTIONS={
+    causal:[['apwh-u8-berlin-occupation-ideological-division','apwh-u8-berlin-blockade-airlift-two-germanies','Occupation policies and currency reform led to a blockade answered by the airlift.']],
+    related:[],
+  };
+  const CARD_KEYS=['context','synthesis'];
+  const UNIT_CARD_MANIFEST={
+    context:{id:'apwh-u8-context-postwar-bipolar-decolonizing-world',kind:'context',role:'Unit 8 Context Card',title:'A Bipolar and Decolonizing World',examSkills:['Contextualization','Causation'],summary:'World War II weakened European empires and elevated the United States and Soviet Union while anticolonial movements demanded sovereignty.',prompt:'How did the outcomes of World War II shape Cold War rivalry and decolonization?',takeaways:['Superpower rivalry divided states and regions.','Anticolonial movements pursued distinct paths to sovereignty.','New states confronted political and economic development choices.']},
+    synthesis:{id:'apwh-u8-synthesis-cold-war-enduring-transformations',kind:'synthesis',role:'Unit 8 Synthesis Card',title:'Cold War Endings and Enduring Transformations',examSkills:['Causation','CCOT'],summary:'Cold War rivalry ended through interacting reforms and pressures, while decolonization and social movements continued to reshape states and societies.',prompt:'Which Unit 8 transformations continued after the Cold War ended?',takeaways:['Sovereignty did not eliminate economic or political tensions.','Movements challenged authoritarian and racial systems.','Cold War institutions left durable global legacies.']},
+  };
 
-test('publishes the exact immutable Unit 8 manifest and learner content',()=>{
-  assert.ok(source,`Expected ${moduleUrl.pathname} to exist`);const api=evaluate();
-  assert.deepEqual(Object.keys(api),['unitId','unitNumber','connectionTimelineMode','locationNumbers','records','unitCards','compareRecords','getById','getByLocation','locationName','getUnitCard']);
-  assert.equal(api.unitId,'u8');assert.equal(api.unitNumber,8);assert.equal(api.connectionTimelineMode,'main-event');
-  assert.deepEqual(Array.from(api.locationNumbers),Array.from(expectedLocations.keys()));assert.equal(api.records.length,30);
-  assert.deepEqual(clone(api.records.map(({id,locationNumber,sequence,title,dateLabel,startYear,endYear,mainEventKey,topicCodes,themeIds,examSkills})=>[id,locationNumber,sequence,title,dateLabel,startYear,endYear,mainEventKey,topicCodes,themeIds,examSkills])),expectedManifest);
-  assert.deepEqual(clone(api.records.map(({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source})=>({id,summary,significance,keyPeople,keyTerms,evidence,examConnection,source}))),expectedContent);
-  assert.deepEqual([...new Set(api.records.flatMap(record=>record.topicCodes))].sort(),['8.1','8.2','8.3','8.4','8.5','8.6','8.7','8.8','8.9']);
-  for(const record of api.records){assert.match(record.id,/^apwh-u8-[a-z0-9]+(?:-[a-z0-9]+)*$/);assert.ok(record.themeIds.length);assert.ok(record.examSkills.length);assert.equal(record.source.locator,L(record.topicCodes));}
-});
+  const fail=(id,rule)=>{throw new Error(`Invalid Unit 8 study record ${typeof id==='string'?id:'(missing ID)'}: ${rule}`);};
+  const english=value=>{if(typeof value!=='string'||!value.trim())return false;const letters=value.match(/\p{Letter}/gu)||[];return letters.length>0&&letters.every(letter=>/\p{Script=Latin}/u.test(letter));};
+  const plain=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)&&Object.getPrototypeOf(value)===Object.prototype;
+  const data=(descriptor,{enumerable,configurable,writable})=>descriptor!==undefined&&Object.prototype.hasOwnProperty.call(descriptor,'value')&&descriptor.enumerable===enumerable&&descriptor.configurable===configurable&&descriptor.writable===writable;
+  const dense=value=>{if(!Array.isArray(value)||Object.getPrototypeOf(value)!==Array.prototype)return false;const descriptors=Object.getOwnPropertyDescriptors(value),length=descriptors.length;if(!data(length,{enumerable:false,configurable:false,writable:true})||!Number.isSafeInteger(length.value)||length.value<0)return false;const keys=Reflect.ownKeys(descriptors),indexes=Array.from({length:length.value},(_,i)=>String(i));return keys.length===indexes.length+1&&indexes.every(index=>data(descriptors[index],{enumerable:true,configurable:true,writable:true}));};
+  const exact=(value,keys)=>plain(value)&&Reflect.ownKeys(value).length===keys.length&&keys.every(key=>{const descriptor=Object.getOwnPropertyDescriptor(value,key);return descriptor&&Object.prototype.hasOwnProperty.call(descriptor,'value')&&descriptor.enumerable&&descriptor.configurable&&descriptor.writable;});
+  const registryShape=(value,keys)=>{try{if(!plain(value))return false;const descriptors=Object.getOwnPropertyDescriptors(value),ownKeys=Reflect.ownKeys(descriptors);return ownKeys.length===keys.length&&ownKeys.every(key=>typeof key==='string'&&keys.includes(key))&&keys.every(key=>{const descriptor=descriptors[key];return descriptor&&Object.prototype.hasOwnProperty.call(descriptor,'value')&&descriptor.enumerable;});}catch{return false;}};
+  const values=(id,value,allowed,field,singular)=>{if(!dense(value)||!value.length)fail(id,`missing ${field}`);if(field==='examSkills'&&value.length>2)fail(id,'too many examSkills');const seen=new Set();for(const item of value){if(!allowed.has(item))fail(id,`invalid ${singular} ${String(item)}`);if(seen.has(item))fail(id,`duplicate ${singular} ${String(item)}`);seen.add(item);}};
+  const validateLocations=()=>{
+    const numbers=CANONICAL.map(entry=>entry[0]);
+    if(LOCATION_NUMBERS.length!==numbers.length||LOCATION_NUMBERS.some((number,index)=>number!==numbers[index])||!registryShape(LOCATIONS,numbers)||!registryShape(BINDINGS,numbers))throw new Error('Invalid Unit 8 locations (locations): location registry must contain exactly the ordered locationNumbers');
+    for(const [number,name,binding] of CANONICAL){
+      if(!english(LOCATIONS[number]))throw new Error('Invalid Unit 8 locations (locations): location '+number+' must have a nonempty English name');
+      if(LOCATIONS[number]!==name)throw new Error('Invalid Unit 8 locations (locations): location '+number+' does not match its canonical name');
+      if(BINDINGS[number]!==binding)throw new Error('Invalid Unit 8 locations (locations): location '+number+' has invalid main-event binding');
+    }
+  };
+  const validateConnections=ids=>{
+    if(!exact(CONNECTIONS,['causal','related']))fail('(connections)','connections must contain exactly causal and related categories');
+    if(!dense(CONNECTIONS.causal)||!dense(CONNECTIONS.related))fail('(connections)','connections must be an ordinary dense array in every category');
+    const validateRows=(rows,category)=>{const seen=new Set();for(const row of rows){if(!dense(row)||row.length!==3)fail('(connections)','connection row must be an ordinary dense three-field array');const [source,target,note]=row;if(typeof source!=='string'||typeof target!=='string'||!ids.has(source)||!ids.has(target))fail('(connections)','unresolved connection');if(source===target)fail(source,'self connection');if(!english(note))fail(source,'connection note must be a nonempty English string');const key=source+'\u0000'+target;if(seen.has(key))fail(source,'duplicate '+category+' connection');seen.add(key);}return seen;};
+    const causal=validateRows(CONNECTIONS.causal,'causal'),related=validateRows(CONNECTIONS.related,'related');
+    for(const key of causal)if(related.has(key))fail('(connections)','cross-category connection is not allowed');
+  };
+  const validateCards=()=>{
+    if(!dense(CARD_KEYS)||CARD_KEYS.length!==2||CARD_KEYS[0]!=='context'||CARD_KEYS[1]!=='synthesis'||!exact(UNIT_CARD_MANIFEST,CARD_KEYS))fail('(cards)','unit cards must contain exactly context and synthesis');
+    const ids=new Set();for(const kind of CARD_KEYS){const card=UNIT_CARD_MANIFEST[kind];if(!exact(card,['id','kind','role','title','examSkills','summary','prompt','takeaways']))fail('(cards)','card must contain exactly approved fields');if(typeof card.id!=='string'||!STABLE_ID.test(card.id))fail('(cards)','malformed card ID');if(ids.has(card.id))fail(card.id,'duplicate card ID');ids.add(card.id);if(card.kind!==kind)fail(card.id,'card kind must match its lookup key');if(!english(card.role)||!english(card.title)||!english(card.summary)||!english(card.prompt))fail(card.id,'malformed card');if(!dense(card.examSkills)||card.examSkills.length!==2||new Set(card.examSkills).size!==2||card.examSkills.some(skill=>!VALID_EXAM_SKILLS.has(skill)))fail(card.id,'malformed card skills');if(!dense(card.takeaways)||card.takeaways.length!==3||card.takeaways.some(takeaway=>!english(takeaway)))fail(card.id,'malformed card takeaways');}
+  };
+  const validate=()=>{
+    validateLocations();
+    if(!dense(STUDY_MANIFEST))fail('(manifest)','manifest must be an ordinary dense array');
+    if(!dense(RAW_RECORDS))fail('(missing ID)','raw records must be an ordinary dense array');
+    if(STUDY_MANIFEST.length!==30||RAW_RECORDS.length!==30)fail('(manifest)','expected exactly 30 records');
+    const raw=new Map(),ids=new Set(),covered=new Set();
+    for(const record of RAW_RECORDS){
+      const idDescriptor=plain(record)?Object.getOwnPropertyDescriptor(record,'id'):undefined;
+      const rawId=data(idDescriptor,{enumerable:true,configurable:true,writable:true})?idDescriptor.value:undefined;
+      const diagnosticId=typeof rawId==='string'?rawId:'(missing ID)';
+      if(!exact(record,['id','summary','significance','keyPeople','keyTerms','evidence','examConnection','source']))fail(diagnosticId,'raw record must contain exactly approved ordinary data fields');
+      if(typeof rawId!=='string'||!rawId.trim())fail(diagnosticId,'raw record ID must be a nonempty string');
+      if(!STABLE_ID.test(rawId))fail(rawId,'invalid stable ID');
+      if(raw.has(rawId))fail(rawId,'duplicate raw record ID');
+      raw.set(rawId,record);
+    }
+    for(const row of STUDY_MANIFEST){
+      if(!dense(row)||row.length!==11)fail('(manifest)','manifest row must be an ordinary dense eleven-field array');
+      const [id,location,sequence,title,label,start,end,event,topics,themes,skills]=row;
+      if(typeof id!=='string'||!STABLE_ID.test(id))fail(typeof id==='string'?id:'(manifest)','invalid stable ID');
+      if(ids.has(id))fail(id,'duplicate record ID');ids.add(id);
+      if(!LOCATION_NUMBERS.includes(location)||event!==BINDINGS[location])fail(id,'invalid mainEventKey');
+      if(![1,2,3].includes(sequence))fail(id,'invalid sequence');
+      if(!english(title)||typeof label!=='string'||!/^\d{4}(?:–\d{4})?$/.test(label)||typeof start!=='number'||typeof end!=='number'||!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start>end||Number(label.slice(0,4))!==start||Number(label.slice(-4))!==end)fail(id,'invalid dateLabel');
+      values(id,topics,VALID_TOPIC_CODES,'topicCodes','topicCode');values(id,themes,VALID_THEME_IDS,'themeIds','themeId');values(id,skills,VALID_EXAM_SKILLS,'examSkills','examSkill');topics.forEach(topic=>covered.add(topic));
+      const record=raw.get(id);if(!record)fail(id,'missing raw record');
+      for(const field of ['summary','significance','examConnection'])if(!english(record[field]))fail(id,field+' must be a nonempty English string');
+      if(!dense(record.keyPeople)||!record.keyPeople.length||record.keyPeople.some(person=>!exact(person,['name','role'])||!english(person.name)||!english(person.role)))fail(id,'malformed keyPeople');
+      if(!dense(record.keyTerms)||!record.keyTerms.length||record.keyTerms.some(term=>!exact(term,['term','explanation'])||!english(term.term)||!english(term.explanation)))fail(id,'malformed keyTerms');
+      if(!dense(record.evidence)||record.evidence.length<2||record.evidence.some(item=>!english(item)))fail(id,'malformed evidence');
+      if(!exact(record.source,['id','locator'])||record.source.id!==SOURCE_ID||record.source.locator!==L(topics))fail(id,'malformed source');
+    }
+    if(covered.size!==9||[...VALID_TOPIC_CODES].some(topic=>!covered.has(topic)))fail('(manifest)','topicCodes must cover exactly 8.1 through 8.9');
+    for(const location of LOCATION_NUMBERS){const local=STUDY_MANIFEST.filter(row=>row[1]===location);if(local.length!==3||new Set(local.map(row=>row[2])).size!==3)fail('(location '+location+')','location must contain exactly three records');}
+    validateConnections(ids);validateCards();
+  };
+  validate();
 
-test('binds exactly three ordered records to each exact location and main event',()=>{
-  const api=evaluate();for(const [number,name] of expectedLocations){assert.equal(api.locationName(number),name);const records=api.getByLocation(number);assert.equal(records.length,3);assert.deepEqual(Array.from(records,record=>record.sequence),[1,2,3]);assert.ok(records.every(record=>record.mainEventKey===expectedBindings.get(number)));}
-});
-
-test('provides defensive lookups, comparator tie breakers, cards, and global descriptors',()=>{
-  const sandbox=evaluateSandbox(),api=sandbox.APWH_U8_LOCATION_STUDY,descriptor=Object.getOwnPropertyDescriptor(sandbox,'APWH_U8_LOCATION_STUDY');
-  assert.deepEqual({enumerable:descriptor.enumerable,configurable:descriptor.configurable,writable:descriptor.writable},{enumerable:true,configurable:false,writable:false});
-  assert.equal(api.getById(api.records[0].id),api.records[0]);assert.equal(api.getById('missing'),null);assert.equal(api.locationName('missing'),null);assert.deepEqual(Array.from(api.getByLocation('missing')),[]);
-  const local=api.getByLocation('29');local.pop();assert.equal(api.getByLocation('29').length,3);
-  const rows=[{sequence:2,startYear:1,endYear:1,id:'z'},{sequence:1,startYear:3,endYear:1,id:'z'},{sequence:1,startYear:2,endYear:3,id:'z'},{sequence:1,startYear:2,endYear:2,id:'z'},{sequence:1,startYear:2,endYear:2,id:'a'}];rows.sort(api.compareRecords);assert.deepEqual(rows.map(row=>[row.sequence,row.startYear,row.endYear,row.id]),[[1,2,2,'a'],[1,2,2,'z'],[1,2,3,'z'],[1,3,1,'z'],[2,1,1,'z']]);
-  assert.ok(api.getUnitCard('context'));assert.equal(api.getUnitCard(api.unitCards.context.id),api.unitCards.context);for(const key of ['missing','toString','constructor','__proto__'])assert.equal(api.getUnitCard(key),null);
-  assert.throws(()=>evaluate(source,{APWH_U8_LOCATION_STUDY:{}}),/Invalid Unit 8 global APWH_U8_LOCATION_STUDY: refusing to overwrite existing value/);
-});
-
-test('deep freezes every published object and defensive array',()=>{
-  const api=evaluate(),seen=new Set();const deep=value=>{if(value===null||typeof value!=='object'||seen.has(value))return;seen.add(value);assert.equal(Object.isFrozen(value),true);for(const key of Reflect.ownKeys(value))deep(value[key]);};deep(api);
-  for(const record of api.records){assert.ok(Object.isFrozen(record.topicCodes));assert.ok(Object.isFrozen(record.themeIds));assert.ok(Object.isFrozen(record.examSkills));assert.ok(Object.isFrozen(record.keyPeople));assert.ok(Object.isFrozen(record.keyTerms));assert.ok(Object.isFrozen(record.evidence));assert.ok(Object.isFrozen(record.source));}
-});
-
-test('keeps the exact required Unit 8 boundary ideas in their relevant learner fixtures',()=>{
-  const content=JSON.stringify(expectedContent);for(const boundary of ['nonalignment was not neutrality','Punjab and Bengal were principal Partition regions','Delhi is a representative national anchor','Johannesburg is a representative national anchor','Saigon was renamed Ho Chi Minh City after reunification','interacting strains rather than a single automatic cause'])assert.ok(content.includes(boundary),boundary);
-});
-
-test('rejects location, binding, identity, sequence, count, date, and taxonomy drift',()=>{
-  assertInvalid(replace("'29':'Cold War Division · Germany / Berlin'","'29':'Wrong place'"),/canonical name/);
-  assertInvalid(replace("'29':'world-event-29-8'","'29':'world-event-29-9'"),/main-event binding/);
-  assertInvalid(replace("'apwh-u8-berlin-blockade-airlift-two-germanies','29',2","'apwh-u8-berlin-occupation-ideological-division','29',2"),/duplicate record ID/);
-  assertInvalid(replace("P('apwh-u8-berlin-blockade-airlift-two-germanies'","P('apwh-u8-berlin-occupation-ideological-division'"),/duplicate raw record ID/);
-  assertInvalid(replace("'apwh-u8-berlin-blockade-airlift-two-germanies','29',2","'apwh-u8-berlin-blockade-airlift-two-germanies','29',1"),/duplicate sequence|exactly three records/);
-  assertInvalid(replace("['apwh-u8-berlin-wall-nonintervention-reunification'","['apwh-u8-fourth-record','29',4,'Fourth','1991',1991,1991,'world-event-29-8',['8.9'],['GOV'],['Causation']],\n['apwh-u8-berlin-wall-nonintervention-reunification'"),/expected exactly 30 records|exactly three records/);
-  assertInvalid(replace("'1948–1949',1948,1949","'1948-1949',1948,1949"),/invalid dateLabel/);
-  assertInvalid(replace("'1948–1949',1948,1949","'1948–1950',1948,1949"),/invalid dateLabel/);
-  assertInvalid(replace("['8.2','8.3'],['GOV','TEC']","['8.2','8.2'],['GOV','TEC']"),/duplicate topicCode/);
-  assertInvalid(replace("['8.2','8.3'],['GOV','TEC']","['8.0'],['GOV','TEC']"),/invalid topicCode/);
-  assertInvalid(replace("['GOV','TEC'],['Causation']","['GOV','GOV'],['Causation']"),/duplicate themeId/);
-  assertInvalid(replace("['GOV','TEC'],['Causation']","['WAR'],['Causation']"),/invalid themeId/);
-  assertInvalid(replace("['GOV','TEC'],['Causation']","['GOV','TEC'],['Causation','Causation']"),/duplicate examSkill/);
-  assertInvalid(replace("['GOV','TEC'],['Causation']","['GOV','TEC'],['Recall']"),/invalid examSkill/);
-});
-
-test('rejects incomplete, non-English, and malformed learner content',()=>{
-  assertInvalid(replace("'Allied occupation divided Germany and Berlin into zones as wartime cooperation gave way to competing political and economic systems.'","''"),/summary/);
-  assertInvalid(replace("'Broad Soviet security aims help explain the eastern buffer, while specific choices over German recovery and currency reform produced distinct confrontations.'","'帝国主义'"),/significance/);
-  assertInvalid(replace("'Allied occupation authorities','Administered separate zones and promoted rival postwar orders.'","'','Administered separate zones and promoted rival postwar orders.'"),/keyPeople/);
-  assertInvalid(replace("'occupation zones','Areas of Germany and Berlin administered by the victorious Allied powers after World War II.'","'occupation zones',''"),/keyTerms/);
-  assertInvalid(replace("['Germany and Berlin were each divided among American, British, French, and Soviet authorities.','Western zones moved toward economic coordination and currency reform in 1948.']","['Only one statement.']"),/evidence/);
-  assertInvalid(replace("'Contextualize the Cold War by separating broad Soviet security aims from the specific decisions that triggered the Berlin blockade.'","''"),/examConnection/);
-  assertInvalid(replace("source:{id:'amsco-apwh-u8',locator}","source:{id:'wrong',locator}"),/source/);
-  assertInvalid(replace("source:{id:'amsco-apwh-u8',locator}","source:{id:'amsco-apwh-u8',locator,extra:true}"),/source/);
-  assertInvalid(replace('validate();',"Object.defineProperty(RAW_RECORDS[0].evidence,'0',{enumerable:false});validate();"),/evidence/);
-});
-
-test('rejects null or hostile ordinary-data structures with controlled Unit 8 diagnostics',()=>{
-  for(const [search,replacement,rule] of [
-    ['const LOCATIONS=Object.freeze({','const LOCATIONS=Object.freeze(null); const UNUSED_LOCATIONS=Object.freeze({',/location registry/],
-    ['const BINDINGS=Object.freeze({','const BINDINGS=Object.freeze(null); const UNUSED_BINDINGS=Object.freeze({',/location registry/],
-    ['const RAW_RECORDS=[','const RAW_RECORDS=null; const UNUSED_RAW_RECORDS=[',/raw records/],
-    ['const CONNECTIONS={','const CONNECTIONS=null; const UNUSED_CONNECTIONS={',/connections must contain exactly/],
-  ])assertInvalid(replace(search,replacement),rule);
-  assertInvalid(replace("'29':'Cold War Division · Germany / Berlin'","get '29'(){throw new Error('accessor leaked');}"),/location registry/);
-});
-
-test('rejects unresolved, self, duplicate, and malformed graph links',()=>{
-  const edge="['apwh-u8-berlin-occupation-ideological-division','apwh-u8-berlin-blockade-airlift-two-germanies','Occupation policies and currency reform led to a blockade answered by the airlift.']";
-  assertInvalid(replace(edge,"['missing','apwh-u8-berlin-blockade-airlift-two-germanies','Occupation policies and currency reform led to a blockade answered by the airlift.']"),/unresolved connection/);
-  assertInvalid(replace(edge,"['apwh-u8-berlin-occupation-ideological-division','apwh-u8-berlin-occupation-ideological-division','Occupation policies and currency reform led to a blockade answered by the airlift.']"),/self connection/);
-  assertInvalid(replace('causal:[','causal:['+edge+','),/duplicate causal connection/);
-  assertInvalid(replace(edge,"['apwh-u8-berlin-occupation-ideological-division','apwh-u8-berlin-blockade-airlift-two-germanies']"),/connection row/);
-});
-
-test('validates the graph twice without mutation and never leaks a TypeError',()=>{
-  const api=evaluate(replace('validate();','validate();validate();'));assert.equal(api.records.length,30);
-  const graphMalformed=replace('validate();',"validate();CONNECTIONS.causal[0][0]='missing';validate();");assert.throws(()=>evaluate(graphMalformed),error=>{assert.equal(error.name,'Error');assert.match(error.message,/Invalid Unit 8/);assert.match(error.message,/unresolved connection/);return true;});
-  const malformed=replace('validate();',"STUDY_MANIFEST[0][0]=Symbol('bad');validate();validate();");assert.throws(()=>evaluate(malformed),error=>{assert.equal(error.name,'Error');assert.match(error.message,/Invalid Unit 8/);assert.match(error.message,/invalid stable ID/);return true;});
-});
+  const byRawId=new Map(RAW_RECORDS.map(record=>[record.id,record]));
+  const connectionState=new Map(STUDY_MANIFEST.map(row=>[row[0],{causes:[],effects:[],related:[],notes:{}}]));
+  for(const [source,target,note] of CONNECTIONS.causal){connectionState.get(source).effects.push(target);connectionState.get(source).notes[target]=note;connectionState.get(target).causes.push(source);connectionState.get(target).notes[source]=note;}
+  for(const [source,target,note] of CONNECTIONS.related){connectionState.get(source).related.push(target);connectionState.get(source).notes[target]=note;}
+  const freezeRecord=row=>{const [id,locationNumber,sequence,title,dateLabel,startYear,endYear,mainEventKey,topicCodes,themeIds,examSkills]=row;const raw=byRawId.get(id),connections=connectionState.get(id);return Object.freeze({...raw,locationNumber,sequence,title,dateLabel,startYear,endYear,mainEventKey,topicCodes:Object.freeze([...topicCodes]),themeIds:Object.freeze([...themeIds]),examSkills:Object.freeze([...examSkills]),causeStudyPointIds:Object.freeze([...connections.causes]),effectStudyPointIds:Object.freeze([...connections.effects]),relatedStudyPointIds:Object.freeze([...connections.related]),connectionNotes:Object.freeze({...connections.notes}),keyPeople:Object.freeze(raw.keyPeople.map(person=>Object.freeze({...person}))),keyTerms:Object.freeze(raw.keyTerms.map(term=>Object.freeze({...term}))),evidence:Object.freeze([...raw.evidence]),source:Object.freeze({...raw.source})});};
+  const freezeCard=card=>Object.freeze({...card,examSkills:Object.freeze([...card.examSkills]),takeaways:Object.freeze([...card.takeaways])});
+  const RECORDS=Object.freeze(STUDY_MANIFEST.map(freezeRecord));
+  const UNIT_CARDS=Object.freeze(Object.fromEntries(CARD_KEYS.map(kind=>[kind,freezeCard(UNIT_CARD_MANIFEST[kind])])));
+  const byId=new Map(RECORDS.map(record=>[record.id,record])),cardById=new Map(CARD_KEYS.map(kind=>[UNIT_CARDS[kind].id,UNIT_CARDS[kind]]));
+  function compareRecords(a,b){return a.sequence-b.sequence||a.startYear-b.startYear||a.endYear-b.endYear||String(a.id).localeCompare(String(b.id));}
+  const byLocation=new Map(LOCATION_NUMBERS.map(number=>[number,RECORDS.filter(record=>record.locationNumber===number).sort(compareRecords)]));
+  const api=Object.freeze({unitId:UNIT_ID,unitNumber:UNIT_NUMBER,connectionTimelineMode:'main-event',locationNumbers:LOCATION_NUMBERS,records:RECORDS,unitCards:UNIT_CARDS,compareRecords,getById(id){return byId.get(String(id))||null;},getByLocation(number){return [...(byLocation.get(String(number))||[])];},locationName(number){const key=String(number);return Object.prototype.hasOwnProperty.call(LOCATIONS,key)?LOCATIONS[key]:null;},getUnitCard(key){const value=String(key);return Object.prototype.hasOwnProperty.call(UNIT_CARDS,value)?UNIT_CARDS[value]:cardById.get(value)||null;}});
+  Object.defineProperty(root,'APWH_U8_LOCATION_STUDY',{value:api,enumerable:true,configurable:false,writable:false});
+})(typeof window!=='undefined'?window:globalThis);
