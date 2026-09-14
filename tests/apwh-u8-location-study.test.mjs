@@ -4,7 +4,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const moduleUrl=new URL('../data/apwh-u8-location-study.js',import.meta.url);
+const ledgerUrl=new URL('../docs/data-sources/apwh-u8-location-study-source-ledger.md',import.meta.url);
 const source=existsSync(moduleUrl)?readFileSync(moduleUrl,'utf8'):'';
+const ledger=existsSync(ledgerUrl)?readFileSync(ledgerUrl,'utf8'):'';
 const evaluateSandbox=(code=source,seed={})=>{const sandbox={...seed};sandbox.window=sandbox;vm.runInNewContext(code,sandbox);return sandbox;};
 const evaluate=(code=source,seed={})=>evaluateSandbox(code,seed).APWH_U8_LOCATION_STUDY;
 const expectedLocations=new Map([
@@ -164,9 +166,9 @@ test('rejects null card registries with controlled Unit 8 diagnostics',()=>{
 });
 
 test('rejects unresolved, self, duplicate, and malformed graph links',()=>{
-  const edge="['apwh-u8-berlin-occupation-ideological-division','apwh-u8-berlin-blockade-airlift-two-germanies','Occupation policies and currency reform led to a blockade answered by the airlift.']";
-  assertInvalid(replace(edge,"['missing','apwh-u8-berlin-blockade-airlift-two-germanies','Occupation policies and currency reform led to a blockade answered by the airlift.']"),/unresolved connection/);
-  assertInvalid(replace(edge,"['apwh-u8-berlin-occupation-ideological-division','apwh-u8-berlin-occupation-ideological-division','Occupation policies and currency reform led to a blockade answered by the airlift.']"),/self connection/);
+  const edge="['apwh-u8-berlin-occupation-ideological-division','apwh-u8-berlin-blockade-airlift-two-germanies','Occupation policies and Western currency reform triggered the Soviet blockade; the Allied airlift sustained West Berlin and hardened Germany’s political division.']";
+  assertInvalid(replace(edge,"['missing','apwh-u8-berlin-blockade-airlift-two-germanies','Occupation policies and Western currency reform triggered the Soviet blockade; the Allied airlift sustained West Berlin and hardened Germany’s political division.']"),/unresolved connection/);
+  assertInvalid(replace(edge,"['apwh-u8-berlin-occupation-ideological-division','apwh-u8-berlin-occupation-ideological-division','Occupation policies and Western currency reform triggered the Soviet blockade; the Allied airlift sustained West Berlin and hardened Germany’s political division.']"),/self connection/);
   assertInvalid(replace('causal:[','causal:['+edge+','),/duplicate causal connection/);
   assertInvalid(replace(edge,"['apwh-u8-berlin-occupation-ideological-division','apwh-u8-berlin-blockade-airlift-two-germanies']"),/connection row/);
 });
@@ -175,4 +177,76 @@ test('validates the graph twice without mutation and never leaks a TypeError',()
   const api=evaluate(replace('validate();','validate();validate();'));assert.equal(api.records.length,30);
   const graphMalformed=replace('validate();',"validate();CONNECTIONS.causal[0][0]='missing';validate();");assert.throws(()=>evaluate(graphMalformed),error=>{assert.equal(error.name,'Error');assert.match(error.message,/Invalid Unit 8/);assert.match(error.message,/unresolved connection/);return true;});
   const malformed=replace('validate();',"STUDY_MANIFEST[0][0]=Symbol('bad');validate();validate();");assert.throws(()=>evaluate(malformed),error=>{assert.equal(error.name,'Error');assert.match(error.message,/Invalid Unit 8/);assert.match(error.message,/invalid stable ID/);return true;});
+});
+
+const localCausalPairs=[...expectedLocations.keys()].flatMap(location=>{
+  const local=expectedManifest.filter(record=>record[1]===location).sort((a,b)=>a[2]-b[2]);
+  return [[local[0][0],local[1][0]],[local[1][0],local[2][0]]];
+});
+const crossLocationCausalPairs=[
+  ['apwh-u8-moscow-security-buffer-soviet-bloc','apwh-u8-berlin-occupation-ideological-division'],
+  ['apwh-u8-beijing-civil-war-land-communist-victory','apwh-u8-saigon-partition-containment-escalation'],
+  ['apwh-u8-moscow-gorbachev-reform-soviet-dissolution','apwh-u8-berlin-wall-nonintervention-reunification'],
+  ['apwh-u8-accra-panafricanism-nonaligned-state-building','apwh-u8-johannesburg-pressure-negotiation-democratic-transition'],
+];
+const expectedRelatedPairs=[
+  ['apwh-u8-berlin-blockade-airlift-two-germanies','apwh-u8-havana-missile-crisis-nuclear-limits','Compare escalation and restraint in Berlin and Cuba: both crises tested superpower resolve without direct war, but Berlin used an airlift against a blockade while Cuba used a quarantine and reciprocal nuclear bargaining.'],
+  ['apwh-u8-beijing-civil-war-land-communist-victory','apwh-u8-havana-batista-inequality-revolution','Compare land, nationalism, political coalitions, and relations with the United States: China emerged from a long civil war with early Soviet ties, while Cuba began as a broader anti-Batista coalition and aligned with the Soviet Union after revolutionary conflict with the United States.'],
+  ['apwh-u8-delhi-independence-partition-displacement','apwh-u8-accra-negotiated-independence','Compare mass nationalism, negotiated imperial withdrawal, inherited institutions, and early state building in India and Ghana; both later pursued active nonalignment, which was not neutrality, while India also experienced Partition and vast displacement.'],
+  ['apwh-u8-accra-negotiated-independence','apwh-u8-algiers-fln-war-counterinsurgency','Compare negotiated and armed paths to sovereignty: mass politics and elections gave Ghanaian leaders leverage for phased British withdrawal, while settler colonial resistance to reform pushed the FLN and France into a destructive independence war.'],
+  ['apwh-u8-algiers-settler-colonialism-blocked-reform','apwh-u8-johannesburg-apartheid-legal-order','Compare minority rule, land and citizenship restrictions, resistance, and international pressure while distinguishing Algeria’s war to leave French colonial rule from South Africa’s negotiated transition within an existing state.'],
+];
+
+test('publishes the exact Unit 8 directed causal graph and reciprocal comparison graph',()=>{
+  const api=evaluate(),byId=new Map(api.records.map(record=>[record.id,record]));
+  const actualCausal=api.records.flatMap(record=>record.effectStudyPointIds.map(target=>[record.id,target]));
+  const expectedCausal=[...localCausalPairs,...crossLocationCausalPairs];
+  assert.deepEqual(clone(actualCausal.map(pair=>pair.join('|')).sort()),expectedCausal.map(pair=>pair.join('|')).sort());
+  assert.equal(actualCausal.length,24);assert.equal(new Set(actualCausal.map(pair=>pair.join('|'))).size,24);
+  for(const [sourceId,targetId] of actualCausal){const sourceRecord=byId.get(sourceId),targetRecord=byId.get(targetId);assert.ok(targetRecord);assert.ok(targetRecord.causeStudyPointIds.includes(sourceId));assert.equal(typeof sourceRecord.connectionNotes[targetId],'string');assert.ok(sourceRecord.connectionNotes[targetId].length>40);assert.equal(targetRecord.connectionNotes[sourceId],sourceRecord.connectionNotes[targetId]);assert.doesNotMatch(sourceRecord.connectionNotes[targetId],/^This happened before/i);}
+  for(const [left,right,note] of expectedRelatedPairs){const leftRecord=byId.get(left),rightRecord=byId.get(right);assert.ok(leftRecord.relatedStudyPointIds.includes(right));assert.ok(rightRecord.relatedStudyPointIds.includes(left));assert.equal(leftRecord.connectionNotes[right],note);assert.equal(rightRecord.connectionNotes[left],note);}
+  assert.equal(api.records.reduce((sum,record)=>sum+record.relatedStudyPointIds.length,0),10);
+});
+
+const expectedUnitCards={
+  context:{id:'apwh-u8-context-allied-victory-bipolar-decolonizing-world',kind:'context',role:'Unit 8 Context Card',title:'From Allied Victory to a Bipolar and Decolonizing World',examSkills:['Contextualization','Causation'],summary:'World War II weakened European imperial capacity, elevated the United States and Soviet Union, left armies occupying strategic regions, strengthened anticolonial demands, and created the United Nations alongside a Security Council whose veto structure could freeze conflicts important to either superpower.',prompt:'How did the outcomes of World War II create both superpower rivalry and new opportunities for decolonization?',takeaways:['The United States and Soviet Union emerged with unmatched military and political influence.','European empires survived the war with reduced resources and legitimacy.','Nuclear weapons and the United Nations changed how states pursued conflict and sovereignty.']},
+  synthesis:{id:'apwh-u8-synthesis-bipolar-competition-globalized-order',kind:'synthesis',role:'Unit 8 Synthesis Card',title:'From Bipolar Competition to a Globalized Order',examSkills:['Causation','CCOT'],summary:'Soviet collapse ended the second superpower system without ending proxy-war legacies, contested borders, uneven development, or demands for political autonomy. Former socialist states, newly independent states, and market-reforming communist governments entered a more integrated system of trade, finance, production, communication, and migration under unequal conditions.',prompt:'Which Cold War and decolonization outcomes shaped who benefited from globalization after 1991?',takeaways:['The Soviet bloc ended, but borders, alliances, military institutions, and conflict legacies persisted.','New states entered global markets with unequal infrastructure, debt, and commodity dependence.','Market reform changed socialist economies without producing identical political systems.']},
+};
+
+test('publishes the exact immutable Unit 8 context and synthesis cards',()=>{
+  const api=evaluate();assert.deepEqual(clone(api.unitCards),expectedUnitCards);assert.equal(Object.isFrozen(api.unitCards),true);
+  for(const [kind,card] of Object.entries(expectedUnitCards)){assert.equal(api.getUnitCard(kind),api.unitCards[kind]);assert.equal(api.getUnitCard(card.id),api.unitCards[kind]);assert.equal(Object.isFrozen(api.unitCards[kind]),true);assert.equal(Object.isFrozen(api.unitCards[kind].examSkills),true);assert.equal(Object.isFrozen(api.unitCards[kind].takeaways),true);assert.equal(Object.hasOwn(api.unitCards[kind],'skills'),false);}
+});
+
+test('rejects graph or card drift before publication',()=>{
+  assertInvalid(replace("Occupation policies and Western currency reform triggered the Soviet blockade; the Allied airlift sustained West Berlin and hardened Germany’s political division.","This happened before the next event and shaped its chronology."),/causal connection does not match|causal mechanism/);
+  assertInvalid(replace("related:[","related:[[\'apwh-u8-berlin-occupation-ideological-division\',\'apwh-u8-berlin-blockade-airlift-two-germanies\',\'Cross category.\'],"),/cross-category connection/);
+  assertInvalid(replace("kind:'context'","kind:'synthesis'"),/card kind/);
+  assertInvalid(replace("role:'Unit 8 Context Card'","role:''"),/card role|malformed card/);
+  assertInvalid(replace("examSkills:['Contextualization','Causation']","examSkills:['Causation','Causation']"),/card skills/);
+  assertInvalid(replace("synthesis:{id:'apwh-u8-synthesis-bipolar-competition-globalized-order'","synthesis:{id:'apwh-u8-context-allied-victory-bipolar-decolonizing-world'"),/duplicate card ID/);
+  assertInvalid(replace("title:'From Allied Victory to a Bipolar and Decolonizing World'","title:'Arbitrary English Title'"),/card contract/);
+  assertInvalid(replace('validate();',"Object.defineProperty(UNIT_CARD_MANIFEST.context.takeaways,'0',{enumerable:false});validate();"),/card takeaways/);
+});
+
+test('keeps the ordered Unit 8 source ledger exact and locator-specific',()=>{
+  const intro='# APWH Unit 8 Location Study Source Ledger\n\nThe learner records use edition-neutral locators in AMSCO AP World History Unit 8 and the College Board framework effective Fall 2026. Map pins are representative anchors; a named city does not imply that every national or regional process occurred only there. Causal and comparison notes distinguish mechanisms from chronology and preserve the agency and differences of each case.\n\n';
+  assert.ok(ledger.startsWith(intro));const lines=ledger.trimEnd().split('\n');assert.equal(lines.length,36);assert.equal(lines[4],'| Stable ID | AP topic assignment | Main event | Source locator | Claims covered |');assert.equal(lines[5],'| --- | --- | --- | --- | --- |');
+  const rows=lines.slice(6).map(row=>row.split('|').slice(1,-1).map(cell=>cell.trim()));assert.equal(rows.length,30);assert.deepEqual(rows.map(row=>row[0]),expectedManifest.map(record=>record[0]));assert.deepEqual(rows.map(row=>row[1]),expectedManifest.map(record=>record[8].join(', ')));assert.deepEqual(rows.map(row=>row[2]),expectedManifest.map(record=>record[7]));assert.deepEqual(rows.map(row=>row[3]),expectedManifest.map(record=>L(record[8])));
+  for(const cells of rows){assert.equal(cells.length,5);assert.match(cells[1],/^8\.[1-9](, 8\.[1-9])*$/);assert.match(cells[3],/^AMSCO AP World History, Unit 8, Topics? 8\.[1-9]/);assert.doesNotMatch(cells[3],/(page|p\.\s*\d|whole book|chapter)/i);assert.ok(cells[4].length>=60);}
+});
+
+test('keeps representative-anchor and cross-case caveats in the Unit 8 ledger',()=>{
+  const claimsById=new Map(ledger.trimEnd().split('\n').slice(6).map(row=>{const cells=row.split('|').slice(1,-1).map(cell=>cell.trim());return [cells[0],cells[4]];}));
+  assert.match(claimsById.get('apwh-u8-delhi-independence-partition-displacement'),/Punjab and Bengal/);assert.match(claimsById.get('apwh-u8-delhi-independence-partition-displacement'),/Delhi is a representative national anchor/);
+  assert.match(claimsById.get('apwh-u8-saigon-withdrawal-reunification-war-costs'),/Saigon was renamed Ho Chi Minh City/);
+  assert.match(claimsById.get('apwh-u8-algiers-settler-colonialism-blocked-reform'),/Algiers is a representative anchor/);
+  assert.match(claimsById.get('apwh-u8-johannesburg-apartheid-legal-order'),/Johannesburg is a representative national anchor/);
+  assert.match(claimsById.get('apwh-u8-accra-negotiated-independence'),/negotiated and armed paths/);assert.match(claimsById.get('apwh-u8-accra-negotiated-independence'),/project-authored comparison/);
+  assert.match(claimsById.get('apwh-u8-berlin-blockade-airlift-two-germanies'),/comparison with Cuba is project-authored analysis/);assert.match(claimsById.get('apwh-u8-beijing-civil-war-land-communist-victory'),/China-Cuba comparison is project-authored analysis/);assert.match(claimsById.get('apwh-u8-delhi-independence-partition-displacement'),/India-Ghana comparison is project-authored analysis/);assert.match(claimsById.get('apwh-u8-johannesburg-pressure-negotiation-democratic-transition'),/Algeria-South Africa comparison is project-authored analysis/);
+});
+
+test('rejects source-ledger structural, vague-locator, page-number, and trailing-content regressions',()=>{
+  const valid=ledger.trimEnd(),requiredCaveats=['Punjab and Bengal','Delhi is a representative national anchor','Saigon was renamed Ho Chi Minh City','Algiers is a representative anchor','Johannesburg is a representative national anchor','comparison with Cuba is project-authored analysis','China-Cuba comparison is project-authored analysis','India-Ghana comparison is project-authored analysis','project-authored comparison distinguishes negotiated and armed paths','Algeria-South Africa comparison is project-authored analysis'],isValid=candidate=>{const lines=candidate.split('\n'),rows=lines.slice(6);return lines.length===36&&lines[4]==='| Stable ID | AP topic assignment | Main event | Source locator | Claims covered |'&&lines[5]==='| --- | --- | --- | --- | --- |'&&rows.length===30&&requiredCaveats.every(caveat=>candidate.includes(caveat))&&rows.every((row,index)=>{if(!row.endsWith('|'))return false;const cells=row.split('|').slice(1,-1).map(cell=>cell.trim());return cells.length===5&&cells[0]===expectedManifest[index][0]&&cells[1]===expectedManifest[index][8].join(', ')&&cells[2]===expectedManifest[index][7]&&cells[3]===L(expectedManifest[index][8])&&cells[4].length>=60;});};
+  const firstRow=valid.split('\n')[6],secondId=expectedManifest[1][0];assert.equal(isValid(valid),true);for(const candidate of [valid.replace('| Main event |','| Event |'),valid.replace('AMSCO AP World History, Unit 8, Topics','AMSCO'),valid.replace('AMSCO AP World History, Unit 8, Topics','AMSCO AP World History, Unit 8, Topics p. 12'),valid.replace(`${firstRow}\n`,''),valid.replace(secondId,expectedManifest[0][0]),valid.replace('world-event-29-8','world-event-29-9'),valid.replace('| Claims covered |','| Extra | Claims covered |'),valid.replace('Punjab and Bengal','Punjab plus Bengal'),`${valid}\ntrailing garbage`,valid.replace(/\|$/,'|junk')]){assert.notEqual(candidate,valid);assert.equal(isValid(candidate),false);}
 });
