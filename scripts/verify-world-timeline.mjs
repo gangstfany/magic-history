@@ -4013,6 +4013,54 @@ async function assertUnit7ConnectionJump(page, frame, surface, jump) {
   await sourceView.locator(`[data-location-study-back="${source.number}"]`).click();
 }
 
+async function assertUnit7DeferredDisclosureConnectionRegression(page, frame, surface) {
+  const sourceId = 'apwh-u7-cairo-colonial-mobilization-total-war';
+  const targetId = 'apwh-u7-verdun-total-war-mobilization';
+  const source = unit7FixtureByStudyId(sourceId);
+  const target = unit7FixtureByStudyId(targetId);
+  const label = `${surface} Unit 7 deferred Connections disclosure regression`;
+  const canonical = surface === 'standalone' ? page : frame;
+  const opened = await openUnit7Study(page, frame, surface, source, label);
+  await opened.view.locator(`[data-study-event="${sourceId}"]`).click();
+
+  await page.evaluate(({ surface, sourceId, targetId }) => {
+    const root = surface === 'standalone' ? document.querySelector('#eventPanel') : document.querySelector('#home-events');
+    const detail = root?.querySelector(`[data-study-detail="${CSS.escape(sourceId)}"]`);
+    const disclosure = detail?.querySelector('details[data-study-disclosure="connections"]');
+    const connection = disclosure?.querySelector(
+      `[data-study-connection="${CSS.escape(targetId)}"][data-study-connection-from="${CSS.escape(sourceId)}"]`);
+    if (!disclosure || disclosure.open || !connection) {
+      throw new Error('deferred-disclosure fixture is not in a closed, connected source state');
+    }
+    disclosure.open = true;
+    connection.click();
+  }, { surface, sourceId, targetId });
+
+  const targetView = opened.panel.locator(
+    `[data-location-study-view="${target.number}"][data-location-study-unit="u7"]`);
+  await targetView.waitFor({ state: 'visible' });
+  await assertUnit7StudyState(canonical, target, targetId, 1, `${label} target`);
+  await targetView.locator('[data-study-connection-back]').click();
+  const sourceView = opened.panel.locator(
+    `[data-location-study-view="${source.number}"][data-location-study-unit="u7"]`);
+  await sourceView.waitFor({ state: 'visible' });
+  const sourceDisclosure = sourceView.locator(
+    `[data-study-detail="${sourceId}"] details[data-study-disclosure="connections"]`);
+  await page.waitForFunction(({ surface, sourceId, targetId }) => {
+    const root = surface === 'standalone' ? document.querySelector('#eventPanel') : document.querySelector('#home-events');
+    const detail = root?.querySelector(`[data-study-detail="${CSS.escape(sourceId)}"]`);
+    const disclosure = detail?.querySelector('details[data-study-disclosure="connections"]');
+    return disclosure?.open === true
+      && document.activeElement?.getAttribute('data-study-connection') === targetId;
+  }, { surface, sourceId, targetId });
+  assert.equal(await sourceDisclosure.getAttribute('open'), '',
+    `${label} Back must retain the disclosure opened in the same task as connection activation`);
+  assert.equal(await sourceView.locator(`[data-study-connection="${targetId}"]`)
+    .evaluate(node => document.activeElement === node), true,
+  `${label} Back must focus the same-task connection invoker`);
+  await assertUnit7StudyState(canonical, source, sourceId, 0, `${label} Back`);
+}
+
 async function assertUnit7Cleanup(page, frame, surface, nextUnit) {
   const source = UNIT_7_STUDY_VIEWS[1];
   const label = `${surface} Unit 7 to ${nextUnit} cleanup`;
@@ -4270,6 +4318,7 @@ async function verifyStandaloneUnit7StudyContract(page) {
     unit7StandaloneParitySnapshots.set(fixture.number, await unit5StudySnapshot(opened.view));
     await assertUnit7OuterBack(page, null, 'standalone', opened, fixture, label);
   }
+  await assertUnit7DeferredDisclosureConnectionRegression(page, null, 'standalone');
   for (const jump of UNIT_7_CONNECTION_JUMPS) await assertUnit7ConnectionJump(page, null, 'standalone', jump);
   await verifyUnit7DepthTwoNavigation(page, null, 'standalone');
   await verifyUnit7KeyboardAndResponsive(page, null, 'standalone');
@@ -4287,6 +4336,7 @@ async function verifyHomepageUnit7StudyContract(page, frame) {
       `${label} must preserve standalone/homepage content and one-open parity`);
     await assertUnit7OuterBack(page, frame, 'homepage', opened, fixture, label);
   }
+  await assertUnit7DeferredDisclosureConnectionRegression(page, frame, 'homepage');
   for (const jump of UNIT_7_CONNECTION_JUMPS) await assertUnit7ConnectionJump(page, frame, 'homepage', jump);
   await verifyUnit7DepthTwoNavigation(page, frame, 'homepage');
   await verifyUnit7KeyboardAndResponsive(page, frame, 'homepage');
