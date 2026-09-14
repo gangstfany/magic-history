@@ -158,6 +158,11 @@ test('rejects null or hostile ordinary-data structures with controlled Unit 8 di
   assertInvalid(replace("'29':'Cold War Division · Germany / Berlin'","get '29'(){throw new Error('accessor leaked');}"),/location registry/);
 });
 
+test('rejects null card registries with controlled Unit 8 diagnostics',()=>{
+  assertInvalid(replace("const CARD_KEYS=['context','synthesis'];","const CARD_KEYS=null; const UNUSED_CARD_KEYS=['context','synthesis'];"),/unit cards must contain exactly/);
+  assertInvalid(replace('const UNIT_CARD_MANIFEST={','const UNIT_CARD_MANIFEST=null; const UNUSED_UNIT_CARD_MANIFEST={'),/unit cards must contain exactly/);
+});
+
 test('rejects unresolved, self, duplicate, and malformed graph links',()=>{
   const edge="['apwh-u8-berlin-occupation-ideological-division','apwh-u8-berlin-blockade-airlift-two-germanies','Occupation policies and currency reform led to a blockade answered by the airlift.']";
   assertInvalid(replace(edge,"['missing','apwh-u8-berlin-blockade-airlift-two-germanies','Occupation policies and currency reform led to a blockade answered by the airlift.']"),/unresolved connection/);
