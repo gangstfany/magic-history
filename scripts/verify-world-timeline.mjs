@@ -4049,7 +4049,15 @@ async function assertUnit7StalingradOrdinaryOnly(page, frame, surface) {
     }, { city: UNIT_7_STALINGRAD.city });
   }
   const panel = surface === 'standalone' ? page.locator('#eventPanel') : page.locator('#home-events');
-  await expectVisible(panel.locator('.event-list > .event-card'), `${label} must show ordinary detail`);
+  const ordinaryCards = panel.locator('.event-list > .event-card');
+  await expectVisible(ordinaryCards, `${label} must show ordinary detail`);
+  assert.equal(await ordinaryCards.count(), 1, `${label} must expose exactly one ordinary event card`);
+  assert.equal((await panel.locator('.event-head .city-name').textContent()).trim(), UNIT_7_STALINGRAD.city,
+    `${label} must retain the exact Stalingrad city heading`);
+  assert.equal((await ordinaryCards.locator('.ec-yr').textContent()).trim(), UNIT_7_STALINGRAD.date,
+    `${label} must retain the exact Stalingrad date`);
+  assert.equal((await ordinaryCards.locator('.ec-trig .hl').first().textContent()).trim(), UNIT_7_STALINGRAD.title,
+    `${label} must retain the exact Stalingrad event title`);
   assert.equal(await panel.locator('[data-location-study-open]').count(), 0, `${label} must not expose a study entry`);
   assert.equal(await panel.locator('[data-location-study-view]').count(), 0, `${label} must not expose a study view`);
   await assertUnit7TimelineState(canonical, UNIT_7_STALINGRAD, label);
@@ -4161,9 +4169,13 @@ async function verifyUnit7DepthTwoNavigation(page, frame, surface) {
   await targetView.locator('[data-study-connection-back]').click();
   middleView = opened.panel.locator(`[data-location-study-view="${middle.number}"][data-location-study-unit="u7"]`);
   await assertUnit7StudyState(canonical, middle, middleId, 1, `${label} second-hop Back`);
+  assert.equal(await middleView.locator(`[data-study-connection="${targetId}"]`).evaluate(node => document.activeElement === node), true,
+    `${label} second-hop Back must restore focus to the invoking connection`);
   await middleView.locator('[data-study-connection-back]').click();
   const sourceView = opened.panel.locator(`[data-location-study-view="${source.number}"][data-location-study-unit="u7"]`);
   await assertUnit7StudyState(canonical, source, sourceId, 0, `${label} first-hop Back`);
+  assert.equal(await sourceView.locator(`[data-study-connection="${middleId}"]`).evaluate(node => document.activeElement === node), true,
+    `${label} first-hop Back must restore focus to the invoking connection`);
   assert.deepEqual(await unit5FilterState(canonical), rootFilters, `${label} connection Back must restore source filters`);
   if (surface === 'homepage') await assertHomepageFilterControls(page, rootFilters, `${label} restored host controls`);
   await sourceView.locator(`[data-location-study-back="${source.number}"]`).click();
@@ -4189,16 +4201,40 @@ async function verifyUnit7KeyboardAndResponsive(page, frame, surface) {
   const detail = view.locator('[data-study-detail]');
   const disclosure = detail.locator('details[data-study-disclosure="connections"]');
   if ((await disclosure.getAttribute('open')) === null) await disclosure.locator('summary').click();
-  const connection = disclosure.locator('[data-study-connection]').first();
+  const connection = disclosure.locator(
+    '[data-study-connection="apwh-u7-verdun-total-war-mobilization"]');
+  const connectionId = await connection.getAttribute('data-study-connection');
+  assert.ok(connectionId, `${label} keyboard connection must expose a stable target ID`);
   await connection.focus(); await connection.press('Enter');
   const targetView = opened.panel.locator('[data-location-study-view][data-location-study-unit="u7"]');
   await expectVisible(targetView, `${label} keyboard Enter must activate a connection`);
+  await page.waitForFunction(() => document.activeElement?.classList.contains('location-study-title'));
+  assert.equal(await targetView.locator('.location-study-title').evaluate(node => document.activeElement === node), true,
+    `${label} keyboard connection activation must focus the target heading`);
   const connectionBack = targetView.locator('[data-study-connection-back]');
   await connectionBack.focus(); await connectionBack.press('Enter');
   const restored = opened.panel.locator(`[data-location-study-view="${fixture.number}"][data-location-study-unit="u7"]`);
+  await expectVisible(restored, `${label} keyboard connection Back must restore the source study`);
+  try {
+    await page.waitForFunction(id => document.activeElement?.getAttribute('data-study-connection') === id,
+      connectionId, { timeout: 5_000 });
+  } catch (error) {
+    const focus = await page.evaluate(() => ({
+      active: document.activeElement?.outerHTML.slice(0, 320) || null,
+      sourceConnections: [...document.querySelectorAll('#eventPanel [data-study-connection]')]
+        .map(node => node.getAttribute('data-study-connection')),
+    }));
+    throw new Error(`${label} keyboard connection Back focus diagnostic: ${JSON.stringify(focus)}`, { cause: error });
+  }
+  assert.equal(await restored.locator(`[data-study-connection="${connectionId}"]`)
+    .evaluate(node => document.activeElement === node), true,
+  `${label} keyboard connection Back must restore invoking connection focus`);
   const back = restored.locator(`[data-location-study-back="${fixture.number}"]`);
   await back.focus(); await back.press('Enter');
   await expectVisible(opened.entry, `${label} keyboard Enter must activate outer Back`);
+  await page.waitForFunction(number => document.activeElement?.getAttribute('data-location-study-open') === number, fixture.number);
+  assert.equal(await opened.entry.evaluate(node => document.activeElement === node), true,
+    `${label} keyboard outer Back must restore original study-entry focus`);
   const originalViewport = page.viewportSize();
   await page.setViewportSize({ width: 360, height: 700 });
   await normalizeUnit7FilterSurface(page, frame, surface, `${label} narrow Timeline`);
@@ -4214,6 +4250,14 @@ async function verifyUnit7KeyboardAndResponsive(page, frame, surface) {
     documentScroll: document.documentElement.scrollWidth, documentClient: document.documentElement.clientWidth,
   }));
   assert.ok(geometry.documentScroll <= geometry.documentClient + 1, `${label} narrow view must not create document overflow: ${JSON.stringify(geometry)}`);
+  if (surface === 'homepage') {
+    const hostGeometry = await page.evaluate(() => ({
+      documentScroll: document.documentElement.scrollWidth,
+      documentClient: document.documentElement.clientWidth,
+    }));
+    assert.ok(hostGeometry.documentScroll <= hostGeometry.documentClient + 1,
+      `${label} narrow mirrored homepage must not create document overflow: ${JSON.stringify(hostGeometry)}`);
+  }
   await narrow.view.locator(`[data-location-study-back="${fixture.number}"]`).click();
   if (originalViewport) await page.setViewportSize(originalViewport);
 }
