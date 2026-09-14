@@ -131,6 +131,32 @@ P('apwh-u8-johannesburg-pressure-negotiation-democratic-transition','Labor and c
     Object.freeze(['apwh-u8-accra-negotiated-independence','apwh-u8-algiers-fln-war-counterinsurgency']),
     Object.freeze(['apwh-u8-algiers-settler-colonialism-blocked-reform','apwh-u8-johannesburg-apartheid-legal-order']),
   ]);
+  const CANONICAL_CAUSAL_NOTES=Object.freeze([
+    'Occupation policies and Western currency reform triggered the Soviet blockade; the Allied airlift sustained West Berlin and hardened Germany’s political division.',
+    'The two German states institutionalized division, while later Soviet nonintervention allowed East German protest and German diplomacy to open the Wall and negotiate reunification.',
+    'Soviet-bloc security commitments institutionalized military competition; arms spending, intervention in Afghanistan, and stagnation accumulated pressures that détente did not remove.',
+    'Economic stagnation and military costs constrained Soviet choices, while Gorbachev used glasnost and perestroika to reform the system and reduced reliance on coercion.',
+    'Communist victory gave party leaders state capacity and rural authority that they chose to use for communes and production targets during the Great Leap Forward.',
+    'The Great Leap’s failure weakened Mao’s position, helping motivate his later choice to mobilize Red Guards against rivals and institutions during the Cultural Revolution.',
+    'French defeat produced the Geneva partition; rival Vietnamese governments pursued competing goals as United States containment choices expanded military support and intervention.',
+    'Vietnamese resistance, mounting war costs, and antiwar pressure altered United States policy, while Vietnamese forces continued fighting through withdrawal and reunification.',
+    'Independence gave Indian leaders sovereign diplomatic authority, which Nehru used to pursue active nonalignment rather than neutrality or formal membership in either bloc.',
+    'The pursuit of autonomy limited pressure to adopt either bloc’s model, helping Indian leaders maintain Five-Year Plans and a mixed economy while making their own policy choices.',
+    'Settler political power blocked meaningful reform, narrowing legal routes and helping FLN organizers build support for armed struggle while French authorities chose counterinsurgency.',
+    'FLN resistance and the political and military costs of counterinsurgency drove negotiations toward the Evian settlement, independence, settler exodus, and new-state formation.',
+    'Strikes, mass organization, and electoral victories demonstrated nationalist legitimacy and pressured Britain, giving Ghanaian leaders leverage for a negotiated transfer of power.',
+    'Sovereignty gave Nkrumah’s government authority to pursue Pan-African diplomacy, nonalignment, and infrastructure programs, while Ghanaian choices shaped new state-building tensions.',
+    'Batista’s repression and inequality broadened revolutionary opposition; after victory, reforms and the failed Bay of Pigs invasion intensified Cuban security fears and Soviet alignment.',
+    'The failed invasion heightened Cuban insecurity and Soviet ties, enabling missile deployment, while leaders chose quarantine and bargaining to limit nuclear escalation.',
+    'Oil nationalization triggered a British boycott and Anglo-American intervention; domestic allies of the coup helped remove Mosaddegh and strengthen the shah’s alignment.',
+    'Coup-backed monarchical power and Western support enabled the White Revolution and repression, which mobilized diverse opponents without making the 1979 outcome automatic.',
+    'Apartheid law created enforceable racial restrictions that ANC, labor, and civic organizers challenged, while state repression pushed resistance toward changing strategies.',
+    'Sustained internal mobilization combined with sanctions and economic pressure to raise apartheid’s costs, while government and movement leaders chose negotiation and democratic transition.',
+    'Soviet security policy sought a controlled Eastern European buffer and shaped occupation policy in Germany, while Allied authorities made distinct choices that divided Berlin and Germany.',
+    'Communist victory in China intensified United States containment and material support in Southeast Asia, while Vietnamese actors and later policy choices still determined escalation around Saigon.',
+    'Gorbachev’s reforms and withdrawal of coercive support from Eastern European governments enabled a political opening, while East German protesters and German leaders drove the Wall’s fall and reunification.',
+    'Pan-African institutions and diplomacy from independent states increased apartheid South Africa’s international isolation, while South African civic action and negotiators determined the transition’s course.',
+  ]);
   const CARD_KEYS=['context','synthesis'];
   const UNIT_CARD_MANIFEST={
     context:{id:'apwh-u8-context-allied-victory-bipolar-decolonizing-world',kind:'context',role:'Unit 8 Context Card',title:'From Allied Victory to a Bipolar and Decolonizing World',examSkills:['Contextualization','Causation'],summary:'World War II weakened European imperial capacity, elevated the United States and Soviet Union, left armies occupying strategic regions, strengthened anticolonial demands, and created the United Nations alongside a Security Council whose veto structure could freeze conflicts important to either superpower.',prompt:'How did the outcomes of World War II create both superpower rivalry and new opportunities for decolonization?',takeaways:['The United States and Soviet Union emerged with unmatched military and political influence.','European empires survived the war with reduced resources and legitimacy.','Nuclear weapons and the United Nations changed how states pursued conflict and sovereignty.']},
@@ -168,8 +194,8 @@ P('apwh-u8-johannesburg-pressure-negotiation-democratic-transition','Labor and c
     const local=LOCATION_NUMBERS.flatMap(location=>{const records=STUDY_MANIFEST.filter(row=>row[1]===location).sort((a,b)=>a[2]-b[2]);return [[records[0][0],records[1][0]],[records[1][0],records[2][0]]];});
     const expectedCausal=[...local,...EXPECTED_CROSS_CAUSAL_PAIRS],expectedCausalKeys=new Set(expectedCausal.map(([source,target])=>source+'\u0000'+target));
     if(causal.size!==expectedCausalKeys.size||[...expectedCausalKeys].some(key=>!causal.has(key)))fail('(connections)','causal connection does not match the Unit 8 graph contract');
-    const mechanism=/\b(?:triggered|enabled|produced|created|gave|help(?:ed|ing)?|motivated|drove|altered|shaped|allowed|pressured|intensified|heightened|raised|mobilized|institutionalized|constrained|combined|sustained|narrowed|pushed|led|contributed|increased)\b/i;
-    for(const [key,note] of causal){if(note.length<40||/^(?:This|It|That) (?:happened|occurred|came) before/i.test(note)||!mechanism.test(note))fail(key.split('\u0000')[0],'causal mechanism note is required');}
+    if(!Array.isArray(CANONICAL_CAUSAL_NOTES)||CANONICAL_CAUSAL_NOTES.length!==expectedCausal.length)fail('(connections)','canonical causal note contract is invalid');
+    for(let index=0;index<expectedCausal.length;index+=1){const [source,target]=expectedCausal[index],note=causal.get(source+'\u0000'+target);if(note!==CANONICAL_CAUSAL_NOTES[index])fail(source,'causal connection does not match the Unit 8 graph contract');}
     const expectedRelatedKeys=new Set(EXPECTED_RELATED_PAIRS.flatMap(([left,right])=>[left+'\u0000'+right,right+'\u0000'+left]));
     if(related.size!==expectedRelatedKeys.size||[...expectedRelatedKeys].some(key=>!related.has(key)))fail('(connections)','related connection does not match the Unit 8 graph contract');
     for(const [key,note] of related){const [source,target]=key.split('\u0000'),reciprocal=related.get(target+'\u0000'+source);if(reciprocal===undefined||reciprocal!==note)fail(source,'nonreciprocal related connection');}

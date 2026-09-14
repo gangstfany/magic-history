@@ -15,6 +15,41 @@ const expectedLocations=new Map([
 const expectedBindings=new Map([
   ['29','world-event-29-8'],['40','world-event-40-3'],['5','world-event-5-5'],['16','world-event-16-0'],['6','world-event-6-3'],['79','world-event-79-1'],['81','world-event-81-0'],['55','world-event-55-2'],['21','world-event-21-1'],['82','world-event-82-0'],
 ]);
+const ledgerIntroduction='# APWH Unit 8 Location Study Source Ledger\n\nThe learner records use edition-neutral locators in AMSCO AP World History Unit 8 and the College Board framework effective Fall 2026. Map pins are representative anchors; a named city does not imply that every national or regional process occurred only there. Causal and comparison notes distinguish mechanisms from chronology and preserve the agency and differences of each case.';
+const ledgerHeader='| Stable ID | AP topic assignment | Main event | Source locator | Claims covered |';
+const ledgerSeparator='| --- | --- | --- | --- | --- |';
+const expectedLedgerRows=[
+  ["apwh-u8-berlin-occupation-ideological-division","8.1, 8.2","world-event-29-8","AMSCO AP World History, Unit 8, Topics 8.1 and 8.2","Allied occupation zones, Western coordination and currency reform, Soviet security aims, and the policy choices that produced an ideologically divided Germany and Berlin."],
+  ["apwh-u8-berlin-blockade-airlift-two-germanies","8.2, 8.3","world-event-29-8","AMSCO AP World History, Unit 8, Topics 8.2 and 8.3","The Soviet blockade, Allied airlift, and creation of two German states demonstrate escalation and restraint; comparison with Cuba is project-authored analysis, not chronology alone."],
+  ["apwh-u8-berlin-wall-nonintervention-reunification","8.2, 8.8, 8.9","world-event-29-8","AMSCO AP World History, Unit 8, Topics 8.2, 8.8, and 8.9","The Berlin Wall restricted emigration, while Soviet nonintervention, East German protest, and German diplomacy enabled the Wall’s opening and negotiated reunification."],
+  ["apwh-u8-moscow-security-buffer-soviet-bloc","8.1, 8.2","world-event-40-3","AMSCO AP World History, Unit 8, Topics 8.1 and 8.2","Soviet security fears, communist governments in Eastern Europe, and the Warsaw Pact created a strategic buffer while extending Soviet political and military power."],
+  ["apwh-u8-moscow-detente-arms-afghanistan-strain","8.2, 8.3, 8.8","world-event-40-3","AMSCO AP World History, Unit 8, Topics 8.2, 8.3, and 8.8","SALT I, arms costs, intervention in Afghanistan, stagnation, and political rigidity are interacting strains rather than one automatic cause of Soviet collapse."],
+  ["apwh-u8-moscow-gorbachev-reform-soviet-dissolution","8.8, 8.9","world-event-40-3","AMSCO AP World History, Unit 8, Topics 8.8 and 8.9","Glasnost, perestroika, nationalism, economic pressure, and withdrawal of coercive support interacted with local agency in Eastern Europe before Soviet dissolution."],
+  ["apwh-u8-beijing-civil-war-land-communist-victory","8.4","world-event-5-5","AMSCO AP World History, Unit 8, Topic 8.4","Land reform, rural organization, nationalism, military choices, and Nationalist weakness explain communist victory without treating later Maoist campaigns as identical causes. The China-Cuba comparison is project-authored analysis."],
+  ["apwh-u8-beijing-great-leap-state-mobilization-famine","8.4","world-event-5-5","AMSCO AP World History, Unit 8, Topic 8.4","Communes, coercive state mobilization, production targets, distorted reporting, and procurement contributed to famine during the Great Leap Forward."],
+  ["apwh-u8-beijing-cultural-revolution-social-upheaval","8.4, 8.7, 8.9","world-event-5-5","AMSCO AP World History, Unit 8, Topics 8.4, 8.7, and 8.9","Mao and Red Guards attacked political and cultural targets, disrupting schools and institutions; the campaign differed in purpose and method from the Great Leap."],
+  ["apwh-u8-saigon-french-return-anticolonial-war","8.5","world-event-16-0","AMSCO AP World History, Unit 8, Topic 8.5","French efforts to restore empire and Viet Minh resistance made the First Indochina War an anticolonial struggle, even as outside Cold War support increased."],
+  ["apwh-u8-saigon-partition-containment-escalation","8.2, 8.3","world-event-16-0","AMSCO AP World History, Unit 8, Topics 8.2 and 8.3","Geneva partition, rival Vietnamese governments, containment, and United States escalation shaped a proxy war; Saigon represents a conflict fought across Vietnam."],
+  ["apwh-u8-saigon-withdrawal-reunification-war-costs","8.3, 8.9","world-event-16-0","AMSCO AP World History, Unit 8, Topics 8.3 and 8.9","Vietnamese resistance, war costs, antiwar pressure, withdrawal, and reunification changed regional and United States politics; Saigon was renamed Ho Chi Minh City after reunification."],
+  ["apwh-u8-delhi-independence-partition-displacement","8.5, 8.6","world-event-6-3","AMSCO AP World History, Unit 8, Topics 8.5 and 8.6","Punjab and Bengal were principal Partition regions, where migration and violence followed new borders; Delhi is a representative national anchor, not the sole site of Partition. The India-Ghana comparison is project-authored analysis."],
+  ["apwh-u8-delhi-nonalignment-foreign-policy-autonomy","8.2, 8.6","world-event-6-3","AMSCO AP World History, Unit 8, Topics 8.2 and 8.6","Bandung and Belgrade illustrate active foreign-policy autonomy: nonalignment was not neutrality, and India cooperated selectively without joining either formal bloc."],
+  ["apwh-u8-delhi-five-year-plans-mixed-economy","8.6, 8.9","world-event-6-3","AMSCO AP World History, Unit 8, Topics 8.6 and 8.9","Indian Five-Year Plans combined public investment and private enterprise; Delhi represents national policy whose implementation and outcomes varied across India."],
+  ["apwh-u8-algiers-settler-colonialism-blocked-reform","8.5","world-event-79-1","AMSCO AP World History, Unit 8, Topic 8.5","Settler control over land, citizenship, and representation blocked meaningful reform and narrowed legal routes; Algiers is a representative anchor for colonial Algeria."],
+  ["apwh-u8-algiers-fln-war-counterinsurgency","8.5, 8.7","world-event-79-1","AMSCO AP World History, Unit 8, Topics 8.5 and 8.7","FLN organization, guerrilla war, French counterinsurgency, and torture are presented factually as choices and mechanisms, not as ethnic inevitability."],
+  ["apwh-u8-algiers-independence-exodus-new-state","8.6, 8.9","world-event-79-1","AMSCO AP World History, Unit 8, Topics 8.6 and 8.9","The Evian settlement, independence, settler exodus, wartime losses, and FLN authority shaped postcolonial state formation across Algeria, not only Algiers."],
+  ["apwh-u8-accra-mass-nationalism-colonial-pressure","8.5","world-event-81-0","AMSCO AP World History, Unit 8, Topic 8.5","Strikes, mass organizing, elections, and imprisonment built nationalist legitimacy and pressure; Britain did not simply grant Ghanaian independence without organized action."],
+  ["apwh-u8-accra-negotiated-independence","8.5","world-event-81-0","AMSCO AP World History, Unit 8, Topic 8.5","Electoral victories and negotiations produced phased withdrawal and sovereignty. The project-authored comparison distinguishes negotiated and armed paths through Ghana and Algeria."],
+  ["apwh-u8-accra-panafricanism-nonaligned-state-building","8.6, 8.9","world-event-81-0","AMSCO AP World History, Unit 8, Topics 8.6 and 8.9","Nkrumah linked Pan-Africanism, nonalignment, infrastructure, and state-led development; Accra represents Ghanaian and transnational projects with contested costs."],
+  ["apwh-u8-havana-batista-inequality-revolution","8.4, 8.7","world-event-55-2","AMSCO AP World History, Unit 8, Topics 8.4 and 8.7","Batista-era repression and inequality helped form a broad revolutionary coalition; comparison with China distinguishes their coalitions, wars, and routes to Soviet alignment."],
+  ["apwh-u8-havana-bay-of-pigs-soviet-alignment","8.2, 8.3, 8.4","world-event-55-2","AMSCO AP World History, Unit 8, Topics 8.2, 8.3, and 8.4","Revolutionary reforms, conflict with the United States, and the failed Bay of Pigs invasion strengthened Cuban security fears and Soviet alignment without predetermining every later choice."],
+  ["apwh-u8-havana-missile-crisis-nuclear-limits","8.2, 8.3, 8.9","world-event-55-2","AMSCO AP World History, Unit 8, Topics 8.2, 8.3, and 8.9","Soviet missiles, the United States quarantine, bargaining, and reciprocal concessions demonstrate nuclear brinkmanship and restraint rather than automatic escalation."],
+  ["apwh-u8-tehran-oil-nationalism-mosaddegh","8.6, 8.7","world-event-21-1","AMSCO AP World History, Unit 8, Topics 8.6 and 8.7","Oil nationalization under Mosaddegh connected parliamentary authority, sovereignty, development, foreign ownership, and competing domestic coalitions across Iran."],
+  ["apwh-u8-tehran-coup-shah-authoritarian-alignment","8.2, 8.6","world-event-21-1","AMSCO AP World History, Unit 8, Topics 8.2 and 8.6","Anglo-American covert intervention, oil interests, Cold War aims, domestic allies, and the shah’s security institutions shaped the 1953 coup and authoritarian alignment."],
+  ["apwh-u8-tehran-white-revolution-islamic-revolution","8.6, 8.7, 8.9","world-event-21-1","AMSCO AP World History, Unit 8, Topics 8.6, 8.7, and 8.9","White Revolution reforms, uneven outcomes, repression, nationalism, and diverse opposition interacted; the 1979 revolution was not merely a religious reaction to modernization."],
+  ["apwh-u8-johannesburg-apartheid-legal-order","8.7","world-event-82-0","AMSCO AP World History, Unit 8, Topic 8.7","Apartheid used classification, pass, residence, work, and political laws nationwide; Johannesburg is a representative national anchor, not the system’s sole site."],
+  ["apwh-u8-johannesburg-resistance-repression","8.7","world-event-82-0","AMSCO AP World History, Unit 8, Topic 8.7","ANC campaigns, labor and civic action, armed struggle, bans, arrests, and state violence show changing nationwide resistance and repression beyond Johannesburg."],
+  ["apwh-u8-johannesburg-pressure-negotiation-democratic-transition","8.7, 8.9","world-event-82-0","AMSCO AP World History, Unit 8, Topics 8.7 and 8.9","Internal mobilization, sanctions, economic pressure, Mandela, de Klerk, negotiations, and the 1994 election combined. The Algeria-South Africa comparison is project-authored analysis and distinguishes transition within an existing state from an independence war."],
+];
 const expectedManifest=[
 ['apwh-u8-berlin-occupation-ideological-division','29',1,'Occupation Zones and Ideological Division','1945–1948',1945,1948,'world-event-29-8',['8.1','8.2'],['GOV','CDI'],['Contextualization','Causation']],
 ['apwh-u8-berlin-blockade-airlift-two-germanies','29',2,'Blockade, Airlift, and Two Germanies','1948–1949',1948,1949,'world-event-29-8',['8.2','8.3'],['GOV','TEC'],['Causation']],
@@ -86,6 +121,26 @@ P('apwh-u8-johannesburg-pressure-negotiation-democratic-transition','Labor and c
 const clone=value=>JSON.parse(JSON.stringify(value));
 const replace=(search,replacement)=>{const code=source.replace(search,replacement);assert.notEqual(code,source,`fixture mutation: ${search}`);return code;};
 const assertInvalid=(code,rule)=>assert.throws(()=>evaluate(code),error=>{assert.match(error.message,/Invalid Unit 8/);assert.match(error.message,rule);assert.notEqual(error.name,'TypeError');return true;});
+const failLedger=rule=>{throw new Error(`Invalid Unit 8 source ledger: ${rule}`);};
+const backslashRunBefore=(value,index)=>{let backslashes=0;for(let cursor=index-1;cursor>=0&&value[cursor]==='\\';cursor-=1)backslashes+=1;return backslashes;};
+const parseMarkdownRowCells=row=>{
+  if(!row.startsWith('|')||!row.endsWith('|')||backslashRunBefore(row,row.length-1)%2===1)failLedger('row must start and end with pipe delimiters');
+  const cells=[];let cell='';
+  for(let index=1;index<row.length;index+=1){const character=row[index];if(character!=='|'){cell+=character;continue;}const backslashes=backslashRunBefore(row,index);if(backslashes)cell=`${cell.slice(0,-backslashes)}${'\\'.repeat(Math.floor(backslashes/2))}`;if(backslashes%2===1){cell+='|';continue;}cells.push(cell.trim());cell='';}
+  return cells;
+};
+const parseLedgerRows=candidate=>{
+  if(!candidate.startsWith(ledgerIntroduction))failLedger('missing canonical introduction');
+  const tablePrefix=`${ledgerIntroduction}\n\n${ledgerHeader}\n${ledgerSeparator}\n`;
+  if(!candidate.startsWith(tablePrefix))failLedger('table header must immediately follow canonical introduction');
+  const lines=candidate.split('\n'),headerIndex=ledgerIntroduction.split('\n').length+1,expectedIds=new Set(expectedLedgerRows.map(row=>row[0])),rows=[];let tableEnd=headerIndex+2;
+  for(;tableEnd<lines.length;tableEnd+=1){const raw=lines[tableEnd];if(!raw)break;const cells=parseMarkdownRowCells(raw);if(cells.length!==5)failLedger('row must contain exactly five columns');if(!/^apwh-u8-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(cells[0]))failLedger(`malformed Stable ID cell ${cells[0]}`);if(!expectedIds.has(cells[0]))failLedger(`unexpected Stable ID ${cells[0]}`);if(!/^world-event-\d+-\d+$/.test(cells[2]))failLedger(`malformed Main event cell ${cells[2]}`);if(/\b(?:p|pp)\.\s*\d+/i.test(cells[3]))failLedger('unverified page number');rows.push(cells);}
+  if(lines.slice(tableEnd).some(line=>line.trim()))failLedger('unexpected trailing content');
+  const parsedOccurrences=new Map();for(const [id] of rows)parsedOccurrences.set(id,(parsedOccurrences.get(id)||0)+1);for(const match of candidate.matchAll(/apwh-u8-[A-Za-z0-9_-]*/g)){const id=match[0],remaining=parsedOccurrences.get(id)||0;if(!remaining)failLedger(`unparsed Stable ID occurrence ${id}`);parsedOccurrences.set(id,remaining-1);}
+  if(rows.length!==expectedLedgerRows.length)failLedger(`expected exactly ${expectedLedgerRows.length} data rows`);
+  for(let index=0;index<expectedLedgerRows.length;index+=1)if(JSON.stringify(rows[index])!==JSON.stringify(expectedLedgerRows[index]))failLedger(`row ${index+1} does not match the canonical record order and fields`);
+  return rows;
+};
 
 test('publishes the exact immutable Unit 8 manifest and learner content',()=>{
   assert.ok(source,`Expected ${moduleUrl.pathname} to exist`);const api=evaluate();
@@ -189,6 +244,32 @@ const crossLocationCausalPairs=[
   ['apwh-u8-moscow-gorbachev-reform-soviet-dissolution','apwh-u8-berlin-wall-nonintervention-reunification'],
   ['apwh-u8-accra-panafricanism-nonaligned-state-building','apwh-u8-johannesburg-pressure-negotiation-democratic-transition'],
 ];
+const expectedCausalNotes={
+  'apwh-u8-berlin-occupation-ideological-division|apwh-u8-berlin-blockade-airlift-two-germanies':'Occupation policies and Western currency reform triggered the Soviet blockade; the Allied airlift sustained West Berlin and hardened Germany’s political division.',
+  'apwh-u8-berlin-blockade-airlift-two-germanies|apwh-u8-berlin-wall-nonintervention-reunification':'The two German states institutionalized division, while later Soviet nonintervention allowed East German protest and German diplomacy to open the Wall and negotiate reunification.',
+  'apwh-u8-moscow-security-buffer-soviet-bloc|apwh-u8-moscow-detente-arms-afghanistan-strain':'Soviet-bloc security commitments institutionalized military competition; arms spending, intervention in Afghanistan, and stagnation accumulated pressures that détente did not remove.',
+  'apwh-u8-moscow-detente-arms-afghanistan-strain|apwh-u8-moscow-gorbachev-reform-soviet-dissolution':'Economic stagnation and military costs constrained Soviet choices, while Gorbachev used glasnost and perestroika to reform the system and reduced reliance on coercion.',
+  'apwh-u8-beijing-civil-war-land-communist-victory|apwh-u8-beijing-great-leap-state-mobilization-famine':'Communist victory gave party leaders state capacity and rural authority that they chose to use for communes and production targets during the Great Leap Forward.',
+  'apwh-u8-beijing-great-leap-state-mobilization-famine|apwh-u8-beijing-cultural-revolution-social-upheaval':'The Great Leap’s failure weakened Mao’s position, helping motivate his later choice to mobilize Red Guards against rivals and institutions during the Cultural Revolution.',
+  'apwh-u8-saigon-french-return-anticolonial-war|apwh-u8-saigon-partition-containment-escalation':'French defeat produced the Geneva partition; rival Vietnamese governments pursued competing goals as United States containment choices expanded military support and intervention.',
+  'apwh-u8-saigon-partition-containment-escalation|apwh-u8-saigon-withdrawal-reunification-war-costs':'Vietnamese resistance, mounting war costs, and antiwar pressure altered United States policy, while Vietnamese forces continued fighting through withdrawal and reunification.',
+  'apwh-u8-delhi-independence-partition-displacement|apwh-u8-delhi-nonalignment-foreign-policy-autonomy':'Independence gave Indian leaders sovereign diplomatic authority, which Nehru used to pursue active nonalignment rather than neutrality or formal membership in either bloc.',
+  'apwh-u8-delhi-nonalignment-foreign-policy-autonomy|apwh-u8-delhi-five-year-plans-mixed-economy':'The pursuit of autonomy limited pressure to adopt either bloc’s model, helping Indian leaders maintain Five-Year Plans and a mixed economy while making their own policy choices.',
+  'apwh-u8-algiers-settler-colonialism-blocked-reform|apwh-u8-algiers-fln-war-counterinsurgency':'Settler political power blocked meaningful reform, narrowing legal routes and helping FLN organizers build support for armed struggle while French authorities chose counterinsurgency.',
+  'apwh-u8-algiers-fln-war-counterinsurgency|apwh-u8-algiers-independence-exodus-new-state':'FLN resistance and the political and military costs of counterinsurgency drove negotiations toward the Evian settlement, independence, settler exodus, and new-state formation.',
+  'apwh-u8-accra-mass-nationalism-colonial-pressure|apwh-u8-accra-negotiated-independence':'Strikes, mass organization, and electoral victories demonstrated nationalist legitimacy and pressured Britain, giving Ghanaian leaders leverage for a negotiated transfer of power.',
+  'apwh-u8-accra-negotiated-independence|apwh-u8-accra-panafricanism-nonaligned-state-building':'Sovereignty gave Nkrumah’s government authority to pursue Pan-African diplomacy, nonalignment, and infrastructure programs, while Ghanaian choices shaped new state-building tensions.',
+  'apwh-u8-havana-batista-inequality-revolution|apwh-u8-havana-bay-of-pigs-soviet-alignment':'Batista’s repression and inequality broadened revolutionary opposition; after victory, reforms and the failed Bay of Pigs invasion intensified Cuban security fears and Soviet alignment.',
+  'apwh-u8-havana-bay-of-pigs-soviet-alignment|apwh-u8-havana-missile-crisis-nuclear-limits':'The failed invasion heightened Cuban insecurity and Soviet ties, enabling missile deployment, while leaders chose quarantine and bargaining to limit nuclear escalation.',
+  'apwh-u8-tehran-oil-nationalism-mosaddegh|apwh-u8-tehran-coup-shah-authoritarian-alignment':'Oil nationalization triggered a British boycott and Anglo-American intervention; domestic allies of the coup helped remove Mosaddegh and strengthen the shah’s alignment.',
+  'apwh-u8-tehran-coup-shah-authoritarian-alignment|apwh-u8-tehran-white-revolution-islamic-revolution':'Coup-backed monarchical power and Western support enabled the White Revolution and repression, which mobilized diverse opponents without making the 1979 outcome automatic.',
+  'apwh-u8-johannesburg-apartheid-legal-order|apwh-u8-johannesburg-resistance-repression':'Apartheid law created enforceable racial restrictions that ANC, labor, and civic organizers challenged, while state repression pushed resistance toward changing strategies.',
+  'apwh-u8-johannesburg-resistance-repression|apwh-u8-johannesburg-pressure-negotiation-democratic-transition':'Sustained internal mobilization combined with sanctions and economic pressure to raise apartheid’s costs, while government and movement leaders chose negotiation and democratic transition.',
+  'apwh-u8-moscow-security-buffer-soviet-bloc|apwh-u8-berlin-occupation-ideological-division':'Soviet security policy sought a controlled Eastern European buffer and shaped occupation policy in Germany, while Allied authorities made distinct choices that divided Berlin and Germany.',
+  'apwh-u8-beijing-civil-war-land-communist-victory|apwh-u8-saigon-partition-containment-escalation':'Communist victory in China intensified United States containment and material support in Southeast Asia, while Vietnamese actors and later policy choices still determined escalation around Saigon.',
+  'apwh-u8-moscow-gorbachev-reform-soviet-dissolution|apwh-u8-berlin-wall-nonintervention-reunification':'Gorbachev’s reforms and withdrawal of coercive support from Eastern European governments enabled a political opening, while East German protesters and German leaders drove the Wall’s fall and reunification.',
+  'apwh-u8-accra-panafricanism-nonaligned-state-building|apwh-u8-johannesburg-pressure-negotiation-democratic-transition':'Pan-African institutions and diplomacy from independent states increased apartheid South Africa’s international isolation, while South African civic action and negotiators determined the transition’s course.',
+};
 const expectedRelatedPairs=[
   ['apwh-u8-berlin-blockade-airlift-two-germanies','apwh-u8-havana-missile-crisis-nuclear-limits','Compare escalation and restraint in Berlin and Cuba: both crises tested superpower resolve without direct war, but Berlin used an airlift against a blockade while Cuba used a quarantine and reciprocal nuclear bargaining.'],
   ['apwh-u8-beijing-civil-war-land-communist-victory','apwh-u8-havana-batista-inequality-revolution','Compare land, nationalism, political coalitions, and relations with the United States: China emerged from a long civil war with early Soviet ties, while Cuba began as a broader anti-Batista coalition and aligned with the Soviet Union after revolutionary conflict with the United States.'],
@@ -203,6 +284,7 @@ test('publishes the exact Unit 8 directed causal graph and reciprocal comparison
   const expectedCausal=[...localCausalPairs,...crossLocationCausalPairs];
   assert.deepEqual(clone(actualCausal.map(pair=>pair.join('|')).sort()),expectedCausal.map(pair=>pair.join('|')).sort());
   assert.equal(actualCausal.length,24);assert.equal(new Set(actualCausal.map(pair=>pair.join('|'))).size,24);
+  assert.deepEqual(clone(Object.fromEntries(actualCausal.map(([sourceId,targetId])=>[`${sourceId}|${targetId}`,byId.get(sourceId).connectionNotes[targetId]]))),expectedCausalNotes);
   for(const [sourceId,targetId] of actualCausal){const sourceRecord=byId.get(sourceId),targetRecord=byId.get(targetId);assert.ok(targetRecord);assert.ok(targetRecord.causeStudyPointIds.includes(sourceId));assert.equal(typeof sourceRecord.connectionNotes[targetId],'string');assert.ok(sourceRecord.connectionNotes[targetId].length>40);assert.equal(targetRecord.connectionNotes[sourceId],sourceRecord.connectionNotes[targetId]);assert.doesNotMatch(sourceRecord.connectionNotes[targetId],/^This happened before/i);}
   for(const [left,right,note] of expectedRelatedPairs){const leftRecord=byId.get(left),rightRecord=byId.get(right);assert.ok(leftRecord.relatedStudyPointIds.includes(right));assert.ok(rightRecord.relatedStudyPointIds.includes(left));assert.equal(leftRecord.connectionNotes[right],note);assert.equal(rightRecord.connectionNotes[left],note);}
   assert.equal(api.records.reduce((sum,record)=>sum+record.relatedStudyPointIds.length,0),10);
@@ -220,6 +302,7 @@ test('publishes the exact immutable Unit 8 context and synthesis cards',()=>{
 
 test('rejects graph or card drift before publication',()=>{
   assertInvalid(replace("Occupation policies and Western currency reform triggered the Soviet blockade; the Allied airlift sustained West Berlin and hardened Germany’s political division.","This happened before the next event and shaped its chronology."),/causal connection does not match|causal mechanism/);
+  assertInvalid(replace("Occupation policies and Western currency reform triggered the Soviet blockade; the Allied airlift sustained West Berlin and hardened Germany’s political division.","This event led to the next event because it happened earlier in chronological order."),/causal connection does not match/);
   assertInvalid(replace("related:[","related:[[\'apwh-u8-berlin-occupation-ideological-division\',\'apwh-u8-berlin-blockade-airlift-two-germanies\',\'Cross category.\'],"),/cross-category connection/);
   assertInvalid(replace("kind:'context'","kind:'synthesis'"),/card kind/);
   assertInvalid(replace("role:'Unit 8 Context Card'","role:''"),/card role|malformed card/);
@@ -229,15 +312,18 @@ test('rejects graph or card drift before publication',()=>{
   assertInvalid(replace('validate();',"Object.defineProperty(UNIT_CARD_MANIFEST.context.takeaways,'0',{enumerable:false});validate();"),/card takeaways/);
 });
 
-test('keeps the ordered Unit 8 source ledger exact and locator-specific',()=>{
-  const intro='# APWH Unit 8 Location Study Source Ledger\n\nThe learner records use edition-neutral locators in AMSCO AP World History Unit 8 and the College Board framework effective Fall 2026. Map pins are representative anchors; a named city does not imply that every national or regional process occurred only there. Causal and comparison notes distinguish mechanisms from chronology and preserve the agency and differences of each case.\n\n';
-  assert.ok(ledger.startsWith(intro));const lines=ledger.trimEnd().split('\n');assert.equal(lines.length,36);assert.equal(lines[4],'| Stable ID | AP topic assignment | Main event | Source locator | Claims covered |');assert.equal(lines[5],'| --- | --- | --- | --- | --- |');
-  const rows=lines.slice(6).map(row=>row.split('|').slice(1,-1).map(cell=>cell.trim()));assert.equal(rows.length,30);assert.deepEqual(rows.map(row=>row[0]),expectedManifest.map(record=>record[0]));assert.deepEqual(rows.map(row=>row[1]),expectedManifest.map(record=>record[8].join(', ')));assert.deepEqual(rows.map(row=>row[2]),expectedManifest.map(record=>record[7]));assert.deepEqual(rows.map(row=>row[3]),expectedManifest.map(record=>L(record[8])));
-  for(const cells of rows){assert.equal(cells.length,5);assert.match(cells[1],/^8\.[1-9](, 8\.[1-9])*$/);assert.match(cells[3],/^AMSCO AP World History, Unit 8, Topics? 8\.[1-9]/);assert.doesNotMatch(cells[3],/(page|p\.\s*\d|whole book|chapter)/i);assert.ok(cells[4].length>=60);}
+test('locks the canonical introduction and all five source-ledger columns for exactly thirty records',()=>{
+  assert.equal(ledger.startsWith(ledgerIntroduction),true);const rows=parseLedgerRows(ledger);assert.deepEqual(rows,expectedLedgerRows);assert.equal(new Set(rows.map(row=>row[0])).size,30);
+  for(let index=0;index<rows.length;index+=1){const manifest=expectedManifest[index];assert.equal(rows[index][0],manifest[0]);assert.equal(rows[index][1],manifest[8].join(', '));assert.equal(rows[index][2],manifest[7]);assert.equal(rows[index][3],L(manifest[8]));assert.ok(expectedLocations.has(manifest[1]));}
+});
+
+test('tokenizes escaped Markdown pipes without creating extra ledger columns',()=>{
+  assert.deepEqual(parseMarkdownRowCells('| one | two \\| literal pipe | three | four | five |'),['one','two | literal pipe','three','four','five']);
+  assert.deepEqual(parseMarkdownRowCells(String.raw`| one | three \\\| literal pipe | three | four | five |`),['one',String.raw`three \| literal pipe`,'three','four','five']);
 });
 
 test('keeps representative-anchor and cross-case caveats in the Unit 8 ledger',()=>{
-  const claimsById=new Map(ledger.trimEnd().split('\n').slice(6).map(row=>{const cells=row.split('|').slice(1,-1).map(cell=>cell.trim());return [cells[0],cells[4]];}));
+  const claimsById=new Map(parseLedgerRows(ledger).map(cells=>[cells[0],cells[4]]));
   assert.match(claimsById.get('apwh-u8-delhi-independence-partition-displacement'),/Punjab and Bengal/);assert.match(claimsById.get('apwh-u8-delhi-independence-partition-displacement'),/Delhi is a representative national anchor/);
   assert.match(claimsById.get('apwh-u8-saigon-withdrawal-reunification-war-costs'),/Saigon was renamed Ho Chi Minh City/);
   assert.match(claimsById.get('apwh-u8-algiers-settler-colonialism-blocked-reform'),/Algiers is a representative anchor/);
@@ -246,7 +332,20 @@ test('keeps representative-anchor and cross-case caveats in the Unit 8 ledger',(
   assert.match(claimsById.get('apwh-u8-berlin-blockade-airlift-two-germanies'),/comparison with Cuba is project-authored analysis/);assert.match(claimsById.get('apwh-u8-beijing-civil-war-land-communist-victory'),/China-Cuba comparison is project-authored analysis/);assert.match(claimsById.get('apwh-u8-delhi-independence-partition-displacement'),/India-Ghana comparison is project-authored analysis/);assert.match(claimsById.get('apwh-u8-johannesburg-pressure-negotiation-democratic-transition'),/Algeria-South Africa comparison is project-authored analysis/);
 });
 
-test('rejects source-ledger structural, vague-locator, page-number, and trailing-content regressions',()=>{
-  const valid=ledger.trimEnd(),requiredCaveats=['Punjab and Bengal','Delhi is a representative national anchor','Saigon was renamed Ho Chi Minh City','Algiers is a representative anchor','Johannesburg is a representative national anchor','comparison with Cuba is project-authored analysis','China-Cuba comparison is project-authored analysis','India-Ghana comparison is project-authored analysis','project-authored comparison distinguishes negotiated and armed paths','Algeria-South Africa comparison is project-authored analysis'],isValid=candidate=>{const lines=candidate.split('\n'),rows=lines.slice(6);return lines.length===36&&lines[4]==='| Stable ID | AP topic assignment | Main event | Source locator | Claims covered |'&&lines[5]==='| --- | --- | --- | --- | --- |'&&rows.length===30&&requiredCaveats.every(caveat=>candidate.includes(caveat))&&rows.every((row,index)=>{if(!row.endsWith('|'))return false;const cells=row.split('|').slice(1,-1).map(cell=>cell.trim());return cells.length===5&&cells[0]===expectedManifest[index][0]&&cells[1]===expectedManifest[index][8].join(', ')&&cells[2]===expectedManifest[index][7]&&cells[3]===L(expectedManifest[index][8])&&cells[4].length>=60;});};
-  const firstRow=valid.split('\n')[6],secondId=expectedManifest[1][0];assert.equal(isValid(valid),true);for(const candidate of [valid.replace('| Main event |','| Event |'),valid.replace('AMSCO AP World History, Unit 8, Topics','AMSCO'),valid.replace('AMSCO AP World History, Unit 8, Topics','AMSCO AP World History, Unit 8, Topics p. 12'),valid.replace(`${firstRow}\n`,''),valid.replace(secondId,expectedManifest[0][0]),valid.replace('world-event-29-8','world-event-29-9'),valid.replace('| Claims covered |','| Extra | Claims covered |'),valid.replace('Punjab and Bengal','Punjab plus Bengal'),`${valid}\ntrailing garbage`,valid.replace(/\|$/,'|junk')]){assert.notEqual(candidate,valid);assert.equal(isValid(candidate),false);}
+test('rejects source-ledger structural garbage, missing rows, extra columns, ordering, and field drift',()=>{
+  const firstRow=ledger.split('\n').find(line=>line.includes('apwh-u8-berlin-occupation-ideological-division')),secondRow=ledger.split('\n').find(line=>line.includes('apwh-u8-berlin-blockade-airlift-two-germanies')),lastRow=ledger.split('\n').find(line=>line.includes('apwh-u8-johannesburg-pressure-negotiation-democratic-transition')),fourColumnRow=`${firstRow.split('|').slice(0,-2).join('|')}|`;
+  const cases=[
+    [ledger.replace(`${ledgerIntroduction}\n\n${ledgerHeader}`,`${ledgerIntroduction}\n\nInserted prose.\n\n${ledgerHeader}`),/table header must immediately follow canonical introduction/],
+    [ledger.replace(firstRow,`${firstRow} trailing garbage`),/row must start and end with pipe delimiters/],
+    [ledger.replace(firstRow,fourColumnRow),/row must contain exactly five columns/],
+    [ledger.replace(firstRow,firstRow.replace(/ \|$/,' | extra |')),/row must contain exactly five columns/],
+    [ledger.replace(lastRow,''),/expected exactly 30 data rows/],
+    [ledger.replace(`${firstRow}\n${secondRow}`,`${secondRow}\n${firstRow}`),/row 1 does not match the canonical record order and fields/],
+    [ledger.replace('AMSCO AP World History, Unit 8, Topics 8.1 and 8.2','AMSCO AP World History, Unit 8'),/row 1 does not match the canonical record order and fields/],
+    [ledger.replace('world-event-29-8','world-event-29-9'),/row 1 does not match the canonical record order and fields/],
+    [ledger.replace('Allied occupation zones, Western coordination','Allied zones, Western coordination'),/row 1 does not match the canonical record order and fields/],
+    [`${ledger}\nTrailing garbage`,/unexpected trailing content/],
+    [`${ledger}\nTrailing apwh-u8-unparsed-garbage`,/unexpected trailing content/],
+  ];
+  for(const [candidate,message] of cases){assert.notEqual(candidate,ledger,'ledger fixture mutation');assert.throws(()=>parseLedgerRows(candidate),message);}
 });
