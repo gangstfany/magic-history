@@ -517,12 +517,13 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
   const unit5ScriptTag = '<script src="data/apwh-u5-location-study.js"></script>';
   const unit6ScriptTag = '<script src="data/apwh-u6-location-study.js"></script>';
   const unit7ScriptTag = '<script src="data/apwh-u7-location-study.js"></script>';
+  const unit8ScriptTag = '<script src="data/apwh-u8-location-study.js"></script>';
   const pageLogicStart = '<script>\n(function () {';
   for (const [label, source] of [
     ['world-map.html', worldMapSource],
     ['index.html', homePageSource],
   ]) {
-    for (const unit of [4, 5, 6, 7]) {
+    for (const unit of [4, 5, 6, 7, 8]) {
       const registeredScriptTag = `<script src="data/apwh-u${unit}-location-study.js"></script>`;
       assert.equal(source.split(registeredScriptTag).length - 1, 1,
         `${label} must load the Unit ${unit} location-study data script exactly once`);
@@ -542,6 +543,10 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
     'world-map.html must load Unit 7 location-study data after the Unit 6 data script');
   assert.ok(homePageSource.indexOf(unit6ScriptTag) < homePageSource.indexOf(unit7ScriptTag),
     'index.html must load Unit 7 location-study data after the Unit 6 data script');
+  assert.ok(worldMapSource.indexOf(unit7ScriptTag) < worldMapSource.indexOf(unit8ScriptTag),
+    'world-map.html must load Unit 8 location-study data after the Unit 7 data script');
+  assert.ok(homePageSource.indexOf(unit7ScriptTag) < homePageSource.indexOf(unit8ScriptTag),
+    'index.html must load Unit 8 location-study data after the Unit 7 data script');
 
   const expectedLocationRegistry = `const LOCATION_STUDY_GLOBAL_BY_UNIT = Object.freeze({
     u1: 'APWH_U1_LOCATION_STUDY',
@@ -551,6 +556,7 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
     u5: 'APWH_U5_LOCATION_STUDY',
     u6: 'APWH_U6_LOCATION_STUDY',
     u7: 'APWH_U7_LOCATION_STUDY',
+    u8: 'APWH_U8_LOCATION_STUDY',
   });`;
   const expectedHomeRegistry = `const HOME_STUDY_GLOBAL_BY_UNIT = Object.freeze({
     u1: 'APWH_U1_LOCATION_STUDY',
@@ -560,13 +566,14 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
     u5: 'APWH_U5_LOCATION_STUDY',
     u6: 'APWH_U6_LOCATION_STUDY',
     u7: 'APWH_U7_LOCATION_STUDY',
+    u8: 'APWH_U8_LOCATION_STUDY',
   });`;
   const extractRegistry = (source, name) => source.match(
     new RegExp(`const ${name} = Object\\.freeze\\(\\{[\\s\\S]*?\\n  \\}\\);`))?.[0];
   assert.equal(extractRegistry(worldMapSource, 'LOCATION_STUDY_GLOBAL_BY_UNIT'), expectedLocationRegistry,
-    'world-map.html must expose the exact Unit 1–7 location-study registry');
+    'world-map.html must expose the exact Unit 1–8 location-study registry');
   assert.equal(extractRegistry(homePageSource, 'HOME_STUDY_GLOBAL_BY_UNIT'), expectedHomeRegistry,
-    'index.html must expose the exact Unit 1–7 location-study registry');
+    'index.html must expose the exact Unit 1–8 location-study registry');
 }
 
 async function importFirst(candidates) {
@@ -7796,6 +7803,18 @@ async function verifyUnit7StandaloneSarajevoSmoke(page, port) {
   }
 }
 
+async function verifyUnit8StandaloneBerlinSmoke(page, port) {
+  await page.goto(`http://127.0.0.1:${port}/world-map.html`, { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    window.__mapFilter.reset();
+    window.__mapFilter.setLearningView('map');
+    window.__mapFilter.setPeriod('u8');
+    window.__mapFilter.openHit('29', 'europe', 'world-event-29-8');
+  });
+  await expectVisible(page.locator('#eventPanel [data-location-study-open="29"]'),
+    'Unit 8 Berlin must expose a location-study entry');
+}
+
 export async function verifyBrowser() {
   await stat(PAGE_FILE);
   await stat(HOME_PAGE_FILE);
@@ -7821,6 +7840,7 @@ export async function verifyBrowser() {
     try {
       await verifyTimeline(page, port);
       await verifyUnit7StandaloneSarajevoSmoke(page, port);
+      await verifyUnit8StandaloneBerlinSmoke(page, port);
       await verifyLearningShell(page, port);
       await verifyHomeLearningShell(page, port);
     } finally {
