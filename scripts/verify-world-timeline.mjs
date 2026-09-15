@@ -4590,12 +4590,21 @@ async function assertUnit8StudyView(view, fixture, label, canonicalFrame = null)
     `${label} must render the exact three stable IDs in order`);
   for (let index = 0; index < fixture.ids.length; index += 1) {
     await rows.nth(index).click();
+    const expectedId = fixture.ids[index];
     assert.equal(await view.locator('[data-study-detail]').count(), 1,
       `${label} row ${index + 1} must leave exactly one detail`);
+    assert.equal(await view.locator('[data-study-detail]').getAttribute('data-study-detail'), expectedId,
+      `${label} row ${index + 1} must render the exact clicked detail`);
     assert.equal(await view.locator('[data-study-event][aria-expanded="true"]').count(), 1,
       `${label} row ${index + 1} must leave exactly one expanded record`);
     assert.equal(await view.locator('[data-study-event][aria-current="true"]').count(), 1,
       `${label} row ${index + 1} must leave exactly one current record`);
+    assert.equal(await rows.nth(index).getAttribute('data-study-event'), expectedId,
+      `${label} row ${index + 1} must retain the exact fixture ID`);
+    assert.equal(await rows.nth(index).getAttribute('aria-expanded'), 'true',
+      `${label} row ${index + 1} itself must be expanded`);
+    assert.equal(await rows.nth(index).getAttribute('aria-current'), 'true',
+      `${label} row ${index + 1} itself must be current`);
     assert.equal(await rows.nth(index).evaluate(node => document.activeElement === node), true,
       `${label} row ${index + 1} must retain focus`);
   }
@@ -4746,8 +4755,11 @@ async function verifyUnit8DepthTwoNavigation(page, frame, surface) {
   let middleView = opened.panel.locator(
     `[data-location-study-view="${middle.number}"][data-location-study-unit="u8"]`);
   await assertUnit8StudyState(canonical, middle, middleId, 1, `${label} first hop`);
+  assert.deepEqual(await unit5FilterState(canonical), rootFilters,
+    `${label} same-location first hop must preserve query, category, and region filters`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, rootFilters, `${label} first-hop controls`);
   await followUnit5StudyConnection(middleView, middleId, targetId, 'Related Event', `${label} second hop`);
-  const targetView = opened.panel.locator(
+  let targetView = opened.panel.locator(
     `[data-location-study-view="${target.number}"][data-location-study-unit="u8"]`);
   await assertUnit8StudyState(canonical, target, targetId, 2, `${label} second hop`);
   const released = await unit5FilterState(canonical);
@@ -4760,6 +4772,9 @@ async function verifyUnit8DepthTwoNavigation(page, frame, surface) {
   middleView = opened.panel.locator(
     `[data-location-study-view="${middle.number}"][data-location-study-unit="u8"]`);
   await assertUnit8StudyState(canonical, middle, middleId, 1, `${label} second-hop Back`);
+  assert.deepEqual(await unit5FilterState(canonical), rootFilters,
+    `${label} target Connection Back must immediately restore root filters`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, rootFilters, `${label} target Back controls`);
   assert.equal(await middleView.locator(`[data-study-connection="${targetId}"]`)
     .evaluate(node => document.activeElement === node), true,
   `${label} second-hop Back must restore invoking connection focus`);
@@ -4776,11 +4791,26 @@ async function verifyUnit8DepthTwoNavigation(page, frame, surface) {
   assert.deepEqual(await unit5FilterState(canonical), rootFilters,
     `${label} connection Back must restore query, category, and region filters`);
   if (surface === 'homepage') await assertHomepageFilterControls(page, rootFilters, `${label} restored controls`);
-  await sourceView.locator(`[data-location-study-back="${source.number}"]`).click();
-  await expectVisible(opened.entry, `${label} outer Back must restore original source entry`);
+  await followUnit5StudyConnection(sourceView, sourceId, middleId, 'Effect', `${label} repeated first hop`);
+  middleView = opened.panel.locator(
+    `[data-location-study-view="${middle.number}"][data-location-study-unit="u8"]`);
+  await followUnit5StudyConnection(middleView, middleId, targetId, 'Related Event', `${label} repeated second hop`);
+  targetView = opened.panel.locator(
+    `[data-location-study-view="${target.number}"][data-location-study-unit="u8"]`);
+  await assertUnit8StudyState(canonical, target, targetId, 2, `${label} repeated target`);
+  await targetView.locator(`[data-location-study-back="${target.number}"]`).click();
+  await expectVisible(opened.entry, `${label} target outer Back must restore original source entry`);
+  assert.deepEqual(await unit5OrdinaryEventSnapshot(opened.panel), opened.ordinarySnapshot,
+    `${label} target outer Back must restore exact source ordinary content`);
   assert.equal(await opened.entry.evaluate(node => document.activeElement === node), true,
-    `${label} outer Back must restore source-entry focus`);
-  await assertUnit8TimelineState(canonical, source, `${label} outer Back`);
+    `${label} target outer Back must restore source-entry focus`);
+  assert.deepEqual(await unit5FilterState(canonical), rootFilters,
+    `${label} target outer Back must restore root filters`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, rootFilters, `${label} target outer Back controls`);
+  await assertUnit8TimelineState(canonical, source, `${label} target outer Back`);
+  assert.equal(await opened.panel.locator('[data-location-study-view], [data-study-detail], [data-study-connection-back]').count(), 0,
+    `${label} target outer Back must clear study views, disclosures, and connection controls`);
+  await assertUnit5StudyStateCleared(canonical, `${label} target outer Back`);
 }
 
 async function verifyUnit8KeyboardAndResponsive(page, frame, surface) {
@@ -4837,9 +4867,25 @@ async function verifyUnit8KeyboardAndResponsive(page, frame, surface) {
   const timeline = await viewport.locator('body').evaluate(() => ({
     scroll: document.querySelector('.world-timeline-track')?.scrollWidth || 0,
     client: document.querySelector('.world-timeline-track')?.clientWidth || 0,
+    overflowX: (() => {
+      const track = document.querySelector('.world-timeline-track');
+      return track ? getComputedStyle(track).overflowX : null;
+    })(),
+    scrollLeft: (() => {
+      const track = document.querySelector('.world-timeline-track');
+      if (!track) return { before: 0, after: 0 };
+      track.scrollLeft = 0;
+      const before = track.scrollLeft;
+      track.scrollLeft = Math.min(80, Math.max(1, track.scrollWidth - track.clientWidth));
+      return { before, after: track.scrollLeft };
+    })(),
   }));
   assert.ok(timeline.scroll > timeline.client,
     `${label} Timeline must remain horizontally scrollable: ${JSON.stringify(timeline)}`);
+  assert.match(timeline.overflowX || '', /^(auto|scroll)$/,
+    `${label} Timeline computed overflow-x must permit horizontal scrolling: ${JSON.stringify(timeline)}`);
+  assert.ok(timeline.scrollLeft.after > timeline.scrollLeft.before,
+    `${label} Timeline must demonstrate a real scrollLeft change: ${JSON.stringify(timeline)}`);
   // The responsive check starts from the normalized all-events state above. On
   // the homepage, that state has no result cards until a query is applied, so
   // enter through the same host-search path a student uses instead of asking
@@ -4865,8 +4911,24 @@ async function verifyUnit8KeyboardAndResponsive(page, frame, surface) {
 
 async function assertUnit8Cleanup(page, frame, surface, nextUnit) {
   const fixture = UNIT_8_STUDY_VIEWS[0];
+  const jump = UNIT_8_CONNECTION_JUMPS[0];
   const label = `${surface} Unit 8 to ${nextUnit} cleanup`;
   const opened = await openUnit8Study(page, frame, surface, fixture, label);
+  await followUnit5StudyConnection(opened.view, jump.source, jump.target, jump.group, `${label} seeded connection`);
+  const targetView = opened.panel.locator(
+    `[data-location-study-view="${fixture.number}"][data-location-study-unit="u8"]`);
+  const targetDetail = targetView.locator(`[data-study-detail="${jump.target}"]`);
+  const evidence = targetDetail.locator('details[data-study-disclosure="evidence"]');
+  if ((await evidence.getAttribute('open')) === null) await evidence.locator('summary').click();
+  await page.waitForFunction(({ surface, stateKey }) => {
+    const win = surface === 'standalone'
+      ? window : document.querySelector('#worldMapFrame')?.contentWindow;
+    return win?.__mapFilter?.getLocationStudyUiState().openDisclosures.includes(stateKey);
+  }, { surface, stateKey: `${jump.target}:evidence` });
+  const seeded = await unit5ExposedStudyState(opened.canonical);
+  assert.equal(seeded.connectionDepth, 1, `${label} must seed a nonempty connection stack before cleanup`);
+  assert.deepEqual(seeded.openDisclosures, [`${jump.target}:evidence`],
+    `${label} must seed an open disclosure before cleanup`);
   await opened.canonical.locator('body').evaluate((body, unit) => window.__mapFilter.setPeriod(unit), nextUnit);
   await opened.canonical.locator('#eventPanel [data-location-study-view]').waitFor({ state: 'detached' });
   for (const selector of ['[data-location-study-unit="u8"]', '[data-study-detail]', '[data-study-connection-back]', '[data-location-study-back]']) {
