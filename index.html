@@ -1134,7 +1134,7 @@ nav.topnav {
       if (!win || !win.__mapFilter) return;
       const open = win.__mapFilter.openEventInMap || win.__mapFilter.openHit;
       open(card.dataset.pin, card.dataset.region, card.dataset.eventKey);
-      setTimeout(syncHomeEvents, 80);
+      syncHomeEvents();
     };
     homeEvents.addEventListener('click', e => {
       const card = e.target.closest('.event-card.is-result');

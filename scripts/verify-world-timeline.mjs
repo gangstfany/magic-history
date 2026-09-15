@@ -456,6 +456,43 @@ const UNIT_7_STALINGRAD = Object.freeze({
   city: 'Stalingrad', title: 'Stalingrad', date: '1942–1943',
 });
 
+const UNIT_8_STUDY_VIEWS = Object.freeze([
+  Object.freeze({ number:'29', region:'europe', label:'Cold War Division · Germany / Berlin', mainEventKey:'world-event-29-8', ids:Object.freeze(['apwh-u8-berlin-occupation-ideological-division','apwh-u8-berlin-blockade-airlift-two-germanies','apwh-u8-berlin-wall-nonintervention-reunification']) }),
+  Object.freeze({ number:'40', region:'europe', label:'Soviet Power & Collapse · Soviet Union / Moscow', mainEventKey:'world-event-40-3', ids:Object.freeze(['apwh-u8-moscow-security-buffer-soviet-bloc','apwh-u8-moscow-detente-arms-afghanistan-strain','apwh-u8-moscow-gorbachev-reform-soviet-dissolution']) }),
+  Object.freeze({ number:'5', region:'asia', label:'Communist Revolution & Transformation · China / Beijing', mainEventKey:'world-event-5-5', ids:Object.freeze(['apwh-u8-beijing-civil-war-land-communist-victory','apwh-u8-beijing-great-leap-state-mobilization-famine','apwh-u8-beijing-cultural-revolution-social-upheaval']) }),
+  Object.freeze({ number:'16', region:'asia', label:'Decolonization & Proxy War · Vietnam / Saigon', mainEventKey:'world-event-16-0', ids:Object.freeze(['apwh-u8-saigon-french-return-anticolonial-war','apwh-u8-saigon-partition-containment-escalation','apwh-u8-saigon-withdrawal-reunification-war-costs']) }),
+  Object.freeze({ number:'6', region:'asia', label:'Independence, Nonalignment & Development · India / Delhi', mainEventKey:'world-event-6-3', ids:Object.freeze(['apwh-u8-delhi-independence-partition-displacement','apwh-u8-delhi-nonalignment-foreign-policy-autonomy','apwh-u8-delhi-five-year-plans-mixed-economy']) }),
+  Object.freeze({ number:'79', region:'mideast', label:'Settler Colonialism & Armed Decolonization · Algeria / Algiers', mainEventKey:'world-event-79-1', ids:Object.freeze(['apwh-u8-algiers-settler-colonialism-blocked-reform','apwh-u8-algiers-fln-war-counterinsurgency','apwh-u8-algiers-independence-exodus-new-state']) }),
+  Object.freeze({ number:'81', region:'africa', label:'Negotiated Independence & Pan-Africanism · Ghana / Accra', mainEventKey:'world-event-81-0', ids:Object.freeze(['apwh-u8-accra-mass-nationalism-colonial-pressure','apwh-u8-accra-negotiated-independence','apwh-u8-accra-panafricanism-nonaligned-state-building']) }),
+  Object.freeze({ number:'55', region:'americas', label:'Revolution & Nuclear Brinkmanship · Cuba / Havana', mainEventKey:'world-event-55-2', ids:Object.freeze(['apwh-u8-havana-batista-inequality-revolution','apwh-u8-havana-bay-of-pigs-soviet-alignment','apwh-u8-havana-missile-crisis-nuclear-limits']) }),
+  Object.freeze({ number:'21', region:'mideast', label:'Oil, Intervention & Revolution · Iran / Tehran', mainEventKey:'world-event-21-1', ids:Object.freeze(['apwh-u8-tehran-oil-nationalism-mosaddegh','apwh-u8-tehran-coup-shah-authoritarian-alignment','apwh-u8-tehran-white-revolution-islamic-revolution']) }),
+  Object.freeze({ number:'82', region:'africa', label:'Apartheid & Democratic Transition · South Africa / Johannesburg', mainEventKey:'world-event-82-0', ids:Object.freeze(['apwh-u8-johannesburg-apartheid-legal-order','apwh-u8-johannesburg-resistance-repression','apwh-u8-johannesburg-pressure-negotiation-democratic-transition']) }),
+]);
+
+const UNIT_8_BANDUNG = Object.freeze({
+  number:'109', region:'asia', mainEventKey:'world-event-109-0',
+  city:'Bandung', title:'Bandung Conference', date:'1955',
+});
+
+function verifyUnit8Fixture(worldMapSource) {
+  const numbers = UNIT_8_STUDY_VIEWS.map(fixture => fixture.number);
+  const ids = UNIT_8_STUDY_VIEWS.flatMap(fixture => fixture.ids);
+  assert.equal(UNIT_8_STUDY_VIEWS.length, 10, 'Unit 8 verifier fixture must contain exactly ten study locations');
+  assert.equal(new Set(numbers).size, 10, 'Unit 8 verifier fixture must contain exactly ten unique location numbers');
+  assert.equal(ids.length, 30, 'Unit 8 verifier fixture must contain exactly thirty study IDs');
+  assert.equal(new Set(ids).size, 30, 'Unit 8 verifier fixture must contain exactly thirty unique study IDs');
+  assert.ok(UNIT_8_STUDY_VIEWS.every(fixture => fixture.ids.length === 3),
+    'every Unit 8 verifier fixture location must contain exactly three ordered study IDs');
+
+  const pinRegions = new Map([...worldMapSource.matchAll(
+    /<g class="pin-group"[^>]*data-region="([^"]+)"[\s\S]*?<text[^>]*>(\d+)<\/text><\/g>/g,
+  )].map(match => [match[2], match[1]]));
+  for (const fixture of [...UNIT_8_STUDY_VIEWS, UNIT_8_BANDUNG]) {
+    assert.equal(pinRegions.get(fixture.number), fixture.region,
+      `Unit 8 fixture location ${fixture.number} must use its actual page-metadata region identifier`);
+  }
+}
+
 function verifyUnit6Fixture(worldMapSource) {
   const numbers = UNIT_6_STUDY_VIEWS.map(fixture => fixture.number);
   const ids = UNIT_6_STUDY_VIEWS.flatMap(fixture => fixture.ids);
@@ -4352,6 +4389,559 @@ async function verifyHomepageUnit7StudyContract(page, frame) {
   await assertUnit7StalingradOrdinaryOnly(page, frame, 'homepage');
 }
 
+const unit8StandaloneParitySnapshots = new Map();
+const UNIT_8_CONNECTION_JUMPS = Object.freeze([
+  Object.freeze({ name: 'Berlin occupation-to-airlift causal jump', group: 'Effect', source: 'apwh-u8-berlin-occupation-ideological-division', target: 'apwh-u8-berlin-blockade-airlift-two-germanies' }),
+  Object.freeze({ name: 'Beijing-to-Saigon containment causal jump', group: 'Effect', source: 'apwh-u8-beijing-civil-war-land-communist-victory', target: 'apwh-u8-saigon-partition-containment-escalation' }),
+  Object.freeze({ name: 'Moscow-reform-to-Berlin-reunification causal jump', group: 'Effect', source: 'apwh-u8-moscow-gorbachev-reform-soviet-dissolution', target: 'apwh-u8-berlin-wall-nonintervention-reunification' }),
+  Object.freeze({ name: 'Accra-to-Johannesburg pressure causal jump', group: 'Effect', source: 'apwh-u8-accra-panafricanism-nonaligned-state-building', target: 'apwh-u8-johannesburg-pressure-negotiation-democratic-transition' }),
+  Object.freeze({ name: 'Berlin-to-Havana crisis comparison', group: 'Related Event', source: 'apwh-u8-berlin-blockade-airlift-two-germanies', target: 'apwh-u8-havana-missile-crisis-nuclear-limits', reciprocal: true }),
+  Object.freeze({ name: 'Accra-to-Algiers decolonization comparison', group: 'Related Event', source: 'apwh-u8-accra-negotiated-independence', target: 'apwh-u8-algiers-fln-war-counterinsurgency', reciprocal: true }),
+  Object.freeze({ name: 'Algiers-to-Johannesburg structural comparison', group: 'Related Event', source: 'apwh-u8-algiers-settler-colonialism-blocked-reform', target: 'apwh-u8-johannesburg-apartheid-legal-order', reciprocal: true }),
+]);
+
+function unit8FixtureByStudyId(studyId) {
+  return UNIT_8_STUDY_VIEWS.find(fixture => fixture.ids.includes(studyId));
+}
+
+function unit8Surface(page, frame, surface) {
+  return {
+    canonical: surface === 'standalone' ? page : frame,
+    panel: surface === 'standalone' ? page.locator('#eventPanel') : page.locator('#home-events'),
+  };
+}
+
+async function assertUnit8FocusedControl(locator, label) {
+  const presentation = await locator.evaluate(element => {
+    const style = getComputedStyle(element);
+    return {
+      active: document.activeElement === element,
+      outlineStyle: style.outlineStyle,
+      outlineWidth: parseFloat(style.outlineWidth),
+    };
+  });
+  assert.equal(presentation.active, true, `${label} must retain keyboard focus`);
+  assert.notEqual(presentation.outlineStyle, 'none', `${label} must expose a visible focus outline`);
+  assert.ok(presentation.outlineWidth >= 2, `${label} must expose at least a 2px focus outline`);
+}
+
+async function assertUnit8TimelineState(context, fixture, label) {
+  const actual = await unit5TimelineState(context);
+  assert.ok(actual.visibleEventKeys.includes(fixture.mainEventKey),
+    `${label} must keep the exact Unit 8 Timeline event visible: ${JSON.stringify(actual)}`);
+  assert.deepEqual({
+    period: actual.period, selectedAnchor: actual.selectedAnchor, selectedEventKey: actual.selectedEventKey,
+    currentEventKeys: actual.currentEventKeys, selectedMapPins: actual.selectedMapPins,
+  }, {
+    period: 'u8', selectedAnchor: { num: fixture.number, region: fixture.region },
+    selectedEventKey: fixture.mainEventKey, currentEventKeys: [fixture.mainEventKey],
+    selectedMapPins: [fixture.number],
+  }, `${label} must synchronize Unit 8 map anchor and exact Timeline selection: ${JSON.stringify(actual)}`);
+}
+
+async function assertUnit8StudyState(context, fixture, studyId, depth, label) {
+  await assertUnit8TimelineState(context, fixture, label);
+  const actual = await context.locator('body').evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    const view = document.querySelector('#eventPanel [data-location-study-view]');
+    return {
+      unitId: state.unitId, studyId: state.studyId, connectionDepth: state.connectionDepth,
+      number: view?.dataset.locationStudyView || null, unit: view?.dataset.locationStudyUnit || null,
+      detail: view?.querySelector('[data-study-detail]')?.dataset.studyDetail || null,
+      details: view?.querySelectorAll('[data-study-detail]').length || 0,
+    };
+  });
+  assert.deepEqual(actual, {
+    unitId: 'u8', studyId, connectionDepth: depth, number: fixture.number,
+    unit: 'u8', detail: studyId, details: 1,
+  }, `${label} must keep canonical Unit 8 study state`);
+}
+
+async function normalizeUnit8FilterSurface(page, frame, surface, label) {
+  const { canonical } = unit8Surface(page, frame, surface);
+  await canonical.locator('body').evaluate(() => {
+    window.__mapFilter.reset();
+    window.__mapFilter.setLearningView('map');
+    window.__mapFilter.setPeriod('u8');
+    window.__mapFilter.setQuery('');
+    for (const category of window.__mapFilter.getCats()) {
+      if (!window.__mapFilter.getState().cats.has(category.abbr)) window.__mapFilter.toggleCat(category.abbr);
+    }
+    document.querySelector('.region-path[role="button"][aria-pressed="true"]')?.dispatchEvent(
+      new MouseEvent('click', { bubbles: true }));
+  });
+  if (surface === 'homepage') {
+    await page.waitForFunction(() => {
+      const win = document.querySelector('#worldMapFrame')?.contentWindow;
+      const state = win?.__mapFilter?.getState();
+      const allCats = win?.__mapFilter?.getCats().length;
+      return state?.period === 'u8' && state.query === '' && state.region === null
+        && state.cats.size === allCats && document.querySelector('#hostPeriod')?.value === 'u8'
+        && document.querySelector('#hostSearch')?.value === ''
+        && document.querySelectorAll('#hostCats [data-cat][aria-pressed="true"]').length === allCats;
+    });
+  } else {
+    await page.waitForFunction(() => {
+      const state = window.__mapFilter.getState();
+      return state.period === 'u8' && state.query === '' && state.region === null
+        && state.cats.size === window.__mapFilter.getCats().length;
+    });
+  }
+  const normalized = await unit5FilterState(canonical);
+  assert.deepEqual(normalized, {
+    query: '', cats: normalized.allCats, allCats: normalized.allCats,
+    period: 'u8', region: null, pressedRegions: [],
+  }, `${label} must begin from a normalized Unit 8 filter state`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, normalized, `${label} homepage controls`);
+}
+
+async function openUnit8OrdinaryEvent(page, frame, surface, fixture, label, { preserveFilters = false } = {}) {
+  const { canonical, panel } = unit8Surface(page, frame, surface);
+  if (!preserveFilters) await normalizeUnit8FilterSurface(page, frame, surface, label);
+  if (surface === 'standalone') {
+    await canonical.locator('body').evaluate((body, current) => {
+      window.__mapFilter.openHit(current.number, current.region, current.mainEventKey);
+    }, fixture);
+  } else {
+    if (!preserveFilters) {
+      const title = await canonical.locator('body').evaluate((body, eventKey) =>
+        window.getTimelineState().visibleEvents.find(event => event.key === eventKey)?.titleEn || null,
+      fixture.mainEventKey);
+      assert.ok(title, `${label} must resolve its exact Unit 8 Timeline title`);
+      await page.locator('#hostSearch').fill(title);
+      await page.waitForFunction(expected => document.querySelector('#worldMapFrame')?.contentWindow
+        ?.__mapFilter?.getState().query === expected, title);
+    }
+    const result = panel.locator(`.event-card.is-result[data-event-key="${fixture.mainEventKey}"]`);
+    try {
+      await result.waitFor({ state: 'visible' });
+    } catch (error) {
+      const diagnostic = await page.evaluate(({ eventKey }) => {
+        const iframe = document.querySelector('#worldMapFrame');
+        const win = iframe?.contentWindow;
+        const state = win?.__mapFilter?.getState?.();
+        const host = document.querySelector('#home-events');
+        const exact = host?.querySelector(`.event-card.is-result[data-event-key="${eventKey}"]`);
+        return {
+          hostSearch: document.querySelector('#hostSearch')?.value,
+          state: state ? { query: state.query, period: state.period, region: state.region, cats: [...state.cats] } : null,
+          canonicalSelected: win?.getTimelineState?.().selectedEventKey,
+          canonicalPanel: win?.document.querySelector('#eventPanel')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 240),
+          hostPanel: host?.textContent.replace(/\s+/g, ' ').trim().slice(0, 240),
+          hostDisplay: host ? getComputedStyle(host).display : null,
+          exactExists: Boolean(exact),
+          exactDisplay: exact ? getComputedStyle(exact).display : null,
+        };
+      }, { eventKey: fixture.mainEventKey });
+      throw new Error(`${label} homepage result diagnostic: ${JSON.stringify(diagnostic)}`, { cause: error });
+    }
+    await result.click();
+  }
+  const entry = panel.locator(
+    `[data-location-study-open="${fixture.number}"][data-location-study-event-key="${fixture.mainEventKey}"]`);
+  try {
+    await expectVisible(entry, `${label} must expose its exact View all 3 study points entry`);
+  } catch (error) {
+    const diagnostic = await page.evaluate(({ surface, number, eventKey }) => {
+      const win = surface === 'standalone' ? window : document.querySelector('#worldMapFrame')?.contentWindow;
+      const mirror = surface === 'standalone' ? document.querySelector('#eventPanel') : document.querySelector('#home-events');
+      return {
+        state: win?.__mapFilter?.getState(),
+        timeline: win?.getTimelineState?.().selectedEventKey,
+        canonical: win?.document.querySelector('#eventPanel')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 240),
+        mirror: mirror?.textContent.replace(/\s+/g, ' ').trim().slice(0, 240),
+        canonicalEntry: Boolean(win?.document.querySelector(
+          `[data-location-study-open="${number}"][data-location-study-event-key="${eventKey}"]`)),
+      };
+    }, { surface, number: fixture.number, eventKey: fixture.mainEventKey });
+    throw new Error(`${label} exact study-entry diagnostic: ${JSON.stringify(diagnostic)}`, { cause: error });
+  }
+  await assertUnit8TimelineState(canonical, fixture, `${label} ordinary event`);
+  assert.equal((await entry.textContent()).trim(), 'View all 3 study points',
+    `${label} must use the shared three-point entry label`);
+  assert.equal(await panel.locator('[data-location-study-open]').count(), 1,
+    `${label} must expose exactly one study entry`);
+  const filterSnapshot = await unit5FilterState(canonical);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, filterSnapshot, `${label} host controls`);
+  return {
+    canonical, panel, entry, filterSnapshot,
+    ordinarySnapshot: await unit5OrdinaryEventSnapshot(panel),
+    timelineSnapshot: await unit5TimelineState(canonical),
+  };
+}
+
+async function openUnit8Study(page, frame, surface, fixture, label, options) {
+  const ordinary = await openUnit8OrdinaryEvent(page, frame, surface, fixture, label, options);
+  await ordinary.entry.click();
+  const view = ordinary.panel.locator(
+    `[data-location-study-view="${fixture.number}"][data-location-study-unit="u8"]`);
+  await expectVisible(view, `${label} must open the Unit 8 study view`);
+  return { ...ordinary, view };
+}
+
+async function assertUnit8StudyView(view, fixture, label, canonicalFrame = null) {
+  const title = view.locator('.location-study-title');
+  assert.equal((await title.textContent()).trim(), `${fixture.label} · Unit 8`,
+    `${label} must render the exact country/region-plus-city heading`);
+  assert.equal(await title.evaluate(node => document.activeElement === node), true,
+    `${label} opening must focus the Unit 8 heading`);
+  const rows = view.locator('[data-study-event]');
+  assert.deepEqual(await rows.evaluateAll(nodes => nodes.map(node => node.dataset.studyEvent)), fixture.ids,
+    `${label} must render the exact three stable IDs in order`);
+  for (let index = 0; index < fixture.ids.length; index += 1) {
+    await rows.nth(index).click();
+    assert.equal(await view.locator('[data-study-detail]').count(), 1,
+      `${label} row ${index + 1} must leave exactly one detail`);
+    assert.equal(await view.locator('[data-study-event][aria-expanded="true"]').count(), 1,
+      `${label} row ${index + 1} must leave exactly one expanded record`);
+    assert.equal(await view.locator('[data-study-event][aria-current="true"]').count(), 1,
+      `${label} row ${index + 1} must leave exactly one current record`);
+    assert.equal(await rows.nth(index).evaluate(node => document.activeElement === node), true,
+      `${label} row ${index + 1} must retain focus`);
+  }
+  if (canonicalFrame) {
+    const canonical = canonicalFrame.locator(
+      `#eventPanel [data-location-study-view="${fixture.number}"][data-location-study-unit="u8"]`);
+    assert.deepEqual(await unit5StudySnapshot(view), await unit5StudySnapshot(canonical),
+      `${label} must preserve iframe/mirror study parity`);
+  }
+}
+
+async function assertUnit8OuterBack(page, frame, surface, opened, fixture, label) {
+  const back = opened.view.locator(`[data-location-study-back="${fixture.number}"]`);
+  await back.click();
+  await expectVisible(opened.entry, `${label} outer Back must restore the ordinary source entry`);
+  assert.equal(await opened.entry.evaluate(node => document.activeElement === node), true,
+    `${label} outer Back must restore source-entry focus`);
+  assert.equal(await opened.panel.locator('[data-location-study-view]').count(), 0,
+    `${label} outer Back must remove study DOM`);
+  assert.deepEqual(await unit5OrdinaryEventSnapshot(opened.panel), opened.ordinarySnapshot,
+    `${label} outer Back must restore exact ordinary detail`);
+  await assertUnit8TimelineState(opened.canonical, fixture, `${label} outer Back`);
+  assert.deepEqual(await unit5FilterState(opened.canonical), opened.filterSnapshot,
+    `${label} outer Back must restore filters`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, opened.filterSnapshot, `${label} host controls`);
+}
+
+async function assertUnit8ConnectionJump(page, frame, surface, jump) {
+  const source = unit8FixtureByStudyId(jump.source);
+  const target = unit8FixtureByStudyId(jump.target);
+  assert.ok(source && target, `${jump.name} must resolve both Unit 8 fixtures`);
+  const label = `${surface} Unit 8 ${jump.name}`;
+  const opened = await openUnit8Study(page, frame, surface, source, label);
+  await opened.view.locator(`[data-study-event="${jump.source}"]`).click();
+  const detail = opened.view.locator(`[data-study-detail="${jump.source}"]`);
+  for (const key of ['evidence', 'connections']) {
+    const disclosure = detail.locator(`details[data-study-disclosure="${key}"]`);
+    if ((await disclosure.getAttribute('open')) === null) await disclosure.locator('summary').click();
+  }
+  const connection = detail.locator(
+    `[data-study-connection="${jump.target}"][data-study-connection-from="${jump.source}"]`);
+  await expectVisible(connection, `${label} must expose its named connection`);
+  assert.equal((await connection.locator('xpath=ancestor::*[@data-study-connection-group][1]/h4').textContent()).trim(), jump.group,
+    `${label} must expose the expected connection type`);
+  await connection.click();
+  const targetView = opened.panel.locator(
+    `[data-location-study-view="${target.number}"][data-location-study-unit="u8"]`);
+  await expectVisible(targetView, `${label} target study must open`);
+  await assertUnit8StudyState(opened.canonical, target, jump.target, 1, `${label} target`);
+  if (jump.reciprocal) {
+    const targetDetail = targetView.locator(`[data-study-detail="${jump.target}"]`);
+    const targetConnections = targetDetail.locator('details[data-study-disclosure="connections"]');
+    if ((await targetConnections.getAttribute('open')) === null) await targetConnections.locator('summary').click();
+    const reverse = targetConnections.locator(
+      `[data-study-connection="${jump.source}"][data-study-connection-from="${jump.target}"]`);
+    await expectVisible(reverse, `${label} must expose the reciprocal related comparison`);
+    assert.equal((await reverse.locator('xpath=ancestor::*[@data-study-connection-group][1]/h4').textContent()).trim(),
+      'Related Event', `${label} reciprocal must remain a Related Event`);
+  }
+  await targetView.locator('[data-study-connection-back]').click();
+  const sourceView = opened.panel.locator(
+    `[data-location-study-view="${source.number}"][data-location-study-unit="u8"]`);
+  await assertUnit8StudyState(opened.canonical, source, jump.source, 0, `${label} connection Back`);
+  assert.equal(await sourceView.locator(`[data-study-connection="${jump.target}"]`)
+    .evaluate(node => document.activeElement === node), true,
+  `${label} connection Back must restore invoking connection focus`);
+  assert.deepEqual(await sourceView.locator(`[data-study-detail="${jump.source}"] details[open]`)
+    .evaluateAll(nodes => nodes.map(node => node.dataset.studyDisclosure)), ['evidence', 'connections'],
+  `${label} connection Back must restore source disclosures`);
+  await sourceView.locator(`[data-location-study-back="${source.number}"]`).click();
+}
+
+async function prepareUnit8DepthTwoFilters(page, frame, surface, fixture) {
+  const { canonical } = unit8Surface(page, frame, surface);
+  await normalizeUnit8FilterSurface(page, frame, surface, `${surface} Unit 8 connection stack`);
+  const title = await canonical.locator('body').evaluate((body, key) =>
+    window.getTimelineState().visibleEvents.find(event => event.key === key)?.titleEn || null,
+  fixture.mainEventKey);
+  assert.ok(title, `${surface} Unit 8 connection stack must resolve the source Timeline title`);
+  await canonical.locator('body').evaluate((body, title) => window.__mapFilter.setQuery(title), title);
+  const sourceResult = surface === 'standalone'
+    ? canonical.locator(`.event-card.is-result[data-event-key="${fixture.mainEventKey}"]`)
+    : page.locator(`#home-events .event-card.is-result[data-event-key="${fixture.mainEventKey}"]`);
+  try {
+    await sourceResult.waitFor({ state: 'visible' });
+  } catch (error) {
+    const diagnostic = await canonical.locator('body').evaluate((body, eventKey) => ({
+      state: (() => { const state = window.__mapFilter.getState(); return {
+        query: state.query, cats: [...state.cats], period: state.period, region: state.region,
+      }; })(),
+      categories: window.__mapFilter.getCats(),
+      results: [...document.querySelectorAll('.event-card.is-result')].map(card => ({
+        key: card.dataset.eventKey, category: card.querySelector('.ec-cat')?.textContent.trim(),
+      })),
+      timelineVisible: window.getTimelineState().visibleEventKeys.includes(eventKey),
+    }), fixture.mainEventKey);
+    throw new Error(`${surface} Unit 8 filtered source must remain visible: ${JSON.stringify(diagnostic)}`, { cause: error });
+  }
+  await canonical.locator('body').evaluate(() => {
+    // Accra's exact source event is GOV. Excluding ECN creates a real nonempty
+    // category subset without filtering the source out of its own stack fixture.
+    window.__mapFilter.toggleCat('ECN');
+  });
+  await canonical.locator(`.region-path[data-region="${fixture.region}"][role="button"]`).evaluate(node =>
+    node.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  try {
+    await sourceResult.waitFor({ state: 'visible' });
+  } catch (error) {
+    const diagnostic = await canonical.locator('body').evaluate((body, eventKey) => {
+      const state = window.__mapFilter.getState();
+      return {
+        state: { query: state.query, cats: [...state.cats], period: state.period, region: state.region },
+        results: [...document.querySelectorAll('.event-card.is-result')].map(card => ({
+          key: card.dataset.eventKey, category: card.querySelector('.ec-cat')?.textContent.trim(),
+        })),
+        timelineVisible: window.getTimelineState().visibleEventKeys.includes(eventKey),
+      };
+    }, fixture.mainEventKey);
+    throw new Error(`${surface} Unit 8 query/category/region source must remain visible: ${JSON.stringify(diagnostic)}`, { cause: error });
+  }
+  const state = await unit5FilterState(canonical);
+  assert.equal(state.query, title, `${surface} Unit 8 stack must retain a nonempty query`);
+  assert.equal(state.period, 'u8', `${surface} Unit 8 stack must retain Unit 8`);
+  assert.deepEqual(state.pressedRegions, [fixture.region], `${surface} Unit 8 stack must retain its source region`);
+  assert.ok(state.cats.length > 0 && state.cats.length < state.allCats.length,
+    `${surface} Unit 8 stack must retain a nonempty category subset`);
+  if (surface === 'homepage') {
+    await page.waitForFunction(expected => document.querySelector('#hostSearch')?.value === expected, title);
+    await assertHomepageFilterControls(page, state, `${surface} Unit 8 stack host controls`);
+  }
+  return state;
+}
+
+async function verifyUnit8DepthTwoNavigation(page, frame, surface) {
+  const sourceId = 'apwh-u8-accra-mass-nationalism-colonial-pressure';
+  const middleId = 'apwh-u8-accra-negotiated-independence';
+  const targetId = 'apwh-u8-algiers-fln-war-counterinsurgency';
+  const source = unit8FixtureByStudyId(sourceId);
+  const middle = unit8FixtureByStudyId(middleId);
+  const target = unit8FixtureByStudyId(targetId);
+  const { canonical } = unit8Surface(page, frame, surface);
+  const label = `${surface} Unit 8 depth-two filtered navigation`;
+  const rootFilters = await prepareUnit8DepthTwoFilters(page, frame, surface, source);
+  const opened = await openUnit8Study(page, frame, surface, source, label, { preserveFilters: true });
+  const sourceDetail = opened.view.locator(`[data-study-detail="${sourceId}"]`);
+  await sourceDetail.locator('details[data-study-disclosure="evidence"] summary').click();
+  await followUnit5StudyConnection(opened.view, sourceId, middleId, 'Effect', `${label} first hop`);
+  let middleView = opened.panel.locator(
+    `[data-location-study-view="${middle.number}"][data-location-study-unit="u8"]`);
+  await assertUnit8StudyState(canonical, middle, middleId, 1, `${label} first hop`);
+  await followUnit5StudyConnection(middleView, middleId, targetId, 'Related Event', `${label} second hop`);
+  const targetView = opened.panel.locator(
+    `[data-location-study-view="${target.number}"][data-location-study-unit="u8"]`);
+  await assertUnit8StudyState(canonical, target, targetId, 2, `${label} second hop`);
+  const released = await unit5FilterState(canonical);
+  assert.deepEqual(released, {
+    query: '', cats: released.allCats, allCats: released.allCats,
+    period: 'u8', region: null, pressedRegions: [],
+  }, `${label} cross-region hop must release hidden target filters`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, released, `${label} released controls`);
+  await targetView.locator('[data-study-connection-back]').click();
+  middleView = opened.panel.locator(
+    `[data-location-study-view="${middle.number}"][data-location-study-unit="u8"]`);
+  await assertUnit8StudyState(canonical, middle, middleId, 1, `${label} second-hop Back`);
+  assert.equal(await middleView.locator(`[data-study-connection="${targetId}"]`)
+    .evaluate(node => document.activeElement === node), true,
+  `${label} second-hop Back must restore invoking connection focus`);
+  await middleView.locator('[data-study-connection-back]').click();
+  const sourceView = opened.panel.locator(
+    `[data-location-study-view="${source.number}"][data-location-study-unit="u8"]`);
+  await assertUnit8StudyState(canonical, source, sourceId, 0, `${label} first-hop Back`);
+  assert.equal(await sourceView.locator(`[data-study-connection="${middleId}"]`)
+    .evaluate(node => document.activeElement === node), true,
+  `${label} first-hop Back must restore invoking connection focus`);
+  assert.deepEqual(await sourceView.locator(`[data-study-detail="${sourceId}"] details[open]`)
+    .evaluateAll(nodes => nodes.map(node => node.dataset.studyDisclosure)), ['evidence', 'connections'],
+  `${label} must restore its source disclosure state`);
+  assert.deepEqual(await unit5FilterState(canonical), rootFilters,
+    `${label} connection Back must restore query, category, and region filters`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, rootFilters, `${label} restored controls`);
+  await sourceView.locator(`[data-location-study-back="${source.number}"]`).click();
+  await expectVisible(opened.entry, `${label} outer Back must restore original source entry`);
+  assert.equal(await opened.entry.evaluate(node => document.activeElement === node), true,
+    `${label} outer Back must restore source-entry focus`);
+  await assertUnit8TimelineState(canonical, source, `${label} outer Back`);
+}
+
+async function verifyUnit8KeyboardAndResponsive(page, frame, surface) {
+  const fixture = UNIT_8_STUDY_VIEWS.find(item => item.number === '6');
+  const label = `${surface} Unit 8 keyboard and narrow India / Delhi contract`;
+  const opened = await openUnit8OrdinaryEvent(page, frame, surface, fixture, label);
+  await opened.entry.focus();
+  await page.keyboard.press('Tab'); await page.keyboard.press('Shift+Tab');
+  await assertUnit8FocusedControl(opened.entry, `${label} entry`);
+  await opened.entry.press('Enter');
+  let view = opened.panel.locator(`[data-location-study-view="${fixture.number}"][data-location-study-unit="u8"]`);
+  await expectVisible(view, `${label} keyboard Enter must open the study`);
+  const row = view.locator('[data-study-event]').first();
+  await row.focus(); await row.press('Space');
+  await assertUnit8FocusedControl(row, `${label} record`);
+  const disclosure = view.locator('[data-study-detail] details[data-study-disclosure="connections"]');
+  const summary = disclosure.locator('summary');
+  await summary.focus(); await summary.press('Enter');
+  await assertUnit8FocusedControl(summary, `${label} disclosure`);
+  const connection = disclosure.locator('[data-study-connection="apwh-u8-accra-negotiated-independence"]');
+  await expectVisible(connection, `${label} must expose the Delhi-to-Accra related connection`);
+  await connection.focus();
+  await assertUnit8FocusedControl(connection, `${label} connection`);
+  await connection.press('Enter');
+  view = opened.panel.locator('[data-location-study-view][data-location-study-unit="u8"]');
+  await page.waitForFunction(({ surface }) => {
+    const root = surface === 'standalone' ? document.querySelector('#eventPanel') : document.querySelector('#home-events');
+    return root?.querySelector('.location-study-title') === document.activeElement;
+  }, { surface });
+  const connectionBack = view.locator('[data-study-connection-back]');
+  await connectionBack.focus();
+  await assertUnit8FocusedControl(connectionBack, `${label} connection Back`);
+  await connectionBack.press('Enter');
+  view = opened.panel.locator(`[data-location-study-view="${fixture.number}"][data-location-study-unit="u8"]`);
+  await expectVisible(view, `${label} keyboard connection Back must restore Delhi`);
+  await page.waitForFunction(({ surface }) => {
+    const root = surface === 'standalone' ? document.querySelector('#eventPanel') : document.querySelector('#home-events');
+    return root?.querySelector('[data-study-connection="apwh-u8-accra-negotiated-independence"]') === document.activeElement;
+  }, { surface });
+  const back = view.locator(`[data-location-study-back="${fixture.number}"]`);
+  await back.focus();
+  await assertUnit8FocusedControl(back, `${label} outer Back`);
+  await back.press('Enter');
+  await expectVisible(opened.entry, `${label} keyboard outer Back must restore the entry`);
+  await page.waitForFunction(({ surface, number }) => {
+    const root = surface === 'standalone' ? document.querySelector('#eventPanel') : document.querySelector('#home-events');
+    return root?.querySelector(`[data-location-study-open="${number}"]`) === document.activeElement;
+  }, { surface, number: fixture.number });
+
+  const originalViewport = page.viewportSize();
+  await page.setViewportSize({ width: 360, height: 700 });
+  await normalizeUnit8FilterSurface(page, frame, surface, `${label} narrow`);
+  const viewport = surface === 'standalone' ? page : frame;
+  const timeline = await viewport.locator('body').evaluate(() => ({
+    scroll: document.querySelector('.world-timeline-track')?.scrollWidth || 0,
+    client: document.querySelector('.world-timeline-track')?.clientWidth || 0,
+  }));
+  assert.ok(timeline.scroll > timeline.client,
+    `${label} Timeline must remain horizontally scrollable: ${JSON.stringify(timeline)}`);
+  // The responsive check starts from the normalized all-events state above. On
+  // the homepage, that state has no result cards until a query is applied, so
+  // enter through the same host-search path a student uses instead of asking
+  // the helper to preserve a deliberately empty query.
+  const narrow = await openUnit8Study(page, frame, surface, fixture, `${label} narrow`);
+  assert.equal((await narrow.view.locator('.location-study-title').textContent()).trim(), `${fixture.label} · Unit 8`,
+    `${label} must preserve the longest India / Delhi heading`);
+  const geometry = await viewport.locator('body').evaluate(() => ({
+    scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth,
+  }));
+  assert.ok(geometry.scroll <= geometry.client + 1,
+    `${label} narrow view must not create document overflow: ${JSON.stringify(geometry)}`);
+  if (surface === 'homepage') {
+    const host = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth,
+    }));
+    assert.ok(host.scroll <= host.client + 1,
+      `${label} narrow homepage must not create document overflow: ${JSON.stringify(host)}`);
+  }
+  await narrow.view.locator(`[data-location-study-back="${fixture.number}"]`).click();
+  if (originalViewport) await page.setViewportSize(originalViewport);
+}
+
+async function assertUnit8Cleanup(page, frame, surface, nextUnit) {
+  const fixture = UNIT_8_STUDY_VIEWS[0];
+  const label = `${surface} Unit 8 to ${nextUnit} cleanup`;
+  const opened = await openUnit8Study(page, frame, surface, fixture, label);
+  await opened.canonical.locator('body').evaluate((body, unit) => window.__mapFilter.setPeriod(unit), nextUnit);
+  await opened.canonical.locator('#eventPanel [data-location-study-view]').waitFor({ state: 'detached' });
+  for (const selector of ['[data-location-study-unit="u8"]', '[data-study-detail]', '[data-study-connection-back]', '[data-location-study-back]']) {
+    assert.equal(await opened.panel.locator(selector).count(), 0, `${label} must clear stale ${selector}`);
+  }
+  await assertUnit5StudyStateCleared(opened.canonical, label);
+  if (surface === 'homepage') {
+    await page.waitForFunction(unit => document.querySelector('#hostPeriod')?.value === unit, nextUnit);
+    assert.equal(await opened.panel.locator('[data-location-study-view]').count(), 0,
+      `${label} homepage mirror must clear stale study DOM`);
+  }
+}
+
+async function assertUnit8BandungOrdinaryOnly(page, frame, surface) {
+  const label = `${surface} Unit 8 Bandung ordinary-only event`;
+  const { canonical, panel } = unit8Surface(page, frame, surface);
+  await normalizeUnit8FilterSurface(page, frame, surface, label);
+  if (surface === 'standalone') {
+    await canonical.locator('body').evaluate((body, fixture) =>
+      window.__mapFilter.openHit(fixture.number, fixture.region, fixture.mainEventKey), UNIT_8_BANDUNG);
+  } else {
+    await page.locator('#hostSearch').fill(UNIT_8_BANDUNG.title);
+    await page.waitForFunction(expected => document.querySelector('#worldMapFrame')?.contentWindow
+      ?.__mapFilter?.getState().query === expected, UNIT_8_BANDUNG.title);
+    const result = panel.locator(`.event-card.is-result[data-event-key="${UNIT_8_BANDUNG.mainEventKey}"]`);
+    await result.waitFor({ state: 'visible' });
+    await result.click();
+  }
+  const cards = panel.locator('.event-list > .event-card');
+  await expectVisible(cards, `${label} must show ordinary detail`);
+  assert.equal(await cards.count(), 1, `${label} must expose exactly one ordinary event card`);
+  assert.equal((await panel.locator('.event-head .city-name').textContent()).trim(), UNIT_8_BANDUNG.city,
+    `${label} must retain the Bandung city heading`);
+  assert.equal((await cards.locator('.ec-yr').textContent()).trim(), UNIT_8_BANDUNG.date,
+    `${label} must retain the Bandung date`);
+  assert.equal((await cards.locator('.ec-trig .hl').first().textContent()).trim(), UNIT_8_BANDUNG.title,
+    `${label} must retain the Bandung event title`);
+  assert.equal(await panel.locator('[data-location-study-open], [data-location-study-view]').count(), 0,
+    `${label} must remain ordinary-only`);
+  await assertUnit8TimelineState(canonical, UNIT_8_BANDUNG, label);
+}
+
+async function verifyStandaloneUnit8StudyContract(page) {
+  for (const fixture of UNIT_8_STUDY_VIEWS) {
+    const label = `standalone ${fixture.label} Unit 8`;
+    const opened = await openUnit8Study(page, null, 'standalone', fixture, label);
+    await assertUnit8StudyView(opened.view, fixture, label);
+    unit8StandaloneParitySnapshots.set(fixture.number, await unit5StudySnapshot(opened.view));
+    await assertUnit8OuterBack(page, null, 'standalone', opened, fixture, label);
+  }
+  for (const jump of UNIT_8_CONNECTION_JUMPS) await assertUnit8ConnectionJump(page, null, 'standalone', jump);
+  await verifyUnit8DepthTwoNavigation(page, null, 'standalone');
+  await verifyUnit8KeyboardAndResponsive(page, null, 'standalone');
+  await assertUnit8Cleanup(page, null, 'standalone', 'u7');
+  await assertUnit8Cleanup(page, null, 'standalone', 'u9');
+  await assertUnit8BandungOrdinaryOnly(page, null, 'standalone');
+}
+
+async function verifyHomepageUnit8StudyContract(page, frame) {
+  for (const fixture of UNIT_8_STUDY_VIEWS) {
+    const label = `homepage ${fixture.label} Unit 8`;
+    const opened = await openUnit8Study(page, frame, 'homepage', fixture, label);
+    await assertUnit8StudyView(opened.view, fixture, label, frame);
+    assert.deepEqual(await unit5StudySnapshot(opened.view), unit8StandaloneParitySnapshots.get(fixture.number),
+      `${label} must preserve standalone/homepage content and one-open parity`);
+    await assertUnit8OuterBack(page, frame, 'homepage', opened, fixture, label);
+  }
+  for (const jump of UNIT_8_CONNECTION_JUMPS) await assertUnit8ConnectionJump(page, frame, 'homepage', jump);
+  await verifyUnit8DepthTwoNavigation(page, frame, 'homepage');
+  await verifyUnit8KeyboardAndResponsive(page, frame, 'homepage');
+  await assertUnit8Cleanup(page, frame, 'homepage', 'u7');
+  await assertUnit8Cleanup(page, frame, 'homepage', 'u9');
+  await assertUnit8BandungOrdinaryOnly(page, frame, 'homepage');
+}
+
 async function assertProgressiveCoreVisible(detail, label) {
   const coreSections = detail.locator('[data-study-core-label]');
   assert.equal(await coreSections.count(), 4, `${label} must render all four always-visible core sections`);
@@ -5907,6 +6497,7 @@ async function verifyTimeline(page, port) {
   await verifyStandaloneUnit5StudyContract(page);
   await verifyStandaloneUnit6StudyContract(page);
   await verifyStandaloneUnit7StudyContract(page);
+  await verifyStandaloneUnit8StudyContract(page);
 
   await page.evaluate(() => {
     window.__mapFilter.setPeriod('u6');
@@ -7785,6 +8376,7 @@ async function verifyHomeLearningShell(page, port) {
   await verifyHomepageUnit5StudyContract(page, frame);
   await verifyHomepageUnit6StudyContract(page, frame);
   await verifyHomepageUnit7StudyContract(page, frame);
+  await verifyHomepageUnit8StudyContract(page, frame);
 }
 
 async function verifyUnit7StandaloneSarajevoSmoke(page, port) {
@@ -7815,6 +8407,42 @@ async function verifyUnit8StandaloneBerlinSmoke(page, port) {
     'Unit 8 Berlin must expose a location-study entry');
 }
 
+async function verifyUnit8HomepageBerlinSmoke(page, port) {
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter);
+  const frame = page.frameLocator('#worldMapFrame');
+  await page.locator('.map-card-head [data-learning-view="map"]').click();
+  await page.locator('#hostPeriod').selectOption('u8');
+  await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow
+    ?.__mapFilter?.getState().period === 'u8');
+  const title = await frame.locator('body').evaluate(() => window.getTimelineState().visibleEvents
+    .find(event => event.key === 'world-event-29-8')?.titleEn || null);
+  assert.ok(title, 'homepage Unit 8 Berlin smoke must resolve the exact Timeline title');
+  await page.locator('#hostSearch').fill(title);
+  await page.waitForFunction(expected => document.querySelector('#worldMapFrame')?.contentWindow
+    ?.__mapFilter?.getState().query === expected, title);
+  const result = page.locator('#home-events .event-card.is-result[data-event-key="world-event-29-8"]');
+  await result.waitFor({ state: 'visible' });
+  await result.click();
+  const entry = page.locator(
+    '#home-events [data-location-study-open="29"][data-location-study-event-key="world-event-29-8"]');
+  try {
+    await expectVisible(entry, 'homepage Unit 8 Berlin must expose its mirrored location-study entry');
+  } catch (error) {
+    const diagnostic = await page.evaluate(() => {
+      const win = document.querySelector('#worldMapFrame')?.contentWindow;
+      return {
+        state: win?.__mapFilter?.getState(), timeline: win?.getTimelineState?.().selectedEventKey,
+        canonical: win?.document.querySelector('#eventPanel')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 260),
+        mirror: document.querySelector('#home-events')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 260),
+        canonicalEntry: Boolean(win?.document.querySelector('[data-location-study-open="29"]')),
+      };
+    });
+    throw new Error(`homepage Unit 8 Berlin entry diagnostic: ${JSON.stringify(diagnostic)}`, { cause: error });
+  }
+  await assertUnit8TimelineState(frame, UNIT_8_STUDY_VIEWS[0], 'homepage Unit 8 Berlin smoke');
+}
+
 export async function verifyBrowser() {
   await stat(PAGE_FILE);
   await stat(HOME_PAGE_FILE);
@@ -7826,6 +8454,7 @@ export async function verifyBrowser() {
   verifyUnit5Fixture(worldMapSource);
   verifyUnit6Fixture(worldMapSource);
   verifyUnit7Fixture(worldMapSource);
+  verifyUnit8Fixture(worldMapSource);
   // Canonical data currently exercises every disclosure, so execute the actual shipped
   // helper to cover the otherwise-unreachable empty-optional-section contract.
   verifyStudyDisclosureRendererRuntime(worldMapSource);
@@ -7841,6 +8470,7 @@ export async function verifyBrowser() {
       await verifyTimeline(page, port);
       await verifyUnit7StandaloneSarajevoSmoke(page, port);
       await verifyUnit8StandaloneBerlinSmoke(page, port);
+      await verifyUnit8HomepageBerlinSmoke(page, port);
       await verifyLearningShell(page, port);
       await verifyHomeLearningShell(page, port);
     } finally {
