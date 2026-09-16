@@ -555,12 +555,13 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
   const unit6ScriptTag = '<script src="data/apwh-u6-location-study.js"></script>';
   const unit7ScriptTag = '<script src="data/apwh-u7-location-study.js"></script>';
   const unit8ScriptTag = '<script src="data/apwh-u8-location-study.js"></script>';
+  const unit9ScriptTag = '<script src="data/apwh-u9-location-study.js"></script>';
   const pageLogicStart = '<script>\n(function () {';
   for (const [label, source] of [
     ['world-map.html', worldMapSource],
     ['index.html', homePageSource],
   ]) {
-    for (const unit of [4, 5, 6, 7, 8]) {
+    for (const unit of [4, 5, 6, 7, 8, 9]) {
       const registeredScriptTag = `<script src="data/apwh-u${unit}-location-study.js"></script>`;
       assert.equal(source.split(registeredScriptTag).length - 1, 1,
         `${label} must load the Unit ${unit} location-study data script exactly once`);
@@ -584,6 +585,10 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
     'world-map.html must load Unit 8 location-study data after the Unit 7 data script');
   assert.ok(homePageSource.indexOf(unit7ScriptTag) < homePageSource.indexOf(unit8ScriptTag),
     'index.html must load Unit 8 location-study data after the Unit 7 data script');
+  assert.ok(worldMapSource.indexOf(unit8ScriptTag) < worldMapSource.indexOf(unit9ScriptTag),
+    'world-map.html must load Unit 9 location-study data after the Unit 8 data script');
+  assert.ok(homePageSource.indexOf(unit8ScriptTag) < homePageSource.indexOf(unit9ScriptTag),
+    'index.html must load Unit 9 location-study data after the Unit 8 data script');
 
   const expectedLocationRegistry = `const LOCATION_STUDY_GLOBAL_BY_UNIT = Object.freeze({
     u1: 'APWH_U1_LOCATION_STUDY',
@@ -594,6 +599,7 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
     u6: 'APWH_U6_LOCATION_STUDY',
     u7: 'APWH_U7_LOCATION_STUDY',
     u8: 'APWH_U8_LOCATION_STUDY',
+    u9: 'APWH_U9_LOCATION_STUDY',
   });`;
   const expectedHomeRegistry = `const HOME_STUDY_GLOBAL_BY_UNIT = Object.freeze({
     u1: 'APWH_U1_LOCATION_STUDY',
@@ -604,13 +610,14 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
     u6: 'APWH_U6_LOCATION_STUDY',
     u7: 'APWH_U7_LOCATION_STUDY',
     u8: 'APWH_U8_LOCATION_STUDY',
+    u9: 'APWH_U9_LOCATION_STUDY',
   });`;
   const extractRegistry = (source, name) => source.match(
     new RegExp(`const ${name} = Object\\.freeze\\(\\{[\\s\\S]*?\\n  \\}\\);`))?.[0];
   assert.equal(extractRegistry(worldMapSource, 'LOCATION_STUDY_GLOBAL_BY_UNIT'), expectedLocationRegistry,
-    'world-map.html must expose the exact Unit 1–8 location-study registry');
+    'world-map.html must expose the exact Unit 1–9 location-study registry');
   assert.equal(extractRegistry(homePageSource, 'HOME_STUDY_GLOBAL_BY_UNIT'), expectedHomeRegistry,
-    'index.html must expose the exact Unit 1–8 location-study registry');
+    'index.html must expose the exact Unit 1–9 location-study registry');
 }
 
 async function importFirst(candidates) {
@@ -8469,6 +8476,18 @@ async function verifyUnit8StandaloneBerlinSmoke(page, port) {
     'Unit 8 Berlin must expose a location-study entry');
 }
 
+async function verifyUnit9StandaloneAmritsarSmoke(page, port) {
+  await page.goto(`http://127.0.0.1:${port}/world-map.html`, { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    window.__mapFilter.reset();
+    window.__mapFilter.setLearningView('map');
+    window.__mapFilter.setPeriod('u9');
+    window.__mapFilter.openHit('11', 'asia', 'world-event-11-3');
+  });
+  await expectVisible(page.locator('#eventPanel [data-location-study-open="11"]'),
+    'Unit 9 Amritsar must expose a location-study entry');
+}
+
 async function verifyUnit8HomepageBerlinSmoke(page, port) {
   await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter);
@@ -8532,6 +8551,7 @@ export async function verifyBrowser() {
       await verifyTimeline(page, port);
       await verifyUnit7StandaloneSarajevoSmoke(page, port);
       await verifyUnit8StandaloneBerlinSmoke(page, port);
+      await verifyUnit9StandaloneAmritsarSmoke(page, port);
       await verifyUnit8HomepageBerlinSmoke(page, port);
       await verifyLearningShell(page, port);
       await verifyHomeLearningShell(page, port);
