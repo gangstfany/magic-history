@@ -474,6 +474,43 @@ const UNIT_8_BANDUNG = Object.freeze({
   city:'Bandung', title:'Bandung Conference', date:'1955',
 });
 
+const UNIT_9_STUDY_VIEWS = Object.freeze([
+  Object.freeze({ number:'11', region:'asia', label:'Food Security & Unequal Inputs · India / Amritsar–Punjab', mainEventKey:'world-event-11-3', ids:Object.freeze(['apwh-u9-amritsar-high-yield-seeds-input-package','apwh-u9-amritsar-unequal-access-land-consolidation','apwh-u9-amritsar-food-population-environmental-costs']) }),
+  Object.freeze({ number:'70', region:'americas', label:'Digital Infrastructure & Knowledge Economy · United States / San Francisco', mainEventKey:'world-event-70-2', ids:Object.freeze(['apwh-u9-san-francisco-public-research-digital-infrastructure','apwh-u9-san-francisco-computing-internet-information-costs','apwh-u9-san-francisco-knowledge-economy-distributed-production']) }),
+  Object.freeze({ number:'15', region:'asia', label:'Special Economic Zones & Export Manufacturing · China / Guangzhou', mainEventKey:'world-event-15-1', ids:Object.freeze(['apwh-u9-guangzhou-market-reform-special-economic-zones','apwh-u9-guangzhou-foreign-investment-export-manufacturing','apwh-u9-guangzhou-supply-chain-labor-environmental-costs']) }),
+  Object.freeze({ number:'65', region:'americas', label:'Free Trade & Maquiladoras · Mexico / Ciudad Juárez', mainEventKey:'world-event-65-0', ids:Object.freeze(['apwh-u9-ciudad-juarez-border-industrialization','apwh-u9-ciudad-juarez-nafta-maquiladora-expansion','apwh-u9-ciudad-juarez-employment-gender-labor-environment']) }),
+  Object.freeze({ number:'5', region:'asia', label:'Market Reform & Political Control · China / Beijing', mainEventKey:'world-event-5-13', ids:Object.freeze(['apwh-u9-beijing-market-reform-political-control','apwh-u9-beijing-tiananmen-protest-repression','apwh-u9-beijing-wto-integration-information-control']) }),
+  Object.freeze({ number:'54', region:'americas', label:'Global Financial Governance · United States / Washington, D.C.', mainEventKey:'world-event-54-5', ids:Object.freeze(['apwh-u9-washington-bretton-woods-financial-institutions','apwh-u9-washington-development-lending-conditionality','apwh-u9-washington-institutional-power-benefits-criticism']) }),
+  Object.freeze({ number:'112', region:'americas', label:'Resistance to Globalization · United States / Seattle', mainEventKey:'world-event-112-0', ids:Object.freeze(['apwh-u9-seattle-wto-expansion-rulemaking-criticism','apwh-u9-seattle-coalition-protest-digital-organization','apwh-u9-seattle-fair-trade-labor-continuing-resistance']) }),
+  Object.freeze({ number:'24', region:'europe', label:'Human Rights & Climate Governance · France / Paris', mainEventKey:'world-event-24-9', ids:Object.freeze(['apwh-u9-paris-universal-rights-global-norm','apwh-u9-paris-kyoto-burden-sharing-debate','apwh-u9-paris-voluntary-climate-governance-limits']) }),
+  Object.freeze({ number:'34', region:'europe', label:'Global Health Cooperation · Switzerland / Geneva', mainEventKey:'world-event-34-2', ids:Object.freeze(['apwh-u9-geneva-vaccination-smallpox-eradication','apwh-u9-geneva-hiv-treatment-unequal-access','apwh-u9-geneva-polio-ebola-coordination-limits']) }),
+  Object.freeze({ number:'110', region:'asia', label:'Digital Culture & Soft Power · South Korea / Seoul', mainEventKey:'world-event-110-1', ids:Object.freeze(['apwh-u9-seoul-state-supported-cultural-industries','apwh-u9-seoul-digital-platforms-transnational-audiences','apwh-u9-seoul-hybrid-culture-exports-soft-power']) }),
+]);
+
+const UNIT_9_DHAKA = Object.freeze({
+  number:'113', region:'asia', mainEventKey:'world-event-113-0',
+  city:'Dhaka', title:'Rana Plaza', date:'2013',
+});
+
+function verifyUnit9Fixture(worldMapSource) {
+  const numbers = UNIT_9_STUDY_VIEWS.map(fixture => fixture.number);
+  const ids = UNIT_9_STUDY_VIEWS.flatMap(fixture => fixture.ids);
+  assert.equal(UNIT_9_STUDY_VIEWS.length, 10, 'Unit 9 verifier fixture must contain exactly ten study locations');
+  assert.equal(new Set(numbers).size, 10, 'Unit 9 verifier fixture must contain exactly ten unique location numbers');
+  assert.equal(ids.length, 30, 'Unit 9 verifier fixture must contain exactly thirty study IDs');
+  assert.equal(new Set(ids).size, 30, 'Unit 9 verifier fixture must contain exactly thirty unique study IDs');
+  assert.ok(UNIT_9_STUDY_VIEWS.every(fixture => fixture.ids.length === 3),
+    'every Unit 9 verifier fixture location must contain exactly three ordered study IDs');
+
+  const pinRegions = new Map([...worldMapSource.matchAll(
+    /<g class="pin-group"[^>]*data-region="([^"]+)"[\s\S]*?<text[^>]*>(\d+)<\/text><\/g>/g,
+  )].map(match => [match[2], match[1]]));
+  for (const fixture of [...UNIT_9_STUDY_VIEWS, UNIT_9_DHAKA]) {
+    assert.equal(pinRegions.get(fixture.number), fixture.region,
+      `Unit 9 fixture location ${fixture.number} must use its actual page-metadata region identifier`);
+  }
+}
+
 function verifyUnit8Fixture(worldMapSource) {
   const numbers = UNIT_8_STUDY_VIEWS.map(fixture => fixture.number);
   const ids = UNIT_8_STUDY_VIEWS.flatMap(fixture => fixture.ids);
@@ -5011,6 +5048,623 @@ async function verifyHomepageUnit8StudyContract(page, frame) {
   await assertUnit8BandungOrdinaryOnly(page, frame, 'homepage');
 }
 
+const unit9StandaloneParitySnapshots = new Map();
+const UNIT_9_CONNECTION_JUMPS = Object.freeze([
+  Object.freeze({ name: 'Amritsar input-package-to-unequal-access causal jump', group: 'Effect', source: 'apwh-u9-amritsar-high-yield-seeds-input-package', target: 'apwh-u9-amritsar-unequal-access-land-consolidation' }),
+  Object.freeze({ name: 'San-Francisco-internet-to-Seoul-audiences causal jump', group: 'Effect', source: 'apwh-u9-san-francisco-computing-internet-information-costs', target: 'apwh-u9-seoul-digital-platforms-transnational-audiences' }),
+  Object.freeze({ name: 'Guangzhou-FDI-to-Beijing-WTO causal jump', group: 'Effect', source: 'apwh-u9-guangzhou-foreign-investment-export-manufacturing', target: 'apwh-u9-beijing-wto-integration-information-control' }),
+  Object.freeze({ name: 'Juárez-labor-to-Seattle-coalition causal jump', group: 'Effect', source: 'apwh-u9-ciudad-juarez-employment-gender-labor-environment', target: 'apwh-u9-seattle-coalition-protest-digital-organization' }),
+  Object.freeze({ name: 'Washington-conditionality-to-Seattle-WTO causal jump', group: 'Effect', source: 'apwh-u9-washington-development-lending-conditionality', target: 'apwh-u9-seattle-wto-expansion-rulemaking-criticism' }),
+  Object.freeze({ name: 'Guangzhou-to-Juárez export-growth comparison', group: 'Related Event', source: 'apwh-u9-guangzhou-foreign-investment-export-manufacturing', target: 'apwh-u9-ciudad-juarez-nafta-maquiladora-expansion', reciprocal: true }),
+  Object.freeze({ name: 'Beijing-to-Seattle contestation comparison', group: 'Related Event', source: 'apwh-u9-beijing-tiananmen-protest-repression', target: 'apwh-u9-seattle-coalition-protest-digital-organization', reciprocal: true }),
+  Object.freeze({ name: 'Washington-to-Paris governance comparison', group: 'Related Event', source: 'apwh-u9-washington-institutional-power-benefits-criticism', target: 'apwh-u9-paris-voluntary-climate-governance-limits', reciprocal: true }),
+  Object.freeze({ name: 'Geneva-to-Paris collective-action comparison', group: 'Related Event', source: 'apwh-u9-geneva-polio-ebola-coordination-limits', target: 'apwh-u9-paris-voluntary-climate-governance-limits', reciprocal: true }),
+]);
+
+function unit9FixtureByStudyId(studyId) {
+  return UNIT_9_STUDY_VIEWS.find(fixture => fixture.ids.includes(studyId));
+}
+
+function unit9Surface(page, frame, surface) {
+  return {
+    canonical: surface === 'standalone' ? page : frame,
+    panel: surface === 'standalone' ? page.locator('#eventPanel') : page.locator('#home-events'),
+  };
+}
+
+async function assertUnit9FocusedControl(locator, label) {
+  const presentation = await locator.evaluate(element => {
+    const style = getComputedStyle(element);
+    return {
+      active: document.activeElement === element,
+      outlineStyle: style.outlineStyle,
+      outlineWidth: parseFloat(style.outlineWidth),
+    };
+  });
+  assert.equal(presentation.active, true, `${label} must retain keyboard focus`);
+  assert.notEqual(presentation.outlineStyle, 'none', `${label} must expose a visible focus outline`);
+  assert.ok(presentation.outlineWidth >= 2, `${label} must expose at least a 2px focus outline`);
+}
+
+async function assertUnit9TimelineState(context, fixture, label) {
+  const actual = await unit5TimelineState(context);
+  assert.ok(actual.visibleEventKeys.includes(fixture.mainEventKey),
+    `${label} must keep the exact Unit 9 Timeline event visible: ${JSON.stringify(actual)}`);
+  assert.deepEqual({
+    period: actual.period, selectedAnchor: actual.selectedAnchor, selectedEventKey: actual.selectedEventKey,
+    currentEventKeys: actual.currentEventKeys, selectedMapPins: actual.selectedMapPins,
+  }, {
+    period: 'u9', selectedAnchor: { num: fixture.number, region: fixture.region },
+    selectedEventKey: fixture.mainEventKey, currentEventKeys: [fixture.mainEventKey],
+    selectedMapPins: [fixture.number],
+  }, `${label} must synchronize Unit 9 map anchor and exact Timeline selection: ${JSON.stringify(actual)}`);
+}
+
+async function assertUnit9StudyState(context, fixture, studyId, depth, label) {
+  await assertUnit9TimelineState(context, fixture, label);
+  const actual = await context.locator('body').evaluate(() => {
+    const state = window.__mapFilter.getLocationStudyUiState();
+    const view = document.querySelector('#eventPanel [data-location-study-view]');
+    return {
+      unitId: state.unitId, studyId: state.studyId, connectionDepth: state.connectionDepth,
+      number: view?.dataset.locationStudyView || null, unit: view?.dataset.locationStudyUnit || null,
+      detail: view?.querySelector('[data-study-detail]')?.dataset.studyDetail || null,
+      details: view?.querySelectorAll('[data-study-detail]').length || 0,
+    };
+  });
+  assert.deepEqual(actual, {
+    unitId: 'u9', studyId, connectionDepth: depth, number: fixture.number,
+    unit: 'u9', detail: studyId, details: 1,
+  }, `${label} must keep canonical Unit 9 study state`);
+}
+
+async function normalizeUnit9FilterSurface(page, frame, surface, label) {
+  const { canonical } = unit9Surface(page, frame, surface);
+  await canonical.locator('body').evaluate(() => {
+    window.__mapFilter.reset();
+    window.__mapFilter.setLearningView('map');
+    window.__mapFilter.setPeriod('u9');
+    window.__mapFilter.setQuery('');
+    for (const category of window.__mapFilter.getCats()) {
+      if (!window.__mapFilter.getState().cats.has(category.abbr)) window.__mapFilter.toggleCat(category.abbr);
+    }
+    document.querySelector('.region-path[role="button"][aria-pressed="true"]')?.dispatchEvent(
+      new MouseEvent('click', { bubbles: true }));
+  });
+  if (surface === 'homepage') {
+    await page.waitForFunction(() => {
+      const win = document.querySelector('#worldMapFrame')?.contentWindow;
+      const state = win?.__mapFilter?.getState();
+      const allCats = win?.__mapFilter?.getCats().length;
+      return state?.period === 'u9' && state.query === '' && state.region === null
+        && state.cats.size === allCats && document.querySelector('#hostPeriod')?.value === 'u9'
+        && document.querySelector('#hostSearch')?.value === ''
+        && document.querySelectorAll('#hostCats [data-cat][aria-pressed="true"]').length === allCats;
+    });
+  } else {
+    await page.waitForFunction(() => {
+      const state = window.__mapFilter.getState();
+      return state.period === 'u9' && state.query === '' && state.region === null
+        && state.cats.size === window.__mapFilter.getCats().length;
+    });
+  }
+  const normalized = await unit5FilterState(canonical);
+  assert.deepEqual(normalized, {
+    query: '', cats: normalized.allCats, allCats: normalized.allCats,
+    period: 'u9', region: null, pressedRegions: [],
+  }, `${label} must begin from a normalized Unit 9 filter state`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, normalized, `${label} homepage controls`);
+}
+
+async function openUnit9OrdinaryEvent(page, frame, surface, fixture, label, { preserveFilters = false } = {}) {
+  const { canonical, panel } = unit9Surface(page, frame, surface);
+  if (!preserveFilters) await normalizeUnit9FilterSurface(page, frame, surface, label);
+  if (surface === 'standalone') {
+    await canonical.locator('body').evaluate((body, current) => {
+      window.__mapFilter.openHit(current.number, current.region, current.mainEventKey);
+    }, fixture);
+  } else {
+    if (!preserveFilters) {
+      const title = await canonical.locator('body').evaluate((body, eventKey) =>
+        window.getTimelineState().visibleEvents.find(event => event.key === eventKey)?.titleEn || null,
+      fixture.mainEventKey);
+      assert.ok(title, `${label} must resolve its exact Unit 9 Timeline title`);
+      await page.locator('#hostSearch').fill(title);
+      await page.waitForFunction(expected => document.querySelector('#worldMapFrame')?.contentWindow
+        ?.__mapFilter?.getState().query === expected, title);
+    }
+    const result = panel.locator(`.event-card.is-result[data-event-key="${fixture.mainEventKey}"]`);
+    try {
+      await result.waitFor({ state: 'visible' });
+    } catch (error) {
+      const diagnostic = await page.evaluate(({ eventKey }) => {
+        const iframe = document.querySelector('#worldMapFrame');
+        const win = iframe?.contentWindow;
+        const state = win?.__mapFilter?.getState?.();
+        const host = document.querySelector('#home-events');
+        const exact = host?.querySelector(`.event-card.is-result[data-event-key="${eventKey}"]`);
+        return {
+          hostSearch: document.querySelector('#hostSearch')?.value,
+          state: state ? { query: state.query, period: state.period, region: state.region, cats: [...state.cats] } : null,
+          canonicalSelected: win?.getTimelineState?.().selectedEventKey,
+          canonicalPanel: win?.document.querySelector('#eventPanel')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 240),
+          hostPanel: host?.textContent.replace(/\s+/g, ' ').trim().slice(0, 240),
+          hostDisplay: host ? getComputedStyle(host).display : null,
+          exactExists: Boolean(exact),
+          exactDisplay: exact ? getComputedStyle(exact).display : null,
+        };
+      }, { eventKey: fixture.mainEventKey });
+      throw new Error(`${label} homepage result diagnostic: ${JSON.stringify(diagnostic)}`, { cause: error });
+    }
+    await result.click();
+  }
+  const entry = panel.locator(
+    `[data-location-study-open="${fixture.number}"][data-location-study-event-key="${fixture.mainEventKey}"]`);
+  try {
+    await expectVisible(entry, `${label} must expose its exact View all 3 study points entry`);
+  } catch (error) {
+    const diagnostic = await page.evaluate(({ surface, number, eventKey }) => {
+      const win = surface === 'standalone' ? window : document.querySelector('#worldMapFrame')?.contentWindow;
+      const mirror = surface === 'standalone' ? document.querySelector('#eventPanel') : document.querySelector('#home-events');
+      return {
+        state: win?.__mapFilter?.getState(),
+        timeline: win?.getTimelineState?.().selectedEventKey,
+        canonical: win?.document.querySelector('#eventPanel')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 240),
+        mirror: mirror?.textContent.replace(/\s+/g, ' ').trim().slice(0, 240),
+        canonicalEntry: Boolean(win?.document.querySelector(
+          `[data-location-study-open="${number}"][data-location-study-event-key="${eventKey}"]`)),
+      };
+    }, { surface, number: fixture.number, eventKey: fixture.mainEventKey });
+    throw new Error(`${label} exact study-entry diagnostic: ${JSON.stringify(diagnostic)}`, { cause: error });
+  }
+  await assertUnit9TimelineState(canonical, fixture, `${label} ordinary event`);
+  assert.equal((await entry.textContent()).trim(), 'View all 3 study points',
+    `${label} must use the shared three-point entry label`);
+  assert.equal(await panel.locator('[data-location-study-open]').count(), 1,
+    `${label} must expose exactly one study entry`);
+  const filterSnapshot = await unit5FilterState(canonical);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, filterSnapshot, `${label} host controls`);
+  return {
+    canonical, panel, entry, filterSnapshot,
+    ordinarySnapshot: await unit5OrdinaryEventSnapshot(panel),
+    timelineSnapshot: await unit5TimelineState(canonical),
+  };
+}
+
+async function openUnit9Study(page, frame, surface, fixture, label, options) {
+  const ordinary = await openUnit9OrdinaryEvent(page, frame, surface, fixture, label, options);
+  await ordinary.entry.click();
+  const view = ordinary.panel.locator(
+    `[data-location-study-view="${fixture.number}"][data-location-study-unit="u9"]`);
+  await expectVisible(view, `${label} must open the Unit 9 study view`);
+  return { ...ordinary, view };
+}
+
+async function assertUnit9StudyView(view, fixture, label, canonicalFrame = null) {
+  const title = view.locator('.location-study-title');
+  assert.equal((await title.textContent()).trim(), `${fixture.label} · Unit 9`,
+    `${label} must render the exact country/region-plus-city heading`);
+  assert.equal(await title.evaluate(node => document.activeElement === node), true,
+    `${label} opening must focus the Unit 9 heading`);
+  const rows = view.locator('[data-study-event]');
+  assert.deepEqual(await rows.evaluateAll(nodes => nodes.map(node => node.dataset.studyEvent)), fixture.ids,
+    `${label} must render the exact three stable IDs in order`);
+  for (let index = 0; index < fixture.ids.length; index += 1) {
+    await rows.nth(index).click();
+    const expectedId = fixture.ids[index];
+    assert.equal(await view.locator('[data-study-detail]').count(), 1,
+      `${label} row ${index + 1} must leave exactly one detail`);
+    assert.equal(await view.locator('[data-study-detail]').getAttribute('data-study-detail'), expectedId,
+      `${label} row ${index + 1} must render the exact clicked detail`);
+    assert.equal(await view.locator('[data-study-event][aria-expanded="true"]').count(), 1,
+      `${label} row ${index + 1} must leave exactly one expanded record`);
+    assert.equal(await view.locator('[data-study-event][aria-current="true"]').count(), 1,
+      `${label} row ${index + 1} must leave exactly one current record`);
+    assert.equal(await rows.nth(index).getAttribute('data-study-event'), expectedId,
+      `${label} row ${index + 1} must retain the exact fixture ID`);
+    assert.equal(await rows.nth(index).getAttribute('aria-expanded'), 'true',
+      `${label} row ${index + 1} itself must be expanded`);
+    assert.equal(await rows.nth(index).getAttribute('aria-current'), 'true',
+      `${label} row ${index + 1} itself must be current`);
+    assert.equal(await rows.nth(index).evaluate(node => document.activeElement === node), true,
+      `${label} row ${index + 1} must retain focus`);
+  }
+  if (canonicalFrame) {
+    const canonical = canonicalFrame.locator(
+      `#eventPanel [data-location-study-view="${fixture.number}"][data-location-study-unit="u9"]`);
+    assert.deepEqual(await unit5StudySnapshot(view), await unit5StudySnapshot(canonical),
+      `${label} must preserve iframe/mirror study parity`);
+  }
+}
+
+async function assertUnit9OuterBack(page, frame, surface, opened, fixture, label) {
+  const back = opened.view.locator(`[data-location-study-back="${fixture.number}"]`);
+  await back.click();
+  await expectVisible(opened.entry, `${label} outer Back must restore the ordinary source entry`);
+  assert.equal(await opened.entry.evaluate(node => document.activeElement === node), true,
+    `${label} outer Back must restore source-entry focus`);
+  assert.equal(await opened.panel.locator('[data-location-study-view]').count(), 0,
+    `${label} outer Back must remove study DOM`);
+  assert.deepEqual(await unit5OrdinaryEventSnapshot(opened.panel), opened.ordinarySnapshot,
+    `${label} outer Back must restore exact ordinary detail`);
+  await assertUnit9TimelineState(opened.canonical, fixture, `${label} outer Back`);
+  assert.deepEqual(await unit5FilterState(opened.canonical), opened.filterSnapshot,
+    `${label} outer Back must restore filters`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, opened.filterSnapshot, `${label} host controls`);
+}
+
+async function assertUnit9ConnectionJump(page, frame, surface, jump) {
+  const source = unit9FixtureByStudyId(jump.source);
+  const target = unit9FixtureByStudyId(jump.target);
+  assert.ok(source && target, `${jump.name} must resolve both Unit 9 fixtures`);
+  const label = `${surface} Unit 9 ${jump.name}`;
+  const opened = await openUnit9Study(page, frame, surface, source, label);
+  await opened.view.locator(`[data-study-event="${jump.source}"]`).click();
+  const detail = opened.view.locator(`[data-study-detail="${jump.source}"]`);
+  for (const key of ['evidence', 'connections']) {
+    const disclosure = detail.locator(`details[data-study-disclosure="${key}"]`);
+    if ((await disclosure.getAttribute('open')) === null) await disclosure.locator('summary').click();
+  }
+  const connection = detail.locator(
+    `[data-study-connection="${jump.target}"][data-study-connection-from="${jump.source}"]`);
+  await expectVisible(connection, `${label} must expose its named connection`);
+  assert.equal((await connection.locator('xpath=ancestor::*[@data-study-connection-group][1]/h4').textContent()).trim(), jump.group,
+    `${label} must expose the expected connection type`);
+  await connection.click();
+  const targetView = opened.panel.locator(
+    `[data-location-study-view="${target.number}"][data-location-study-unit="u9"]`);
+  await expectVisible(targetView, `${label} target study must open`);
+  await assertUnit9StudyState(opened.canonical, target, jump.target, 1, `${label} target`);
+  if (jump.reciprocal) {
+    const targetDetail = targetView.locator(`[data-study-detail="${jump.target}"]`);
+    const targetConnections = targetDetail.locator('details[data-study-disclosure="connections"]');
+    if ((await targetConnections.getAttribute('open')) === null) await targetConnections.locator('summary').click();
+    const reverse = targetConnections.locator(
+      `[data-study-connection="${jump.source}"][data-study-connection-from="${jump.target}"]`);
+    await expectVisible(reverse, `${label} must expose the reciprocal related comparison`);
+    assert.equal((await reverse.locator('xpath=ancestor::*[@data-study-connection-group][1]/h4').textContent()).trim(),
+      'Related Event', `${label} reciprocal must remain a Related Event`);
+  }
+  await targetView.locator('[data-study-connection-back]').click();
+  const sourceView = opened.panel.locator(
+    `[data-location-study-view="${source.number}"][data-location-study-unit="u9"]`);
+  await assertUnit9StudyState(opened.canonical, source, jump.source, 0, `${label} connection Back`);
+  assert.equal(await sourceView.locator(`[data-study-connection="${jump.target}"]`)
+    .evaluate(node => document.activeElement === node), true,
+  `${label} connection Back must restore invoking connection focus`);
+  assert.deepEqual(await sourceView.locator(`[data-study-detail="${jump.source}"] details[open]`)
+    .evaluateAll(nodes => nodes.map(node => node.dataset.studyDisclosure)), ['evidence', 'connections'],
+  `${label} connection Back must restore source disclosures`);
+  await sourceView.locator(`[data-location-study-back="${source.number}"]`).click();
+}
+
+async function prepareUnit9DepthTwoFilters(page, frame, surface, fixture) {
+  const { canonical } = unit9Surface(page, frame, surface);
+  await normalizeUnit9FilterSurface(page, frame, surface, `${surface} Unit 9 connection stack`);
+  const title = await canonical.locator('body').evaluate((body, key) =>
+    window.getTimelineState().visibleEvents.find(event => event.key === key)?.titleEn || null,
+  fixture.mainEventKey);
+  assert.ok(title, `${surface} Unit 9 connection stack must resolve the source Timeline title`);
+  await canonical.locator('body').evaluate((body, title) => window.__mapFilter.setQuery(title), title);
+  const sourceResult = surface === 'standalone'
+    ? canonical.locator(`.event-card.is-result[data-event-key="${fixture.mainEventKey}"]`)
+    : page.locator(`#home-events .event-card.is-result[data-event-key="${fixture.mainEventKey}"]`);
+  try {
+    await sourceResult.waitFor({ state: 'visible' });
+  } catch (error) {
+    const diagnostic = await canonical.locator('body').evaluate((body, eventKey) => ({
+      state: (() => { const state = window.__mapFilter.getState(); return {
+        query: state.query, cats: [...state.cats], period: state.period, region: state.region,
+      }; })(),
+      categories: window.__mapFilter.getCats(),
+      results: [...document.querySelectorAll('.event-card.is-result')].map(card => ({
+        key: card.dataset.eventKey, category: card.querySelector('.ec-cat')?.textContent.trim(),
+      })),
+      timelineVisible: window.getTimelineState().visibleEventKeys.includes(eventKey),
+    }), fixture.mainEventKey);
+    throw new Error(`${surface} Unit 9 filtered source must remain visible: ${JSON.stringify(diagnostic)}`, { cause: error });
+  }
+  await canonical.locator('body').evaluate(() => {
+    // Washington's exact source event is ECN. Excluding TEC creates a real nonempty
+    // category subset without filtering the source out of its own stack fixture.
+    window.__mapFilter.toggleCat('TEC');
+  });
+  await canonical.locator(`.region-path[data-region="${fixture.region}"][role="button"]`).evaluate(node =>
+    node.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  try {
+    await sourceResult.waitFor({ state: 'visible' });
+  } catch (error) {
+    const diagnostic = await canonical.locator('body').evaluate((body, eventKey) => {
+      const state = window.__mapFilter.getState();
+      return {
+        state: { query: state.query, cats: [...state.cats], period: state.period, region: state.region },
+        results: [...document.querySelectorAll('.event-card.is-result')].map(card => ({
+          key: card.dataset.eventKey, category: card.querySelector('.ec-cat')?.textContent.trim(),
+        })),
+        timelineVisible: window.getTimelineState().visibleEventKeys.includes(eventKey),
+      };
+    }, fixture.mainEventKey);
+    throw new Error(`${surface} Unit 9 query/category/region source must remain visible: ${JSON.stringify(diagnostic)}`, { cause: error });
+  }
+  const state = await unit5FilterState(canonical);
+  assert.equal(state.query, title, `${surface} Unit 9 stack must retain a nonempty query`);
+  assert.equal(state.period, 'u9', `${surface} Unit 9 stack must retain Unit 9`);
+  assert.deepEqual(state.pressedRegions, [fixture.region], `${surface} Unit 9 stack must retain its source region`);
+  assert.ok(state.cats.length > 0 && state.cats.length < state.allCats.length,
+    `${surface} Unit 9 stack must retain a nonempty category subset`);
+  if (surface === 'homepage') {
+    await page.waitForFunction(expected => document.querySelector('#hostSearch')?.value === expected, title);
+    await assertHomepageFilterControls(page, state, `${surface} Unit 9 stack host controls`);
+  }
+  return state;
+}
+
+async function verifyUnit9DepthTwoNavigation(page, frame, surface) {
+  const sourceId = 'apwh-u9-washington-development-lending-conditionality';
+  const middleId = 'apwh-u9-washington-institutional-power-benefits-criticism';
+  const targetId = 'apwh-u9-paris-voluntary-climate-governance-limits';
+  const source = unit9FixtureByStudyId(sourceId);
+  const middle = unit9FixtureByStudyId(middleId);
+  const target = unit9FixtureByStudyId(targetId);
+  const { canonical } = unit9Surface(page, frame, surface);
+  const label = `${surface} Unit 9 depth-two filtered navigation`;
+  const rootFilters = await prepareUnit9DepthTwoFilters(page, frame, surface, source);
+  const opened = await openUnit9Study(page, frame, surface, source, label, { preserveFilters: true });
+  await opened.view.locator(`[data-study-event="${sourceId}"]`).click();
+  const sourceDetail = opened.view.locator(`[data-study-detail="${sourceId}"]`);
+  await sourceDetail.locator('details[data-study-disclosure="evidence"] summary').click();
+  await followUnit5StudyConnection(opened.view, sourceId, middleId, 'Effect', `${label} first hop`);
+  let middleView = opened.panel.locator(
+    `[data-location-study-view="${middle.number}"][data-location-study-unit="u9"]`);
+  await assertUnit9StudyState(canonical, middle, middleId, 1, `${label} first hop`);
+  assert.deepEqual(await unit5FilterState(canonical), rootFilters,
+    `${label} same-location first hop must preserve query, category, and region filters`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, rootFilters, `${label} first-hop controls`);
+  await followUnit5StudyConnection(middleView, middleId, targetId, 'Related Event', `${label} second hop`);
+  let targetView = opened.panel.locator(
+    `[data-location-study-view="${target.number}"][data-location-study-unit="u9"]`);
+  await assertUnit9StudyState(canonical, target, targetId, 2, `${label} second hop`);
+  const released = await unit5FilterState(canonical);
+  assert.deepEqual(released, {
+    query: '', cats: released.allCats, allCats: released.allCats,
+    period: 'u9', region: null, pressedRegions: [],
+  }, `${label} cross-region hop must release hidden target filters`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, released, `${label} released controls`);
+  await targetView.locator('[data-study-connection-back]').click();
+  middleView = opened.panel.locator(
+    `[data-location-study-view="${middle.number}"][data-location-study-unit="u9"]`);
+  await assertUnit9StudyState(canonical, middle, middleId, 1, `${label} second-hop Back`);
+  assert.deepEqual(await unit5FilterState(canonical), rootFilters,
+    `${label} target Connection Back must immediately restore root filters`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, rootFilters, `${label} target Back controls`);
+  assert.equal(await middleView.locator(`[data-study-connection="${targetId}"]`)
+    .evaluate(node => document.activeElement === node), true,
+  `${label} second-hop Back must restore invoking connection focus`);
+  await middleView.locator('[data-study-connection-back]').click();
+  const sourceView = opened.panel.locator(
+    `[data-location-study-view="${source.number}"][data-location-study-unit="u9"]`);
+  await assertUnit9StudyState(canonical, source, sourceId, 0, `${label} first-hop Back`);
+  assert.equal(await sourceView.locator(`[data-study-connection="${middleId}"]`)
+    .evaluate(node => document.activeElement === node), true,
+  `${label} first-hop Back must restore invoking connection focus`);
+  assert.deepEqual(await sourceView.locator(`[data-study-detail="${sourceId}"] details[open]`)
+    .evaluateAll(nodes => nodes.map(node => node.dataset.studyDisclosure)), ['evidence', 'connections'],
+  `${label} must restore its source disclosure state`);
+  assert.deepEqual(await unit5FilterState(canonical), rootFilters,
+    `${label} connection Back must restore query, category, and region filters`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, rootFilters, `${label} restored controls`);
+  await followUnit5StudyConnection(sourceView, sourceId, middleId, 'Effect', `${label} repeated first hop`);
+  middleView = opened.panel.locator(
+    `[data-location-study-view="${middle.number}"][data-location-study-unit="u9"]`);
+  await followUnit5StudyConnection(middleView, middleId, targetId, 'Related Event', `${label} repeated second hop`);
+  targetView = opened.panel.locator(
+    `[data-location-study-view="${target.number}"][data-location-study-unit="u9"]`);
+  await assertUnit9StudyState(canonical, target, targetId, 2, `${label} repeated target`);
+  await targetView.locator(`[data-location-study-back="${target.number}"]`).click();
+  await expectVisible(opened.entry, `${label} target outer Back must restore original source entry`);
+  assert.deepEqual(await unit5OrdinaryEventSnapshot(opened.panel), opened.ordinarySnapshot,
+    `${label} target outer Back must restore exact source ordinary content`);
+  assert.equal(await opened.entry.evaluate(node => document.activeElement === node), true,
+    `${label} target outer Back must restore source-entry focus`);
+  assert.deepEqual(await unit5FilterState(canonical), rootFilters,
+    `${label} target outer Back must restore root filters`);
+  if (surface === 'homepage') await assertHomepageFilterControls(page, rootFilters, `${label} target outer Back controls`);
+  await assertUnit9TimelineState(canonical, source, `${label} target outer Back`);
+  assert.equal(await opened.panel.locator('[data-location-study-view], [data-study-detail], [data-study-connection-back]').count(), 0,
+    `${label} target outer Back must clear study views, disclosures, and connection controls`);
+  await assertUnit5StudyStateCleared(canonical, `${label} target outer Back`);
+}
+
+async function verifyUnit9KeyboardAndResponsive(page, frame, surface) {
+  const fixture = UNIT_9_STUDY_VIEWS.find(item => item.number === '70');
+  const label = `${surface} Unit 9 keyboard and narrow San Francisco contract`;
+  const opened = await openUnit9OrdinaryEvent(page, frame, surface, fixture, label);
+  await opened.entry.focus();
+  await page.keyboard.press('Tab'); await page.keyboard.press('Shift+Tab');
+  await assertUnit9FocusedControl(opened.entry, `${label} entry`);
+  await opened.entry.press('Enter');
+  let view = opened.panel.locator(`[data-location-study-view="${fixture.number}"][data-location-study-unit="u9"]`);
+  await expectVisible(view, `${label} keyboard Enter must open the study`);
+  const row = view.locator('[data-study-event="apwh-u9-san-francisco-computing-internet-information-costs"]');
+  await row.focus(); await row.press('Space');
+  await assertUnit9FocusedControl(row, `${label} record`);
+  const disclosure = view.locator('[data-study-detail] details[data-study-disclosure="connections"]');
+  const summary = disclosure.locator('summary');
+  await summary.focus(); await summary.press('Enter');
+  await assertUnit9FocusedControl(summary, `${label} disclosure`);
+  const connection = disclosure.locator('[data-study-connection="apwh-u9-seoul-digital-platforms-transnational-audiences"]');
+  await expectVisible(connection, `${label} must expose the San-Francisco-to-Seoul causal connection`);
+  await connection.focus();
+  await assertUnit9FocusedControl(connection, `${label} connection`);
+  await connection.press('Enter');
+  view = opened.panel.locator('[data-location-study-view][data-location-study-unit="u9"]');
+  await page.waitForFunction(({ surface }) => {
+    const root = surface === 'standalone' ? document.querySelector('#eventPanel') : document.querySelector('#home-events');
+    return root?.querySelector('.location-study-title') === document.activeElement;
+  }, { surface });
+  const connectionBack = view.locator('[data-study-connection-back]');
+  await connectionBack.focus();
+  await assertUnit9FocusedControl(connectionBack, `${label} connection Back`);
+  await connectionBack.press('Enter');
+  view = opened.panel.locator(`[data-location-study-view="${fixture.number}"][data-location-study-unit="u9"]`);
+  await expectVisible(view, `${label} keyboard connection Back must restore San Francisco`);
+  await page.waitForFunction(({ surface }) => {
+    const root = surface === 'standalone' ? document.querySelector('#eventPanel') : document.querySelector('#home-events');
+    return root?.querySelector('[data-study-connection="apwh-u9-seoul-digital-platforms-transnational-audiences"]') === document.activeElement;
+  }, { surface });
+  const back = view.locator(`[data-location-study-back="${fixture.number}"]`);
+  await back.focus();
+  await assertUnit9FocusedControl(back, `${label} outer Back`);
+  await back.press('Enter');
+  await expectVisible(opened.entry, `${label} keyboard outer Back must restore the entry`);
+  await page.waitForFunction(({ surface, number }) => {
+    const root = surface === 'standalone' ? document.querySelector('#eventPanel') : document.querySelector('#home-events');
+    return root?.querySelector(`[data-location-study-open="${number}"]`) === document.activeElement;
+  }, { surface, number: fixture.number });
+
+  const originalViewport = page.viewportSize();
+  await page.setViewportSize({ width: 360, height: 700 });
+  await normalizeUnit9FilterSurface(page, frame, surface, `${label} narrow`);
+  const viewport = surface === 'standalone' ? page : frame;
+  const timeline = await viewport.locator('body').evaluate(() => ({
+    scroll: document.querySelector('.world-timeline-track')?.scrollWidth || 0,
+    client: document.querySelector('.world-timeline-track')?.clientWidth || 0,
+    overflowX: (() => {
+      const track = document.querySelector('.world-timeline-track');
+      return track ? getComputedStyle(track).overflowX : null;
+    })(),
+    scrollLeft: (() => {
+      const track = document.querySelector('.world-timeline-track');
+      if (!track) return { before: 0, after: 0 };
+      track.scrollLeft = 0;
+      const before = track.scrollLeft;
+      track.scrollLeft = Math.min(80, Math.max(1, track.scrollWidth - track.clientWidth));
+      return { before, after: track.scrollLeft };
+    })(),
+  }));
+  assert.ok(timeline.scroll > timeline.client,
+    `${label} Timeline must remain horizontally scrollable: ${JSON.stringify(timeline)}`);
+  assert.match(timeline.overflowX || '', /^(auto|scroll)$/,
+    `${label} Timeline computed overflow-x must permit horizontal scrolling: ${JSON.stringify(timeline)}`);
+  assert.ok(timeline.scrollLeft.after > timeline.scrollLeft.before,
+    `${label} Timeline must demonstrate a real scrollLeft change: ${JSON.stringify(timeline)}`);
+  // The responsive check starts from the normalized all-events state above. On
+  // the homepage, that state has no result cards until a query is applied, so
+  // enter through the same host-search path a student uses instead of asking
+  // the helper to preserve a deliberately empty query.
+  const narrow = await openUnit9Study(page, frame, surface, fixture, `${label} narrow`);
+  assert.equal((await narrow.view.locator('.location-study-title').textContent()).trim(), `${fixture.label} · Unit 9`,
+    `${label} must preserve the longest San Francisco heading`);
+  const geometry = await viewport.locator('body').evaluate(() => ({
+    scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth,
+  }));
+  assert.ok(geometry.scroll <= geometry.client + 1,
+    `${label} narrow view must not create document overflow: ${JSON.stringify(geometry)}`);
+  if (surface === 'homepage') {
+    const host = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth,
+    }));
+    assert.ok(host.scroll <= host.client + 1,
+      `${label} narrow homepage must not create document overflow: ${JSON.stringify(host)}`);
+  }
+  await narrow.view.locator(`[data-location-study-back="${fixture.number}"]`).click();
+  if (originalViewport) await page.setViewportSize(originalViewport);
+}
+
+async function assertUnit9Cleanup(page, frame, surface, nextUnit) {
+  const fixture = UNIT_9_STUDY_VIEWS[0];
+  const jump = UNIT_9_CONNECTION_JUMPS[0];
+  const label = `${surface} Unit 9 to ${nextUnit} cleanup`;
+  const opened = await openUnit9Study(page, frame, surface, fixture, label);
+  await followUnit5StudyConnection(opened.view, jump.source, jump.target, jump.group, `${label} seeded connection`);
+  const targetView = opened.panel.locator(
+    `[data-location-study-view="${fixture.number}"][data-location-study-unit="u9"]`);
+  const targetDetail = targetView.locator(`[data-study-detail="${jump.target}"]`);
+  const evidence = targetDetail.locator('details[data-study-disclosure="evidence"]');
+  if ((await evidence.getAttribute('open')) === null) await evidence.locator('summary').click();
+  await page.waitForFunction(({ surface, stateKey }) => {
+    const win = surface === 'standalone'
+      ? window : document.querySelector('#worldMapFrame')?.contentWindow;
+    return win?.__mapFilter?.getLocationStudyUiState().openDisclosures.includes(stateKey);
+  }, { surface, stateKey: `${jump.target}:evidence` });
+  const seeded = await unit5ExposedStudyState(opened.canonical);
+  assert.equal(seeded.connectionDepth, 1, `${label} must seed a nonempty connection stack before cleanup`);
+  assert.deepEqual(seeded.openDisclosures, [`${jump.target}:evidence`],
+    `${label} must seed an open disclosure before cleanup`);
+  await opened.canonical.locator('body').evaluate((body, unit) => window.__mapFilter.setPeriod(unit), nextUnit);
+  await opened.canonical.locator('#eventPanel [data-location-study-view]').waitFor({ state: 'detached' });
+  for (const selector of ['[data-location-study-unit="u9"]', '[data-study-detail]', '[data-study-connection-back]', '[data-location-study-back]']) {
+    assert.equal(await opened.panel.locator(selector).count(), 0, `${label} must clear stale ${selector}`);
+  }
+  await assertUnit5StudyStateCleared(opened.canonical, label);
+  if (surface === 'homepage') {
+    await page.waitForFunction(unit => document.querySelector('#hostPeriod')?.value === unit, nextUnit);
+    assert.equal(await opened.panel.locator('[data-location-study-view]').count(), 0,
+      `${label} homepage mirror must clear stale study DOM`);
+  }
+}
+
+async function assertUnit9DhakaOrdinaryOnly(page, frame, surface) {
+  const label = `${surface} Unit 9 Dhaka ordinary-only event`;
+  const { canonical, panel } = unit9Surface(page, frame, surface);
+  await normalizeUnit9FilterSurface(page, frame, surface, label);
+  if (surface === 'standalone') {
+    await canonical.locator('body').evaluate((body, fixture) =>
+      window.__mapFilter.openHit(fixture.number, fixture.region, fixture.mainEventKey), UNIT_9_DHAKA);
+  } else {
+    await page.locator('#hostSearch').fill(UNIT_9_DHAKA.title);
+    await page.waitForFunction(expected => document.querySelector('#worldMapFrame')?.contentWindow
+      ?.__mapFilter?.getState().query === expected, UNIT_9_DHAKA.title);
+    const result = panel.locator(`.event-card.is-result[data-event-key="${UNIT_9_DHAKA.mainEventKey}"]`);
+    await result.waitFor({ state: 'visible' });
+    await result.click();
+  }
+  const cards = panel.locator('.event-list > .event-card');
+  await expectVisible(cards, `${label} must show ordinary detail`);
+  assert.equal(await cards.count(), 1, `${label} must expose exactly one ordinary event card`);
+  assert.equal((await panel.locator('.event-head .city-name').textContent()).trim(), UNIT_9_DHAKA.city,
+    `${label} must retain the Dhaka city heading`);
+  assert.equal((await cards.locator('.ec-yr').textContent()).trim(), UNIT_9_DHAKA.date,
+    `${label} must retain the Dhaka date`);
+  assert.equal((await cards.locator('.ec-trig .hl').first().textContent()).trim(), UNIT_9_DHAKA.title,
+    `${label} must retain the Rana Plaza event title`);
+  assert.equal(await panel.locator('[data-location-study-open], [data-location-study-view]').count(), 0,
+    `${label} must remain ordinary-only`);
+  await assertUnit9TimelineState(canonical, UNIT_9_DHAKA, label);
+}
+
+async function verifyStandaloneUnit9StudyContract(page) {
+  for (const fixture of UNIT_9_STUDY_VIEWS) {
+    const label = `standalone ${fixture.label} Unit 9`;
+    const opened = await openUnit9Study(page, null, 'standalone', fixture, label);
+    await assertUnit9StudyView(opened.view, fixture, label);
+    unit9StandaloneParitySnapshots.set(fixture.number, await unit5StudySnapshot(opened.view));
+    await assertUnit9OuterBack(page, null, 'standalone', opened, fixture, label);
+  }
+  for (const jump of UNIT_9_CONNECTION_JUMPS) await assertUnit9ConnectionJump(page, null, 'standalone', jump);
+  await verifyUnit9DepthTwoNavigation(page, null, 'standalone');
+  await verifyUnit9KeyboardAndResponsive(page, null, 'standalone');
+  await assertUnit9Cleanup(page, null, 'standalone', 'u8');
+  await assertUnit9Cleanup(page, null, 'standalone', '');
+  await assertUnit9DhakaOrdinaryOnly(page, null, 'standalone');
+}
+
+async function verifyHomepageUnit9StudyContract(page, frame) {
+  for (const fixture of UNIT_9_STUDY_VIEWS) {
+    const label = `homepage ${fixture.label} Unit 9`;
+    const opened = await openUnit9Study(page, frame, 'homepage', fixture, label);
+    await assertUnit9StudyView(opened.view, fixture, label, frame);
+    assert.deepEqual(await unit5StudySnapshot(opened.view), unit9StandaloneParitySnapshots.get(fixture.number),
+      `${label} must preserve standalone/homepage content and one-open parity`);
+    await assertUnit9OuterBack(page, frame, 'homepage', opened, fixture, label);
+  }
+  for (const jump of UNIT_9_CONNECTION_JUMPS) await assertUnit9ConnectionJump(page, frame, 'homepage', jump);
+  await verifyUnit9DepthTwoNavigation(page, frame, 'homepage');
+  await verifyUnit9KeyboardAndResponsive(page, frame, 'homepage');
+  await assertUnit9Cleanup(page, frame, 'homepage', 'u8');
+  await assertUnit9Cleanup(page, frame, 'homepage', '');
+  await assertUnit9DhakaOrdinaryOnly(page, frame, 'homepage');
+}
 async function assertProgressiveCoreVisible(detail, label) {
   const coreSections = detail.locator('[data-study-core-label]');
   assert.equal(await coreSections.count(), 4, `${label} must render all four always-visible core sections`);
@@ -6567,6 +7221,7 @@ async function verifyTimeline(page, port) {
   await verifyStandaloneUnit6StudyContract(page);
   await verifyStandaloneUnit7StudyContract(page);
   await verifyStandaloneUnit8StudyContract(page);
+  await verifyStandaloneUnit9StudyContract(page);
 
   await page.evaluate(() => {
     window.__mapFilter.setPeriod('u6');
@@ -8446,6 +9101,7 @@ async function verifyHomeLearningShell(page, port) {
   await verifyHomepageUnit6StudyContract(page, frame);
   await verifyHomepageUnit7StudyContract(page, frame);
   await verifyHomepageUnit8StudyContract(page, frame);
+  await verifyHomepageUnit9StudyContract(page, frame);
 }
 
 async function verifyUnit7StandaloneSarajevoSmoke(page, port) {
@@ -8536,6 +9192,7 @@ export async function verifyBrowser() {
   verifyUnit6Fixture(worldMapSource);
   verifyUnit7Fixture(worldMapSource);
   verifyUnit8Fixture(worldMapSource);
+  verifyUnit9Fixture(worldMapSource);
   // Canonical data currently exercises every disclosure, so execute the actual shipped
   // helper to cover the otherwise-unreachable empty-optional-section contract.
   verifyStudyDisclosureRendererRuntime(worldMapSource);
