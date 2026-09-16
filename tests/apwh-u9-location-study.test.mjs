@@ -4,7 +4,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const moduleUrl=new URL('../data/apwh-u9-location-study.js',import.meta.url);
+const ledgerUrl=new URL('../docs/data-sources/apwh-u9-location-study-source-ledger.md',import.meta.url);
 const source=existsSync(moduleUrl)?readFileSync(moduleUrl,'utf8'):'';
+const ledger=existsSync(ledgerUrl)?readFileSync(ledgerUrl,'utf8'):'';
 const evaluateSandbox=(code=source,seed={})=>{const sandbox={...seed};sandbox.window=sandbox;vm.runInNewContext(code,sandbox);return sandbox;};
 const evaluate=(code=source,seed={})=>evaluateSandbox(code,seed).APWH_U9_LOCATION_STUDY;
 const expectedLocations=new Map([
@@ -22,6 +24,41 @@ const expectedLocations=new Map([
 const expectedBindings=new Map([
   ['11','world-event-11-3'],['70','world-event-70-2'],['15','world-event-15-1'],['65','world-event-65-0'],['5','world-event-5-13'],['54','world-event-54-5'],['112','world-event-112-0'],['24','world-event-24-9'],['34','world-event-34-2'],['110','world-event-110-1'],
 ]);
+const ledgerIntroduction='# APWH Unit 9 Location Study Source Ledger\n\nThe learner records use edition-neutral locators in AMSCO AP World History Unit 9 and the College Board framework effective Fall 2026. Map pins are representative anchors; a named city does not imply that every national or global process occurred only there. Institutional labels remain distinct, and project-authored causal or comparison analysis is identified separately from sourced facts.';
+const ledgerHeader='| Stable ID | AP topic assignment | Main event | Source locator | Claims covered and caveat |';
+const ledgerSeparator='| --- | --- | --- | --- | --- |';
+const expectedLedgerRows=[
+  ['apwh-u9-amritsar-high-yield-seeds-input-package','9.1, 9.3','world-event-11-3','AMSCO AP World History, Unit 9, Topics 9.1 and 9.3','High-yield varieties required irrigation, fertilizer, credit, land, and machinery. Amritsar–Punjab is a representative regional anchor, not the sole site of India’s Green Revolution; the local causal link is project-authored analysis.'],
+  ['apwh-u9-amritsar-unequal-access-land-consolidation','9.3, 9.4','world-event-11-3','AMSCO AP World History, Unit 9, Topics 9.3 and 9.4','Unequal access favored larger landholders and changed labor demand. The comparison with Guangzhou distinguishes input-intensive agriculture from export manufacturing and is project-authored analysis.'],
+  ['apwh-u9-amritsar-food-population-environmental-costs','9.3, 9.9','world-event-11-3','AMSCO AP World History, Unit 9, Topics 9.3 and 9.9','Higher food output supported population while intensive irrigation and chemicals strained water and soil across Punjab; the causal synthesis is project-authored analysis.'],
+  ['apwh-u9-san-francisco-public-research-digital-infrastructure','9.1','world-event-70-2','AMSCO AP World History, Unit 9, Topic 9.1','Public research, procurement, universities, semiconductors, and skilled labor supported computing. San Francisco represents the wider Bay Area and does not claim sole invention; the causal link is project-authored analysis.'],
+  ['apwh-u9-san-francisco-computing-internet-information-costs','9.1, 9.4','world-event-70-2','AMSCO AP World History, Unit 9, Topics 9.1 and 9.4','Computing and interoperable internet networks lowered information costs. San Francisco is one commercialization anchor, and the cross-link to Seoul is project-authored causal analysis.'],
+  ['apwh-u9-san-francisco-knowledge-economy-distributed-production','9.4, 9.9','world-event-70-2','AMSCO AP World History, Unit 9, Topics 9.4 and 9.9','Digital firms concentrated design and software while distributing production and support work internationally; the uneven-gains conclusion is project-authored analysis.'],
+  ['apwh-u9-guangzhou-market-reform-special-economic-zones','9.4','world-event-15-1','AMSCO AP World History, Unit 9, Topic 9.4','Chinese leaders unilaterally authorized market reforms and coastal special economic zones while retaining party control; Guangzhou represents the Pearl River Delta, and the causal link is project-authored analysis.'],
+  ['apwh-u9-guangzhou-foreign-investment-export-manufacturing','9.4','world-event-15-1','AMSCO AP World History, Unit 9, Topic 9.4','Foreign direct investment, labor, infrastructure, and port access expanded export manufacturing. Cross-links to Beijing and Ciudad Juárez are project-authored analysis, not sourced chronology.'],
+  ['apwh-u9-guangzhou-supply-chain-labor-environmental-costs','9.3, 9.4, 9.9','world-event-15-1','AMSCO AP World History, Unit 9, Topics 9.3, 9.4, and 9.9','WTO-era supply chains drew migrant labor and produced factory pollution. The Amritsar comparison distinguishes manufacturing from agriculture and is project-authored analysis.'],
+  ['apwh-u9-ciudad-juarez-border-industrialization','9.4','world-event-65-0','AMSCO AP World History, Unit 9, Topic 9.4','Mexico’s 1965 Border Industrialization Program created an assembly base before NAFTA; Ciudad Juárez is a representative border anchor, and the local causal link is project-authored analysis.'],
+  ['apwh-u9-ciudad-juarez-nafta-maquiladora-expansion','9.4','world-event-65-0','AMSCO AP World History, Unit 9, Topic 9.4','NAFTA’s negotiated North American rules expanded an existing maquiladora system. The Guangzhou comparison distinguishes the agreement from unilateral Chinese reform and is project-authored analysis.'],
+  ['apwh-u9-ciudad-juarez-employment-gender-labor-environment','9.3, 9.4, 9.9','world-event-65-0','AMSCO AP World History, Unit 9, Topics 9.3, 9.4, and 9.9','Maquiladora expansion changed employment and gender patterns while raising labor and pollution disputes. Ciudad Juárez is not the whole border economy; the cross-link to Seattle is project-authored causal analysis.'],
+  ['apwh-u9-beijing-market-reform-political-control','9.4, 9.5','world-event-5-13','AMSCO AP World History, Unit 9, Topics 9.4 and 9.5','Market reform proceeded without political liberalization under one-party rule. Beijing is a national-policy anchor, and the local causal link is project-authored analysis.'],
+  ['apwh-u9-beijing-tiananmen-protest-repression','9.5','world-event-5-13','AMSCO AP World History, Unit 9, Topic 9.5','Students and workers organized protest before the one-party state chose military repression. The Seattle comparison distinguishes repression from pluralist summit protest and is project-authored analysis.'],
+  ['apwh-u9-beijing-wto-integration-information-control','9.4, 9.5, 9.9','world-event-5-13','AMSCO AP World History, Unit 9, Topics 9.4, 9.5, and 9.9','WTO integration coexisted with party information controls and did not cause democratization; the Guangzhou-to-Beijing mechanism is project-authored causal analysis.'],
+  ['apwh-u9-washington-bretton-woods-financial-institutions','9.8','world-event-54-5','AMSCO AP World History, Unit 9, Topic 9.8','Bretton Woods created the IMF and World Bank. Washington, D.C. is a headquarters anchor; the World Bank, IMF, and WTO remain distinct institutions, and the causal link is project-authored analysis.'],
+  ['apwh-u9-washington-development-lending-conditionality','9.4, 9.8','world-event-54-5','AMSCO AP World History, Unit 9, Topics 9.4 and 9.8','Development lending and conditionality shaped borrower policy with contested outcomes. The link to Seattle concerns institutional accountability and is project-authored causal analysis.'],
+  ['apwh-u9-washington-institutional-power-benefits-criticism','9.7, 9.8, 9.9','world-event-54-5','AMSCO AP World History, Unit 9, Topics 9.7, 9.8, and 9.9','Weighted voting and lending power generated benefits and criticism. The Paris comparison distinguishes financial conditionality from voluntary rights-and-climate commitments and is project-authored analysis.'],
+  ['apwh-u9-seattle-wto-expansion-rulemaking-criticism','9.7, 9.8','world-event-112-0','AMSCO AP World History, Unit 9, Topics 9.7 and 9.8','WTO rule-making criticism concerned labor, environment, sovereignty, and transparency. Seattle anchors a global summit, while the Washington-to-Seattle link is project-authored causal analysis.'],
+  ['apwh-u9-seattle-coalition-protest-digital-organization','9.1, 9.5, 9.7','world-event-112-0','AMSCO AP World History, Unit 9, Topics 9.1, 9.5, and 9.7','Labor, environmental, and other groups used digital organization during pluralist summit protest. Comparisons with Beijing and the cross-link from Ciudad Juárez are project-authored analysis.'],
+  ['apwh-u9-seattle-fair-trade-labor-continuing-resistance','9.5, 9.7, 9.9','world-event-112-0','AMSCO AP World History, Unit 9, Topics 9.5, 9.7, and 9.9','Fair-trade, labor, environmental, and global-justice campaigns continued beyond one summit; the local causal link is project-authored analysis.'],
+  ['apwh-u9-paris-universal-rights-global-norm','9.5, 9.8','world-event-24-9','AMSCO AP World History, Unit 9, Topics 9.5 and 9.8','The UN General Assembly adopted the Universal Declaration of Human Rights in Paris without automatic enforcement. Paris is a representative diplomacy anchor, and the causal link is project-authored analysis.'],
+  ['apwh-u9-paris-kyoto-burden-sharing-debate','9.3, 9.8','world-event-24-9','AMSCO AP World History, Unit 9, Topics 9.3 and 9.8','Kyoto-to-Paris negotiations contested historical responsibility, development, sovereignty, participation, and enforcement; the local causal link is project-authored analysis.'],
+  ['apwh-u9-paris-voluntary-climate-governance-limits','9.3, 9.8, 9.9','world-event-24-9','AMSCO AP World History, Unit 9, Topics 9.3, 9.8, and 9.9','The Paris Agreement uses nationally determined contributions, reporting, and review under the UN climate process. Comparisons with Washington and Geneva are project-authored analysis distinguishing voluntary governance and long climate mitigation.'],
+  ['apwh-u9-geneva-vaccination-smallpox-eradication','9.2, 9.8','world-event-34-2','AMSCO AP World History, Unit 9, Topics 9.2 and 9.8','WHO coordination, national health workers, local participation, surveillance, and vaccination enabled smallpox eradication. Geneva is a coordination anchor, not the campaign’s sole site; the causal link is project-authored analysis.'],
+  ['apwh-u9-geneva-hiv-treatment-unequal-access','9.2, 9.9','world-event-34-2','AMSCO AP World History, Unit 9, Topics 9.2 and 9.9','Effective HIV treatment spread unequally because of patents, prices, infrastructure, stigma, activism, and state capacity; the local causal link is project-authored analysis.'],
+  ['apwh-u9-geneva-polio-ebola-coordination-limits','9.2, 9.8, 9.9','world-event-34-2','AMSCO AP World History, Unit 9, Topics 9.2, 9.8, and 9.9','WHO-led polio and Ebola work depended on states and trusted local systems. Geneva is a coordination anchor; comparison with Paris distinguishes targeted disease campaigns from long climate mitigation and is project-authored analysis.'],
+  ['apwh-u9-seoul-state-supported-cultural-industries','9.4, 9.6','world-event-110-1','AMSCO AP World History, Unit 9, Topics 9.4 and 9.6','South Korean policy and private creativity built cultural industries and export capacity. Seoul is a representative national anchor, and the local causal link is project-authored analysis.'],
+  ['apwh-u9-seoul-digital-platforms-transnational-audiences','9.1, 9.6','world-event-110-1','AMSCO AP World History, Unit 9, Topics 9.1 and 9.6','Broadband, streaming, social media, translation, recommendation systems, and fans built transnational audiences. Seoul is an anchor, and the San Francisco cross-link is project-authored causal analysis.'],
+  ['apwh-u9-seoul-hybrid-culture-exports-soft-power','9.6, 9.9','world-event-110-1','AMSCO AP World History, Unit 9, Topics 9.6 and 9.9','Korean creators combined local and global forms into exports and soft power, showing globalization was not synonymous with Americanization; the causal synthesis is project-authored analysis.'],
+];
 const expectedManifest=[
   ['apwh-u9-amritsar-high-yield-seeds-input-package','11',1,'High-Yield Seeds and Complementary Inputs','1960s–1970s',1960,1979,'world-event-11-3',['9.1','9.3'],['TEC','ENV'],['Contextualization','Causation']],
   ['apwh-u9-amritsar-unequal-access-land-consolidation','11',2,'Unequal Access, Mechanization, and Land Consolidation','1960s–1980s',1960,1989,'world-event-11-3',['9.3','9.4'],['ECN','SIO'],['Causation','Comparison']],
@@ -88,14 +125,76 @@ P('apwh-u9-seoul-state-supported-cultural-industries','South Korean governments 
 P('apwh-u9-seoul-digital-platforms-transnational-audiences','Broadband networks, streaming sites, social media, and fan communities allowed Korean music and drama to reach transnational audiences rapidly.','Digital distribution lowered barriers, while translation, recommendation systems, and organized fans actively built audiences.','Korean media producers and transnational fan communities','Distributed, translated, promoted, and discussed cultural products through digital platforms.','digital distribution','The circulation of media through networked platforms rather than only physical copies or broadcast channels.',['South Korea developed high levels of broadband access and digital-media use.','Online video, streaming, and social platforms carried Korean music and drama across continents.'],'Explain how digital platforms and fan networks changed the scale and speed of transnational audiences.',L(['9.1','9.6'])),
 P('apwh-u9-seoul-hybrid-culture-exports-soft-power','Korean producers combined local language and themes with global genres, production styles, and marketing to create hybrid culture exports.','Seoul is a representative anchor for soft power, and globalization was not synonymous with Americanization.','Korean artists, producers, and cultural diplomats','Created hybrid media exports that influenced foreign audiences and national image.','soft power','The ability to attract and influence others through culture, values, and reputation rather than coercion.',['K-pop blended Korean lyrics and performance systems with hip-hop, electronic, and other transnational styles.','The South Korean state used cultural exports in tourism and public-diplomacy campaigns.'],'Compare cultural borrowing and local adaptation to show how hybrid exports generated economic value and soft power.',L(['9.6','9.9'])),
 ];
-const placeholderEdge=['apwh-u9-amritsar-high-yield-seeds-input-package','apwh-u9-amritsar-unequal-access-land-consolidation','High-yield seeds raised output only when combined with costly inputs, so unequal access shaped who received the largest gains.'];
+const localCausalPairs=[...expectedLocations.keys()].flatMap(location=>{
+  const local=expectedManifest.filter(record=>record[1]===location).sort((a,b)=>a[2]-b[2]);
+  return [[local[0][0],local[1][0]],[local[1][0],local[2][0]]];
+});
+const crossLocationCausalPairs=[
+  ['apwh-u9-san-francisco-computing-internet-information-costs','apwh-u9-seoul-digital-platforms-transnational-audiences'],
+  ['apwh-u9-guangzhou-foreign-investment-export-manufacturing','apwh-u9-beijing-wto-integration-information-control'],
+  ['apwh-u9-ciudad-juarez-employment-gender-labor-environment','apwh-u9-seattle-coalition-protest-digital-organization'],
+  ['apwh-u9-washington-development-lending-conditionality','apwh-u9-seattle-wto-expansion-rulemaking-criticism'],
+];
+const expectedCausalNotes={
+  'apwh-u9-amritsar-high-yield-seeds-input-package|apwh-u9-amritsar-unequal-access-land-consolidation':'High-yield varieties required irrigation, fertilizer, credit, land, and machinery, so better-capitalized farmers adopted sooner while smallholders and laborers made choices within unequal constraints.',
+  'apwh-u9-amritsar-unequal-access-land-consolidation|apwh-u9-amritsar-food-population-environmental-costs':'Unequal access and mechanization encouraged land consolidation and changed labor demand, while farming communities and officials expanded food output and confronted groundwater and soil costs.',
+  'apwh-u9-san-francisco-public-research-digital-infrastructure|apwh-u9-san-francisco-computing-internet-information-costs':'Public research funding, university training, and procurement created infrastructure and expertise that engineers and entrepreneurs used to commercialize computing and expand interoperable networks.',
+  'apwh-u9-san-francisco-computing-internet-information-costs|apwh-u9-san-francisco-knowledge-economy-distributed-production':'Lower computing and communication costs let firms coordinate design, software, services, and production across distance, while firms and workers shaped how uneven gains were distributed.',
+  'apwh-u9-guangzhou-market-reform-special-economic-zones|apwh-u9-guangzhou-foreign-investment-export-manufacturing':'Chinese officials designed special-zone incentives, infrastructure, and investment rules that foreign investors and local governments used to build export factories and supplier networks.',
+  'apwh-u9-guangzhou-foreign-investment-export-manufacturing|apwh-u9-guangzhou-supply-chain-labor-environmental-costs':'Foreign-financed export capacity and WTO access expanded supply-chain production, while migrant workers, factory managers, and regulators contested working conditions and pollution.',
+  'apwh-u9-ciudad-juarez-border-industrialization|apwh-u9-ciudad-juarez-nafta-maquiladora-expansion':'Mexico’s earlier border program created an assembly base that NAFTA negotiators enlarged by reducing trade barriers, while firms chose to expand cross-border production networks.',
+  'apwh-u9-ciudad-juarez-nafta-maquiladora-expansion|apwh-u9-ciudad-juarez-employment-gender-labor-environment':'Maquiladora expansion increased employment and reorganized gendered labor while workers and border communities challenged wages, safety conditions, and industrial pollution.',
+  'apwh-u9-beijing-market-reform-political-control|apwh-u9-beijing-tiananmen-protest-repression':'Market reform without political liberalization sharpened demands for change that students and workers organized publicly, while party leaders chose military repression to preserve one-party rule.',
+  'apwh-u9-beijing-tiananmen-protest-repression|apwh-u9-beijing-wto-integration-information-control':'After suppressing political challenge, party leaders retained one-party control while choosing WTO integration and digital restrictions that firms and users adapted to and contested.',
+  'apwh-u9-washington-bretton-woods-financial-institutions|apwh-u9-washington-development-lending-conditionality':'Postwar agreements created lending capacity and unequal voting rules that institution officials and borrowing governments used and negotiated through development loans and policy conditions.',
+  'apwh-u9-washington-development-lending-conditionality|apwh-u9-washington-institutional-power-benefits-criticism':'Conditional lending and weighted voting distributed development benefits, policy constraints, and risks unevenly, prompting borrower governments and civil-society groups to criticize institutional power.',
+  'apwh-u9-seattle-wto-expansion-rulemaking-criticism|apwh-u9-seattle-coalition-protest-digital-organization':'Concerns about WTO rules on labor, environment, sovereignty, and transparency gave diverse organizations shared targets, while organizers used digital networks to coordinate summit protest.',
+  'apwh-u9-seattle-coalition-protest-digital-organization|apwh-u9-seattle-fair-trade-labor-continuing-resistance':'Coalition networks and summit experience helped labor, environmental, and fair-trade advocates sustain consumer campaigns, institutional reform efforts, and later global-justice mobilization.',
+  'apwh-u9-paris-universal-rights-global-norm|apwh-u9-paris-kyoto-burden-sharing-debate':'The universal-rights framework supplied language for transnational responsibility, while states negotiated climate burdens through competing claims about sovereignty, capacity, and historical emissions.',
+  'apwh-u9-paris-kyoto-burden-sharing-debate|apwh-u9-paris-voluntary-climate-governance-limits':'Conflict over Kyoto’s differentiated targets and participation led negotiators to broaden participation through nationally determined contributions, while states retained authority to set ambition.',
+  'apwh-u9-geneva-vaccination-smallpox-eradication|apwh-u9-geneva-hiv-treatment-unequal-access':'Smallpox campaigns strengthened WHO coordination and international health networks that agencies and activists later used to expand HIV treatment, while patents, prices, and state capacity kept access unequal.',
+  'apwh-u9-geneva-hiv-treatment-unequal-access|apwh-u9-geneva-polio-ebola-coordination-limits':'HIV access struggles expanded global health financing, community-based delivery, and medicine-access advocacy that polio and Ebola teams adapted while confronting surveillance, conflict, and trust barriers.',
+  'apwh-u9-seoul-state-supported-cultural-industries|apwh-u9-seoul-digital-platforms-transnational-audiences':'State investment and private creativity built media capacity and digital infrastructure that producers, platforms, translators, and fan communities used to reach audiences across borders.',
+  'apwh-u9-seoul-digital-platforms-transnational-audiences|apwh-u9-seoul-hybrid-culture-exports-soft-power':'Transnational platforms and active fan communities rewarded hybrid cultural production, while Korean creators and diplomats converted export popularity into economic value and soft power.',
+  'apwh-u9-san-francisco-computing-internet-information-costs|apwh-u9-seoul-digital-platforms-transnational-audiences':'Lower information costs and interoperable networks enabled global platform distribution, while Korean producers, translators, and fan communities actively built transnational audiences.',
+  'apwh-u9-guangzhou-foreign-investment-export-manufacturing|apwh-u9-beijing-wto-integration-information-control':'Export growth and foreign investment gave Chinese leaders incentives to pursue WTO accession, while party officials coupled deeper market integration with continuing information control.',
+  'apwh-u9-ciudad-juarez-employment-gender-labor-environment|apwh-u9-seattle-coalition-protest-digital-organization':'Labor, gender, and environmental disputes in export zones supplied issues for transnational advocacy, while Seattle organizers chose to unite labor, environmental, and other movements.',
+  'apwh-u9-washington-development-lending-conditionality|apwh-u9-seattle-wto-expansion-rulemaking-criticism':'Controversies over lending conditionality broadened demands for accountability in global economic governance, while WTO members and Seattle critics pursued competing rule-making priorities.',
+};
+const expectedRelatedPairs=[
+  ['apwh-u9-amritsar-unequal-access-land-consolidation','apwh-u9-guangzhou-supply-chain-labor-environmental-costs','Compare unequal gains and environmental costs: Punjab’s input-intensive agriculture encouraged land consolidation and changed farm labor, while Guangzhou’s export manufacturing relied on migrant factory labor and produced industrial pollution.'],
+  ['apwh-u9-guangzhou-foreign-investment-export-manufacturing','apwh-u9-ciudad-juarez-nafta-maquiladora-expansion','Compare routes to export growth: Chinese leaders unilaterally authorized market reforms and special zones, while NAFTA negotiators changed rules among three states and expanded an older maquiladora system.'],
+  ['apwh-u9-beijing-tiananmen-protest-repression','apwh-u9-seattle-coalition-protest-digital-organization','Compare political contestation: China’s one-party state used military repression against domestic protesters, while Seattle’s pluralist coalition challenged a global summit within an electoral political system.'],
+  ['apwh-u9-washington-institutional-power-benefits-criticism','apwh-u9-paris-voluntary-climate-governance-limits','Compare enforcement and power: financial institutions use weighted voting and lending conditionality, while global rights and climate governance relies more on voluntary commitments, reporting, persuasion, and state cooperation.'],
+  ['apwh-u9-geneva-polio-ebola-coordination-limits','apwh-u9-paris-voluntary-climate-governance-limits','Compare collective-action problems: targeted disease campaigns can coordinate surveillance and intervention around cases, while climate mitigation requires long-term economy-wide changes that states must sustain.'],
+];
 const expectedUnitCards={
-  context:{id:'apwh-u9-context-accelerating-global-connections',kind:'context',role:'Unit 9 Context Card',title:'Accelerating Global Connections',examSkills:['Contextualization','Causation'],summary:'New technologies, state policies, and international institutions accelerated the movement of goods, capital, information, culture, and disease after 1900. These connections built on earlier networks while changing their speed, scale, and reach.',prompt:'Which technologies and political choices accelerated global connections after 1900?',takeaways:['Communication and transportation reduced the cost of coordinating across distance.','Governments and institutions shaped the rules under which integration occurred.','Faster connections distributed opportunities and risks unevenly.']},
-  synthesis:{id:'apwh-u9-synthesis-globalization-benefits-resistance',kind:'synthesis',role:'Unit 9 Synthesis Card',title:'Globalization, Uneven Benefits, and Resistance',examSkills:['Comparison','CCOT'],summary:'Global integration expanded production, communication, cooperation, and cultural exchange while generating unequal gains, environmental pressures, political control, and organized resistance. Local actors adapted global systems rather than simply receiving them.',prompt:'How did communities preserve agency while responding to the benefits and costs of globalization?',takeaways:['Globalization produced different outcomes across places and social groups.','States remained powerful participants in markets, information, health, and culture.','Resistance and adaptation changed global institutions and cultural forms.']},
+  context:{id:'apwh-u9-context-post-cold-war-globalized-system',kind:'context',role:'Unit 9 Context Card',title:'From the End of the Cold War to a Globalized System',examSkills:['Contextualization','Causation'],summary:'The end of the Cold War removed a rival superpower system just as market reforms, trade agreements, container shipping, air travel, and digital communications accelerated the movement of goods, capital, information, and people. Institutions created after World War II gained wider reach, but newly integrated states entered with unequal bargaining power, infrastructure, debt, and access to technology.',prompt:'How did the end of the Cold War and falling transportation and information costs change the scale and rules of global interaction?',takeaways:['The collapse of the Soviet bloc widened participation in a predominantly market-oriented global economy.','Technology reduced the cost of connection without distributing the gains or risks equally.','Postwar institutions expanded their reach while retaining unequal voting power and limited enforcement.']},
+  synthesis:{id:'apwh-u9-synthesis-regional-networks-planetary-interdependence',kind:'synthesis',role:'Unit 9 Synthesis Card',title:'From Regional Networks to Planetary Interdependence',examSkills:['CCOT','Causation'],summary:'Since c. 1200, exchange networks repeatedly widened as states, merchants, empires, industries, and institutions reduced the cost of moving goods, labor, capital, and ideas. By the late twentieth century those networks connected production, communication, health, culture, human rights, and the environment at planetary scale, but no world government acquired matching authority to distribute gains, enforce rules, or assign responsibility for shared costs.',prompt:'Across Units 1–9, how did expanding networks change who wrote the rules, captured the gains, and bore the costs of interdependence?',takeaways:['Technologies changed the speed and scale of exchange, while political institutions determined access and rules.','Expanding networks created recurring inequalities between centers, intermediaries, workers, and environments.','Global problems became harder to contain within states even though enforcement still depended on state cooperation.']},
 };
 const clone=value=>JSON.parse(JSON.stringify(value));
 const replace=(search,replacement)=>{const code=source.replace(search,replacement);assert.notEqual(code,source,`fixture mutation: ${search}`);return code;};
 const assertInvalid=(code,rule)=>assert.throws(()=>evaluate(code),error=>{assert.equal(error.name,'Error');assert.match(error.message,/Invalid Unit 9/);assert.match(error.message,rule);return true;});
+const failLedger=rule=>{throw new Error(`Invalid Unit 9 source ledger: ${rule}`);};
+const backslashRunBefore=(value,index)=>{let backslashes=0;for(let cursor=index-1;cursor>=0&&value[cursor]==='\\';cursor-=1)backslashes+=1;return backslashes;};
+const parseMarkdownRowCells=row=>{
+  if(!row.startsWith('|')||!row.endsWith('|')||backslashRunBefore(row,row.length-1)%2===1)failLedger('row must start and end with pipe delimiters');
+  const cells=[];let cell='';
+  for(let index=1;index<row.length;index+=1){const character=row[index];if(character!=='|'){cell+=character;continue;}const backslashes=backslashRunBefore(row,index);if(backslashes)cell=`${cell.slice(0,-backslashes)}${'\\'.repeat(Math.floor(backslashes/2))}`;if(backslashes%2===1){cell+='|';continue;}cells.push(cell.trim());cell='';}
+  return cells;
+};
+const parseLedgerRows=candidate=>{
+  if(!candidate.startsWith(ledgerIntroduction))failLedger('missing canonical introduction');
+  const tablePrefix=`${ledgerIntroduction}\n\n${ledgerHeader}\n${ledgerSeparator}\n`;
+  if(!candidate.startsWith(tablePrefix))failLedger('table header must immediately follow canonical introduction');
+  const lines=candidate.split('\n'),headerIndex=ledgerIntroduction.split('\n').length+1,expectedIds=new Set(expectedLedgerRows.map(row=>row[0])),rows=[];let tableEnd=headerIndex+2;
+  for(;tableEnd<lines.length;tableEnd+=1){const raw=lines[tableEnd];if(!raw)break;const cells=parseMarkdownRowCells(raw);if(cells.length!==5)failLedger('row must contain exactly five columns');if(!/^apwh-u9-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(cells[0]))failLedger(`malformed Stable ID cell ${cells[0]}`);if(!expectedIds.has(cells[0]))failLedger(`unexpected Stable ID ${cells[0]}`);if(!/^world-event-\d+-\d+$/.test(cells[2]))failLedger(`malformed Main event cell ${cells[2]}`);if(/\b(?:p|pp)\.\s*\d+/i.test(cells[3]))failLedger('unverified page number');if(!/^AMSCO AP World History, Unit 9, Topics? 9\.[1-9]/.test(cells[3]))failLedger('vague source locator');if(!/project-authored (?:causal |comparison |)analysis/.test(cells[4]))failLedger('missing source-analysis distinction');rows.push(cells);}
+  if(lines.slice(tableEnd).some(line=>line.trim()))failLedger('unexpected trailing content');
+  const parsedOccurrences=new Map();for(const [id] of rows)parsedOccurrences.set(id,(parsedOccurrences.get(id)||0)+1);for(const match of candidate.matchAll(/apwh-u9-[A-Za-z0-9_-]*/g)){const id=match[0],remaining=parsedOccurrences.get(id)||0;if(!remaining)failLedger(`unparsed Stable ID occurrence ${id}`);parsedOccurrences.set(id,remaining-1);}
+  if(rows.length!==expectedLedgerRows.length)failLedger(`expected exactly ${expectedLedgerRows.length} data rows`);
+  for(let index=0;index<expectedLedgerRows.length;index+=1)if(JSON.stringify(rows[index])!==JSON.stringify(expectedLedgerRows[index]))failLedger(`row ${index+1} does not match the canonical record order and fields`);
+  return rows;
+};
 
 test('publishes the exact immutable Unit 9 manifest and complete learner contract',()=>{
   assert.ok(source,`Expected ${moduleUrl.pathname} to exist`);const api=evaluate();
@@ -147,7 +246,7 @@ test('locks the required Unit 9 content fixtures and historical boundaries',()=>
   const sanFrancisco=api.getByLocation('70').map(text).join(' ');assert.doesNotMatch(sanFrancisco,/internet (?:was )?invented (?:in|at)|World Wide Web (?:was )?invented (?:in|at)/i);
 });
 
-test('provides defensive lookups, comparator tie breakers, generic Task 2 cards, and a locked global',()=>{
+test('provides defensive lookups, comparator tie breakers, course-closing cards, and a locked global',()=>{
   const sandbox=evaluateSandbox(),api=sandbox.APWH_U9_LOCATION_STUDY,descriptor=Object.getOwnPropertyDescriptor(sandbox,'APWH_U9_LOCATION_STUDY');
   assert.deepEqual({enumerable:descriptor.enumerable,configurable:descriptor.configurable,writable:descriptor.writable},{enumerable:true,configurable:false,writable:false});
   assert.equal(api.getById(api.records[0].id),api.records[0]);assert.equal(api.getById('missing'),null);assert.equal(api.locationName('missing'),null);assert.deepEqual(Array.from(api.getByLocation('missing')),[]);
@@ -157,11 +256,24 @@ test('provides defensive lookups, comparator tie breakers, generic Task 2 cards,
   assert.throws(()=>evaluate(source,{APWH_U9_LOCATION_STUDY:{}}),/Invalid Unit 9 global APWH_U9_LOCATION_STUDY: refusing to overwrite existing value/);
 });
 
-test('deep freezes every published object and uses the minimum Task 2 graph placeholder',()=>{
+test('deep freezes every published object and defensive array',()=>{
   const api=evaluate(),seen=new Set();const deep=value=>{if(value===null||typeof value!=='object'||seen.has(value))return;seen.add(value);assert.equal(Object.isFrozen(value),true);for(const key of Reflect.ownKeys(value))deep(value[key]);};deep(api);
-  const [sourceId,targetId,note]=placeholderEdge,sourceRecord=api.getById(sourceId),targetRecord=api.getById(targetId);
-  assert.deepEqual(clone(sourceRecord.effectStudyPointIds),[targetId]);assert.deepEqual(clone(targetRecord.causeStudyPointIds),[sourceId]);assert.equal(sourceRecord.connectionNotes[targetId],note);assert.equal(targetRecord.connectionNotes[sourceId],note);
-  assert.equal(api.records.reduce((sum,record)=>sum+record.effectStudyPointIds.length,0),1);assert.equal(api.records.reduce((sum,record)=>sum+record.relatedStudyPointIds.length,0),0);
+  for(const record of api.records){assert.ok(Object.isFrozen(record.causeStudyPointIds));assert.ok(Object.isFrozen(record.effectStudyPointIds));assert.ok(Object.isFrozen(record.relatedStudyPointIds));assert.ok(Object.isFrozen(record.connectionNotes));}
+});
+
+test('publishes exactly twenty vertical and four cross-location causal links with reciprocal navigation',()=>{
+  const api=evaluate(),byId=new Map(api.records.map(record=>[record.id,record])),expectedPairs=[...localCausalPairs,...crossLocationCausalPairs];
+  const actualPairs=api.records.flatMap(record=>record.effectStudyPointIds.map(target=>[record.id,target]));
+  const pairKey=([source,target])=>`${source}|${target}`;assert.equal(localCausalPairs.length,20);assert.equal(crossLocationCausalPairs.length,4);assert.deepEqual(clone(actualPairs.map(pairKey).sort()),expectedPairs.map(pairKey).sort());
+  assert.deepEqual(clone(Object.fromEntries(actualPairs.map(([sourceId,targetId])=>[`${sourceId}|${targetId}`,byId.get(sourceId).connectionNotes[targetId]]))),expectedCausalNotes);
+  for(const [sourceId,targetId] of actualPairs){const sourceRecord=byId.get(sourceId),targetRecord=byId.get(targetId);assert.ok(targetRecord.causeStudyPointIds.includes(sourceId));assert.equal(targetRecord.connectionNotes[sourceId],sourceRecord.connectionNotes[targetId]);assert.match(sourceRecord.connectionNotes[targetId],/\b(?:required|created|let|designed|expanded|increased|sharpened|strengthened|retained|distributed|gave|helped|supplied|led|built|enabled|broadened|rewarded|converted)\b/i);assert.doesNotMatch(sourceRecord.connectionNotes[targetId],/^(?:This|It) happened before|chronolog(?:y|ical order)|\b(?:demonstrated|showed)\b/i);}
+});
+
+test('publishes exactly five reciprocal related pairs with identical mechanism-centered comparison notes',()=>{
+  const api=evaluate(),byId=new Map(api.records.map(record=>[record.id,record]));
+  for(const [left,right,note] of expectedRelatedPairs){const leftRecord=byId.get(left),rightRecord=byId.get(right);assert.ok(leftRecord.relatedStudyPointIds.includes(right));assert.ok(rightRecord.relatedStudyPointIds.includes(left));assert.equal(leftRecord.connectionNotes[right],note);assert.equal(rightRecord.connectionNotes[left],note);}
+  assert.equal(api.records.reduce((sum,record)=>sum+record.relatedStudyPointIds.length,0),10);
+  const notes=expectedRelatedPairs.map(pair=>pair[2]).join(' ');for(const boundary of ['agriculture','manufacturing','unilaterally','NAFTA','one-party','pluralist','financial institutions','voluntary commitments','targeted disease campaigns','long-term'])assert.match(notes,new RegExp(boundary,'i'));
 });
 
 test('rejects location, binding, identity, sequence, count, and date drift',()=>{
@@ -212,25 +324,88 @@ test('rejects null or hostile raw registries, cards, and graph structures with c
 });
 
 test('rejects unresolved, self, duplicate, and malformed graph links',()=>{
-  const edge=`['${placeholderEdge[0]}','${placeholderEdge[1]}','${placeholderEdge[2]}']`;
-  const unresolved=replace(edge,edge.replace(`'${placeholderEdge[0]}'`,`'apwh-u9-missing-source'`));
+  const [edgeSource,edgeTarget]=localCausalPairs[0],edgeNote=expectedCausalNotes[`${edgeSource}|${edgeTarget}`],edge=`['${edgeSource}','${edgeTarget}','${edgeNote}']`;
+  const [relatedSource,relatedTarget,relatedNote]=expectedRelatedPairs[0],relatedEdge=`['${relatedSource}','${relatedTarget}','${relatedNote}']`;
+  const unresolved=replace(edge,edge.replace(`'${edgeSource}'`,`'apwh-u9-missing-source'`));
   assert.throws(()=>evaluate(unresolved),error=>{assert.equal(error.name,'Error');assert.match(error.message,/Invalid Unit 9 study record apwh-u9-missing-source: unresolved connection/);return true;});
-  assertInvalid(replace(edge,edge.replace(`'${placeholderEdge[1]}'`,`'${placeholderEdge[0]}'`)),/self connection/);
+  assertInvalid(replace(edge,edge.replace(`'${edgeTarget}'`,`'${edgeSource}'`)),/self connection/);
   assertInvalid(replace('causal:[','causal:['+edge+','),/duplicate causal connection/);
-  const malformed=replace(edge,`['${placeholderEdge[0]}','${placeholderEdge[1]}']`);
-  assert.throws(()=>evaluate(malformed),error=>{assert.equal(error.name,'Error');assert.match(error.message,new RegExp(`Invalid Unit 9 study record ${placeholderEdge[0]}: connection row`));return true;});
-  assertInvalid(replace(edge,edge.replace(`'${placeholderEdge[0]}'`,`Symbol('bad source')`)),/unresolved connection/);
+  assertInvalid(replace(relatedEdge,relatedEdge.replace(`'${relatedSource}'`,`'apwh-u9-missing-related'`)),/unresolved connection/);
+  assertInvalid(replace(relatedEdge,relatedEdge.replace(`'${relatedTarget}'`,`'${relatedSource}'`)),/self connection/);
+  assertInvalid(replace('related:[','related:['+relatedEdge+','),/duplicate related connection/);
+  const malformed=replace(edge,`['${edgeSource}','${edgeTarget}']`);
+  assert.throws(()=>evaluate(malformed),error=>{assert.equal(error.name,'Error');assert.match(error.message,/Invalid Unit 9/);assert.match(error.message,/connection row/);return true;});
+  assertInvalid(replace(edge,edge.replace(`'${edgeSource}'`,`Symbol('bad source')`)),/unresolved connection/);
+  assertInvalid(replace('related:[','related:['+edge+','),/cross-category connection/);
 });
 
-test('rejects malformed generic Task 2 cards',()=>{
+test('publishes exact frozen course-closing cards with no Unit 10 handoff',()=>{
+  const api=evaluate();assert.deepEqual(clone(api.unitCards),expectedUnitCards);assert.equal(Object.isFrozen(api.unitCards),true);
+  for(const [kind,card] of Object.entries(expectedUnitCards)){assert.equal(api.getUnitCard(kind),api.unitCards[kind]);assert.equal(api.getUnitCard(card.id),api.unitCards[kind]);assert.equal(Object.isFrozen(api.unitCards[kind]),true);assert.equal(Object.isFrozen(api.unitCards[kind].examSkills),true);assert.equal(Object.isFrozen(api.unitCards[kind].takeaways),true);assert.equal(Object.hasOwn(api.unitCards[kind],'skills'),false);}
+  assert.doesNotMatch(JSON.stringify(api.unitCards),/Unit 10|u10|handoff/i);
+});
+
+test('rejects graph or course-closing card drift before publication',()=>{
+  const firstNote=expectedCausalNotes[`${localCausalPairs[0][0]}|${localCausalPairs[0][1]}`];
+  assertInvalid(replace(firstNote,'This happened before the next event and shaped its chronology.'),/causal connection does not match|causal mechanism/);
+  assertInvalid(replace(firstNote,'This event led to the next event because it happened earlier in chronological order.'),/causal connection does not match|causal mechanism/);
+  const relatedNote=expectedRelatedPairs[4][2],vagueRelated='These two developments are both important examples of globalization.',driftedRelated=source.replace(relatedNote,vagueRelated).replace(relatedNote,vagueRelated);assert.notEqual(driftedRelated,source,'related fixture mutation');assertInvalid(driftedRelated,/related comparison does not match/);
   assertInvalid(replace("kind:'context'","kind:'synthesis'"),/card kind/);
   assertInvalid(replace("role:'Unit 9 Context Card'","role:''"),/malformed card/);
   assertInvalid(replace("examSkills:['Contextualization','Causation']","examSkills:['Causation','Causation']"),/card skills/);
-  assertInvalid(replace("synthesis:{id:'apwh-u9-synthesis-globalization-benefits-resistance'","synthesis:{id:'apwh-u9-context-accelerating-global-connections'"),/duplicate card ID/);
+  assertInvalid(replace("synthesis:{id:'apwh-u9-synthesis-regional-networks-planetary-interdependence'","synthesis:{id:'apwh-u9-context-post-cold-war-globalized-system'"),/duplicate card ID/);
+  assertInvalid(replace("title:'From the End of the Cold War to a Globalized System'","title:'Arbitrary English Title'"),/card contract/);
+  assertInvalid(replace('validate();',"Object.defineProperty(UNIT_CARD_MANIFEST.context.takeaways,'0',{enumerable:false});validate();"),/card takeaways/);
 });
 
 test('validates the graph twice without mutation and never leaks a TypeError',()=>{
   const api=evaluate(replace('validate();','validate();validate();'));assert.equal(api.records.length,30);
   const graphMalformed=replace('validate();',"validate();CONNECTIONS.causal[0][0]='missing';validate();");assert.throws(()=>evaluate(graphMalformed),error=>{assert.equal(error.name,'Error');assert.match(error.message,/Invalid Unit 9/);assert.match(error.message,/unresolved connection/);return true;});
   const malformed=replace('validate();',"STUDY_MANIFEST[0][0]=Symbol('bad');validate();validate();");assert.throws(()=>evaluate(malformed),error=>{assert.equal(error.name,'Error');assert.match(error.message,/Invalid Unit 9/);assert.match(error.message,/invalid stable ID/);return true;});
+});
+
+test('locks the canonical introduction and all five source-ledger columns for exactly thirty records',()=>{
+  assert.equal(ledger.startsWith(ledgerIntroduction),true);const rows=parseLedgerRows(ledger);assert.deepEqual(rows,expectedLedgerRows);assert.equal(new Set(rows.map(row=>row[0])).size,30);
+  for(let index=0;index<rows.length;index+=1){const manifest=expectedManifest[index];assert.equal(rows[index][0],manifest[0]);assert.equal(rows[index][1],manifest[8].join(', '));assert.equal(rows[index][2],manifest[7]);assert.equal(rows[index][3],L(manifest[8]));assert.ok(expectedLocations.has(manifest[1]));}
+});
+
+test('tokenizes escaped Markdown pipes without creating extra ledger columns',()=>{
+  assert.deepEqual(parseMarkdownRowCells('| one | two \\| literal pipe | three | four | five |'),['one','two | literal pipe','three','four','five']);
+  assert.deepEqual(parseMarkdownRowCells(String.raw`| one | three \\\| literal pipe | three | four | five |`),['one',String.raw`three \| literal pipe`,'three','four','five']);
+});
+
+test('keeps anchor, institution, and five cross-case analytical caveats in the Unit 9 ledger',()=>{
+  const claimsById=new Map(parseLedgerRows(ledger).map(cells=>[cells[0],cells[4]]));
+  for(const [id,boundary] of [
+    ['apwh-u9-amritsar-high-yield-seeds-input-package',/representative regional anchor/],
+    ['apwh-u9-san-francisco-computing-internet-information-costs',/one commercialization anchor/],
+    ['apwh-u9-washington-bretton-woods-financial-institutions',/World Bank, IMF, and WTO remain distinct institutions/],
+    ['apwh-u9-paris-voluntary-climate-governance-limits',/UN climate process/],
+    ['apwh-u9-geneva-polio-ebola-coordination-limits',/coordination anchor/],
+    ['apwh-u9-seoul-digital-platforms-transnational-audiences',/Seoul is an anchor/],
+    ['apwh-u9-amritsar-unequal-access-land-consolidation',/agriculture from export manufacturing/],
+    ['apwh-u9-ciudad-juarez-nafta-maquiladora-expansion',/unilateral Chinese reform/],
+    ['apwh-u9-beijing-tiananmen-protest-repression',/pluralist summit protest/],
+    ['apwh-u9-washington-institutional-power-benefits-criticism',/financial conditionality from voluntary rights-and-climate commitments/],
+    ['apwh-u9-geneva-polio-ebola-coordination-limits',/targeted disease campaigns from long climate mitigation/],
+  ])assert.match(claimsById.get(id),boundary);
+});
+
+test('rejects ledger missing or extra rows, ordering, columns, trailing content, vague citations, page numbers, and missing caveats',()=>{
+  const firstRow=ledger.split('\n').find(line=>line.includes('apwh-u9-amritsar-high-yield-seeds-input-package')),secondRow=ledger.split('\n').find(line=>line.includes('apwh-u9-amritsar-unequal-access-land-consolidation')),lastRow=ledger.split('\n').find(line=>line.includes('apwh-u9-seoul-hybrid-culture-exports-soft-power')),fourColumnRow=`${firstRow.split('|').slice(0,-2).join('|')}|`;
+  const cases=[
+    [ledger.replace(`${ledgerIntroduction}\n\n${ledgerHeader}`,`${ledgerIntroduction}\n\nInserted prose.\n\n${ledgerHeader}`),/table header must immediately follow canonical introduction/],
+    [ledger.replace(firstRow,`${firstRow} trailing garbage`),/row must start and end with pipe delimiters/],
+    [ledger.replace(firstRow,fourColumnRow),/row must contain exactly five columns/],
+    [ledger.replace(firstRow,firstRow.replace(/ \|$/,' | extra |')),/row must contain exactly five columns/],
+    [ledger.replace(lastRow,''),/expected exactly 30 data rows/],
+    [ledger.replace(firstRow,`${firstRow}\n${firstRow}`),/expected exactly 30 data rows/],
+    [ledger.replace(`${firstRow}\n${secondRow}`,`${secondRow}\n${firstRow}`),/row 1 does not match the canonical record order and fields/],
+    [ledger.replace('AMSCO AP World History, Unit 9, Topics 9.1 and 9.3','AMSCO AP World History, Unit 9'),/vague source locator/],
+    [ledger.replace('AMSCO AP World History, Unit 9, Topics 9.1 and 9.3','AMSCO AP World History, Unit 9, Topics 9.1 and 9.3, p. 742'),/unverified page number/],
+    [ledger.replace('the local causal link is project-authored analysis','the local link follows the sources'),/missing source-analysis distinction/],
+    [ledger.replace('world-event-11-3','world-event-11-4'),/row 1 does not match the canonical record order and fields/],
+    [`${ledger}\nTrailing garbage`,/unexpected trailing content/],
+  ];
+  for(const [candidate,message] of cases){assert.notEqual(candidate,ledger,'ledger fixture mutation');assert.throws(()=>parseLedgerRows(candidate),message);}
 });
