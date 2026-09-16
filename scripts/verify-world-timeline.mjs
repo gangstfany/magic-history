@@ -487,6 +487,40 @@ const UNIT_9_STUDY_VIEWS = Object.freeze([
   Object.freeze({ number:'110', region:'asia', label:'Digital Culture & Soft Power · South Korea / Seoul', mainEventKey:'world-event-110-1', ids:Object.freeze(['apwh-u9-seoul-state-supported-cultural-industries','apwh-u9-seoul-digital-platforms-transnational-audiences','apwh-u9-seoul-hybrid-culture-exports-soft-power']) }),
 ]);
 
+const UNIT_9_PRESENTATION_ANCHORS = Object.freeze({
+  "apwh-u9-amritsar-high-yield-seeds-input-package": Object.freeze({"title":"High-Yield Seeds and Complementary Inputs","date":"1960s–1970s","summaryAnchor":"High-yield wheat and rice varieties increased harvest potential only when farmers could combine ","significanceAnchor":"Amritsar–Punjab is a representative anchor for Green Revolution change, and seeds alone did not ","actorAnchor":"Indian agricultural officials and Punjab farmers","actorRoleAnchor":"Distributed new varieties and made choices about irrigation, fertilizer, credit, land, and machi","termAnchor":"Green Revolution","termExplanationAnchor":"The spread of high-yield crop varieties together with the inputs and institutions needed to rais","evidenceAnchor":"High-yield wheat varieties spread widely in Punjab during the late 1960s.","examAnchor":"Explain causation by linking new seed varieties to the irrigation, fertilizer, credit, land, and","connectionNoteAnchor":"High-yield varieties required irrigation, fertilizer, credit, land, and machinery, so better-cap"}),
+  "apwh-u9-amritsar-unequal-access-land-consolidation": Object.freeze({"title":"Unequal Access, Mechanization, and Land Consolidation","date":"1960s–1980s","summaryAnchor":"Farmers with larger holdings and better access to water, loans, fertilizer, and machinery often ","significanceAnchor":"Unequal input access could widen rural inequality, encourage land consolidation, and reduce dema","actorAnchor":"Punjab landowners, smallholders, and agricultural laborers","actorRoleAnchor":"Experienced different costs and benefits from capital-intensive agricultural change.","termAnchor":"land consolidation","termExplanationAnchor":"The concentration of farmland into fewer or larger holdings through purchase, debt, or displacem","evidenceAnchor":"Larger landowners were generally better positioned to obtain formal credit and purchase machiner","examAnchor":"Compare how land, credit, irrigation, and machinery shaped unequal gains for large landowners, s","connectionNoteAnchor":"High-yield varieties required irrigation, fertilizer, credit, land, and machinery, so better-cap"}),
+  "apwh-u9-amritsar-food-population-environmental-costs": Object.freeze({"title":"Food Supply, Population Growth, and Environmental Costs","date":"1970s–2010s","summaryAnchor":"Higher grain output supported food security and population growth, while intensive irrigation an","significanceAnchor":"The case joins a major increase in food supply to uneven social gains and environmental costs ra","actorAnchor":"Punjab farming communities and environmental officials","actorRoleAnchor":"Managed expanding food production alongside falling water tables and soil stress.","termAnchor":"groundwater depletion","termExplanationAnchor":"The decline of underground water reserves when pumping exceeds natural recharge.","evidenceAnchor":"India moved from chronic grain shortages toward much greater wheat and rice output after the Gre","examAnchor":"Trace continuity and change by weighing increased food supply and population support against wat","connectionNoteAnchor":"Unequal access and mechanization encouraged land consolidation and changed labor demand, while f"}),
+  "apwh-u9-san-francisco-public-research-digital-infrastructure": Object.freeze({"title":"Public Research and Digital Infrastructure","date":"1940s–1980s","summaryAnchor":"Public universities, defense research, and government procurement supported semiconductor and co","significanceAnchor":"San Francisco is a representative anchor for a wider Bay Area ecosystem in which public investme","actorAnchor":"Public research agencies, universities, and technology firms","actorRoleAnchor":"Funded research, trained workers, and commercialized semiconductor and computing applications.","termAnchor":"semiconductor","termExplanationAnchor":"A material and electronic component used to control electrical signals in modern computing devic","evidenceAnchor":"Federal defense and research spending supported electronics laboratories and university work in ","examAnchor":"Contextualize private innovation by identifying the public research, procurement, education, and","connectionNoteAnchor":"Public research funding, university training, and procurement created infrastructure and experti"}),
+  "apwh-u9-san-francisco-computing-internet-information-costs": Object.freeze({"title":"Computing, Internet, and Lower Information Costs","date":"1970s–1990s","summaryAnchor":"Advances in semiconductors, personal computing, and internet networks sharply lowered informatio","significanceAnchor":"Cheaper communication accelerated market integration across distance, while the Bay Area was one","actorAnchor":"Computer engineers, public network researchers, and entrepreneurs","actorRoleAnchor":"Improved computing capacity and expanded interoperable digital networks.","termAnchor":"internet","termExplanationAnchor":"A global network of interconnected computer networks that exchange data through common protocols","evidenceAnchor":"Microprocessor costs fell while computing power increased during the late twentieth century.","examAnchor":"Explain how computing and internet infrastructure reduced information costs without assigning a ","connectionNoteAnchor":"Public research funding, university training, and procurement created infrastructure and experti"}),
+  "apwh-u9-san-francisco-knowledge-economy-distributed-production": Object.freeze({"title":"Knowledge Economy and Uneven Global Production","date":"1990s–2010s","summaryAnchor":"Digital firms concentrated design, software, finance, and knowledge work while distributed produ","significanceAnchor":"The knowledge economy created high-value work and rapid coordination but also widened regional a","actorAnchor":"Technology firms and global supply-chain workers","actorRoleAnchor":"Coordinated knowledge-intensive services with production performed across multiple countries.","termAnchor":"knowledge economy","termExplanationAnchor":"An economy in which information, expertise, research, and intellectual property are major source","evidenceAnchor":"Bay Area firms retained design and software functions while contracting hardware production to f","examAnchor":"Trace how lower information costs changed the location of knowledge work and distributed product","connectionNoteAnchor":"Lower computing and communication costs let firms coordinate design, software, services, and pro"}),
+  "apwh-u9-guangzhou-market-reform-special-economic-zones": Object.freeze({"title":"Market Reform and Special Economic Zones","date":"1978–1984","summaryAnchor":"Deng-era leaders authorized market reforms and special economic zones in coastal Guangdong to te","significanceAnchor":"Export growth followed a state choice about law, infrastructure, and location rather than an aut","actorAnchor":"Deng Xiaoping and Chinese state officials","actorRoleAnchor":"Authorized reform experiments and coastal zones while retaining Communist Party political contro","termAnchor":"special economic zone","termExplanationAnchor":"A designated area where a government applies distinct trade, investment, tax, or regulatory poli","evidenceAnchor":"China began major market-oriented reforms after 1978 under Deng Xiaoping.","examAnchor":"Explain why special economic zone growth depended on state choices, geography, and investment ru","connectionNoteAnchor":"Chinese officials designed special-zone incentives, infrastructure, and investment rules that fo"}),
+  "apwh-u9-guangzhou-foreign-investment-export-manufacturing": Object.freeze({"title":"Foreign Investment and Export Manufacturing","date":"1980s–2001","summaryAnchor":"Special policies attracted foreign direct investment and linked Guangdong factories to export ma","significanceAnchor":"Foreign capital, abundant labor, state infrastructure, and port access combined to expand export","actorAnchor":"Chinese local governments and foreign investors","actorRoleAnchor":"Built factories, infrastructure, and supplier networks for export-oriented production.","termAnchor":"foreign direct investment","termExplanationAnchor":"Investment by an entity based in one country that establishes or controls productive assets in a","evidenceAnchor":"Overseas Chinese and multinational investors financed factories across the Pearl River Delta.","examAnchor":"Build a multicausal argument connecting foreign investment, labor, infrastructure, policy incent","connectionNoteAnchor":"Chinese officials designed special-zone incentives, infrastructure, and investment rules that fo"}),
+  "apwh-u9-guangzhou-supply-chain-labor-environmental-costs": Object.freeze({"title":"Supply-Chain Expansion, Labor, and Environmental Costs","date":"2001–2010s","summaryAnchor":"After China joined the WTO, firms expanded supply-chain production in the Pearl River Delta and ","significanceAnchor":"Supply relocation increased jobs and output while producing demanding labor regimes, pollution, ","actorAnchor":"Migrant workers, factory managers, and environmental regulators","actorRoleAnchor":"Produced export goods and contested working conditions and environmental damage.","termAnchor":"supply-chain relocation","termExplanationAnchor":"The movement of production stages to new regions to lower costs or reach suppliers and markets.","evidenceAnchor":"China entered the World Trade Organization in 2001 and manufactured exports rose rapidly.","examAnchor":"Trace continuity and change after WTO entry by weighing supply-chain growth against labor and en","connectionNoteAnchor":"Foreign-financed export capacity and WTO access expanded supply-chain production, while migrant "}),
+  "apwh-u9-ciudad-juarez-border-industrialization": Object.freeze({"title":"Border Industrialization before NAFTA","date":"1965–1993","summaryAnchor":"Mexico created the Border Industrialization Program before NAFTA to encourage foreign-owned asse","significanceAnchor":"The 1965 program established the maquiladora model, so border industrialization cannot be attrib","actorAnchor":"Mexican officials and border manufacturers","actorRoleAnchor":"Created tariff and investment arrangements for export assembly along the northern border.","termAnchor":"Border Industrialization Program","termExplanationAnchor":"Mexico’s program promoting export-oriented assembly plants in its northern border region.","evidenceAnchor":"Mexico launched the Border Industrialization Program in 1965.","examAnchor":"Contextualize NAFTA by distinguishing the earlier Border Industrialization Program from later fr","connectionNoteAnchor":"Mexico’s earlier border program created an assembly base that NAFTA negotiators enlarged by redu"}),
+  "apwh-u9-ciudad-juarez-nafta-maquiladora-expansion": Object.freeze({"title":"NAFTA and Maquiladora Expansion","date":"1994–2000s","summaryAnchor":"NAFTA reduced trade barriers and encouraged cross-border production networks, accelerating maqui","significanceAnchor":"The agreement enlarged an existing assembly system by making components, capital, and finished g","actorAnchor":"Mexican, United States, and Canadian trade officials","actorRoleAnchor":"Negotiated rules that increased regional trade and investment integration.","termAnchor":"NAFTA","termExplanationAnchor":"The 1994 agreement reducing many trade and investment barriers among Mexico, the United States, ","evidenceAnchor":"NAFTA took effect in 1994 among Mexico, the United States, and Canada.","examAnchor":"Explain how NAFTA accelerated rather than originated maquiladora development.","connectionNoteAnchor":"Mexico’s earlier border program created an assembly base that NAFTA negotiators enlarged by redu"}),
+  "apwh-u9-ciudad-juarez-employment-gender-labor-environment": Object.freeze({"title":"Employment, Gender, Labor, and Environmental Tradeoffs","date":"1990s–2010s","summaryAnchor":"Maquiladora employment expanded, especially for women and migrants, while workers faced low pay,","significanceAnchor":"Export manufacturing shows that job creation could coexist with labor vulnerability, gender ineq","actorAnchor":"Maquiladora workers and labor organizers","actorRoleAnchor":"Produced export goods and organized around wages, safety, gender violence, and workplace rights.","termAnchor":"maquiladora","termExplanationAnchor":"An export-oriented factory in Mexico that imports components for assembly and re-exports finishe","evidenceAnchor":"Women made up a large share of early maquiladora workforces in Ciudad Juárez.","examAnchor":"Compare employment gains with gender, labor, and pollution tradeoffs in maquiladora production.","connectionNoteAnchor":"Maquiladora expansion increased employment and reorganized gendered labor while workers and bord"}),
+  "apwh-u9-beijing-market-reform-political-control": Object.freeze({"title":"Market Reform without Political Liberalization","date":"1978–1989","summaryAnchor":"Chinese leaders expanded market incentives and foreign trade after 1978 while preserving one-par","significanceAnchor":"Market reform did not automatically bring political liberalization, demonstrating that economic ","actorAnchor":"Deng Xiaoping and the Chinese Communist Party","actorRoleAnchor":"Directed market-oriented reforms while maintaining one-party rule.","termAnchor":"reform and opening","termExplanationAnchor":"China’s post-1978 program of market incentives, foreign investment, and wider engagement with wo","evidenceAnchor":"Household responsibility reforms and township enterprises expanded market activity after 1978.","examAnchor":"Contextualize Chinese globalization by separating market reform from political liberalization.","connectionNoteAnchor":"Market reform without political liberalization sharpened demands for change that students and wo"}),
+  "apwh-u9-beijing-tiananmen-protest-repression": Object.freeze({"title":"Tiananmen Protest and State Repression","date":"1989","summaryAnchor":"Students and other citizens demanded political change in 1989, and the state used military force","significanceAnchor":"The repression showed that leaders chose coercive political control even as economic reform cont","actorAnchor":"Student demonstrators and Chinese state leaders","actorRoleAnchor":"Organized demands for reform and ordered or carried out the suppression of protests.","termAnchor":"Tiananmen Square protests","termExplanationAnchor":"The 1989 Beijing demonstrations for political reform that ended in a violent military crackdown.","evidenceAnchor":"Large demonstrations occupied Tiananmen Square during the spring of 1989.","examAnchor":"Explain how state repression preserved political control without treating the outcome as an auto","connectionNoteAnchor":"Market reform without political liberalization sharpened demands for change that students and wo"}),
+  "apwh-u9-beijing-wto-integration-information-control": Object.freeze({"title":"WTO Integration and Controlled Information","date":"2001–2010s","summaryAnchor":"WTO membership deepened China’s trade integration while the state expanded censorship, surveilla","significanceAnchor":"Economic integration did not cause democratization; leaders combined world-market participation ","actorAnchor":"Chinese trade officials and internet regulators","actorRoleAnchor":"Managed WTO integration while restricting political information and digital communication.","termAnchor":"Great Firewall","termExplanationAnchor":"The laws, filtering systems, and platform controls used by the Chinese state to regulate interne","evidenceAnchor":"China joined the World Trade Organization in 2001.","examAnchor":"Trace deeper WTO integration alongside continued one-party rule and evolving information control","connectionNoteAnchor":"After suppressing political challenge, party leaders retained one-party control while choosing W"}),
+  "apwh-u9-washington-bretton-woods-financial-institutions": Object.freeze({"title":"Bretton Woods and Postwar Financial Institutions","date":"1944–1945","summaryAnchor":"The Bretton Woods conference designed the IMF and World Bank framework for postwar monetary stab","significanceAnchor":"Washington, D.C. is a headquarters anchor, and the World Bank, IMF, and WTO were distinct instit","actorAnchor":"Bretton Woods delegates and postwar governments","actorRoleAnchor":"Created multilateral monetary and development institutions after World War II.","termAnchor":"Bretton Woods institutions","termExplanationAnchor":"The International Monetary Fund and World Bank organizations established from the 1944 Bretton W","evidenceAnchor":"Delegates from forty-four Allied countries met at Bretton Woods in 1944.","examAnchor":"Contextualize financial governance by distinguishing the IMF and World Bank from the later WTO t","connectionNoteAnchor":"Postwar agreements created lending capacity and unequal voting rules that institution officials "}),
+  "apwh-u9-washington-development-lending-conditionality": Object.freeze({"title":"Development Lending and Policy Conditionality","date":"1950s–2000s","summaryAnchor":"The World Bank financed development projects, while the IMF offered balance-of-payments support ","significanceAnchor":"Lending could fund infrastructure or stabilize currencies, but conditionality could also reduce ","actorAnchor":"World Bank and IMF officials with borrowing governments","actorRoleAnchor":"Negotiated development lending, stabilization programs, and attached policy conditions.","termAnchor":"conditionality","termExplanationAnchor":"Economic or administrative policy changes that a lending institution requires a borrower to adop","evidenceAnchor":"World Bank loans financed dams, roads, schools, and other development projects.","examAnchor":"Explain how lending and conditionality produced both claimed development gains and contested soc","connectionNoteAnchor":"Postwar agreements created lending capacity and unequal voting rules that institution officials "}),
+  "apwh-u9-washington-institutional-power-benefits-criticism": Object.freeze({"title":"Institutional Power, Development Claims, and Criticism","date":"1990s–2010s","summaryAnchor":"Supporters credited global institutions with development finance and trade rules, while critics ","significanceAnchor":"Institutional outcomes reflected cooperation and power imbalances because wealthy states held di","actorAnchor":"Member governments, institutional officials, and civil-society critics","actorRoleAnchor":"Debated development benefits, governance rules, voting power, and criticism of accountability.","termAnchor":"weighted voting","termExplanationAnchor":"A system in which members have different vote shares, often connected to financial contributions","evidenceAnchor":"United States voting power has been especially large in the IMF and World Bank.","examAnchor":"Compare claimed gains in finance and rule making with criticism of voting power, conditionality,","connectionNoteAnchor":"Conditional lending and weighted voting distributed development benefits, policy constraints, an"}),
+  "apwh-u9-seattle-wto-expansion-rulemaking-criticism": Object.freeze({"title":"WTO Expansion and Rule-Making Criticism","date":"1995–1999","summaryAnchor":"The WTO expanded a rules-based trade system, and its 1999 Seattle ministerial focused criticism ","significanceAnchor":"Resistance targeted how global trade rules were made and whose interests they served, not simply","actorAnchor":"WTO delegates and globalization critics","actorRoleAnchor":"Debated trade negotiations, institutional authority, and public accountability.","termAnchor":"WTO ministerial conference","termExplanationAnchor":"A meeting of World Trade Organization members that makes major decisions about negotiations and ","evidenceAnchor":"The WTO began operating in 1995 as the successor to the GATT trade framework.","examAnchor":"Contextualize Seattle by connecting WTO expansion to criticism of rule making, labor, and the en","connectionNoteAnchor":"Concerns about WTO rules on labor, environment, sovereignty, and transparency gave diverse organ"}),
+  "apwh-u9-seattle-coalition-protest-digital-organization": Object.freeze({"title":"Coalition Protest and Digital Organization","date":"1999","summaryAnchor":"Labor unions, environmentalists, students, and human-rights advocates built a coalition and used","significanceAnchor":"Internet networks lowered organizing costs, while coalition building and on-the-ground action ma","actorAnchor":"Labor, environmental, student, and human-rights organizers","actorRoleAnchor":"Coordinated demonstrations and public arguments across distinct movements.","termAnchor":"digital mobilization","termExplanationAnchor":"The use of networked communication to coordinate collective action, share information, and recru","evidenceAnchor":"Organizers used email lists and websites to circulate plans before the 1999 ministerial.","examAnchor":"Explain how internet organizing and a labor-environment coalition contributed to protest without","connectionNoteAnchor":"Concerns about WTO rules on labor, environment, sovereignty, and transparency gave diverse organ"}),
+  "apwh-u9-seattle-fair-trade-labor-continuing-resistance": Object.freeze({"title":"Fair Trade, Labor Standards, and Continuing Resistance","date":"2000s–2010s","summaryAnchor":"After Seattle, activists promoted fair trade, labor standards, environmental safeguards, and con","significanceAnchor":"The movement continued criticism of unequal globalization while shifting among protest, consumer","actorAnchor":"Fair-trade advocates and transnational labor networks","actorRoleAnchor":"Pressed for labor protections, environmental standards, and accountable trade rules.","termAnchor":"fair trade","termExplanationAnchor":"An approach to exchange seeking better prices, labor conditions, environmental practices, and pr","evidenceAnchor":"Fair-trade certification linked consumer purchases to standards for producers and workers.","examAnchor":"Trace continuity and change from the Seattle coalition to later fair trade, labor, and global-ju","connectionNoteAnchor":"Coalition networks and summit experience helped labor, environmental, and fair-trade advocates s"}),
+  "apwh-u9-paris-universal-rights-global-norm": Object.freeze({"title":"Universal Rights as a Global Norm","date":"1948","summaryAnchor":"The UN adopted the Universal Declaration of Human Rights in Paris, articulating rights as a glob","significanceAnchor":"Paris is a representative diplomacy anchor for a broader human rights framework negotiated by de","actorAnchor":"Eleanor Roosevelt and United Nations delegates","actorRoleAnchor":"Drafted and negotiated universal civil, political, social, and economic rights.","termAnchor":"Universal Declaration of Human Rights","termExplanationAnchor":"The 1948 United Nations declaration setting a common global standard for human rights.","evidenceAnchor":"The UN General Assembly adopted the declaration in Paris on 10 December 1948.","examAnchor":"Contextualize human rights governance by distinguishing a global norm from a binding enforcement","connectionNoteAnchor":"The universal-rights framework supplied language for transnational responsibility, while states "}),
+  "apwh-u9-paris-kyoto-burden-sharing-debate": Object.freeze({"title":"Kyoto-to-Paris Burden-Sharing Debate","date":"1997–2015","summaryAnchor":"Climate negotiations from Kyoto to Paris struggled over how industrialized and developing states","significanceAnchor":"Burden sharing remained contested because historical emissions, current emissions, development n","actorAnchor":"Climate negotiators from industrialized and developing states","actorRoleAnchor":"Debated differentiated responsibility, targets, finance, and national sovereignty.","termAnchor":"common but differentiated responsibilities","termExplanationAnchor":"The principle that all states share environmental duties but have different obligations because ","evidenceAnchor":"The 1997 Kyoto Protocol assigned binding targets mainly to industrialized countries.","examAnchor":"Compare Kyoto and Paris approaches to burden sharing, sovereignty, participation, and enforcemen","connectionNoteAnchor":"The universal-rights framework supplied language for transnational responsibility, while states "}),
+  "apwh-u9-paris-voluntary-climate-governance-limits": Object.freeze({"title":"Paris Agreement and the Limits of Voluntary Governance","date":"2015–2019","summaryAnchor":"The Paris Agreement used nationally determined contributions, reporting, and review to coordinat","significanceAnchor":"Broad participation increased, but voluntary commitments and weak enforcement limited guaranteed","actorAnchor":"National climate negotiators and UN climate officials","actorRoleAnchor":"Submitted, reviewed, and revised national climate commitments under a common framework.","termAnchor":"nationally determined contribution","termExplanationAnchor":"A climate-action target and plan that each party defines for itself under the Paris Agreement.","evidenceAnchor":"Nearly every state adopted the Paris Agreement in 2015.","examAnchor":"Evaluate broad participation and transparency against sovereignty and enforcement limits in the ","connectionNoteAnchor":"Conflict over Kyoto’s differentiated targets and participation led negotiators to broaden partic"}),
+  "apwh-u9-geneva-vaccination-smallpox-eradication": Object.freeze({"title":"Vaccination Networks and Smallpox Eradication","date":"1967–1980","summaryAnchor":"The WHO coordinated surveillance, vaccination, and assistance that helped eradicate smallpox wor","significanceAnchor":"Geneva is a coordination anchor for a campaign whose success depended on national health workers","actorAnchor":"WHO officials and national vaccination teams","actorRoleAnchor":"Coordinated surveillance, vaccine delivery, case tracing, and containment across borders.","termAnchor":"ring vaccination","termExplanationAnchor":"The strategy of vaccinating contacts around detected cases to interrupt disease transmission.","evidenceAnchor":"The WHO intensified the global smallpox eradication campaign in 1967.","examAnchor":"Explain how WHO coordination, vaccination, surveillance, and local implementation combined to er","connectionNoteAnchor":"Smallpox campaigns strengthened WHO coordination and international health networks that agencies"}),
+  "apwh-u9-geneva-hiv-treatment-unequal-access": Object.freeze({"title":"HIV/AIDS Treatment and Unequal Access","date":"1980s–2000s","summaryAnchor":"Researchers and health agencies expanded antiretroviral treatment for HIV, but patents, prices, ","significanceAnchor":"Medical innovation did not distribute itself evenly; resources, state capacity, activism, and po","actorAnchor":"People living with HIV, treatment activists, and health agencies","actorRoleAnchor":"Demanded affordable medicines and organized prevention and treatment programs.","termAnchor":"antiretroviral therapy","termExplanationAnchor":"Drug combinations that suppress HIV replication and allow many patients to live longer lives.","evidenceAnchor":"Combination antiretroviral therapy became effective in the mid-1990s.","examAnchor":"Compare effective HIV treatment with unequal access caused by price, patents, infrastructure, st","connectionNoteAnchor":"Smallpox campaigns strengthened WHO coordination and international health networks that agencies"}),
+  "apwh-u9-geneva-polio-ebola-coordination-limits": Object.freeze({"title":"Polio, Ebola, and the Limits of Health Coordination","date":"1988–2010s","summaryAnchor":"WHO-led programs coordinated polio vaccination and Ebola response, but weak surveillance, distru","significanceAnchor":"Global cooperation could mobilize expertise without eliminating the need for capable states and ","actorAnchor":"WHO responders, health ministries, and community workers","actorRoleAnchor":"Coordinated surveillance, vaccination, treatment, and public communication during disease campai","termAnchor":"disease surveillance","termExplanationAnchor":"The systematic collection and analysis of health data used to detect cases and guide action.","evidenceAnchor":"The Global Polio Eradication Initiative began in 1988 and reduced cases dramatically.","examAnchor":"Trace why polio and Ebola coordination remained limited by surveillance, state capacity, trust, ","connectionNoteAnchor":"HIV access struggles expanded global health financing, community-based delivery, and medicine-ac"}),
+  "apwh-u9-seoul-state-supported-cultural-industries": Object.freeze({"title":"State Support for Cultural Industries","date":"1990s–2000s","summaryAnchor":"South Korean governments treated film, television, music, and digital media as strategic cultura","significanceAnchor":"Seoul is a representative anchor for a national strategy in which state support and private crea","actorAnchor":"South Korean cultural agencies and media firms","actorRoleAnchor":"Invested in production capacity, creative training, and export promotion.","termAnchor":"Hallyu","termExplanationAnchor":"The transnational popularity of South Korean popular culture, often called the Korean Wave.","evidenceAnchor":"South Korea expanded cultural-industry policy and media investment after the 1990s.","examAnchor":"Contextualize cultural industries by linking state support, private firms, creative labor, and c","connectionNoteAnchor":"State investment and private creativity built media capacity and digital infrastructure that pro"}),
+  "apwh-u9-seoul-digital-platforms-transnational-audiences": Object.freeze({"title":"Digital Platforms and Transnational Audiences","date":"2000s–2010s","summaryAnchor":"Broadband networks, streaming sites, social media, and fan communities allowed Korean music and ","significanceAnchor":"Digital distribution lowered barriers, while translation, recommendation systems, and organized ","actorAnchor":"Korean media producers and transnational fan communities","actorRoleAnchor":"Distributed, translated, promoted, and discussed cultural products through digital platforms.","termAnchor":"digital distribution","termExplanationAnchor":"The circulation of media through networked platforms rather than only physical copies or broadca","evidenceAnchor":"South Korea developed high levels of broadband access and digital-media use.","examAnchor":"Explain how digital platforms and fan networks changed the scale and speed of transnational audi","connectionNoteAnchor":"State investment and private creativity built media capacity and digital infrastructure that pro"}),
+  "apwh-u9-seoul-hybrid-culture-exports-soft-power": Object.freeze({"title":"Hybrid Culture, Exports, and Soft Power","date":"2000s–2010s","summaryAnchor":"Korean producers combined local language and themes with global genres, production styles, and m","significanceAnchor":"Seoul is a representative anchor for soft power, and globalization was not synonymous with Ameri","actorAnchor":"Korean artists, producers, and cultural diplomats","actorRoleAnchor":"Created hybrid media exports that influenced foreign audiences and national image.","termAnchor":"soft power","termExplanationAnchor":"The ability to attract and influence others through culture, values, and reputation rather than ","evidenceAnchor":"K-pop blended Korean lyrics and performance systems with hip-hop, electronic, and other transnat","examAnchor":"Compare cultural borrowing and local adaptation to show how hybrid exports generated economic va","connectionNoteAnchor":"Transnational platforms and active fan communities rewarded hybrid cultural production, while Ko"}),
+});
+
+
 const UNIT_9_DHAKA = Object.freeze({
   number:'113', region:'asia', mainEventKey:'world-event-113-0',
   city:'Dhaka', title:'Rana Plaza', date:'2013',
@@ -495,12 +529,28 @@ const UNIT_9_DHAKA = Object.freeze({
 function verifyUnit9Fixture(worldMapSource) {
   const numbers = UNIT_9_STUDY_VIEWS.map(fixture => fixture.number);
   const ids = UNIT_9_STUDY_VIEWS.flatMap(fixture => fixture.ids);
+  const presentationFields = [
+    'title', 'date', 'summaryAnchor', 'significanceAnchor', 'actorAnchor', 'actorRoleAnchor',
+    'termAnchor', 'termExplanationAnchor', 'evidenceAnchor', 'examAnchor', 'connectionNoteAnchor',
+  ];
   assert.equal(UNIT_9_STUDY_VIEWS.length, 10, 'Unit 9 verifier fixture must contain exactly ten study locations');
   assert.equal(new Set(numbers).size, 10, 'Unit 9 verifier fixture must contain exactly ten unique location numbers');
   assert.equal(ids.length, 30, 'Unit 9 verifier fixture must contain exactly thirty study IDs');
   assert.equal(new Set(ids).size, 30, 'Unit 9 verifier fixture must contain exactly thirty unique study IDs');
   assert.ok(UNIT_9_STUDY_VIEWS.every(fixture => fixture.ids.length === 3),
     'every Unit 9 verifier fixture location must contain exactly three ordered study IDs');
+  assert.equal(Object.isFrozen(UNIT_9_PRESENTATION_ANCHORS), true,
+    'Unit 9 presentation anchors must be an immutable literal oracle');
+  assert.deepEqual(Object.keys(UNIT_9_PRESENTATION_ANCHORS).sort(), [...ids].sort(),
+    'Unit 9 presentation anchors must cover the exact thirty frozen study IDs');
+  for (const id of ids) {
+    const expected = UNIT_9_PRESENTATION_ANCHORS[id];
+    assert.equal(Object.isFrozen(expected), true, `Unit 9 presentation anchors for ${id} must be immutable`);
+    assert.deepEqual(Object.keys(expected), presentationFields,
+      `Unit 9 presentation anchors for ${id} must lock every learner-facing field`);
+    assert.ok(presentationFields.every(field => typeof expected[field] === 'string' && expected[field].trim()),
+      `Unit 9 presentation anchors for ${id} must contain nonempty literal text`);
+  }
 
   const pinRegions = new Map([...worldMapSource.matchAll(
     /<g class="pin-group"[^>]*data-region="([^"]+)"[\s\S]*?<text[^>]*>(\d+)<\/text><\/g>/g,
@@ -5086,6 +5136,22 @@ async function assertUnit9FocusedControl(locator, label) {
   assert.ok(presentation.outlineWidth >= 2, `${label} must expose at least a 2px focus outline`);
 }
 
+async function assertUnit9VisibleAnchor(locator, expected, label) {
+  assert.equal(await locator.count(), 1, `${label} must render exactly once`);
+  await expectVisible(locator, `${label} must be visible`);
+  const actual = (await locator.textContent()).replace(/\s+/g, ' ').trim();
+  assert.ok(actual.includes(expected.trim()),
+    `${label} must contain its frozen presentation anchor: ${JSON.stringify({ expected, actual })}`);
+}
+
+async function unit9StudyPresentationSnapshot(view) {
+  return {
+    ...await unit5StudySnapshot(view),
+    openDisclosures: await view.locator('details[open][data-study-disclosure]').evaluateAll(nodes =>
+      nodes.map(node => node.dataset.studyDisclosure)),
+  };
+}
+
 async function assertUnit9TimelineState(context, fixture, label) {
   const actual = await unit5TimelineState(context);
   assert.ok(actual.visibleEventKeys.includes(fixture.mainEventKey),
@@ -5252,23 +5318,17 @@ async function assertUnit9StudyView(view, fixture, label, canonicalFrame = null)
   const rowSnapshots = [];
   for (let index = 0; index < fixture.ids.length; index += 1) {
     const expectedId = fixture.ids[index];
+    const expectedRecord = UNIT_9_PRESENTATION_ANCHORS[expectedId];
+    assert.ok(expectedRecord, `${label} row ${index + 1} must have a frozen literal presentation oracle`);
     await rows.nth(index).click();
     const detail = view.locator(`[data-study-detail="${expectedId}"]`);
     await expectVisible(detail, `${label} row ${index + 1} exact detail must be visible`);
-    const expectedRecord = await view.evaluate((element, studyId) => {
-      const record = window.APWH_U9_LOCATION_STUDY?.getById(studyId);
-      return record ? { title: record.title, dateLabel: record.dateLabel } : null;
-    }, expectedId);
-    assert.ok(expectedRecord?.title && expectedRecord?.dateLabel,
-      `${label} row ${index + 1} must resolve its exact Unit 9 learner fixture`);
     assert.equal(await view.locator('[data-study-detail]').count(), 1,
       `${label} row ${index + 1} must leave exactly one detail`);
-    assert.equal(await detail.locator('.location-study-detail-title').textContent(), expectedRecord.title,
+    assert.equal((await detail.locator('.location-study-detail-title').textContent()).trim(), expectedRecord.title,
       `${label} row ${index + 1} must render the exact learner title`);
-    assert.equal(await detail.locator('.location-study-detail-date').textContent(), expectedRecord.dateLabel,
+    assert.equal((await detail.locator('.location-study-detail-date').textContent()).trim(), expectedRecord.date,
       `${label} row ${index + 1} must render the exact learner date`);
-    assert.ok((await detail.textContent()).trim().length > expectedRecord.title.length + expectedRecord.dateLabel.length,
-      `${label} row ${index + 1} must render nonempty learner detail content`);
     assert.deepEqual(await view.locator('[data-study-detail]').evaluateAll(nodes =>
       nodes.map(node => node.dataset.studyDetail)), [expectedId],
     `${label} row ${index + 1} must remove all stale detail DOM`);
@@ -5284,12 +5344,53 @@ async function assertUnit9StudyView(view, fixture, label, canonicalFrame = null)
       `${label} row ${index + 1} itself must be current`);
     assert.equal(await rows.nth(index).evaluate(node => document.activeElement === node), true,
       `${label} row ${index + 1} must retain focus`);
-    const snapshot = await unit5StudySnapshot(view);
+
+    const coreSections = detail.locator('.location-study-core > section');
+    assert.deepEqual(await coreSections.locator(':scope > [data-study-core-label]').evaluateAll(nodes =>
+      nodes.map(node => node.textContent.trim())), ['Region', 'Summary', 'Why It Matters', 'Use It on the Exam'],
+    `${label} row ${index + 1} must retain the exact ordered learner core sections`);
+    await assertUnit9VisibleAnchor(coreSections.nth(1).locator(':scope > p'), expectedRecord.summaryAnchor,
+      `${label} row ${index + 1} Summary`);
+    await assertUnit9VisibleAnchor(coreSections.nth(2).locator(':scope > p'), expectedRecord.significanceAnchor,
+      `${label} row ${index + 1} Why It Matters`);
+    await assertUnit9VisibleAnchor(coreSections.nth(3).locator(':scope > p'), expectedRecord.examAnchor,
+      `${label} row ${index + 1} Use It on the Exam`);
+
+    const disclosures = detail.locator('details[data-study-disclosure]');
+    assert.deepEqual(await disclosures.evaluateAll(nodes => nodes.map(node => node.dataset.studyDisclosure)),
+      ['terms', 'evidence', 'connections', 'people', 'source'],
+    `${label} row ${index + 1} must retain the exact ordered learner disclosures`);
+    for (const key of ['terms', 'evidence', 'connections', 'people']) {
+      const disclosure = detail.locator(`details[data-study-disclosure="${key}"]`);
+      if ((await disclosure.getAttribute('open')) === null) await disclosure.locator('summary').click();
+      await disclosure.locator('.location-study-disclosure-body').waitFor({ state: 'visible' });
+    }
+    await assertUnit9VisibleAnchor(
+      detail.locator('details[data-study-disclosure="terms"] .location-study-term-grid > div').first().locator('dt'),
+      expectedRecord.termAnchor, `${label} row ${index + 1} first key term`);
+    await assertUnit9VisibleAnchor(
+      detail.locator('details[data-study-disclosure="terms"] .location-study-term-grid > div').first().locator('dd'),
+      expectedRecord.termExplanationAnchor, `${label} row ${index + 1} first key-term explanation`);
+    await assertUnit9VisibleAnchor(
+      detail.locator('details[data-study-disclosure="evidence"] li').first(), expectedRecord.evidenceAnchor,
+      `${label} row ${index + 1} first evidence point`);
+    await assertUnit9VisibleAnchor(
+      detail.locator('details[data-study-disclosure="people"] .location-study-people > div').first().locator('dt'),
+      expectedRecord.actorAnchor, `${label} row ${index + 1} first actor`);
+    await assertUnit9VisibleAnchor(
+      detail.locator('details[data-study-disclosure="people"] .location-study-people > div').first().locator('dd'),
+      expectedRecord.actorRoleAnchor, `${label} row ${index + 1} first actor role`);
+    await assertUnit9VisibleAnchor(
+      detail.locator('details[data-study-disclosure="connections"] .location-study-connection span')
+        .filter({ hasText: expectedRecord.connectionNoteAnchor.trim() }).first(),
+      expectedRecord.connectionNoteAnchor, `${label} row ${index + 1} relevant connection note`);
+
+    const snapshot = await unit9StudyPresentationSnapshot(view);
     rowSnapshots.push(snapshot);
     if (canonicalFrame) {
       const canonical = canonicalFrame.locator(
         `#eventPanel [data-location-study-view="${fixture.number}"][data-location-study-unit="u9"]`);
-      assert.deepEqual(await unit5StudySnapshot(canonical), snapshot,
+      assert.deepEqual(await unit9StudyPresentationSnapshot(canonical), snapshot,
         `${label} row ${index + 1} must preserve exact canonical/mirror content and one-open parity`);
     }
   }
@@ -5545,43 +5646,92 @@ async function verifyUnit9KeyboardAndResponsive(page, frame, surface) {
   await page.setViewportSize({ width: 360, height: 700 });
   await normalizeUnit9FilterSurface(page, frame, surface, `${label} narrow`);
   const viewport = surface === 'standalone' ? page : frame;
-  const timeline = await viewport.locator('body').evaluate(() => ({
-    scroll: document.querySelector('.world-timeline-track')?.scrollWidth || 0,
-    client: document.querySelector('.world-timeline-track')?.clientWidth || 0,
-    dockHeight: document.querySelector('.world-timeline-dock')?.getBoundingClientRect().height || 0,
-    cardHeights: [...document.querySelectorAll('.world-timeline-card')]
-      .map(card => card.getBoundingClientRect().height),
-    cardChildClasses: [...document.querySelectorAll('.world-timeline-card')]
-      .map(card => [...card.children].map(child => child.className)),
-    expandedContentCount: document.querySelectorAll(
-      '.world-timeline-card .event-card, .world-timeline-card .ec-trig, '
-      + '.world-timeline-card .location-study-detail, .world-timeline-card [data-study-detail]').length,
-    overflowX: (() => {
-      const track = document.querySelector('.world-timeline-track');
-      return track ? getComputedStyle(track).overflowX : null;
-    })(),
-    scrollLeft: (() => {
-      const track = document.querySelector('.world-timeline-track');
-      if (!track) return { before: 0, after: 0 };
-      track.scrollLeft = 0;
-      const before = track.scrollLeft;
+  const timeline = await viewport.locator('body').evaluate(() => {
+    const numeric = value => Number.parseFloat(value) || 0;
+    const track = document.querySelector('.world-timeline-track');
+    const dock = document.querySelector('.world-timeline-dock');
+    const head = document.querySelector('.world-timeline-head');
+    const trackStyle = track ? getComputedStyle(track) : null;
+    const dockStyle = dock ? getComputedStyle(dock) : null;
+    const headStyle = head ? getComputedStyle(head) : null;
+    const cards = [...document.querySelectorAll('.world-timeline-card')].map(card => {
+      const cardStyle = getComputedStyle(card);
+      const date = card.querySelector(':scope > .world-timeline-date');
+      const titleEn = card.querySelector(':scope > .world-timeline-title-en');
+      const titleZh = card.querySelector(':scope > .world-timeline-title-zh');
+      const titleStyle = node => {
+        const style = node ? getComputedStyle(node) : null;
+        return style ? {
+          overflow: style.overflow, textOverflow: style.textOverflow, whiteSpace: style.whiteSpace,
+        } : null;
+      };
+      return {
+        height: card.getBoundingClientRect().height,
+        minHeight: numeric(cardStyle.minHeight),
+        heightTolerance: Math.max(4, numeric(cardStyle.fontSize) * 0.75),
+        dateCount: card.querySelectorAll(':scope > .world-timeline-date').length,
+        titleEnCount: card.querySelectorAll(':scope > .world-timeline-title-en').length,
+        titleZhCount: card.querySelectorAll(':scope > .world-timeline-title-zh').length,
+        date: date?.textContent.trim() || '',
+        titleEn: titleEn?.textContent.trim() || '',
+        titleZh: titleZh?.textContent.trim() || '',
+        titleEnStyle: titleStyle(titleEn),
+        titleZhStyle: titleStyle(titleZh),
+        verboseStructureCount: card.querySelectorAll(
+          'p, ul, ol, dl, details, article, section, .event-card, .ec-trig, '
+          + '.location-study-detail, [data-study-detail]').length,
+      };
+    });
+    const dockFlowHeight = (head?.getBoundingClientRect().height || 0) + numeric(headStyle?.marginBottom)
+      + (track?.getBoundingClientRect().height || 0) + numeric(dockStyle?.paddingTop)
+      + numeric(dockStyle?.paddingBottom) + numeric(dockStyle?.borderTopWidth)
+      + numeric(dockStyle?.borderBottomWidth);
+    if (track) track.scrollLeft = 0;
+    const before = track?.scrollLeft || 0;
+    if (track) {
       track.scrollLeft = Math.min(80, Math.max(1, track.scrollWidth - track.clientWidth));
-      return { before, after: track.scrollLeft };
-    })(),
-  }));
+    }
+    return {
+      scroll: track?.scrollWidth || 0,
+      client: track?.clientWidth || 0,
+      dockHeight: dock?.getBoundingClientRect().height || 0,
+      dockFlowHeight,
+      layoutTolerance: Math.max(2, window.devicePixelRatio * 2),
+      cards,
+      expandedContentCount: document.querySelectorAll(
+        '.world-timeline-card .event-card, .world-timeline-card .ec-trig, '
+        + '.world-timeline-card .location-study-detail, .world-timeline-card [data-study-detail]').length,
+      overflowX: trackStyle?.overflowX || null,
+      overflowY: trackStyle?.overflowY || null,
+      scrollLeft: { before, after: track?.scrollLeft || 0 },
+    };
+  });
   assert.ok(timeline.scroll > timeline.client,
     `${label} Timeline must remain horizontally scrollable: ${JSON.stringify(timeline)}`);
   assert.match(timeline.overflowX || '', /^(auto|scroll)$/,
     `${label} Timeline computed overflow-x must permit horizontal scrolling: ${JSON.stringify(timeline)}`);
+  assert.equal(timeline.overflowY, 'hidden',
+    `${label} Timeline must preserve its horizontal-only overflow contract: ${JSON.stringify(timeline)}`);
   assert.ok(timeline.scrollLeft.after > timeline.scrollLeft.before,
     `${label} Timeline must demonstrate a real scrollLeft change: ${JSON.stringify(timeline)}`);
-  assert.ok(timeline.cardHeights.length > 0 && Math.max(...timeline.cardHeights) <= 100,
-    `${label} Timeline cards must remain concise and at most 100px high: ${JSON.stringify(timeline)}`);
-  assert.ok(timeline.dockHeight > 0 && timeline.dockHeight <= 180,
-    `${label} Timeline dock must remain a concise horizontal strip: ${JSON.stringify(timeline)}`);
-  assert.ok(timeline.cardChildClasses.every(classes => JSON.stringify(classes) === JSON.stringify([
-    'world-timeline-date', 'world-timeline-title-en', 'world-timeline-title-zh',
-  ])), `${label} Timeline cards must retain only concise date and title content: ${JSON.stringify(timeline)}`);
+  assert.ok(timeline.cards.length > 0, `${label} Timeline must retain concise event cards`);
+  for (const [index, card] of timeline.cards.entries()) {
+    assert.deepEqual([card.dateCount, card.titleEnCount, card.titleZhCount], [1, 1, 1],
+      `${label} Timeline card ${index + 1} must expose one semantic date and two concise titles`);
+    assert.ok(card.date && card.titleEn && card.titleZh,
+      `${label} Timeline card ${index + 1} must retain nonempty concise text: ${JSON.stringify(card)}`);
+    assert.equal(card.verboseStructureCount, 0,
+      `${label} Timeline card ${index + 1} must not contain verbose detail structures`);
+    assert.ok(card.minHeight > 0 && card.height <= card.minHeight + card.heightTolerance,
+      `${label} Timeline card ${index + 1} must stay within its CSS minimum-height contract: ${JSON.stringify(card)}`);
+    for (const [titleKind, style] of [['English', card.titleEnStyle], ['Chinese', card.titleZhStyle]]) {
+      assert.deepEqual(style, { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+        `${label} Timeline card ${index + 1} ${titleKind} title must stay single-line and ellipsized`);
+    }
+  }
+  assert.ok(timeline.dockHeight > 0
+      && Math.abs(timeline.dockHeight - timeline.dockFlowHeight) <= timeline.layoutTolerance,
+    `${label} Timeline dock must follow its computed CSS flow without vertical expansion: ${JSON.stringify(timeline)}`);
   assert.equal(timeline.expandedContentCount, 0,
     `${label} Timeline cards must not absorb ordinary or study detail content`);
   // The responsive check starts from the normalized all-events state above. On
