@@ -5249,13 +5249,29 @@ async function assertUnit9StudyView(view, fixture, label, canonicalFrame = null)
   const rows = view.locator('[data-study-event]');
   assert.deepEqual(await rows.evaluateAll(nodes => nodes.map(node => node.dataset.studyEvent)), fixture.ids,
     `${label} must render the exact three stable IDs in order`);
+  const rowSnapshots = [];
   for (let index = 0; index < fixture.ids.length; index += 1) {
-    await rows.nth(index).click();
     const expectedId = fixture.ids[index];
+    await rows.nth(index).click();
+    const detail = view.locator(`[data-study-detail="${expectedId}"]`);
+    await expectVisible(detail, `${label} row ${index + 1} exact detail must be visible`);
+    const expectedRecord = await view.evaluate((element, studyId) => {
+      const record = window.APWH_U9_LOCATION_STUDY?.getById(studyId);
+      return record ? { title: record.title, dateLabel: record.dateLabel } : null;
+    }, expectedId);
+    assert.ok(expectedRecord?.title && expectedRecord?.dateLabel,
+      `${label} row ${index + 1} must resolve its exact Unit 9 learner fixture`);
     assert.equal(await view.locator('[data-study-detail]').count(), 1,
       `${label} row ${index + 1} must leave exactly one detail`);
-    assert.equal(await view.locator('[data-study-detail]').getAttribute('data-study-detail'), expectedId,
-      `${label} row ${index + 1} must render the exact clicked detail`);
+    assert.equal(await detail.locator('.location-study-detail-title').textContent(), expectedRecord.title,
+      `${label} row ${index + 1} must render the exact learner title`);
+    assert.equal(await detail.locator('.location-study-detail-date').textContent(), expectedRecord.dateLabel,
+      `${label} row ${index + 1} must render the exact learner date`);
+    assert.ok((await detail.textContent()).trim().length > expectedRecord.title.length + expectedRecord.dateLabel.length,
+      `${label} row ${index + 1} must render nonempty learner detail content`);
+    assert.deepEqual(await view.locator('[data-study-detail]').evaluateAll(nodes =>
+      nodes.map(node => node.dataset.studyDetail)), [expectedId],
+    `${label} row ${index + 1} must remove all stale detail DOM`);
     assert.equal(await view.locator('[data-study-event][aria-expanded="true"]').count(), 1,
       `${label} row ${index + 1} must leave exactly one expanded record`);
     assert.equal(await view.locator('[data-study-event][aria-current="true"]').count(), 1,
@@ -5268,13 +5284,16 @@ async function assertUnit9StudyView(view, fixture, label, canonicalFrame = null)
       `${label} row ${index + 1} itself must be current`);
     assert.equal(await rows.nth(index).evaluate(node => document.activeElement === node), true,
       `${label} row ${index + 1} must retain focus`);
+    const snapshot = await unit5StudySnapshot(view);
+    rowSnapshots.push(snapshot);
+    if (canonicalFrame) {
+      const canonical = canonicalFrame.locator(
+        `#eventPanel [data-location-study-view="${fixture.number}"][data-location-study-unit="u9"]`);
+      assert.deepEqual(await unit5StudySnapshot(canonical), snapshot,
+        `${label} row ${index + 1} must preserve exact canonical/mirror content and one-open parity`);
+    }
   }
-  if (canonicalFrame) {
-    const canonical = canonicalFrame.locator(
-      `#eventPanel [data-location-study-view="${fixture.number}"][data-location-study-unit="u9"]`);
-    assert.deepEqual(await unit5StudySnapshot(view), await unit5StudySnapshot(canonical),
-      `${label} must preserve iframe/mirror study parity`);
-  }
+  return rowSnapshots;
 }
 
 async function assertUnit9OuterBack(page, frame, surface, opened, fixture, label) {
@@ -5529,6 +5548,14 @@ async function verifyUnit9KeyboardAndResponsive(page, frame, surface) {
   const timeline = await viewport.locator('body').evaluate(() => ({
     scroll: document.querySelector('.world-timeline-track')?.scrollWidth || 0,
     client: document.querySelector('.world-timeline-track')?.clientWidth || 0,
+    dockHeight: document.querySelector('.world-timeline-dock')?.getBoundingClientRect().height || 0,
+    cardHeights: [...document.querySelectorAll('.world-timeline-card')]
+      .map(card => card.getBoundingClientRect().height),
+    cardChildClasses: [...document.querySelectorAll('.world-timeline-card')]
+      .map(card => [...card.children].map(child => child.className)),
+    expandedContentCount: document.querySelectorAll(
+      '.world-timeline-card .event-card, .world-timeline-card .ec-trig, '
+      + '.world-timeline-card .location-study-detail, .world-timeline-card [data-study-detail]').length,
     overflowX: (() => {
       const track = document.querySelector('.world-timeline-track');
       return track ? getComputedStyle(track).overflowX : null;
@@ -5548,6 +5575,15 @@ async function verifyUnit9KeyboardAndResponsive(page, frame, surface) {
     `${label} Timeline computed overflow-x must permit horizontal scrolling: ${JSON.stringify(timeline)}`);
   assert.ok(timeline.scrollLeft.after > timeline.scrollLeft.before,
     `${label} Timeline must demonstrate a real scrollLeft change: ${JSON.stringify(timeline)}`);
+  assert.ok(timeline.cardHeights.length > 0 && Math.max(...timeline.cardHeights) <= 100,
+    `${label} Timeline cards must remain concise and at most 100px high: ${JSON.stringify(timeline)}`);
+  assert.ok(timeline.dockHeight > 0 && timeline.dockHeight <= 180,
+    `${label} Timeline dock must remain a concise horizontal strip: ${JSON.stringify(timeline)}`);
+  assert.ok(timeline.cardChildClasses.every(classes => JSON.stringify(classes) === JSON.stringify([
+    'world-timeline-date', 'world-timeline-title-en', 'world-timeline-title-zh',
+  ])), `${label} Timeline cards must retain only concise date and title content: ${JSON.stringify(timeline)}`);
+  assert.equal(timeline.expandedContentCount, 0,
+    `${label} Timeline cards must not absorb ordinary or study detail content`);
   // The responsive check starts from the normalized all-events state above. On
   // the homepage, that state has no result cards until a query is applied, so
   // enter through the same host-search path a student uses instead of asking
@@ -5604,6 +5640,53 @@ async function assertUnit9Cleanup(page, frame, surface, nextUnit) {
   }
 }
 
+async function assertUnit9NoUnit10Handoff(page, frame, surface) {
+  const { canonical, panel } = unit9Surface(page, frame, surface);
+  const label = `${surface} Unit 9 final-unit handoff`;
+  if (surface === 'standalone') {
+    await page.locator('#periodFilter').selectOption('u9');
+    await page.locator('[data-learning-view="chain"]').click();
+    await page.waitForFunction(() => window.__mapFilter.getState().period === 'u9'
+      && window.__mapFilter.getLearningState().view === 'chain'
+      && window.__mapFilter.getLearningState().chainId === 'u9_main'
+      && document.querySelector('#eventPanel [data-chain-seam="from"]'));
+  } else {
+    await page.locator('#hostPeriod').selectOption('u9');
+    await page.locator('.map-card-head [data-learning-view="chain"]').click();
+    await page.waitForFunction(() => {
+      const win = document.querySelector('#worldMapFrame')?.contentWindow;
+      return win?.__mapFilter?.getState().period === 'u9'
+        && win?.__mapFilter?.getLearningState().view === 'chain'
+        && win?.__mapFilter?.getLearningState().chainId === 'u9_main'
+        && document.querySelector('.map-card-head [data-learning-view="chain"]')
+          ?.getAttribute('aria-pressed') === 'true'
+        && win?.document?.querySelector('#eventPanel [data-chain-seam="from"]')
+        && document.querySelector('#home-events [data-chain-seam="from"]');
+    });
+  }
+  const canonicalPanel = canonical.locator('#eventPanel');
+  assert.equal(await canonicalPanel.locator('[data-chain-seam="from"]').count(), 1,
+    `${label} canonical chain must expose exactly one Unit 8 incoming handoff`);
+  assert.equal(await canonicalPanel.locator(
+    '[data-chain-seam="to"], [data-chain-boundary="u10_main"], [href*="u10"], [data-unit="u10"]').count(), 0,
+  `${label} canonical chain must expose no Unit 10 handoff, control, or link`);
+  assert.doesNotMatch(await canonicalPanel.innerText(), /\bUNIT\s*10\b/i,
+    `${label} canonical chain must not name Unit 10`);
+  assert.equal(await canonical.locator('#periodFilter option[value="u10"]').count(), 0,
+    `${label} canonical Unit control must not expose Unit 10`);
+  if (surface === 'homepage') {
+    await expectVisible(panel.locator('[data-chain-seam="from"]'),
+      `${label} mirrored chain must expose its Unit 8 incoming handoff`);
+    assert.equal(await panel.locator(
+      '[data-chain-seam="to"], [data-chain-boundary="u10_main"], [href*="u10"], [data-unit="u10"]').count(), 0,
+    `${label} mirrored chain must expose no Unit 10 handoff, control, or link`);
+    assert.doesNotMatch(await panel.innerText(), /\bUNIT\s*10\b/i,
+      `${label} mirrored chain must not name Unit 10`);
+    assert.equal(await page.locator('#hostPeriod option[value="u10"]').count(), 0,
+      `${label} homepage Unit control must not expose Unit 10`);
+  }
+}
+
 async function assertUnit9DhakaOrdinaryOnly(page, frame, surface) {
   const label = `${surface} Unit 9 Dhaka ordinary-only event`;
   const { canonical, panel } = unit9Surface(page, frame, surface);
@@ -5637,8 +5720,8 @@ async function verifyStandaloneUnit9StudyContract(page) {
   for (const fixture of UNIT_9_STUDY_VIEWS) {
     const label = `standalone ${fixture.label} Unit 9`;
     const opened = await openUnit9Study(page, null, 'standalone', fixture, label);
-    await assertUnit9StudyView(opened.view, fixture, label);
-    unit9StandaloneParitySnapshots.set(fixture.number, await unit5StudySnapshot(opened.view));
+    unit9StandaloneParitySnapshots.set(fixture.number,
+      await assertUnit9StudyView(opened.view, fixture, label));
     await assertUnit9OuterBack(page, null, 'standalone', opened, fixture, label);
   }
   for (const jump of UNIT_9_CONNECTION_JUMPS) await assertUnit9ConnectionJump(page, null, 'standalone', jump);
@@ -5646,6 +5729,7 @@ async function verifyStandaloneUnit9StudyContract(page) {
   await verifyUnit9KeyboardAndResponsive(page, null, 'standalone');
   await assertUnit9Cleanup(page, null, 'standalone', 'u8');
   await assertUnit9Cleanup(page, null, 'standalone', '');
+  await assertUnit9NoUnit10Handoff(page, null, 'standalone');
   await assertUnit9DhakaOrdinaryOnly(page, null, 'standalone');
 }
 
@@ -5653,9 +5737,9 @@ async function verifyHomepageUnit9StudyContract(page, frame) {
   for (const fixture of UNIT_9_STUDY_VIEWS) {
     const label = `homepage ${fixture.label} Unit 9`;
     const opened = await openUnit9Study(page, frame, 'homepage', fixture, label);
-    await assertUnit9StudyView(opened.view, fixture, label, frame);
-    assert.deepEqual(await unit5StudySnapshot(opened.view), unit9StandaloneParitySnapshots.get(fixture.number),
-      `${label} must preserve standalone/homepage content and one-open parity`);
+    const rowSnapshots = await assertUnit9StudyView(opened.view, fixture, label, frame);
+    assert.deepEqual(rowSnapshots, unit9StandaloneParitySnapshots.get(fixture.number),
+      `${label} must preserve standalone/homepage content and one-open parity after every row transition`);
     await assertUnit9OuterBack(page, frame, 'homepage', opened, fixture, label);
   }
   for (const jump of UNIT_9_CONNECTION_JUMPS) await assertUnit9ConnectionJump(page, frame, 'homepage', jump);
@@ -5663,6 +5747,7 @@ async function verifyHomepageUnit9StudyContract(page, frame) {
   await verifyUnit9KeyboardAndResponsive(page, frame, 'homepage');
   await assertUnit9Cleanup(page, frame, 'homepage', 'u8');
   await assertUnit9Cleanup(page, frame, 'homepage', '');
+  await assertUnit9NoUnit10Handoff(page, frame, 'homepage');
   await assertUnit9DhakaOrdinaryOnly(page, frame, 'homepage');
 }
 async function assertProgressiveCoreVisible(detail, label) {
