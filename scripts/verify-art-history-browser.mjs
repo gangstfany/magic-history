@@ -569,6 +569,160 @@ const U3_WORKS = validateAndFreezeU3Works(parseVerifierJson(
   await readFile(join(PROJECT_ROOT, 'tests', 'fixtures', 'u3-browser.json'), 'utf8'),
   'U3 browser fixture',
 ));
+const U4_WORK_KEYS = Object.freeze([
+  'id',
+  'apNumber',
+  'titleEn',
+  'titleZh',
+  'unit',
+  'region',
+  'siteName',
+  'provenanceQualifier',
+  'images',
+]);
+const U4_IMAGE_KEYS = Object.freeze([
+  'id',
+  'label',
+  'imageUrl',
+  'imageAlt',
+  'imageSourceUrl',
+]);
+export const U4_PRIVATE_MEDIA_KEYS = Object.freeze([
+  'ap140-two-fridas::primary',
+  'ap143-dream-alameda-central::primary',
+  'ap146-marilyn-diptych::primary',
+  'ap148-narcissus-garden::primary',
+  'ap149-bay::primary',
+  'ap150-lipstick-caterpillar-tracks::primary',
+  'ap152-house-new-castle-county::exterior',
+  'ap152-house-new-castle-county::interior',
+]);
+const U4_PRIVATE_SCRIPT_PATH = '.private-media/u4/overrides.js';
+export const U4_REGION_LABELS = Object.freeze([
+  'Southern Europe · 4 pieces',
+  'France · 20 pieces',
+  'British Isles · 3 pieces',
+  'Central & Northern Europe · 5 pieces',
+  'Russia & Soviet Union · 1 piece',
+  'United States · 14 pieces',
+  'Mexico & Caribbean · 5 pieces',
+  'Pacific · 1 piece',
+  'Transatlantic · 1 piece',
+]);
+
+function projectU4CanonicalBrowser(canonical) {
+  assertExactKeys(canonical, ['artworks', 'credits'], 'U4 canonical');
+  assert.equal(canonical.artworks.length, 54, 'U4 canonical work count');
+  return canonical.artworks.map((work, index) => {
+    assert.equal(work.apNumber, index + 99, `U4 canonical AP ${index + 99} sequence`);
+    return Object.freeze({
+      id: work.id,
+      apNumber: work.apNumber,
+      titleEn: work.titleEn,
+      titleZh: work.titleZh,
+      unit: work.unit,
+      region: work.region,
+      siteName: work.siteName,
+      provenanceQualifier: work.provenanceQualifier ?? null,
+      images: Object.freeze(work.images.map((image) => Object.freeze({
+        id: image.id,
+        label: image.label,
+        imageUrl: image.imageUrl,
+        imageAlt: image.imageAlt,
+        imageSourceUrl: image.imageSourceUrl,
+        ...(image.mediaStatus ? { mediaStatus: image.mediaStatus } : {}),
+      }))),
+    });
+  });
+}
+
+const U4_CANONICAL = parseVerifierJson(
+  await readFile(join(PROJECT_ROOT, 'tests', 'fixtures', 'u4-canonical.json'), 'utf8'),
+  'U4 canonical fixture',
+);
+const U4_EXPECTED_BROWSER = Object.freeze(projectU4CanonicalBrowser(U4_CANONICAL));
+
+export function validateAndFreezeU4Works(works) {
+  assert.ok(Array.isArray(works), 'U4 browser fixture must be an array');
+  assert.equal(works.length, 54, 'U4 browser fixture must contain exactly 54 U4 works');
+  const workIds = [];
+  const viewIds = [];
+  const publicImageUrls = [];
+  const privateKeys = [];
+  let viewCount = 0;
+
+  works.forEach((work, workIndex) => {
+    const apNumber = workIndex + 99;
+    assertExactKeys(work, U4_WORK_KEYS, `AP ${apNumber}`);
+    assert.equal(work.apNumber, apNumber, `AP ${apNumber} sequence`);
+    assert.equal(work.unit, 4, `AP ${apNumber} Unit`);
+    for (const key of ['id', 'titleEn', 'titleZh', 'region', 'siteName']) {
+      assert.equal(typeof work[key], 'string', `AP ${apNumber} ${key} type`);
+      assert.ok(work[key].trim(), `AP ${apNumber} ${key} value`);
+    }
+    assert.ok(
+      work.provenanceQualifier === null
+        || (typeof work.provenanceQualifier === 'string' && work.provenanceQualifier.trim()),
+      `AP ${apNumber} provenanceQualifier value`,
+    );
+    assert.ok(Array.isArray(work.images) && work.images.length > 0, `AP ${apNumber} images`);
+    workIds.push(work.id);
+    work.images.forEach((image, imageIndex) => {
+      const restricted = image.mediaStatus === 'rightsRestricted';
+      assertExactKeys(
+        image,
+        restricted ? [...U4_IMAGE_KEYS, 'mediaStatus'] : U4_IMAGE_KEYS,
+        `AP ${apNumber} view ${imageIndex + 1}`,
+      );
+      for (const key of ['id', 'label', 'imageAlt', 'imageSourceUrl']) {
+        assert.equal(typeof image[key], 'string', `AP ${apNumber} view ${imageIndex + 1} ${key}`);
+        assert.ok(image[key].trim(), `AP ${apNumber} view ${imageIndex + 1} ${key} value`);
+      }
+      assert.match(image.imageSourceUrl, /^https:\/\//, `AP ${apNumber} image source URL`);
+      const identity = `${work.id}::${image.id}`;
+      if (restricted) {
+        assert.equal(image.imageUrl, null, `${identity} rightsRestricted requires null image URL`);
+        privateKeys.push(identity);
+      } else {
+        assert.equal(typeof image.imageUrl, 'string', `${identity} public image URL type`);
+        assert.match(image.imageUrl, /^https:\/\//, `${identity} public image URL`);
+        publicImageUrls.push(image.imageUrl);
+      }
+      viewIds.push(identity);
+      viewCount += 1;
+      Object.freeze(image);
+    });
+    Object.freeze(work.images);
+    Object.freeze(work);
+  });
+  assert.equal(viewCount, 63, 'U4 browser fixture must contain exactly 63 U4 views');
+  assert.equal(publicImageUrls.length, 55, 'U4 browser fixture public image count');
+  assert.deepEqual(privateKeys, U4_PRIVATE_MEDIA_KEYS, 'U4 exact private media keys');
+  assertUnique(workIds, 'U4 work id');
+  assertUnique(viewIds, 'U4 view id');
+  assertUnique(publicImageUrls, 'U4 public image URL');
+  works.forEach((work, index) => {
+    assertExactCanonicalValue(
+      work,
+      U4_EXPECTED_BROWSER[index],
+      `U4 canonical projection.AP${work.apNumber}`,
+    );
+  });
+  return Object.freeze(works);
+}
+
+const U4_WORKS = validateAndFreezeU4Works(parseVerifierJson(
+  await readFile(join(PROJECT_ROOT, 'tests', 'fixtures', 'u4-browser.json'), 'utf8'),
+  'U4 browser fixture',
+));
+
+export function assertU4RegionTraversalCoverage(actualLabels, label) {
+  assert.deepEqual(actualLabels, U4_REGION_LABELS, `${label} exact U4 region branches`);
+}
+
+export function assertU4MarkerLayoutPreserved(preserved, label) {
+  assert.equal(preserved, true, `${label} marker layout rollback`);
+}
 const IMAGE_FIXTURE = Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480"><rect width="640" height="480" fill="#d8c5a7"/><circle cx="320" cy="240" r="120" fill="#8f553f"/></svg>',
 );
@@ -1151,8 +1305,9 @@ async function assertInitialHierarchy(frame) {
     'U1 · Global Prehistory · 11 pieces',
     'U2 · Ancient Mediterranean · 36 pieces',
     'U3 · Early Europe and Colonial Americas · 51 pieces',
+    'U4 · Later Europe and Americas · 54 pieces',
   ]);
-  assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 98 件作品');
+  assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 152 件作品');
 }
 
 async function assertHierarchyAndDialog(page, frame) {
@@ -1593,7 +1748,7 @@ async function verifyStandalone(
     await waitForArt(page);
     assert.equal(
       (await page.locator('.page-header h1').textContent()).trim(),
-      'AP 艺术史互动地图 · Units 1-3',
+      'AP 艺术史互动地图 · Units 1-4',
     );
     await assertInitialHierarchy(page);
     let metrics = await assertCommonLayout(page, 'standalone', viewport);
@@ -1658,7 +1813,7 @@ async function selectArtAndFrame(page, useKeyboard = false) {
   await caption.waitFor({ state: 'visible' });
   assert.equal(
     (await caption.textContent()).trim(),
-    '98 AP works · Units 1-3 · filter, compare and study',
+    '152 AP works · Units 1-4 · filter, compare and study',
   );
   const iframe = page.locator('#artMapFrame');
   await iframe.waitFor({ state: 'visible' });
@@ -1757,8 +1912,10 @@ async function resetAndActivateWork(page, frame, work, beforeActivate = () => {}
   const unitFilter = frame.locator('#unitFilter');
   const searchInput = frame.locator('#searchInput');
   const resultCount = frame.locator('.result-count');
-  const unit = work.unit || (work.apNumber <= 11 ? 1 : work.apNumber <= 47 ? 2 : 3);
-  const unitCount = new Map([[1, 11], [2, 36], [3, 51]]).get(unit);
+  const unit = work.unit || (
+    work.apNumber <= 11 ? 1 : work.apNumber <= 47 ? 2 : work.apNumber <= 98 ? 3 : 4
+  );
+  const unitCount = new Map([[1, 11], [2, 36], [3, 51], [4, 54]]).get(unit);
   await fillSearchThroughUi(searchInput, '', `AP ${work.apNumber} reset search`);
   await unitFilter.selectOption('all');
   await waitForPostTransformRender(frame);
@@ -1766,13 +1923,13 @@ async function resetAndActivateWork(page, frame, work, beforeActivate = () => {}
   assert.equal(await searchInput.inputValue(), '', `AP ${work.apNumber} Unit reset retains search`);
   assert.equal(
     (await resultCount.textContent()).trim(),
-    '当前显示 98 件作品',
+    '当前显示 152 件作品',
     `AP ${work.apNumber} search reset result`,
   );
   await frame.locator('#resetView').click();
   assert.equal(
     (await resultCount.textContent()).trim(),
-    '当前显示 98 件作品',
+    '当前显示 152 件作品',
     `AP ${work.apNumber} hierarchy reset result`,
   );
 
@@ -1784,8 +1941,13 @@ async function resetAndActivateWork(page, frame, work, beforeActivate = () => {}
     `当前显示 ${unitCount} 件作品`,
     `AP ${work.apNumber} Unit result`,
   );
-  await fillSearchThroughUi(searchInput, work.titleEn, `AP ${work.apNumber} exact search`);
-  assert.equal((await resultCount.textContent()).trim(), '当前显示 1 件作品');
+  const exactSearch = unit === 4 ? `AP ${work.apNumber}` : work.titleEn;
+  await fillSearchThroughUi(searchInput, exactSearch, `AP ${work.apNumber} exact search`);
+  assert.equal(
+    (await resultCount.textContent()).trim(),
+    '当前显示 1 件作品',
+    `AP ${work.apNumber} exact search result`,
+  );
 
   const region = frame.locator('.site-marker[data-group-kind="region"]');
   await region.waitFor();
@@ -1803,6 +1965,208 @@ async function resetAndActivateWork(page, frame, work, beforeActivate = () => {}
   const heading = frame.locator('[data-selected-artwork-title]');
   await heading.waitFor();
   assert.equal((await heading.textContent()).trim(), work.titleEn);
+}
+
+function privatePathForU4(identity) {
+  return `.private-media/u4/${identity.replace('::', '-')}.jpg`;
+}
+
+export function createU4PrivateOverrides() {
+  return Object.fromEntries(U4_PRIVATE_MEDIA_KEYS.map((identity) => [identity, {
+    filePath: privatePathForU4(identity),
+    creatorOrInstitution: 'Browser verifier private study copy',
+    rightsNote: 'Private browser-verification copy',
+    rightsUrl: 'https://example.org/private-study-rights',
+  }]));
+}
+
+async function installU4PrivateRoutes(
+  page,
+  privateImageRequests,
+  { includeScript = true, includeImages = true } = {},
+) {
+  const overrides = createU4PrivateOverrides();
+  await page.route('**/.private-media/u4/**', async (route) => {
+    const requestUrl = new URL(route.request().url());
+    if (requestUrl.pathname.endsWith(U4_PRIVATE_SCRIPT_PATH)) {
+      if (!includeScript) {
+        await route.fulfill({ status: 404, body: '' });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/javascript; charset=utf-8',
+        body: `window.AP_ART_HISTORY_PRIVATE_MEDIA = Object.freeze(${JSON.stringify(overrides)});`,
+      });
+      return;
+    }
+    const localPath = requestUrl.pathname.replace(/^\//, '');
+    privateImageRequests.set(localPath, (privateImageRequests.get(localPath) || 0) + 1);
+    if (!includeImages) {
+      await route.fulfill({ status: 404, body: '' });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/svg+xml',
+      body: IMAGE_FIXTURE,
+    });
+  });
+  return overrides;
+}
+
+async function verifyU4RegionBranches(frame, mode) {
+  await frame.locator('#unitFilter').selectOption('4');
+  await waitForPostTransformRender(frame);
+  const regionLabels = await frame
+    .locator('.site-marker[data-group-kind="region"]')
+    .evaluateAll((markers) => markers.map((marker) => marker.getAttribute('aria-label')));
+  assertU4RegionTraversalCoverage(regionLabels, `${mode} U4 regions`);
+  assertU4MarkerLayoutPreserved(
+    await frame.locator('#markerLayer .site-marker').count() === 9,
+    `${mode} U4 region render`,
+  );
+  return regionLabels;
+}
+
+async function verifyU4Works(
+  page,
+  frame,
+  remoteImageRequests,
+  privateImageRequests,
+  mode,
+  { privateMode = false } = {},
+) {
+  const results = [];
+  const privateOverrides = createU4PrivateOverrides();
+  for (const work of U4_WORKS) {
+    remoteImageRequests.clear();
+    privateImageRequests.clear();
+    await resetAndActivateWork(page, frame, work);
+    const summary = frame.locator('.selected-summary');
+    assert.equal(
+      (await summary.locator('[data-selected-artwork-title]').textContent()).trim(),
+      work.titleEn,
+      `${mode} AP ${work.apNumber} English title`,
+    );
+    assert.equal(
+      (await summary.locator('.work-title-zh').textContent()).trim(),
+      work.titleZh,
+      `${mode} AP ${work.apNumber} Chinese subtitle`,
+    );
+    const viewButtons = summary.locator('.image-view-switcher button');
+    assert.equal(
+      await viewButtons.count(),
+      work.images.length > 1 ? work.images.length : 0,
+      `${mode} AP ${work.apNumber} view button count`,
+    );
+    if (work.images.length > 1) {
+      assert.deepEqual(
+        await viewButtons.allTextContents(),
+        work.images.map(({ label }) => label),
+        `${mode} AP ${work.apNumber} view labels`,
+      );
+    }
+
+    for (let imageIndex = 0; imageIndex < work.images.length; imageIndex += 1) {
+      const expected = work.images[imageIndex];
+      const identity = `${work.id}::${expected.id}`;
+      const restricted = expected.mediaStatus === 'rightsRestricted';
+      if (work.images.length > 1) await viewButtons.nth(imageIndex).click();
+      if (restricted && !privateMode) {
+        const placeholder = summary.locator('.rights-placeholder');
+        assert.equal(await placeholder.count(), 1, `${mode} ${identity} public placeholder`);
+        assert.match(
+          (await placeholder.textContent()).trim(),
+          /Image unavailable in the public version/,
+          `${mode} ${identity} placeholder message`,
+        );
+        assert.equal(
+          await placeholder.locator('.rights-placeholder-source').getAttribute('href'),
+          expected.imageSourceUrl,
+          `${mode} ${identity} official source`,
+        );
+        assert.equal(await summary.locator('.artwork-image-button').count(), 0);
+        assert.equal(await placeholder.locator('img').count(), 0);
+        assert.equal(await frame.locator('#imageDialog').getAttribute('open'), null);
+        continue;
+      }
+
+      const expectedImageUrl = restricted
+        ? privateOverrides[identity].filePath
+        : expected.imageUrl;
+      const imageButton = summary.locator('.artwork-image-button');
+      const image = imageButton.locator('img');
+      await waitForVerifierImage(image, `${mode} ${identity} ${expectedImageUrl}`);
+      assert.equal(await image.getAttribute('src'), expectedImageUrl, `${mode} ${identity} image URL`);
+      assert.equal(await image.getAttribute('alt'), expected.imageAlt, `${mode} ${identity} image alt`);
+      const inlineLinks = summary.locator('.image-credit-host .image-credit a');
+      assert.equal(await inlineLinks.count(), 2, `${mode} ${identity} credit links`);
+      assert.equal(
+        await inlineLinks.nth(1).getAttribute('href'),
+        expected.imageSourceUrl,
+        `${mode} ${identity} inline source`,
+      );
+      if (restricted) {
+        assert.equal(
+          await inlineLinks.nth(0).getAttribute('href'),
+          privateOverrides[identity].rightsUrl,
+          `${mode} ${identity} private rights`,
+        );
+      }
+
+      await imageButton.focus();
+      await imageButton.click();
+      const dialog = frame.locator('#imageDialog');
+      await dialog.waitFor({ state: 'visible' });
+      const dialogImage = frame.locator('#dialogImage');
+      await waitForVerifierImage(dialogImage, `${mode} ${identity} dialog ${expectedImageUrl}`);
+      assert.equal(await dialogImage.getAttribute('src'), expectedImageUrl);
+      assert.equal(await dialogImage.getAttribute('alt'), expected.imageAlt);
+      assert.equal(await frame.locator('#dialogSource').getAttribute('href'), expected.imageSourceUrl);
+      await frame.locator('#dialogClose').click();
+      await dialog.waitFor({ state: 'hidden' });
+      assertDialogFocusRestored(
+        await frame.evaluate(() => document.activeElement?.classList.contains('artwork-image-button')),
+        `${mode} ${identity}`,
+      );
+    }
+
+    const publicViews = work.images.filter(({ imageUrl }) => imageUrl !== null);
+    assert.equal(remoteImageRequests.size, publicViews.length, `${mode} AP ${work.apNumber} public request set`);
+    for (const image of publicViews) {
+      assert.equal(
+        remoteImageRequests.get(image.imageUrl),
+        1,
+        `${mode} AP ${work.apNumber} ${image.id} request count`,
+      );
+    }
+    const privateViews = privateMode
+      ? work.images.filter(({ mediaStatus }) => mediaStatus === 'rightsRestricted')
+      : [];
+    assert.equal(privateImageRequests.size, privateViews.length, `${mode} AP ${work.apNumber} private request set`);
+    for (const image of privateViews) {
+      const path = privatePathForU4(`${work.id}::${image.id}`);
+      assert.equal(privateImageRequests.get(path), 1, `${mode} AP ${work.apNumber} ${image.id} private request`);
+    }
+    results.push({
+      apNumber: work.apNumber,
+      mode,
+      privateMode,
+      views: work.images.length,
+    });
+  }
+  return results;
+}
+
+async function verifyU4PrivateFallbacks(page, frame, mode) {
+  const restrictedWork = U4_WORKS.find(({ apNumber }) => apNumber === 140);
+  assert.ok(restrictedWork, `${mode} AP 140 fallback fixture`);
+  await resetAndActivateWork(page, frame, restrictedWork);
+  const placeholder = frame.locator('.rights-placeholder');
+  await placeholder.waitFor();
+  assert.match(await placeholder.textContent(), /Private image not installed/);
+  assert.equal(await frame.locator('.artwork-image-button').count(), 0);
 }
 
 function assertSingleImageRequest(imageRequests, work, checkpoint) {
@@ -2537,6 +2901,103 @@ async function verifyU3Embedded(browser, baseUrl) {
   });
 }
 
+async function verifyU4Standalone(browser, baseUrl, privateMode = false) {
+  const viewport = { width: 1440, height: 900 };
+  return withBrowserContext(browser, { viewport, reducedMotion: 'reduce' }, async (context) => {
+    const page = await context.newPage();
+    const label = `U4 standalone ${privateMode ? 'private' : 'public'}`;
+    const issues = installErrorCollection(page, label);
+    const remoteImageRequests = new Map();
+    const privateImageRequests = new Map();
+    await mockRemoteImages(page, (url) => {
+      remoteImageRequests.set(url, (remoteImageRequests.get(url) || 0) + 1);
+    });
+    if (privateMode) await installU4PrivateRoutes(page, privateImageRequests);
+    await page.goto(
+      `${baseUrl}/art-history-map.html${privateMode ? '?privateMedia=1' : ''}`,
+      { waitUntil: 'load' },
+    );
+    await waitForArt(page);
+    const regions = await verifyU4RegionBranches(page, label);
+    const works = await verifyU4Works(
+      page,
+      page,
+      remoteImageRequests,
+      privateImageRequests,
+      label,
+      { privateMode },
+    );
+    assertNoCollectedIssues(issues, label);
+    return { viewport, regions, works };
+  });
+}
+
+async function verifyU4Embedded(browser, baseUrl, privateMode = false) {
+  const viewport = { width: 1440, height: 900 };
+  return withBrowserContext(browser, { viewport, reducedMotion: 'reduce' }, async (context) => {
+    const page = await context.newPage();
+    const label = `U4 embedded ${privateMode ? 'private' : 'public'}`;
+    const issues = installErrorCollection(page, label);
+    const remoteImageRequests = new Map();
+    const privateImageRequests = new Map();
+    await mockRemoteImages(page, (url) => {
+      remoteImageRequests.set(url, (remoteImageRequests.get(url) || 0) + 1);
+    });
+    if (privateMode) await installU4PrivateRoutes(page, privateImageRequests);
+    await page.goto(
+      `${baseUrl}/index.html${privateMode ? '?privateMedia=1' : ''}`,
+      { waitUntil: 'load' },
+    );
+    await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => (
+      document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
+    ));
+    const { frame } = await selectArtAndFrame(page, true);
+    const regions = await verifyU4RegionBranches(frame, label);
+    const works = await verifyU4Works(
+      page,
+      frame,
+      remoteImageRequests,
+      privateImageRequests,
+      label,
+      { privateMode },
+    );
+    assertNoCollectedIssues(issues, label);
+    return { viewport, regions, works };
+  });
+}
+
+async function verifyU4PrivateNegativePaths(browser, baseUrl) {
+  const viewport = { width: 1365, height: 768 };
+  const missingScript = await withBrowserContext(
+    browser,
+    { viewport, reducedMotion: 'reduce' },
+    async (context) => {
+      const page = await context.newPage();
+      await mockRemoteImages(page);
+      await installU4PrivateRoutes(page, new Map(), { includeScript: false });
+      await page.goto(`${baseUrl}/art-history-map.html?privateMedia=1`, { waitUntil: 'load' });
+      await waitForArt(page);
+      await verifyU4PrivateFallbacks(page, page, 'U4 missing private script');
+      return true;
+    },
+  );
+  const missingImage = await withBrowserContext(
+    browser,
+    { viewport, reducedMotion: 'reduce' },
+    async (context) => {
+      const page = await context.newPage();
+      await mockRemoteImages(page);
+      await installU4PrivateRoutes(page, new Map(), { includeImages: false });
+      await page.goto(`${baseUrl}/art-history-map.html?privateMedia=1`, { waitUntil: 'load' });
+      await waitForArt(page);
+      await verifyU4PrivateFallbacks(page, page, 'U4 missing private image');
+      return true;
+    },
+  );
+  return { missingScript, missingImage, status: 'Private image not installed' };
+}
+
 async function verifyU1Standalone(browser, baseUrl) {
   const viewport = { width: 1440, height: 900 };
   return withBrowserContext(browser, { viewport, reducedMotion: 'reduce' }, async (context) => {
@@ -2588,7 +3049,7 @@ async function verifyImportedWorksStandalone(browser, baseUrl) {
     await waitForArt(page);
     assert.equal(
       (await page.locator('.page-header h1').textContent()).trim(),
-      'AP 艺术史互动地图 · Units 1-3',
+      'AP 艺术史互动地图 · Units 1-4',
     );
     const works = await verifyNineImportedWorks(page, page, imageRequests, 'standalone');
     assert.deepEqual(issues, []);
@@ -2838,6 +3299,26 @@ export async function runVerification() {
         kind: 'u3-fifty-one-works',
         standalone: u3Standalone,
         embedded: u3Embedded,
+      });
+      const u4PublicStandalone = await verifyU4Standalone(browser, server.baseUrl);
+      const u4PublicEmbedded = await verifyU4Embedded(browser, server.baseUrl);
+      const u4PrivateStandalone = await verifyU4Standalone(browser, server.baseUrl, true);
+      const u4PrivateEmbedded = await verifyU4Embedded(browser, server.baseUrl, true);
+      const u4PrivateNegativePaths = await verifyU4PrivateNegativePaths(
+        browser,
+        server.baseUrl,
+      );
+      report.push({
+        kind: 'u4-fifty-four-works',
+        public: {
+          standalone: u4PublicStandalone,
+          embedded: u4PublicEmbedded,
+        },
+        private: {
+          standalone: u4PrivateStandalone,
+          embedded: u4PrivateEmbedded,
+        },
+        negativePaths: u4PrivateNegativePaths,
       });
       const standaloneImported = await verifyImportedWorksStandalone(browser, server.baseUrl);
       const embeddedImported = await verifyImportedWorksEmbedded(browser, server.baseUrl);

@@ -15,6 +15,8 @@ const U1_BROWSER_FIXTURE = new URL('./fixtures/u1-browser.json', import.meta.url
 const U1_CANONICAL_FIXTURE = new URL('./fixtures/u1-canonical.json', import.meta.url);
 const U3_BROWSER_FIXTURE = new URL('./fixtures/u3-browser.json', import.meta.url);
 const U3_CANONICAL_FIXTURE = new URL('./fixtures/u3-canonical.json', import.meta.url);
+const U4_BROWSER_FIXTURE = new URL('./fixtures/u4-browser.json', import.meta.url);
+const U4_CANONICAL_FIXTURE = new URL('./fixtures/u4-canonical.json', import.meta.url);
 
 function projectBrowserFixture(canonical) {
   return canonical.artworks.map((work) => {
@@ -65,6 +67,34 @@ function projectU3BrowserFixture(canonical) {
       imageUrl,
       imageAlt,
       imageSourceUrl,
+    })),
+  }));
+}
+
+function projectU4BrowserFixture(canonical) {
+  return canonical.artworks.map((work) => ({
+    id: work.id,
+    apNumber: work.apNumber,
+    titleEn: work.titleEn,
+    titleZh: work.titleZh,
+    unit: work.unit,
+    region: work.region,
+    siteName: work.siteName,
+    provenanceQualifier: work.provenanceQualifier ?? null,
+    images: work.images.map(({
+      id,
+      label,
+      imageUrl,
+      imageAlt,
+      imageSourceUrl,
+      ...image
+    }) => ({
+      id,
+      label,
+      imageUrl,
+      imageAlt,
+      imageSourceUrl,
+      ...(image.mediaStatus ? { mediaStatus: image.mediaStatus } : {}),
     })),
   }));
 }
@@ -354,6 +384,110 @@ test('U3 browser fixture is the exact 51-work, 103-view canonical projection', a
     ));
     assert.equal(new Set(values).size, values.length, `distinct U3 ${key} values`);
   }
+});
+
+test('U4 browser fixture is the exact 54-work, 63-view rights-safe canonical projection', async () => {
+  const [browserFixture, canonical] = await Promise.all([
+    readFile(U4_BROWSER_FIXTURE, 'utf8').then(JSON.parse),
+    readFile(U4_CANONICAL_FIXTURE, 'utf8').then(JSON.parse),
+  ]);
+
+  assert.deepEqual(browserFixture, projectU4BrowserFixture(canonical));
+  assert.deepEqual(
+    browserFixture.map(({ apNumber }) => apNumber),
+    Array.from({ length: 54 }, (_, index) => index + 99),
+  );
+  const views = browserFixture.flatMap((work) => (
+    work.images.map((image) => ({ work, image, key: `${work.id}::${image.id}` }))
+  ));
+  assert.equal(views.length, 63);
+  assert.equal(views.filter(({ image }) => image.imageUrl !== null).length, 55);
+  assert.deepEqual(
+    views.filter(({ image }) => image.imageUrl === null).map(({ key, image }) => ({
+      key,
+      mediaStatus: image.mediaStatus,
+    })),
+    [
+      'ap140-two-fridas::primary',
+      'ap143-dream-alameda-central::primary',
+      'ap146-marilyn-diptych::primary',
+      'ap148-narcissus-garden::primary',
+      'ap149-bay::primary',
+      'ap150-lipstick-caterpillar-tracks::primary',
+      'ap152-house-new-castle-county::exterior',
+      'ap152-house-new-castle-county::interior',
+    ].map((key) => ({ key, mediaStatus: 'rightsRestricted' })),
+  );
+});
+
+test('U4 fixture validation freezes all levels and rejects every reviewed mutation class', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const fixture = JSON.parse(await readFile(U4_BROWSER_FIXTURE, 'utf8'));
+  const frozen = verifier.validateAndFreezeU4Works(structuredClone(fixture));
+
+  assert.equal(frozen.length, 54);
+  assert.equal(frozen.reduce((total, work) => total + work.images.length, 0), 63);
+  assert.ok(Object.isFrozen(frozen));
+  assert.ok(frozen.every(Object.isFrozen));
+  assert.ok(frozen.every((work) => Object.isFrozen(work.images)));
+  assert.ok(frozen.every((work) => work.images.every(Object.isFrozen)));
+
+  const wrongTitle = structuredClone(fixture);
+  wrongTitle[0].titleEn = 'Wrong U4 title';
+  assert.throws(
+    () => verifier.validateAndFreezeU4Works(wrongTitle),
+    /U4 canonical projection\.AP99\.titleEn/,
+  );
+
+  const missingFinalView = structuredClone(fixture);
+  missingFinalView.at(-1).images.pop();
+  assert.throws(
+    () => verifier.validateAndFreezeU4Works(missingFinalView),
+    /63 U4 views|AP 152/,
+  );
+
+  const wrongPlaceholder = structuredClone(fixture);
+  wrongPlaceholder.find(({ apNumber }) => apNumber === 140).images[0].id = 'wrong-placeholder-key';
+  assert.throws(
+    () => verifier.validateAndFreezeU4Works(wrongPlaceholder),
+    /U4 canonical projection\.AP140\.images\[0\]\.id|private media keys/,
+  );
+
+  const leakedRestrictedUrl = structuredClone(fixture);
+  leakedRestrictedUrl.find(({ apNumber }) => apNumber === 140).images[0].imageUrl =
+    'https://example.invalid/restricted-public-image.jpg';
+  assert.throws(
+    () => verifier.validateAndFreezeU4Works(leakedRestrictedUrl),
+    /rightsRestricted.*null image URL|U4 canonical projection/,
+  );
+
+  assert.throws(
+    () => verifier.assertU4RegionTraversalCoverage(
+      [...verifier.U4_REGION_LABELS, 'Ninth mutation region · 1 piece'],
+      'ninth region mutation',
+    ),
+    /ninth region mutation/,
+  );
+  assert.throws(
+    () => verifier.assertU4MarkerLayoutPreserved(false, 'marker rollback mutation'),
+    /marker rollback mutation/,
+  );
+  assert.throws(
+    () => verifier.assertExactImageRequests(
+      new Map([[fixture[0].images[0].imageUrl, 2]]),
+      fixture[0],
+      'U4 duplicate request mutation',
+    ),
+    /request count/,
+  );
+  assert.throws(
+    () => verifier.assertNoCollectedIssues(['console warning: U4 mutation'], 'U4 warning mutation'),
+    /console warning: U4 mutation/,
+  );
+  assert.throws(
+    () => verifier.assertDialogFocusRestored(false, 'U4 focus mutation'),
+    /U4 focus mutation/,
+  );
 });
 
 test('U3 browser fixture loader validates the exact schema and freezes every level', async () => {
@@ -693,12 +827,13 @@ test('browser verifier loads the frozen U1 projection and traverses all eleven w
   assert.match(source, /verifyU1Embedded/);
 });
 
-test('browser verifier locks the three-Unit hierarchy and exact U1/U3 region contracts', async () => {
+test('browser verifier locks the four-Unit hierarchy and exact U1/U3 region contracts', async () => {
   const source = await readFile(VERIFIER_URL, 'utf8');
 
   assert.match(source, /U1 · Global Prehistory · 11 pieces/);
   assert.match(source, /U2 · Ancient Mediterranean · 36 pieces/);
   assert.match(source, /U3 · Early Europe and Colonial Americas · 51 pieces/);
+  assert.match(source, /U4 · Later Europe and Americas · 54 pieces/);
   assert.match(source, /selectOption\('1'\)/);
   assert.match(source, /cultureFilters.*isHidden/s);
   assert.match(source, /Africa · 2 pieces/);
@@ -719,7 +854,7 @@ test('browser verifier locks the three-Unit hierarchy and exact U1/U3 region con
   assert.match(source, /Colonial Americas · 5 pieces/);
 });
 
-test('initial hierarchy asserts the exact ordered three markers and 98-work result count', async () => {
+test('initial hierarchy asserts the exact ordered four markers and 152-work result count', async () => {
   const source = await readFile(VERIFIER_URL, 'utf8');
   const hierarchy = source.slice(
     source.indexOf('async function assertInitialHierarchy'),
@@ -729,9 +864,9 @@ test('initial hierarchy asserts the exact ordered three markers and 98-work resu
   assert.match(hierarchy, /assert\.deepEqual\(\s*initial,\s*\[/s);
   assert.match(
     hierarchy,
-    /'U1 · Global Prehistory · 11 pieces',[\s\S]*'U2 · Ancient Mediterranean · 36 pieces',[\s\S]*'U3 · Early Europe and Colonial Americas · 51 pieces'/,
+    /'U1 · Global Prehistory · 11 pieces',[\s\S]*'U2 · Ancient Mediterranean · 36 pieces',[\s\S]*'U3 · Early Europe and Colonial Americas · 51 pieces',[\s\S]*'U4 · Later Europe and Americas · 54 pieces'/,
   );
-  assert.match(hierarchy, /当前显示 98 件作品/);
+  assert.match(hierarchy, /当前显示 152 件作品/);
 });
 
 test('U3 responsive traversal rejects an omitted region branch and loops all eight branches', async () => {
@@ -915,6 +1050,21 @@ test('browser verifier loads and traverses every frozen U3 work in standalone an
   assert.match(source, /kind:\s*'u3-fifty-one-works'/);
 });
 
+test('browser verifier traverses all U4 public and private views in standalone and embedded modes', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+
+  assert.match(source, /u4-browser\.json/);
+  assert.match(source, /const U4_WORKS = validateAndFreezeU4Works/);
+  assert.match(source, /async function verifyU4Works\(/);
+  assert.match(source, /for \(const work of U4_WORKS\)/);
+  assert.match(source, /async function verifyU4Standalone\(/);
+  assert.match(source, /async function verifyU4Embedded\(/);
+  assert.match(source, /privateMedia=1/);
+  assert.match(source, /\.private-media\/u4\/overrides\.js/);
+  assert.match(source, /Private image not installed/);
+  assert.match(source, /kind:\s*'u4-fifty-four-works'/);
+});
+
 test('U3 traversal covers all study tabs and AP 89 comparison navigation to AP 46', async () => {
   const source = await readFile(VERIFIER_URL, 'utf8');
 
@@ -1051,25 +1201,25 @@ test('U1 standalone and embedded traversals exercise all study tabs and cross-Un
   );
 });
 
-test('integration copy and release labels target the complete 98-work Units 1-3 map', async () => {
+test('integration copy and release labels target the complete 152-work Units 1-4 map', async () => {
   const [homepage, artMap, releaseSource] = await Promise.all([
     readFile(HOMEPAGE_URL, 'utf8'),
     readFile(ART_MAP_URL, 'utf8'),
     readFile(RELEASE_VERIFIER_URL, 'utf8'),
   ]);
 
-  assert.match(homepage, /98 AP works · Units 1-3 · filter, compare and study/);
-  assert.match(artMap, /AP 艺术史互动地图 · Units 1-3/);
+  assert.match(homepage, /152 AP works · Units 1-4 · filter, compare and study/);
+  assert.match(artMap, /AP 艺术史互动地图 · Units 1-4/);
   assert.match(
     artMap,
-    /aria-label="完整世界地图；展示 AP 艺术史 Units 1-3 全部 98 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
+    /aria-label="完整世界地图；展示 AP 艺术史 Units 1-4 全部 152 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
   );
   assert.match(
     artMap,
-    /aria-label="AP 艺术史 Units 1-3 完整世界地图，标记全部 98 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
+    /aria-label="AP 艺术史 Units 1-4 完整世界地图，标记全部 152 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
   );
   assert.match(artMap, /count\.textContent = `当前显示 \$\{visibleWorks\.length\} 件作品`/);
-  assert.match(releaseSource, /strict 98-work Units 1-3 validator/);
+  assert.match(releaseSource, /strict 152-work Units 1-4 validator/);
 });
 
 test('copy integration preserves World History text and iframe dimensions', async () => {
