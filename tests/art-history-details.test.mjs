@@ -48,6 +48,22 @@ const NEW_ARTWORK_IDS = [
   'ap31-temple-minerva-apollo',
   'ap32-tomb-of-the-triclinium',
 ];
+const PRIVATE_OVERRIDE_FIELDS = [
+  'filePath',
+  'creatorOrInstitution',
+  'rightsNote',
+  'rightsUrl',
+];
+const PRIVATE_MEDIA_KEYS = [
+  'ap140-two-fridas::primary',
+  'ap143-dream-alameda-central::primary',
+  'ap146-marilyn-diptych::primary',
+  'ap148-narcissus-garden::primary',
+  'ap149-bay::primary',
+  'ap150-lipstick-caterpillar-tracks::primary',
+  'ap152-house-new-castle-county::exterior',
+  'ap152-house-new-castle-county::interior',
+];
 const REQUIRED_U3_COMPARISON_NOTES = [
   {
     sourceId:'ap49-santa-sabina',
@@ -385,7 +401,14 @@ class FakeNode {
   }
 }
 
-function createDetailHarness(html, artworks, credits, stateOverrides = {}) {
+function createDetailHarness(
+  html,
+  artworks,
+  credits,
+  stateOverrides = {},
+  privateOverrides = {},
+  privateMode = false,
+) {
   const elements = new Map();
   const document = {
     activeElement:null,
@@ -439,6 +462,8 @@ function createDetailHarness(html, artworks, credits, stateOverrides = {}) {
     getFunctionSource(html, 'getArtworkImages'),
     getFunctionSource(html, 'getArtworkImageCredits'),
     getFunctionSource(html, 'createImageCredit'),
+    getFunctionSource(html, 'createRightsPlaceholder'),
+    getFunctionSource(html, 'resolveMediaView'),
     getFunctionSource(html, 'summarizeComparisonField'),
     getFunctionSource(html, 'createComparisonAngle'),
     getFunctionSource(html, 'openImageDialog'),
@@ -454,6 +479,8 @@ function createDetailHarness(html, artworks, credits, stateOverrides = {}) {
     'state',
     'detailPanel',
     'scrollCalls',
+    'privateMediaOverrides',
+    'PRIVATE_MEDIA_MODE',
     `"use strict";
       let imageDialogTrigger = null;
       let syncedControls = null;
@@ -505,6 +532,8 @@ function createDetailHarness(html, artworks, credits, stateOverrides = {}) {
     state,
     detailPanel,
     scrollCalls,
+    privateOverrides,
+    privateMode,
   );
 }
 
@@ -884,6 +913,150 @@ test('image dialog supports labelled media, attribution, and focus restoration',
   assert.match(html, /imageDialogTrigger\?\.isConnected/);
   assert.match(html, /detailPanel\.querySelector\('\.artwork-image-button'\)/);
   assert.match(html, /focusTarget\?\.focus\(\)/);
+});
+
+test('private media overrides accept only approved U4 keys and local relative image paths', async () => {
+  const html = await loadHtml();
+  const validatePrivateMediaOverrides = Function(
+    'PRIVATE_MEDIA_KEYS',
+    'PRIVATE_OVERRIDE_FIELDS',
+    `"use strict"; ${getFunctionSource(html, 'validatePrivateMediaOverrides')}; return validatePrivateMediaOverrides;`,
+  )(PRIVATE_MEDIA_KEYS, PRIVATE_OVERRIDE_FIELDS);
+  const validEntry = {
+    filePath:'.private-media/u4/two-fridas.jpg',
+    creatorOrInstitution:'Private study copy',
+    rightsNote:'Local educational reference only',
+    rightsUrl:'https://example.org/rights',
+  };
+  const valid = validatePrivateMediaOverrides({ [PRIVATE_MEDIA_KEYS[0]]:validEntry });
+
+  assert.deepEqual(valid, { [PRIVATE_MEDIA_KEYS[0]]:validEntry });
+  assert.ok(Object.isFrozen(valid));
+  assert.ok(Object.isFrozen(valid[PRIVATE_MEDIA_KEYS[0]]));
+  assert.deepEqual(validatePrivateMediaOverrides(null), {});
+  assert.throws(() => validatePrivateMediaOverrides([]), /must be an object/);
+  assert.throws(
+    () => validatePrivateMediaOverrides({ 'ap1-apollo-11-stones::primary':validEntry }),
+    /Unapproved private media key/,
+  );
+  for (const filePath of [
+    'https://example.org/image.jpg',
+    '/Users/student/image.jpg',
+    '.private-media/u4/../image.jpg',
+    '.private-media/u3/image.jpg',
+    '.private-media/u4/image.svg',
+  ]) {
+    assert.throws(
+      () => validatePrivateMediaOverrides({
+        [PRIVATE_MEDIA_KEYS[0]]:{ ...validEntry, filePath },
+      }),
+      /invalid private path/,
+      filePath,
+    );
+  }
+  assert.throws(
+    () => validatePrivateMediaOverrides({
+      [PRIVATE_MEDIA_KEYS[0]]:{ ...validEntry, extra:'nope' },
+    }),
+    /schema mismatch/,
+  );
+  assert.throws(
+    () => validatePrivateMediaOverrides({
+      [PRIVATE_MEDIA_KEYS[0]]:{ ...validEntry, rightsUrl:'javascript:alert(1)' },
+    }),
+    /expected HTTPS URL/,
+  );
+});
+
+test('private overlay resolution is ephemeral and leaves the public media record untouched', async () => {
+  const html = await loadHtml();
+  const source = getFunctionSource(html, 'resolveMediaView');
+  const publicMedia = {
+    id:'primary',
+    imageUrl:null,
+    imageAlt:'受版权限制的公开占位视图',
+    imageSourceName:'Official source',
+    imageSourceUrl:'https://example.org/source',
+    mediaStatus:'rightsRestricted',
+  };
+  const override = {
+    filePath:'.private-media/u4/two-fridas.jpg',
+    creatorOrInstitution:'Private study copy',
+    rightsNote:'Local educational reference only',
+    rightsUrl:'https://example.org/rights',
+  };
+  const resolveMediaView = Function(
+    'privateMediaOverrides',
+    `"use strict"; ${source}; return resolveMediaView;`,
+  )({ 'ap140-two-fridas::primary':override });
+  const resolved = resolveMediaView({ id:'ap140-two-fridas' }, publicMedia);
+
+  assert.equal(resolved.imageUrl, override.filePath);
+  assert.equal(resolved.mediaStatus, 'privateLocal');
+  assert.deepEqual(resolved.privateCredit, {
+    creatorOrInstitution:override.creatorOrInstitution,
+    licenseName:override.rightsNote,
+    licenseUrl:override.rightsUrl,
+  });
+  assert.equal(publicMedia.imageUrl, null);
+  assert.equal(publicMedia.mediaStatus, 'rightsRestricted');
+});
+
+test('rights-restricted views render a noninteractive public placeholder and opt-in local image', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const work = artworks.find(({ id }) => id === 'ap140-two-fridas');
+  const publicHarness = createDetailHarness(html, artworks, credits);
+  const publicSummary = publicHarness.renderArtworkDetails(work, { works:[work] });
+  const publicPlaceholder = publicSummary.querySelector('.rights-placeholder');
+
+  assert.ok(publicPlaceholder);
+  assert.equal(publicSummary.querySelectorAll('img').length, 0);
+  assert.equal(publicSummary.querySelector('.artwork-image-button'), null);
+  assert.match(publicPlaceholder.textContent, /Image unavailable in the public version/);
+  assert.match(publicPlaceholder.textContent, /公开版不显示图像/);
+  assert.equal(
+    publicPlaceholder.querySelector('.rights-placeholder-source').href,
+    work.images[0].imageSourceUrl,
+  );
+
+  const identity = `${work.id}::${work.images[0].id}`;
+  const override = {
+    filePath:'.private-media/u4/two-fridas.jpg',
+    creatorOrInstitution:'Private study copy',
+    rightsNote:'Local educational reference only',
+    rightsUrl:'https://example.org/rights',
+  };
+  const privateHarness = createDetailHarness(
+    html,
+    artworks,
+    credits,
+    {},
+    { [identity]:override },
+    true,
+  );
+  const privateSummary = privateHarness.renderArtworkDetails(work, { works:[work] });
+  const imageButton = privateSummary.querySelector('.artwork-image-button');
+
+  assert.ok(imageButton);
+  assert.equal(privateSummary.querySelector('.rights-placeholder'), null);
+  assert.equal(imageButton.querySelector('img').src, override.filePath);
+  assert.match(privateSummary.querySelector('.image-credit-host').textContent, /Private study copy/);
+  imageButton.click();
+  assert.equal(privateHarness.isDialogOpen(), true);
+});
+
+test('private mode without an installed override retains the placeholder with a local status', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const work = artworks.find(({ id }) => id === 'ap140-two-fridas');
+  const harness = createDetailHarness(html, artworks, credits, {}, {}, true);
+  const summary = harness.renderArtworkDetails(work, { works:[work] });
+
+  assert.match(summary.querySelector('.rights-placeholder').textContent, /Private image not installed/);
+  assert.equal(summary.querySelectorAll('img').length, 0);
 });
 
 test('normalizes legacy single images and preserves explicit image arrays', async () => {

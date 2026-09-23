@@ -326,7 +326,7 @@ test('all U3 comparisons resolve and retain the required cross-unit targets', as
   const ids = new Set(artworks.map(({ id }) => id));
   const u3 = artworks.filter(({ unit }) => unit === 3);
 
-  assert.equal(artworks.length, 98);
+  assert.equal(artworks.length, 152);
   assert.equal(u3.length, 51);
   for (const work of u3) {
     assert.ok(
@@ -492,7 +492,7 @@ test('U1 source ledger matches all 11 records and 12 media views', async () => {
   );
 });
 
-test('U4 audited source bundle is complete while live data remains frozen at Units 1-3', async () => {
+test('U4 audited source bundle exactly matches the imported live Unit 4 projection', async () => {
   const [
     { artworks, credits },
     manifest,
@@ -516,10 +516,11 @@ test('U4 audited source bundle is complete while live data remains frozen at Uni
     `${cells[1].replaceAll('`', '')}::${cells[2]}`
   ));
 
-  assert.equal(artworks.length, 98, 'Task 2 must not import U4 into live HTML');
-  assert.ok(artworks.every(({ unit }) => unit <= 3), 'live HTML must remain Units 1-3 only');
-  assert.ok(expectedWorkIds.every((id) => !artworks.some((work) => work.id === id)));
-  assert.ok(expectedWorkIds.every((id) => !(id in credits)));
+  const liveU4Artworks = artworks.filter(({ unit }) => unit === 4);
+  const liveU4Credits = Object.fromEntries(expectedWorkIds.map((id) => [id, credits[id]]));
+  assert.equal(artworks.length, 152);
+  assert.deepEqual(liveU4Artworks, fixture.artworks);
+  assert.deepEqual(liveU4Credits, fixture.credits);
   assert.deepEqual(fixture.artworks.map(({ id }) => id), expectedWorkIds);
   assert.deepEqual(Object.keys(fixture.credits), expectedWorkIds);
   assert.deepEqual(Object.keys(rights), expectedMediaKeys);

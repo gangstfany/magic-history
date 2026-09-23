@@ -82,6 +82,13 @@
     .work-meta { font-size:12px; font-weight:600; }
     .artwork-image-button { display:grid; place-items:center; box-sizing:border-box; width:100%; height:300px; max-height:300px; padding:10px; overflow:hidden; border:1px solid var(--line-strong); border-radius:10px; background:var(--surface-sunken); cursor:zoom-in; }
     .artwork-image-button img { display:block; width:100%; height:278px; max-width:100%; max-height:278px; object-fit:contain; object-position:center; }
+    .artwork-media-stage { min-width:0; }
+    .rights-placeholder { min-height:270px; margin:0; padding:28px; border:1px solid var(--line); border-radius:16px; background:linear-gradient(145deg,#eee4d5,#faf5ec); display:grid; place-items:center; align-content:center; gap:10px; text-align:center; }
+    .rights-placeholder h3, .rights-placeholder p { margin:0; }
+    .rights-placeholder p { color:var(--ink-soft); font-weight:600; line-height:1.55; }
+    .rights-placeholder-icon { width:52px; height:52px; border-radius:50%; display:grid; place-items:center; background:#fffaf1; color:var(--accent); font-size:24px; }
+    .rights-placeholder-source { min-height:44px; padding:0 18px; border:1px solid #aa9b87; border-radius:999px; display:inline-flex; align-items:center; color:var(--accent); font-weight:700; }
+    .private-media-missing { color:var(--accent) !important; }
     .image-view-switcher { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 0; }
     .image-view-switcher button { min-height:30px; padding:5px 10px; border:1px solid var(--line); border-radius:999px; background:var(--paper); color:var(--ink-soft); font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
     .image-view-switcher button[aria-pressed="true"] { background:var(--ink); border-color:var(--ink); color:#fff; }
@@ -9127,6 +9134,95 @@
   <script>
     const ARTWORKS = JSON.parse(document.getElementById('artwork-data').textContent);
     const IMAGE_CREDITS = JSON.parse(document.getElementById('image-credit-data').textContent);
+    const PRIVATE_OVERRIDE_FIELDS = Object.freeze([
+      'filePath', 'creatorOrInstitution', 'rightsNote', 'rightsUrl'
+    ]);
+    const PRIVATE_MEDIA_KEYS = Object.freeze([
+      'ap140-two-fridas::primary',
+      'ap143-dream-alameda-central::primary',
+      'ap146-marilyn-diptych::primary',
+      'ap148-narcissus-garden::primary',
+      'ap149-bay::primary',
+      'ap150-lipstick-caterpillar-tracks::primary',
+      'ap152-house-new-castle-county::exterior',
+      'ap152-house-new-castle-county::interior'
+    ]);
+    const PRIVATE_MEDIA_MODE = new URLSearchParams(location.search).get('privateMedia') === '1';
+    let privateMediaOverrides = Object.freeze({});
+
+    function validatePrivateMediaOverrides(value) {
+      if (value == null) return Object.freeze({});
+      if (typeof value !== 'object' || Array.isArray(value)) {
+        throw new TypeError('Private media overrides must be an object');
+      }
+      const result = {};
+      for (const [identity, entry] of Object.entries(value)) {
+        if (!PRIVATE_MEDIA_KEYS.includes(identity)) {
+          throw new TypeError(`Unapproved private media key: ${identity}`);
+        }
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+          throw new TypeError(`${identity}: private override must be an object`);
+        }
+        const fields = Object.keys(entry);
+        if (fields.join('|') !== PRIVATE_OVERRIDE_FIELDS.join('|')) {
+          throw new TypeError(`${identity}: private override schema mismatch`);
+        }
+        for (const field of PRIVATE_OVERRIDE_FIELDS) {
+          if (typeof entry[field] !== 'string' || entry[field].trim() === '') {
+            throw new TypeError(`${identity}.${field}: expected non-empty string`);
+          }
+        }
+        if (!/^\.private-media\/u4\/[a-z0-9-]+\.(?:jpe?g|png|webp)$/.test(entry.filePath)) {
+          throw new TypeError(`${identity}.filePath: invalid private path`);
+        }
+        if (!/^https:\/\//.test(entry.rightsUrl)) {
+          throw new TypeError(`${identity}.rightsUrl: expected HTTPS URL`);
+        }
+        result[identity] = Object.freeze({ ...entry });
+      }
+      return Object.freeze(result);
+    }
+
+    function loadPrivateMediaOverrides(timeoutMs = 2000) {
+      if (!PRIVATE_MEDIA_MODE) return Promise.resolve(Object.freeze({}));
+      return new Promise((resolve) => {
+        const script = document.createElement('script');
+        let settled = false;
+        let timer;
+        const finish = (loaded) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          try {
+            resolve(validatePrivateMediaOverrides(window.AP_ART_HISTORY_PRIVATE_MEDIA));
+          } catch (error) {
+            if (loaded) console.warn(`Private media override ignored: ${error.message}`);
+            resolve(Object.freeze({}));
+          }
+        };
+        script.src = '.private-media/u4/overrides.js';
+        script.onload = () => finish(true);
+        script.onerror = () => finish(false);
+        timer = setTimeout(() => finish(false), timeoutMs);
+        document.head.append(script);
+      });
+    }
+
+    function resolveMediaView(work, media) {
+      const identity = `${work.id}::${media.id}`;
+      const override = privateMediaOverrides[identity];
+      if (!override) return media;
+      return {
+        ...media,
+        imageUrl:override.filePath,
+        mediaStatus:'privateLocal',
+        privateCredit:{
+          creatorOrInstitution:override.creatorOrInstitution,
+          licenseName:override.rightsNote,
+          licenseUrl:override.rightsUrl
+        }
+      };
+    }
     const AP_UNITS = Object.freeze([
       Object.freeze({ id: 1, nameEn: 'Global Prehistory', start: 1, end: 11, requiredCount: 11 }),
       Object.freeze({ id: 2, nameEn: 'Ancient Mediterranean', start: 12, end: 47, requiredCount: 36 }),
@@ -10534,8 +10630,12 @@
       detailPanel.querySelector(`[aria-label="${label}"]`)?.focus();
     }
 
-    function installImageFallback(image, work) {
+    function installImageFallback(image, work, replacementFactory = null) {
       image.addEventListener('error', () => {
+        if (replacementFactory) {
+          image.closest?.('.artwork-media-stage')?.replaceChildren(replacementFactory());
+          return;
+        }
         const fallback = document.createElement('div');
         fallback.className = 'image-fallback';
         fallback.textContent = `${work.titleZh} · ${work.titleEn}`;
@@ -10591,6 +10691,40 @@
       source.textContent = media.imageSourceName;
       line.append(source);
       return line;
+    }
+
+    function createRightsPlaceholder(work, media, privateMissing = false) {
+      const panel = document.createElement('section');
+      panel.className = 'rights-placeholder';
+      panel.setAttribute('aria-label', `${work.titleEn}: public image unavailable`);
+
+      const icon = document.createElement('span');
+      icon.className = 'rights-placeholder-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = '⌑';
+
+      const title = document.createElement('h3');
+      title.textContent = 'Image unavailable in the public version';
+
+      const explanation = document.createElement('p');
+      explanation.textContent = '由于作品版权限制，公开版不显示图像。本地私人学习模式可显示完整视图。';
+
+      panel.append(icon, title, explanation);
+      if (privateMissing) {
+        const localStatus = document.createElement('p');
+        localStatus.className = 'private-media-missing';
+        localStatus.textContent = 'Private image not installed';
+        panel.append(localStatus);
+      }
+
+      const source = document.createElement('a');
+      source.className = 'rights-placeholder-source';
+      source.href = media.imageSourceUrl;
+      source.target = '_blank';
+      source.rel = 'noopener noreferrer';
+      source.textContent = 'View official source ↗';
+      panel.append(source);
+      return panel;
     }
 
     function summarizeComparisonField(value) {
@@ -10684,6 +10818,8 @@
       const mediaItems = getArtworkImages(work);
       const credits = getArtworkImageCredits(work);
       let activeMediaIndex = 0;
+      const imageStage = document.createElement('div');
+      imageStage.className = 'artwork-media-stage';
       const imageButton = document.createElement('button');
       imageButton.type = 'button';
       imageButton.className = 'artwork-image-button';
@@ -10693,13 +10829,32 @@
 
       function renderActiveArtworkImage(mediaIndex) {
         activeMediaIndex = mediaIndex;
-        const media = mediaItems[activeMediaIndex];
-        const credit = credits[activeMediaIndex];
+        const publicMedia = mediaItems[activeMediaIndex];
+        const media = resolveMediaView(work, publicMedia);
+        const credit = media.privateCredit ?? credits[activeMediaIndex];
+        if (media.mediaStatus === 'rightsRestricted' || !media.imageUrl) {
+          imageStage.replaceChildren(createRightsPlaceholder(work, media, PRIVATE_MEDIA_MODE));
+          creditHost.replaceChildren();
+          viewButtons.forEach((button, index) => {
+            button.setAttribute('aria-pressed', String(index === activeMediaIndex));
+          });
+          return;
+        }
         const image = document.createElement('img');
         image.src = media.imageUrl;
         image.alt = media.imageAlt;
-        installImageFallback(image, work);
+        installImageFallback(
+          image,
+          work,
+          media.mediaStatus === 'privateLocal'
+            ? () => {
+                creditHost.replaceChildren();
+                return createRightsPlaceholder(work, publicMedia, true);
+              }
+            : null
+        );
         imageButton.replaceChildren(image);
+        imageStage.replaceChildren(imageButton);
         imageButton.setAttribute(
           'aria-label',
           `Open ${work.titleEn}（${work.titleZh}）· ${media.label} 大图`
@@ -10749,7 +10904,7 @@
         row.append(term, description);
         identity.append(row);
       });
-      summary.append(heading, chineseTitle, meta, imageButton);
+      summary.append(heading, chineseTitle, meta, imageStage);
       if (imageViewSwitcher) summary.append(imageViewSwitcher);
       summary.append(creditHost, identity);
 
@@ -11378,8 +11533,12 @@
       cycleIndex,
       zoomAroundPoint,
       clientDeltaToViewBox,
+      validatePrivateMediaOverrides,
+      loadPrivateMediaOverrides,
+      resolveMediaView,
       installImageFallback,
       createImageCredit,
+      createRightsPlaceholder,
       createComparisonAngle,
       openImageDialog,
       selectComparison,
@@ -11390,10 +11549,13 @@
       state,
       ARTWORKS
     };
-    runDevelopmentAssertions();
-    render();
-    applyTransform();
-    assertRenderedMarkerSemantics();
+    loadPrivateMediaOverrides().then((overrides) => {
+      privateMediaOverrides = overrides;
+      runDevelopmentAssertions();
+      render();
+      applyTransform();
+      assertRenderedMarkerSemantics();
+    });
   </script>
 </body>
 </html>
