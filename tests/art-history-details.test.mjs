@@ -1161,13 +1161,13 @@ test('source worksheet parser rejects rows with missing or extra cells', () => {
   );
 });
 
-test('keeps all 98 loaded works, the complete Unit 2 id set, and one credit per image', async () => {
+test('keeps all 152 loaded works, the complete Unit 2 id set, and one credit per image', async () => {
   const html = await loadHtml();
   const artworks = parseJsonBlock(html, 'artwork-data');
   const credits = parseJsonBlock(html, 'image-credit-data');
   const artworkIds = artworks.map(({ id }) => id);
 
-  assert.equal(artworks.length, 98);
+  assert.equal(artworks.length, 152);
   for (const id of ORIGINAL_ARTWORK_IDS) {
     assert.ok(artworkIds.includes(id), `missing original artwork ${id}`);
   }
@@ -1183,8 +1183,12 @@ test('keeps all 98 loaded works, the complete Unit 2 id set, and one credit per 
       : [credits[artwork.id]];
     assert.equal(creditItems.length, mediaItems.length, `${artwork.id} needs one credit per image`);
     mediaItems.forEach((media, index) => {
-      assert.equal(typeof media.imageUrl, 'string', `${artwork.id} image ${index + 1} needs a URL`);
-      assert.ok(media.imageUrl.trim(), `${artwork.id} image ${index + 1} needs a non-empty URL`);
+      if (media.mediaStatus === 'rightsRestricted') {
+        assert.equal(media.imageUrl, null, `${artwork.id} image ${index + 1} must use a public placeholder`);
+      } else {
+        assert.equal(typeof media.imageUrl, 'string', `${artwork.id} image ${index + 1} needs a URL`);
+        assert.ok(media.imageUrl.trim(), `${artwork.id} image ${index + 1} needs a non-empty URL`);
+      }
       const credit = creditItems[index];
       assert.ok(credit.creatorOrInstitution, `${artwork.id} missing creator or institution`);
       assert.ok(credit.licenseName, `${artwork.id} missing license name`);

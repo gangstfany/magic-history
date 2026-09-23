@@ -1141,6 +1141,21 @@ test('U4 canonical fixture matches all 54 manifest works and complete bilingual 
   assertCanonicalStudyContract(fixture, manifest, resolvableIds);
 });
 
+test('live map projects the exact canonical Unit 4 artworks and credits', async () => {
+  const [fixture, html] = await Promise.all([
+    readJson(FIXTURE_URL),
+    readFile(HTML_URL, 'utf8'),
+  ]);
+  const liveArtworks = parseJsonBlock(html, 'artwork-data').filter(({ unit }) => unit === 4);
+  const liveCredits = parseJsonBlock(html, 'image-credit-data');
+  const liveU4Credits = Object.fromEntries(
+    fixture.artworks.map(({ id }) => [id, liveCredits[id]]),
+  );
+
+  assert.deepEqual(liveArtworks, fixture.artworks);
+  assert.deepEqual(liveU4Credits, fixture.credits);
+});
+
 test('U4 canonical study validation rejects incomplete fields and unresolved comparison definitions', async () => {
   const [fixture, manifest, html] = await Promise.all([
     readJson(FIXTURE_URL),

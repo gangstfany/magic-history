@@ -43,6 +43,7 @@ const MANIFEST_PATHS = {
   4: new URL('../data/ap-art-history-unit-4-manifest.json', import.meta.url),
 };
 const EXPECTED_COMPLETE_AP_NUMBERS = Array.from({ length: 98 }, (_, index) => index + 1);
+const EXPECTED_LIVE_AP_NUMBERS = Array.from({ length: 152 }, (_, index) => index + 1);
 const EXPECTED_U2_AP_NUMBERS = Array.from({ length: 36 }, (_, index) => index + 12);
 const EXPECTED_U1_MANIFEST = [
   '1|ap1-apollo-11-stones|Apollo 11 stones',
@@ -668,7 +669,7 @@ function patchAlignedUnit3Credit(fixture, mediaKey, patch) {
   Object.assign(fixture.rights[mediaKey], patch);
 }
 
-async function loadValidatedLiveUnits123() {
+async function loadValidatedLiveUnits1234() {
   return loadAndValidate();
 }
 
@@ -733,14 +734,14 @@ test('CLI rejects an empty Units 1-2 dataset instead of reporting success', asyn
   }
 });
 
-test('loads exactly AP 1–98 in official order while preserving the AP 12–47 manifest', async () => {
+test('loads exactly AP 1–152 in official order while preserving the AP 12–47 manifest', async () => {
   const artworks = await loadAndValidate();
   const manifest = await loadManifest();
 
-  assert.equal(artworks.length, 98);
+  assert.equal(artworks.length, 152);
   assert.deepEqual(
     artworks.map(({ apNumber }) => apNumber),
-    EXPECTED_COMPLETE_AP_NUMBERS,
+    EXPECTED_LIVE_AP_NUMBERS,
     'artwork-data must remain in official AP order',
   );
   assert.deepEqual(
@@ -758,20 +759,20 @@ test('loads exactly AP 1–98 in official order while preserving the AP 12–47 
   );
 });
 
-test('strict live loader accepts the complete AP 1–98 document by default', async () => {
+test('strict live loader accepts the complete AP 1–152 document by default', async () => {
   const artworks = await loadAndValidate();
 
   assert.deepEqual(
     artworks.map(({ apNumber }) => apNumber),
-    EXPECTED_COMPLETE_AP_NUMBERS,
+    EXPECTED_LIVE_AP_NUMBERS,
   );
 });
 
 test('strict live loader rejects a duplicate raw artwork property key', async () => {
   const html = await readFile(HTML_PATH, 'utf8');
-  const original = '"id":"ap48-catacomb-priscilla","apNumber":48';
-  const duplicate = '"id":"ap48-catacomb-priscilla","id":"ap48-catacomb-priscilla","apNumber":48';
-  assert.equal(html.split(original).length - 1, 1, 'AP48 mutation target must be unique');
+  const original = /"id":\s*"ap48-catacomb-priscilla",\s*"apNumber":\s*48/;
+  const duplicate = '"id": "ap48-catacomb-priscilla", "id": "ap48-catacomb-priscilla", "apNumber": 48';
+  assert.equal(html.match(new RegExp(original.source, 'g'))?.length, 1, 'AP48 mutation target must be unique');
 
   const directory = await mkdtemp(join(tmpdir(), 'art-history-duplicate-artwork-key-'));
   const htmlPath = await writeRawFixtureHtml(directory, html.replace(original, duplicate));
@@ -787,13 +788,19 @@ test('strict live loader rejects a duplicate raw artwork property key', async ()
 
 test('strict live loader rejects a duplicate raw top-level image credit key', async () => {
   const html = await readFile(HTML_PATH, 'utf8');
-  const match = html.match(/^  "ap48-catacomb-priscilla":.+$/m);
-  assert.ok(match, 'AP48 image-credit mutation target must exist');
+  const creditValue = JSON.stringify(
+    JSON.parse(html.match(/<script id="image-credit-data" type="application\/json">([\s\S]*?)<\/script>/)[1])['ap48-catacomb-priscilla'],
+  );
+  const scriptStart = /(<script id="image-credit-data" type="application\/json">\s*\{)/;
+  assert.match(html, scriptStart, 'image-credit-data mutation target must exist');
 
   const directory = await mkdtemp(join(tmpdir(), 'art-history-duplicate-credit-key-'));
   const htmlPath = await writeRawFixtureHtml(
     directory,
-    html.replace(match[0], `${match[0]}\n${match[0]}`),
+    html.replace(
+      scriptStart,
+      `$1\n  "ap48-catacomb-priscilla": ${creditValue},`,
+    ),
   );
   try {
     await assert.rejects(
@@ -2031,7 +2038,7 @@ test('validator enforces unit ranges, regions, AP order, coordinates, and compar
 });
 
 test('imports the exact nine missing works with approved classification metadata', async () => {
-  const artworks = await loadValidatedLiveUnits123();
+  const artworks = await loadValidatedLiveUnits1234();
 
   for (const expected of EXPECTED_NEW_WORKS) {
     const artwork = artworks.find(({ id }) => id === expected.id);
@@ -2045,14 +2052,15 @@ test('imports the exact nine missing works with approved classification metadata
   }
 });
 
-test('assigns exactly 11, 36, and 51 works to Units 1, 2, and 3', async () => {
-  const artworks = await loadValidatedLiveUnits123();
+test('assigns exactly 11, 36, 51, and 54 works to Units 1, 2, 3, and 4', async () => {
+  const artworks = await loadValidatedLiveUnits1234();
 
   assert.equal(artworks.filter(({ unit }) => unit === 1).length, 11);
   assert.equal(artworks.filter(({ unit }) => unit === 2).length, 36);
   assert.equal(artworks.filter(({ unit }) => unit === 3).length, 51);
+  assert.equal(artworks.filter(({ unit }) => unit === 4).length, 54);
   for (const artwork of artworks) {
-    assert.ok([1, 2, 3].includes(artwork.unit), `${artwork.id} must be in Unit 1, 2, or 3`);
+    assert.ok([1, 2, 3, 4].includes(artwork.unit), `${artwork.id} must be in Unit 1, 2, 3, or 4`);
     assert.equal(typeof artwork.culture, 'string', `${artwork.id} must have a culture`);
     assert.ok(artwork.culture.trim(), `${artwork.id} must have a non-empty culture`);
     assert.equal(typeof artwork.region, 'string', `${artwork.id} must have a region`);
@@ -2081,7 +2089,7 @@ test('keeps one image per Unit 1 work except Stonehenge with exactly two', async
 });
 
 test('uses unique artwork ids and AP numbers', async () => {
-  const artworks = await loadValidatedLiveUnits123();
+  const artworks = await loadValidatedLiveUnits1234();
   const ids = artworks.map(({ id }) => id);
   const apNumbers = artworks.map(({ apNumber }) => apNumber);
 
@@ -2090,7 +2098,7 @@ test('uses unique artwork ids and AP numbers', async () => {
 });
 
 test('resolves comparison ids and keeps coordinates inside the map', async () => {
-  const artworks = await loadValidatedLiveUnits123();
+  const artworks = await loadValidatedLiveUnits1234();
   const ids = new Set(artworks.map(({ id }) => id));
 
   for (const artwork of artworks) {
@@ -2103,7 +2111,7 @@ test('resolves comparison ids and keeps coordinates inside the map', async () =>
 });
 
 test('keeps the approved AP 27 source coordinates', async () => {
-  const artworks = await loadValidatedLiveUnits123();
+  const artworks = await loadValidatedLiveUnits1234();
   const kouros = artworks.find(({ id }) => id === 'ap27-anavysos-kouros');
 
   assert.deepEqual(kouros?.coordinates, { x: 405, y: 285 });
