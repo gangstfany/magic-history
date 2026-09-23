@@ -5,14 +5,14 @@ import { readFile } from 'node:fs/promises';
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const loadHtml = () => readFile(HTML_PATH, 'utf8');
 
-test('standalone document copy introduces the complete 98-work Units 1-3 map', async () => {
+test('standalone document copy introduces the complete 152-work Units 1-4 map', async () => {
   const html = await loadHtml();
 
-  assert.match(html, /<title>AP 艺术史互动地图 · Units 1-3<\/title>/);
-  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-3<\/h1>/);
+  assert.match(html, /<title>AP 艺术史互动地图 · Units 1-4<\/title>/);
+  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-4<\/h1>/);
   assert.match(
     html,
-    /<p class="subtitle">Units 1-3：从全球史前艺术、古代地中海到 U3 Early Europe and Colonial Americas，以地点连接全部 98 件作品、传统与历史语境。<\/p>/,
+    /<p class="subtitle">Units 1-4：从全球史前艺术、古代地中海到 U4 Later Europe and Americas，以地点连接全部 152 件作品、传统与历史语境。<\/p>/,
   );
   assert.doesNotMatch(html, /Units 1-2/);
   assert.doesNotMatch(html, /AP 艺术史 · Unit 2 古代地中海/);
