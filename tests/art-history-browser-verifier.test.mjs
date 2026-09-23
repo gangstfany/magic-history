@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const VERIFIER_URL = new URL('../scripts/verify-art-history-browser.mjs', import.meta.url);
 const RELEASE_VERIFIER_URL = new URL('../scripts/verify-art-history-release.mjs', import.meta.url);
+const PRIVATE_LEAK_VERIFIER_URL = new URL('../scripts/verify-art-history-private-leaks.mjs', import.meta.url);
 const RELEASE_STAGE_URL = new URL('../scripts/art-history-release-stage.mjs', import.meta.url);
 const HOMEPAGE_URL = new URL('../index.html', import.meta.url);
 const ART_MAP_URL = new URL('../art-history-map.html', import.meta.url);
@@ -263,6 +264,59 @@ test('release child stage has a bounded timeout and waits for child termination'
   );
   assert.ok(Date.now() - startedAt >= 265, 'runner must await the SIGKILL fallback');
   assert.ok(Date.now() - startedAt < 1000, 'release timeout test must not wait minutes');
+});
+
+test('private leak guards reject tracked bundles, local paths, and restricted URL hashes', async () => {
+  const verifier = await import(PRIVATE_LEAK_VERIFIER_URL.href);
+
+  assert.doesNotThrow(() => verifier.assertNoTrackedPrivatePaths([
+    '.gitignore',
+    'art-history-map.html',
+  ]));
+  assert.throws(
+    () => verifier.assertNoTrackedPrivatePaths([
+      'art-history-map.html',
+      '.private-media/u4/ap140-two-fridas-primary.jpg',
+    ]),
+    /tracked private-media path.*ap140-two-fridas-primary\.jpg/,
+  );
+
+  assert.doesNotThrow(() => verifier.assertNoAbsolutePrivatePaths([
+    { path: 'index.html', text: 'art-history-map.html?embed=1' },
+  ]));
+  for (const [path, text, expected] of [
+    ['index.html', '/Users/student/private.jpg', /index\.html.*\/Users\//],
+    ['art-history-map.html', 'file:///tmp/private.jpg', /art-history-map\.html.*file:\/\//],
+  ]) {
+    assert.throws(
+      () => verifier.assertNoAbsolutePrivatePaths([{ path, text }]),
+      expected,
+    );
+  }
+
+  const restrictedUrl = 'https://example.invalid/restricted-study-image.jpg';
+  const restrictedHash = verifier.hashAssetUrl(restrictedUrl);
+  assert.doesNotThrow(() => verifier.assertNoRestrictedAssetUrls(
+    [{ path: 'art-history-map.html', text: 'https://example.org/public-source-page' }],
+    new Set([restrictedHash]),
+  ));
+  assert.throws(
+    () => verifier.assertNoRestrictedAssetUrls(
+      [{ path: 'tests/fixtures/leak.json', text: `{"imageUrl":"${restrictedUrl}"}` }],
+      new Set([restrictedHash]),
+    ),
+    /tests\/fixtures\/leak\.json.*restricted asset URL hash/,
+  );
+});
+
+test('release verifier runs the private leak guard before browser verification', async () => {
+  const source = await readFile(RELEASE_VERIFIER_URL, 'utf8');
+  const leakStage = source.indexOf("'private-media leak guard'");
+  const browserStage = source.indexOf("'rendered browser matrix'");
+
+  assert.ok(leakStage >= 0, 'release verifier must include the private-media leak guard');
+  assert.ok(browserStage > leakStage, 'private-media leak guard must run before browser verification');
+  assert.match(source, /scripts\/verify-art-history-private-leaks\.mjs/);
 });
 
 test('U3 assembled fault modes use an explicit allowlist', async () => {

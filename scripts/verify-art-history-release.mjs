@@ -20,6 +20,7 @@ const steps = [
     'strict 152-work Units 1-4 validator',
     ['scripts/validate-art-history-data.mjs', 'art-history-map.html'],
   ],
+  ['private-media leak guard', ['scripts/verify-art-history-private-leaks.mjs']],
   ['rendered browser matrix', ['scripts/verify-art-history-browser.mjs']],
 ];
 
