@@ -19,6 +19,7 @@ const VALIDATOR_PATH = fileURLToPath(new URL('../scripts/validate-art-history-da
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const U1_CANONICAL_PATH = new URL('./fixtures/u1-canonical.json', import.meta.url);
 const U3_CANONICAL_PATH = new URL('./fixtures/u3-canonical.json', import.meta.url);
+const U4_CANONICAL_PATH = new URL('./fixtures/u4-canonical.json', import.meta.url);
 const U3_MANIFEST_PATH = new URL(
   '../data/ap-art-history-unit-3-manifest.json',
   import.meta.url,
@@ -27,10 +28,19 @@ const U3_RIGHTS_PATH = new URL(
   '../data/ap-art-history-unit-3-rights.json',
   import.meta.url,
 );
+const U4_RIGHTS_PATH = new URL(
+  '../data/ap-art-history-unit-4-rights.json',
+  import.meta.url,
+);
+const U4_PLACEHOLDERS_PATH = new URL(
+  '../data/ap-art-history-unit-4-public-placeholders.json',
+  import.meta.url,
+);
 const MANIFEST_PATHS = {
   1: new URL('../data/ap-art-history-unit-1-manifest.json', import.meta.url),
   2: new URL('../data/ap-art-history-unit-2-manifest.json', import.meta.url),
   3: U3_MANIFEST_PATH,
+  4: new URL('../data/ap-art-history-unit-4-manifest.json', import.meta.url),
 };
 const EXPECTED_COMPLETE_AP_NUMBERS = Array.from({ length: 98 }, (_, index) => index + 1);
 const EXPECTED_U2_AP_NUMBERS = Array.from({ length: 36 }, (_, index) => index + 12);
@@ -628,6 +638,23 @@ async function loadCompleteUnits123Fixture() {
     credits: { ...units12.credits, ...unit3.credits },
     manifests: { ...units12.manifests, 3: manifest3 },
     rights,
+  };
+}
+
+async function loadCompleteUnits1234Fixture() {
+  const [units123, unit4, manifest4, rights4, placeholders] = await Promise.all([
+    loadCompleteUnits123Fixture(),
+    readFile(U4_CANONICAL_PATH, 'utf8').then(JSON.parse),
+    readFile(MANIFEST_PATHS[4], 'utf8').then(JSON.parse),
+    readFile(U4_RIGHTS_PATH, 'utf8').then(JSON.parse),
+    readFile(U4_PLACEHOLDERS_PATH, 'utf8').then(JSON.parse),
+  ]);
+  return {
+    artworks: [...units123.artworks, ...unit4.artworks],
+    credits: { ...units123.credits, ...unit4.credits },
+    manifests: { ...units123.manifests, 4: manifest4 },
+    rights: { 3: units123.rights, 4: rights4 },
+    placeholders,
   };
 }
 
@@ -1541,6 +1568,149 @@ test('validator accepts an equivalent Unit 3 rights audit regardless of key inse
   assert.equal(
     validateImageCredits(fixture.credits, fixture.artworks, reorderedRights),
     fixture.credits,
+  );
+});
+
+test('validator accepts the complete rights-safe AP 1–152 fixture', async () => {
+  const fixture = await loadCompleteUnits1234Fixture();
+
+  assert.deepEqual(
+    fixture.artworks.map(({ apNumber }) => apNumber),
+    Array.from({ length: 152 }, (_, index) => index + 1),
+  );
+  assert.equal(
+    validateArtworks(fixture.artworks, fixture.manifests, fixture.placeholders),
+    fixture.artworks,
+  );
+  assert.equal(
+    validateImageCredits(
+      fixture.credits,
+      fixture.artworks,
+      fixture.rights,
+      fixture.placeholders,
+    ),
+    fixture.credits,
+  );
+
+  const restricted = fixture.artworks
+    .flatMap((work) => normalizeArtworkMedia(work))
+    .filter(({ mediaStatus }) => mediaStatus === 'rightsRestricted');
+  assert.equal(restricted.length, 8);
+  assert.ok(restricted.every(({ imageUrl }) => imageUrl === null));
+
+  const directory = await mkdtemp(join(tmpdir(), 'art-history-validator-u4-'));
+  const htmlPath = await writeFixtureHtml(directory, fixture.artworks, fixture.credits);
+  try {
+    const loaded = await loadAndValidate(htmlPath);
+    assert.equal(loaded.length, 152);
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test('validator rejects missing, extra, and duplicate Unit 4 AP numbers', async () => {
+  const fixture = await loadCompleteUnits1234Fixture();
+  const missing = fixture.artworks.filter(({ apNumber }) => apNumber !== 99);
+  const extra = [
+    ...fixture.artworks,
+    { ...structuredClone(fixture.artworks.at(-1)), id: 'ap153-extra', apNumber: 153 },
+  ];
+  const duplicate = structuredClone(fixture.artworks);
+  duplicate[99].apNumber = 99;
+
+  assert.throws(
+    () => validateArtworks(missing, fixture.manifests, fixture.placeholders),
+    /exactly 152|1\.\.152|received 151/i,
+  );
+  assert.throws(
+    () => validateArtworks(extra, fixture.manifests, fixture.placeholders),
+    /exactly 152|1\.\.152|received 153/i,
+  );
+  assert.throws(
+    () => validateArtworks(duplicate, fixture.manifests, fixture.placeholders),
+    /duplicate AP number 99/i,
+  );
+});
+
+test('validator rejects Unit 4 manifest, view-order, and comparison drift', async () => {
+  const fixture = await loadCompleteUnits1234Fixture();
+
+  const mismatchedManifest = structuredClone(fixture.manifests);
+  mismatchedManifest[4][99].id = 'ap99-wrong';
+  assert.throws(
+    () => validateArtworks(fixture.artworks, mismatchedManifest, fixture.placeholders),
+    /AP 99 manifest id.*ap99-wrong/i,
+  );
+
+  const reorderedViews = structuredClone(fixture.artworks);
+  const monticello = reorderedViews.find(({ apNumber }) => apNumber === 102);
+  monticello.images.reverse();
+  assert.throws(
+    () => validateArtworks(reorderedViews, fixture.manifests, fixture.placeholders),
+    /AP 102.*required views.*Unit 4 manifest/i,
+  );
+
+  const unresolvedComparison = structuredClone(fixture.artworks);
+  const firstU4 = unresolvedComparison.find(({ unit }) => unit === 4);
+  delete firstU4.comparisonNotes[firstU4.comparisonIds[0]];
+  assert.throws(
+    () => validateArtworks(unresolvedComparison, fixture.manifests, fixture.placeholders),
+    /comparisonNotes must define/i,
+  );
+});
+
+test('validator rejects Unit 4 placeholder leaks, status drift, and wrong restricted sets', async () => {
+  const fixture = await loadCompleteUnits1234Fixture();
+  const restrictedKey = Object.keys(fixture.placeholders)[0];
+  const [restrictedArtworkId, restrictedViewId] = restrictedKey.split('::');
+
+  const leaked = structuredClone(fixture.artworks);
+  leaked
+    .find(({ id }) => id === restrictedArtworkId)
+    .images.find(({ id }) => id === restrictedViewId).imageUrl = 'https://invalid.test/leak.jpg';
+  assert.throws(
+    () => validateArtworks(leaked, fixture.manifests, fixture.placeholders),
+    new RegExp(`${restrictedKey}.*public placeholder`, 'i'),
+  );
+
+  const missingStatus = structuredClone(fixture.artworks);
+  delete missingStatus
+    .find(({ id }) => id === restrictedArtworkId)
+    .images.find(({ id }) => id === restrictedViewId).mediaStatus;
+  assert.throws(
+    () => validateArtworks(missingStatus, fixture.manifests, fixture.placeholders),
+    new RegExp(`${restrictedKey}.*public placeholder`, 'i'),
+  );
+
+  const unapprovedNull = structuredClone(fixture.artworks);
+  unapprovedNull.find(({ id }) => id === 'ap139-fallingwater').images[0].imageUrl = null;
+  assert.throws(
+    () => validateArtworks(unapprovedNull, fixture.manifests, fixture.placeholders),
+    /ap139-fallingwater.*imageUrl.*non-empty/i,
+  );
+
+  const wrongPlaceholders = structuredClone(fixture.placeholders);
+  delete wrongPlaceholders[restrictedKey];
+  assert.throws(
+    () => validateImageCredits(
+      fixture.credits,
+      fixture.artworks,
+      fixture.rights,
+      wrongPlaceholders,
+    ),
+    new RegExp(`placeholder keys.*${restrictedKey}`, 'i'),
+  );
+
+  const rightsMismatch = structuredClone(fixture.rights);
+  rightsMismatch[4][restrictedKey].creatorOrInstitution = 'Altered creator';
+  assert.throws(
+    () => validateImageCredits(
+      fixture.credits,
+      fixture.artworks,
+      rightsMismatch,
+      fixture.placeholders,
+    ),
+    new RegExp(`${restrictedKey}.*creatorOrInstitution.*credit mismatch`, 'i'),
   );
 });
 
