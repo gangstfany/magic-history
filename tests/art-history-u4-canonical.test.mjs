@@ -109,6 +109,10 @@ const APPROVED_NORMAL_LICENSE_POLICIES = new Map([
     licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
     releaseClass: 'open',
   }],
+  ['CC BY-NC-SA 2.0', {
+    licenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/2.0/',
+    releaseClass: 'noncommercial',
+  }],
   ['CC BY-NC-SA 4.0', {
     licenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
     releaseClass: 'noncommercial',
@@ -145,9 +149,25 @@ const APPROVED_NORMAL_LICENSE_POLICIES = new Map([
     licenseUrl: 'https://collections.louvre.fr/en/page/cgu',
     releaseClass: 'institutionalEducational',
   }],
+  ['Library of Congress HABS/HAER rights advisory; no known restrictions', {
+    licenseUrl: 'https://www.loc.gov/pictures/collection/hh/rights.html',
+    releaseClass: 'open',
+  }],
+  ['MoMA fair-use terms—noncommercial educational use', {
+    licenseUrl: 'https://www.moma.org/about/about-this-site/',
+    releaseClass: 'institutionalEducational',
+  }],
   ['No known copyright restrictions', {
     licenseUrl: 'https://commons.wikimedia.org/wiki/Commons:Copyright_rules_by_subject_matter#Photographs_of_old_artworks',
     releaseClass: 'open',
+  }],
+  ['No known restrictions on publication', {
+    licenseUrl: 'https://hdl.loc.gov/loc.pnp/res.598.kora',
+    releaseClass: 'open',
+  }],
+  ['PMA educational/fair-use terms', {
+    licenseUrl: 'https://www.philamuseum.org/legal',
+    releaseClass: 'institutionalEducational',
   }],
   ['Public Domain Mark 1.0', {
     licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/',
@@ -160,6 +180,14 @@ const APPROVED_NORMAL_LICENSE_POLICIES = new Map([
   ['Public domain (self-dedicated)', {
     licenseUrl: 'https://commons.wikimedia.org/wiki/Template:PD-self',
     releaseClass: 'open',
+  }],
+  ['Public domain (U.S. pre-1931 publication)', {
+    licenseUrl: 'https://commons.wikimedia.org/wiki/Template:PD-US-expired',
+    releaseClass: 'open',
+  }],
+  ['University at Buffalo educational-use terms', {
+    licenseUrl: 'https://digital.lib.buffalo.edu/items/show/31590',
+    releaseClass: 'institutionalEducational',
   }],
 ]);
 const LEDGER_HEADER = [
@@ -487,7 +515,7 @@ function assertHttpsUrl(value, identity) {
 }
 
 function markdownLink(value, identity = 'ledger') {
-  const match = value.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+  const match = value.match(/^\[([^\]]+)\]\((https:\/\/.+)\)$/);
   assert.ok(match, `${identity}: malformed HTTPS Markdown link: ${value}`);
   assert.match(match[2], /^https:\/\//, `${identity}: malformed HTTPS Markdown link: ${value}`);
   assertHttpsUrl(match[2], `${identity}: HTTPS Markdown link`);
@@ -986,6 +1014,47 @@ test('U4 normal rights policy requires an approved exact license triple', () => 
     releaseClass: 'open',
   };
   assert.doesNotThrow(() => assertApprovedNormalLicensePolicy(approved, 'approved'));
+  for (const truthfulU4Policy of [
+    {
+      licenseName: 'CC BY-NC-SA 2.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/2.0/',
+      releaseClass: 'noncommercial',
+    },
+    {
+      licenseName: 'Public domain (U.S. pre-1931 publication)',
+      licenseUrl: 'https://commons.wikimedia.org/wiki/Template:PD-US-expired',
+      releaseClass: 'open',
+    },
+    {
+      licenseName: 'Library of Congress HABS/HAER rights advisory; no known restrictions',
+      licenseUrl: 'https://www.loc.gov/pictures/collection/hh/rights.html',
+      releaseClass: 'open',
+    },
+    {
+      licenseName: 'MoMA fair-use terms—noncommercial educational use',
+      licenseUrl: 'https://www.moma.org/about/about-this-site/',
+      releaseClass: 'institutionalEducational',
+    },
+    {
+      licenseName: 'PMA educational/fair-use terms',
+      licenseUrl: 'https://www.philamuseum.org/legal',
+      releaseClass: 'institutionalEducational',
+    },
+    {
+      licenseName: 'No known restrictions on publication',
+      licenseUrl: 'https://hdl.loc.gov/loc.pnp/res.598.kora',
+      releaseClass: 'open',
+    },
+    {
+      licenseName: 'University at Buffalo educational-use terms',
+      licenseUrl: 'https://digital.lib.buffalo.edu/items/show/31590',
+      releaseClass: 'institutionalEducational',
+    },
+  ]) {
+    assert.doesNotThrow(
+      () => assertApprovedNormalLicensePolicy(truthfulU4Policy, truthfulU4Policy.licenseName),
+    );
+  }
   assert.throws(
     () => assertApprovedNormalLicensePolicy(
       { ...approved, releaseClass: 'noncommercial' },

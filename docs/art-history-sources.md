@@ -1,5 +1,40 @@
 # AP 艺术史作品来源索引
 
+## Unit 4: Later Europe and Americas
+
+- Official AP #99–152 identity and view contract:
+  `data/ap-art-history-unit-4-manifest.json`
+- Canonical 54-work / 63-view study-and-media fixture:
+  `tests/fixtures/u4-canonical.json`
+- Ordered per-view source and attribution ledger:
+  `docs/data-sources/u4-source-ledger.md`
+- Per-view license and release-class audit:
+  `data/ap-art-history-unit-4-rights.json`
+- Rights-restricted identity/source evidence:
+  `data/ap-art-history-unit-4-public-placeholders.json`
+- Public/private media design and release rules:
+  `docs/superpowers/specs/2026-08-09-u4-rights-safe-private-media-design.md`
+- College Board authority: current AP Art History Course and Exam Description,
+  Unit 4, Later Europe and Americas, AP #99–152
+- Local study cross-checks: `APAH notes.pdf` and
+  `Smarthistory-guide-to-AP®-Art-History-volume-three-99-152-1578678215.pdf`
+
+Unit 4 preserves the manifest's exact AP order, creation-context region,
+provenance qualifiers, movement grouping, and ordered multi-view requirements.
+The bilingual study fields synthesize the two local study references above;
+the College Board contract remains authoritative for official identity, date,
+medium, and required image count.
+
+Rights are audited independently for every logical view. The ledger distinguishes
+the direct image from the source page and from the license or institutional
+terms. A Creative Commons license attached to a photograph is recorded only for
+that photograph and does not silently expand to the underlying modern artwork.
+`open`, `noncommercial`, and `institutionalEducational` retain the meanings
+defined below for Unit 3. A `restricted` entry has `imageUrl: null`, publishes no
+reproduction, and keeps only a stable identity/source link. The ignored private
+media overlay described in the approved design is outside Git and outside the
+public release claim.
+
 ## Unit 3: Early Europe and Colonial Americas
 
 - Official AP #48–98 contract: `data/ap-art-history-unit-3-manifest.json`
