@@ -353,7 +353,7 @@ test('art map reuses World History typography and compact detail hierarchy', asy
   assert.match(html, /chineseTitle\.textContent = work\.titleZh/);
   assert.match(
     html,
-    /summary\.append\(heading,\s*chineseTitle,\s*meta,\s*imageButton\)/,
+    /summary\.append\(heading,\s*chineseTitle,\s*meta,\s*imageStage\)/,
     'detail summary must append English heading before the Chinese subtitle and metadata',
   );
   assert.match(html, /summary\.append\(creditHost,\s*identity\)/);
@@ -512,7 +512,7 @@ test('official AP unit helpers use every published unit boundary', async () => {
   assert.equal(getUnitById('2'), null);
 });
 
-test('Unit filter configuration, tradition labels, and map regions cover Units 1 through 3', async () => {
+test('Unit filter configuration, tradition labels, and map regions cover Units 1 through 4', async () => {
   const html = await loadHtml();
   const configSource = [
     getObjectDeclarationSource(html, 'const TRADITION_LABELS ='),
@@ -538,6 +538,15 @@ test('Unit filter configuration, tradition labels, and map regions cover Units 1
           'medievalIslamic',
           'renaissanceMannerism',
           'baroqueColonial',
+        ],
+      },
+      4: {
+        showCultureFilters: true,
+        cultureIds: [
+          'enlightenmentRevolution',
+          'realismIndustryPhotography',
+          'postImpressionismEarlyModernism',
+          'avantGardeArchitecturePostwar',
         ],
       },
     },
@@ -566,11 +575,11 @@ test('Unit filter configuration, tradition labels, and map regions cover Units 1
   assert.deepEqual(MAP_REGIONS.oceania, { nameEn: 'Oceania', unitIds: [1] });
   assert.equal(MAP_REGIONS.middleEast?.nameEn, 'Middle East');
   assert.deepEqual(MAP_REGIONS.northAfrica, { nameEn: 'North Africa', unitIds: [2] });
-  assert.deepEqual(MAP_REGIONS.southernEurope, { nameEn: 'Southern Europe', unitIds: [2] });
+  assert.deepEqual(MAP_REGIONS.southernEurope, { nameEn: 'Southern Europe', unitIds: [2, 4] });
   assert.deepEqual(MAP_REGIONS.italyVatican, { nameEn: 'Italy & Vatican', unitIds: [3] });
-  assert.deepEqual(MAP_REGIONS.france, { nameEn: 'France', unitIds: [3] });
+  assert.deepEqual(MAP_REGIONS.france, { nameEn: 'France', unitIds: [3, 4] });
   assert.deepEqual(MAP_REGIONS.iberianPeninsula, { nameEn: 'Iberian Peninsula', unitIds: [3] });
-  assert.deepEqual(MAP_REGIONS.britishIsles, { nameEn: 'British Isles', unitIds: [3] });
+  assert.deepEqual(MAP_REGIONS.britishIsles, { nameEn: 'British Isles', unitIds: [3, 4] });
   assert.deepEqual(MAP_REGIONS.lowCountries, { nameEn: 'Low Countries', unitIds: [3] });
   assert.deepEqual(MAP_REGIONS.centralEurope, { nameEn: 'Central Europe', unitIds: [3] });
   assert.deepEqual(MAP_REGIONS.easternMediterranean, {
@@ -581,6 +590,17 @@ test('Unit filter configuration, tradition labels, and map regions cover Units 1
     nameEn: 'Colonial Americas',
     unitIds: [3],
   });
+  assert.deepEqual(MAP_REGIONS.france, { nameEn: 'France', unitIds: [3, 4] });
+  assert.deepEqual(MAP_REGIONS.britishIsles, { nameEn: 'British Isles', unitIds: [3, 4] });
+  assert.deepEqual(MAP_REGIONS.southernEurope, { nameEn: 'Southern Europe', unitIds: [2, 4] });
+  assert.deepEqual(MAP_REGIONS.centralNorthernEurope, {
+    nameEn: 'Central & Northern Europe', unitIds: [4],
+  });
+  assert.deepEqual(MAP_REGIONS.russiaSoviet, { nameEn: 'Russia & Soviet Union', unitIds: [4] });
+  assert.deepEqual(MAP_REGIONS.unitedStates, { nameEn: 'United States', unitIds: [4] });
+  assert.deepEqual(MAP_REGIONS.mexicoCaribbean, { nameEn: 'Mexico & Caribbean', unitIds: [4] });
+  assert.deepEqual(MAP_REGIONS.pacific, { nameEn: 'Pacific', unitIds: [4] });
+  assert.deepEqual(MAP_REGIONS.transatlantic, { nameEn: 'Transatlantic', unitIds: [4] });
 });
 
 test('Unit 3 broad and precise tradition labels are exact and bilingual', async () => {
@@ -786,7 +806,7 @@ test('culture filter visibility follows the selected Unit configuration', async 
   assert.match(source, /\['all',\s*\.\.\.unitConfig\.cultureIds\]/);
   assert.match(
     source,
-    /cultureId === 'all'[\s\S]*unitId === 3 \? 'All traditions' : 'All cultures'[\s\S]*getCultureLabel\(cultureId, 'en'\)/,
+    /unitId === 3[\s\S]*'All traditions'[\s\S]*unitId === 4[\s\S]*'All movements'[\s\S]*'All cultures'[\s\S]*getCultureLabel\(cultureId, 'en'\)/,
   );
   assert.match(source, /updateCultureFilterSelection\(container, state\.culture\)/);
 });
@@ -848,6 +868,19 @@ test('Unit 3 renders five broad tradition pills while Unit 2 keeps culture wordi
   harness.state.unit = '2';
   harness.renderCultureFilters();
   assert.equal(container.children[0].textContent, 'All cultures');
+
+  harness.state.unit = '4';
+  harness.renderCultureFilters();
+  assert.deepEqual(
+    container.children.map(({ dataset, textContent }) => [dataset.culture, textContent]),
+    [
+      ['all', 'All movements'],
+      ['enlightenmentRevolution', 'Enlightenment & Revolution'],
+      ['realismIndustryPhotography', 'Realism, Industry & Photography'],
+      ['postImpressionismEarlyModernism', 'Post-Impressionism & Early Modernism'],
+      ['avantGardeArchitecturePostwar', 'Avant-Garde, Architecture & Postwar'],
+    ],
+  );
 });
 
 test('Unit toolbar uses one accessible Unit select and an English culture group', async () => {
@@ -887,6 +920,7 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
   const u1Works = parseArtworkData(html).filter(({ unit }) => unit === 1);
   const u2Works = parseArtworkData(html).filter(({ unit }) => unit === 2);
   const u3Works = parseArtworkData(html).filter(({ unit }) => unit === 3);
+  const u4Works = parseArtworkData(html).filter(({ unit }) => unit === 4);
   const works = [
     {
       id: 'white-temple', unit: 2, culture: 'ancientNearEast',
@@ -1009,7 +1043,7 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
       workType: '',
       search: '4',
     }).map(({ id }) => id),
-    ['ap-4', 'date-4200'],
+    ['ap-4', 'ap-14', 'date-4200'],
   );
   assert.deepEqual(
     filterWorks(numericSemanticsWorks, {
@@ -1043,6 +1077,67 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
   assert.deepEqual(searchU3('Italy & Vatican'), [
     48, 49, 51, 63, 67, 69, 70, 71, 72, 73, 75, 76, 78, 80, 82, 85, 88, 89,
   ]);
+
+  const searchU4 = (search) => filterWorks(u4Works, {
+    unit:'4', culture:'all', period:'', workType:'', search,
+  }).map(({ apNumber }) => apNumber);
+  assert.deepEqual(searchU4('Cubism'), [126, 130]);
+  assert.deepEqual(searchU4('立体主义'), [126, 130]);
+  assert.deepEqual(searchU4('Land Art'), [151]);
+  assert.deepEqual(searchU4('大地艺术'), [151]);
+  assert.deepEqual(searchU4('AP 106'), [106]);
+});
+
+test('Unit 4 exposes nine exact regions, four movement groups, and every canonical site', async () => {
+  const html = await loadHtml();
+  const artworks = parseArtworkData(html).filter(({ unit }) => unit === 4);
+  const configSource = [
+    getObjectDeclarationSource(html, 'const UNIT_FILTER_CONFIG ='),
+    getObjectDeclarationSource(html, 'const MAP_REGIONS ='),
+    getObjectDeclarationSource(html, 'const SITE_WORLD_COORDINATES ='),
+  ].join('\n');
+  const { UNIT_FILTER_CONFIG, MAP_REGIONS, SITE_WORLD_COORDINATES } = Function(
+    `"use strict"; ${configSource}; return { UNIT_FILTER_CONFIG, MAP_REGIONS, SITE_WORLD_COORDINATES };`,
+  )();
+  const counts = artworks.reduce((result, work) => {
+    result[work.region] = (result[work.region] ?? 0) + 1;
+    return result;
+  }, {});
+
+  assert.deepEqual(UNIT_FILTER_CONFIG[4].cultureIds, [
+    'enlightenmentRevolution',
+    'realismIndustryPhotography',
+    'postImpressionismEarlyModernism',
+    'avantGardeArchitecturePostwar',
+  ]);
+  assert.deepEqual(counts, {
+    mexicoCaribbean:5,
+    britishIsles:3,
+    france:20,
+    unitedStates:14,
+    southernEurope:4,
+    centralNorthernEurope:5,
+    pacific:1,
+    transatlantic:1,
+    russiaSoviet:1,
+  });
+  assert.deepEqual(
+    Object.keys(MAP_REGIONS).filter((regionId) => MAP_REGIONS[regionId].unitIds.includes(4)),
+    [
+      'southernEurope', 'france', 'britishIsles', 'centralNorthernEurope',
+      'russiaSoviet', 'unitedStates', 'mexicoCaribbean', 'pacific', 'transatlantic',
+    ],
+  );
+  const canonicalSites = new Map();
+  artworks.forEach(({ siteName, coordinates }) => canonicalSites.set(siteName, coordinates));
+  assert.equal(canonicalSites.size, 28);
+  for (const siteName of canonicalSites.keys()) {
+    assert.ok(SITE_WORLD_COORDINATES[siteName], siteName);
+  }
+  assert.deepEqual(
+    SITE_WORLD_COORDINATES['North Atlantic Ocean, aboard SS Kaiser Wilhelm II'],
+    { x:560, y:250 },
+  );
 });
 
 test('culture selection updates existing buttons without replacing the focused button', async () => {
@@ -1311,6 +1406,7 @@ test('configured Unit 2 hierarchy follows real region and site metadata', async 
       { key: 'unit-1', kind: 'unit', count: 11 },
       { key: 'unit-2', kind: 'unit', count: 36 },
       { key: 'unit-3', kind: 'unit', count: 51 },
+      { key: 'unit-4', kind: 'unit', count: 54 },
     ],
   );
 
@@ -2793,7 +2889,7 @@ test('artwork images and modal preserve labels, complete-image space, fallback, 
   const dialogMediaCss = getCssDeclarations(html, '.dialog-media');
 
   assert.match(renderDetailsSource, /image\.alt = media\.imageAlt/);
-  assert.match(renderDetailsSource, /installImageFallback\(image, work\)/);
+  assert.match(renderDetailsSource, /installImageFallback\(\s*image,\s*work,/);
   assert.match(openDialogSource, /image\.alt = media\.imageAlt/);
   assert.match(openDialogSource, /installImageFallback\(image, work\)/);
   assert.match(fallbackSource, /image\.addEventListener\('error'/);

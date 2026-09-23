@@ -1059,6 +1059,67 @@ test('private mode without an installed override retains the placeholder with a 
   assert.equal(summary.querySelectorAll('img').length, 0);
 });
 
+test('all Unit 4 details preserve bilingual hierarchy, study tabs, and required view controls', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const harness = createDetailHarness(html, artworks, credits);
+  const unit4 = artworks.filter(({ unit }) => unit === 4);
+
+  assert.equal(unit4.length, 54);
+  for (const work of unit4) {
+    const summary = harness.renderArtworkDetails(work, { works:[work] });
+    assert.equal(summary.children[0].textContent, work.titleEn, `${work.id} English title`);
+    assert.equal(summary.children[1].textContent, work.titleZh, `${work.id} Chinese title`);
+    assert.equal(summary.querySelectorAll('[role="tab"]').length, 4, `${work.id} tabs`);
+    const expectedViews = work.images?.length ?? 1;
+    const switcher = summary.querySelector('.image-view-switcher');
+    if (expectedViews > 1) {
+      assert.equal(switcher.querySelectorAll('button').length, expectedViews, `${work.id} views`);
+    } else {
+      assert.equal(switcher, null, `${work.id} single view`);
+    }
+  }
+});
+
+test('Monticello keeps a real cross-unit Pantheon comparison and navigation clears U4 filters', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const monticello = artworks.find(({ id }) => id === 'ap102-monticello');
+  const pantheon = artworks.find(({ id }) => id === 'ap46-pantheon');
+  const harness = createDetailHarness(html, artworks, credits, {
+    unit:'4',
+    culture:'enlightenmentRevolution',
+    period:'Neoclassicism',
+    workType:'House and plantation complex',
+    search:'Monticello',
+    selectedId:monticello.id,
+    selectedSiteIndex:0,
+    expandedSiteToken:'u4:unitedStates',
+    activeUnit:4,
+    activeRegion:'unit-4-region-unitedStates',
+    pendingFocusParentKey:'unit-4-region-unitedStates',
+    activeDetailTab:'compare',
+  });
+  const summary = harness.renderArtworkDetails(monticello, { works:[monticello] });
+  const comparison = summary.querySelectorAll('.comparison-card').find(
+    ({ dataset }) => dataset.comparisonId === pantheon.id,
+  );
+
+  assert.ok(monticello.comparisonIds.includes(pantheon.id));
+  assert.match(monticello.comparisonNotes[pantheon.id], /万神殿/);
+  assert.ok(comparison);
+  comparison.click();
+  assert.equal(harness.getState().unit, '2');
+  assert.equal(harness.getState().culture, 'all');
+  assert.equal(harness.getState().period, '');
+  assert.equal(harness.getState().workType, '');
+  assert.equal(harness.getState().search, '');
+  assert.equal(harness.getState().selectedId, pantheon.id);
+  assert.equal(harness.getDetailPanel().ownerDocument.activeElement?.textContent, pantheon.titleEn);
+});
+
 test('normalizes legacy single images and preserves explicit image arrays', async () => {
   const html = await loadHtml();
   const artworks = parseJsonBlock(html, 'artwork-data');

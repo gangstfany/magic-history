@@ -175,10 +175,12 @@
         "服务空间嵌入平台下方"
       ],
       "comparisonIds": [
-        "ap101-swing"
+        "ap101-swing",
+        "ap46-pantheon"
       ],
       "comparisonNotes": {
-        "ap101-swing": "与The Swing比较其形式、材料与历史语境如何形成不同观看经验。"
+        "ap101-swing": "与The Swing比较其形式、材料与历史语境如何形成不同观看经验。",
+        "ap46-pantheon": "比较蒙蒂塞洛如何借用万神殿的古典柱廊与穹顶语言，并把帝国纪念空间转化为美国住宅和政治身份。"
       },
       "keywords": [
         "Monticello",
