@@ -1,5 +1,95 @@
 # AP 艺术史作品来源索引
 
+## Unit 5: Indigenous Americas
+
+- Official AP #153–166 identity and ordered-view contract:
+  `data/ap-art-history-unit-5-manifest.json`
+- Canonical 14-work / 27-view bilingual study fixture:
+  `tests/fixtures/u5-canonical.json`
+- Ordered per-view image, source, rights, and review ledger:
+  `docs/data-sources/u5-source-ledger.md`
+- Per-view creator, license, and release-class audit:
+  `data/ap-art-history-unit-5-rights.json`
+- Rights-restricted source authority, with no image assets:
+  `data/ap-art-history-unit-5-placeholder-authority.json`
+- Identity authority: current [College Board AP Art History Course and Exam
+  Description](https://apcentral.collegeboard.org/media/pdf/ap-art-history-course-and-exam-description.pdf),
+  Unit 5, Indigenous Americas, AP #153–166
+- Local study cross-checks: `APAH notes.pdf` and
+  `UNIT 11_ INDIGENOUS AMERICAS.pptx`
+
+The College Board CED controls the AP number, official English identity, and
+required logical views; it is not a public image host. The canonical fixture
+preserves exact manifest order and creation-context geography while separating
+findspot, current collection, colonial reuse, and later interpretation. Broad
+or uncertain provenance remains qualified rather than being converted into an
+invented city. The map coordinates for portable works are regional anchors,
+not claims about a precise workshop.
+
+Every view has an independent rights decision. The audited distribution is 16
+`open` and eleven `restricted`. The NPS Mesa Verde photograph is federal public
+domain and therefore remains `open`; its NPS conditions and living Pueblo
+heritage context are documented without inventing an educational-only license.
+A `restricted` view always has `imageUrl: null` and
+`mediaStatus: "rightsRestricted"`; its authority file contains only a stable
+source page and an honest rights note. Restricted files are not copied into
+Git and are not part of any public-release claim.
+
+The stricter eleven-view restricted set is deliberate. The CED's Chavín relief
+uses a rights-managed Corbis photograph, and the open cactus-bearer stela could
+not be proven to be the same panel. Peabody's exact Yaxchilán Structure 40
+archive image has only limited use terms and no verified portable public asset.
+Great Serpent Mound is treated as a sacred American Indian site using a joint
+Ohio History Connection–Shawnee authority. The Weltmuseum penacho remains
+culturally contested. The Templo Mayor reconstruction photograph has CC BY 2.0
+terms, but the modern museum model's underlying design rights were not verified.
+The exact Inka maize photograph is rights-managed; NMAI,
+the Musée du quai Branly, SAR, and the Barbara Gonzales family photograph do
+not supply portable permission for AP 163–166. For the Kwakwa̱ka̱ʼwakw mask,
+a CC license on one museum-display photograph was not treated as permission
+for the underlying ceremonial and family/clan property.
+
+Terminology and cultural-context review used present community and official
+institutional sources:
+
+- [UNESCO Chavín de Huántar](https://whc.unesco.org/en/list/330) and the
+  [Cleveland Museum of Art nose ornament record](https://www.clevelandart.org/art/1958.183)
+- [NPS Mesa Verde people](https://www.nps.gov/meve/learn/historyculture/people.htm)
+  and [Cliff Palace](https://www.nps.gov/meve/learn/historyculture/cliff_palace.htm)
+- [INAH Yaxchilán](https://lugares.inah.gob.mx/es/node/4367),
+  [Templo Mayor](https://www.inah.gob.mx/zonas/zona-arqueologica-templo-mayor),
+  and [Piedra del Sol](https://www.inah.gob.mx/foto-del-dia/piedra-del-sol-235-anos-del-resurgimiento-del-nahui-ollin)
+- [Ohio History Connection and Shawnee Tribe on Serpent
+  Mound](https://www.ohiohistory.org/ohios-serpent-mound-an-american-indian-story-written-in-the-earth/)
+- [Weltmuseum feather-headdress research](https://www.weltmuseumwien.at/en/the-feather-headdress/)
+  and [object record](https://www.weltmuseumwien.at/en/objects/531234)
+- [UNESCO City of Cuzco](https://whc.unesco.org/en/list/273) and the Cusco
+  culture authority's [Saqsaywaman page](https://www.culturacusco.gob.pe/parques/saqsaywaman/)
+- Peru's official [Machupicchu history](https://www.machupicchu.gob.pe/history/?lang=en)
+  and [visitor information](https://www.machupicchu.gob.pe/informative-brochure/?lang=en)
+- [Dumbarton Oaks All-T'oqapu tunic](https://museum.doaks.org/objects-1/info/23071)
+  and the published [Berlin maize-cob technical study](https://doi.org/10.4000/bifea.8301)
+- [Delaware Tribe Lenape bags guide](https://delawaretribe.org/wp-content/uploads/Lenape-Bags.pdf),
+  [NMAI Bandolier bag record](https://www.si.edu/object/shoulder-bagbandolier-bag%3ANMAI_227689),
+  and [NMAI collections sensitivity statement](https://americanindian.si.edu/collections-statement)
+- [U'mista Cultural Centre](https://www.umista.ca/pages/about-us), its
+  [collection history](https://www.umista.ca/pages/collection-history), and
+  its [statement on inherited family and clan authority](https://www.umista.ca/pages/authenticity)
+- [Eastern Shoshone Tribe](https://easternshoshone.org/about/) and the
+  [School for Advanced Research Katsikodi record](https://emuseum.sarsf.org/objects/1568/untitled)
+- [Pueblo de San Ildefonso](https://sanipueblo.org/visiting-the-pueblo/) and
+  the Museum of Indian Arts & Culture's [black-on-black process
+  account](https://www.indianartsandculture.org/exhibits/maria/ar_black.html)
+
+Current community names appear first: Ancestral Pueblo people, Mexica, Inka,
+Lenape, Kwakwa̱ka̱ʼwakw, Eastern Shoshone, and Pueblo de San Ildefonso.
+Older labels are included only where they help AP search and recognition.
+Living cultures are described in the present tense. Sacred meaning, maker,
+ownership, ritual function, the proposed puma-shaped Cusco plan, Machupicchu's
+specific functions, Great Serpent Mound's date and makers, and the maize cobs'
+authenticity are all stated as interpretations or current uncertainties where
+the evidence does not establish certainty.
+
 ## Unit 4: Later Europe and Americas
 
 - Official AP #99–152 identity and view contract:

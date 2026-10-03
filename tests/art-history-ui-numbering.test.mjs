@@ -5,14 +5,14 @@ import { readFile } from 'node:fs/promises';
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const loadHtml = () => readFile(HTML_PATH, 'utf8');
 
-test('standalone document copy introduces the complete 152-work Units 1-4 map', async () => {
+test('standalone document copy introduces the complete 166-work Units 1-5 map', async () => {
   const html = await loadHtml();
 
-  assert.match(html, /<title>AP 艺术史互动地图 · Units 1-4<\/title>/);
-  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-4<\/h1>/);
+  assert.match(html, /<title>AP 艺术史互动地图 · Units 1-5<\/title>/);
+  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-5<\/h1>/);
   assert.match(
     html,
-    /<p class="subtitle">Units 1-4：从全球史前艺术、古代地中海到 U4 Later Europe and Americas，以地点连接全部 152 件作品、传统与历史语境。<\/p>/,
+    /<p class="subtitle">Units 1-5：从全球史前艺术、古代地中海到 U5 Indigenous Americas，以地点连接全部 166 件作品、传统与历史语境。<\/p>/,
   );
   assert.doesNotMatch(html, /Units 1-2/);
   assert.doesNotMatch(html, /AP 艺术史 · Unit 2 古代地中海/);
@@ -512,7 +512,7 @@ test('official AP unit helpers use every published unit boundary', async () => {
   assert.equal(getUnitById('2'), null);
 });
 
-test('Unit filter configuration, tradition labels, and map regions cover Units 1 through 4', async () => {
+test('Unit filter configuration, tradition labels, and map regions cover Units 1 through 5', async () => {
   const html = await loadHtml();
   const configSource = [
     getObjectDeclarationSource(html, 'const TRADITION_LABELS ='),
@@ -547,6 +547,15 @@ test('Unit filter configuration, tradition labels, and map regions cover Units 1
           'realismIndustryPhotography',
           'postImpressionismEarlyModernism',
           'avantGardeArchitecturePostwar',
+        ],
+      },
+      5: {
+        showCultureFilters: true,
+        cultureIds: [
+          'Ancient Mesoamerica',
+          'Ancient Central Andes',
+          'Ancient North America',
+          'Native North America',
         ],
       },
     },
@@ -601,6 +610,59 @@ test('Unit filter configuration, tradition labels, and map regions cover Units 1
   assert.deepEqual(MAP_REGIONS.mexicoCaribbean, { nameEn: 'Mexico & Caribbean', unitIds: [4] });
   assert.deepEqual(MAP_REGIONS.pacific, { nameEn: 'Pacific', unitIds: [4] });
   assert.deepEqual(MAP_REGIONS.transatlantic, { nameEn: 'Transatlantic', unitIds: [4] });
+  assert.deepEqual(
+    Object.fromEntries(
+      [
+        'mesoamerica',
+        'centralAndes',
+        'ancestralPueblo',
+        'easternWoodlands',
+        'northwestCoast',
+        'plainsGreatBasin',
+      ].map((regionId) => [regionId, MAP_REGIONS[regionId]]),
+    ),
+    {
+      mesoamerica: { nameEn: 'Mesoamerica', unitIds: [5] },
+      centralAndes: { nameEn: 'Central Andes', unitIds: [5] },
+      ancestralPueblo: { nameEn: 'Ancestral Pueblo', unitIds: [5] },
+      easternWoodlands: { nameEn: 'Eastern Woodlands', unitIds: [5] },
+      northwestCoast: { nameEn: 'Northwest Coast', unitIds: [5] },
+      plainsGreatBasin: { nameEn: 'Plains & Great Basin', unitIds: [5] },
+    },
+  );
+});
+
+test('Unit 5 freezes four broad traditions and labels every precise culture', async () => {
+  const html = await loadHtml();
+  const configSource = [
+    getObjectDeclarationSource(html, 'const TRADITION_LABELS ='),
+    getObjectDeclarationSource(html, 'const UNIT_FILTER_CONFIG ='),
+  ].join('\n');
+  const { TRADITION_LABELS, UNIT_FILTER_CONFIG } = Function(
+    `"use strict"; ${configSource}; return { TRADITION_LABELS, UNIT_FILTER_CONFIG };`,
+  )();
+  const unit5 = parseArtworkData(html).filter(({ unit }) => unit === 5);
+  const preciseCultures = [...new Set(unit5.map(({ culture }) => culture))];
+
+  assert.deepEqual(
+    UNIT_FILTER_CONFIG[5].cultureIds.map((id) => TRADITION_LABELS[id].labelEn),
+    [
+      'Ancient Mesoamerica',
+      'Ancient Central Andes',
+      'Ancient North America',
+      'Native North America',
+    ],
+  );
+  assert.deepEqual(
+    UNIT_FILTER_CONFIG[5].cultureIds.map((id) => TRADITION_LABELS[id].labelZh),
+    ['古代中美洲', '古代中安第斯', '古代北美洲', '北美原住民艺术'],
+  );
+  assert.equal(preciseCultures.length, 14);
+  for (const culture of preciseCultures) {
+    assert.ok(TRADITION_LABELS[culture], `missing precise U5 label: ${culture}`);
+    assert.ok(TRADITION_LABELS[culture].labelEn);
+    assert.ok(TRADITION_LABELS[culture].labelZh);
+  }
 });
 
 test('Unit 3 broad and precise tradition labels are exact and bilingual', async () => {
@@ -811,7 +873,7 @@ test('culture filter visibility follows the selected Unit configuration', async 
   assert.match(source, /updateCultureFilterSelection\(container, state\.culture\)/);
 });
 
-test('Unit 3 renders five broad tradition pills while Unit 2 keeps culture wording', async () => {
+test('Units 3 and 5 render broad tradition pills while Units 2 and 4 keep their wording', async () => {
   const html = await loadHtml();
   const sources = [
     getObjectDeclarationSource(html, 'const TRADITION_LABELS ='),
@@ -881,6 +943,19 @@ test('Unit 3 renders five broad tradition pills while Unit 2 keeps culture wordi
       ['avantGardeArchitecturePostwar', 'Avant-Garde, Architecture & Postwar'],
     ],
   );
+
+  harness.state.unit = '5';
+  harness.renderCultureFilters();
+  assert.deepEqual(
+    container.children.map(({ dataset, textContent }) => [dataset.culture, textContent]),
+    [
+      ['all', 'All traditions'],
+      ['Ancient Mesoamerica', 'Ancient Mesoamerica'],
+      ['Ancient Central Andes', 'Ancient Central Andes'],
+      ['Ancient North America', 'Ancient North America'],
+      ['Native North America', 'Native North America'],
+    ],
+  );
 });
 
 test('Unit toolbar uses one accessible Unit select and an English culture group', async () => {
@@ -921,6 +996,7 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
   const u2Works = parseArtworkData(html).filter(({ unit }) => unit === 2);
   const u3Works = parseArtworkData(html).filter(({ unit }) => unit === 3);
   const u4Works = parseArtworkData(html).filter(({ unit }) => unit === 4);
+  const u5Works = parseArtworkData(html).filter(({ unit }) => unit === 5);
   const works = [
     {
       id: 'white-temple', unit: 2, culture: 'ancientNearEast',
@@ -1086,6 +1162,23 @@ test('filterWorks combines Unit, culture, exact filters, and bilingual free sear
   assert.deepEqual(searchU4('Land Art'), [151]);
   assert.deepEqual(searchU4('大地艺术'), [151]);
   assert.deepEqual(searchU4('AP 106'), [106]);
+
+  const searchU5 = (search) => filterWorks(u5Works, {
+    unit:'5', culture:'all', period:'', workType:'', search,
+  }).map(({ apNumber }) => apNumber);
+  assert.ok(searchU5('153').includes(153));
+  assert.deepEqual(searchU5('Lanzón'), [153]);
+  assert.deepEqual(searchU5('Coyolxauhqui'), [157]);
+  assert.deepEqual(searchU5('Saqsa Waman'), [159]);
+  assert.deepEqual(searchU5("T'oqapu"), [162]);
+  assert.deepEqual(searchU5("Kwakwaka'wakw"), [164]);
+  assert.deepEqual(searchU5('Cotsiogo'), [165]);
+  assert.deepEqual(searchU5('Maria and Julian Martinez'), [166]);
+  assert.deepEqual(searchU5('下沉广场'), [153]);
+  assert.deepEqual(searchU5('大神庙'), [157]);
+  assert.deepEqual(searchU5('萨克萨瓦曼'), [159]);
+  assert.deepEqual(searchU5('变形面具'), [164]);
+  assert.deepEqual(searchU5('还原焰烧'), [166]);
 });
 
 test('Unit 4 exposes nine exact regions, four movement groups, and every canonical site', async () => {
@@ -1138,6 +1231,184 @@ test('Unit 4 exposes nine exact regions, four movement groups, and every canonic
     SITE_WORLD_COORDINATES['North Atlantic Ocean, aboard SS Kaiser Wilhelm II'],
     { x:560, y:250 },
   );
+});
+
+test('Unit 5 hierarchy is six regions then creation-context sites and official AP pins', async () => {
+  const html = await loadHtml();
+  const unit5 = parseArtworkData(html).filter(({ unit }) => unit === 5);
+  const helpers = loadPureFunctions(
+    html,
+    [
+      'compactApNumbers',
+      'formatApGroupLabel',
+      'formatPieceCount',
+      'createSiteToken',
+      'getUnitById',
+      'getApUnitNumber',
+      'getMapGroupText',
+      'toWorldCoordinates',
+      'groupBySite',
+      'groupByConfiguredRegion',
+      'getMapHierarchyLevel',
+      'groupByRegionGrid',
+      'buildMapGroups',
+    ],
+    ['const AP_UNITS =', 'const MAP_REGIONS =', 'const SITE_WORLD_COORDINATES ='],
+  );
+  const regions = helpers.buildMapGroups(unit5, 1, {
+    selectedUnit:'5', activeUnit:5, activeRegion:null,
+  });
+
+  assert.deepEqual(
+    regions.map(({ regionId, works }) => [regionId, works.length]),
+    [
+      ['mesoamerica', 3],
+      ['centralAndes', 5],
+      ['ancestralPueblo', 2],
+      ['easternWoodlands', 2],
+      ['northwestCoast', 1],
+      ['plainsGreatBasin', 1],
+    ],
+  );
+  assert.deepEqual(
+    regions.map(helpers.getMapGroupText),
+    [
+      { title:'Mesoamerica', subtitle:'3 pieces' },
+      { title:'Central Andes', subtitle:'5 pieces' },
+      { title:'Ancestral Pueblo', subtitle:'2 pieces' },
+      { title:'Eastern Woodlands', subtitle:'2 pieces' },
+      { title:'Northwest Coast', subtitle:'1 piece' },
+      { title:'Plains & Great Basin', subtitle:'1 piece' },
+    ],
+  );
+  assert.equal(
+    regions.find(({ regionId }) => regionId === 'mesoamerica').apGroupLabel,
+    'AP 155, 157–158',
+  );
+
+  const expectedSites = new Set(unit5.map(({ siteName }) => siteName));
+  const renderedSites = [];
+  for (const region of regions) {
+    const sites = helpers.buildMapGroups(unit5, 2.5, {
+      selectedUnit:'5', activeUnit:5, activeRegion:region.key,
+    });
+    assert.ok(sites.every(({ kind }) => kind === 'site'));
+    assert.ok(sites.every(({ parentKey }) => parentKey === region.key));
+    sites.forEach((site) => {
+      renderedSites.push(site.siteName);
+      assert.equal(site.apGroupLabel, helpers.formatApGroupLabel(site.works));
+      assert.deepEqual(
+        site.works.map(({ apNumber }) => apNumber),
+        [...site.works].map(({ apNumber }) => apNumber).sort((a, b) => a - b),
+      );
+      if (site.works.length === 1) {
+        assert.equal(site.apLabel, String(site.works[0].apNumber));
+      }
+    });
+  }
+  assert.deepEqual(new Set(renderedSites), expectedSites);
+  assert.equal(renderedSites.length, expectedSites.size);
+  assert.equal(renderedSites.some((site) => /museum|collection/i.test(site)), false);
+  const inkaRealm = helpers.groupBySite(unit5).find(
+    ({ siteName }) => siteName === 'Inka realm, Central Andes',
+  );
+  assert.equal(inkaRealm.apGroupLabel, 'AP 160, 162');
+  assert.deepEqual(helpers.getMapGroupText(inkaRealm), {
+    title:'Inka realm, Central Andes',
+    subtitle:'AP 160, 162 · 2 pieces',
+  });
+});
+
+test('selecting Unit 5 resets incompatible filters, regenerates options, and fits its works', async () => {
+  const html = await loadHtml();
+  const artworks = parseArtworkData(html);
+  const unit5 = artworks.filter(({ unit }) => unit === 5);
+  const stateSource = getObjectDeclarationSource(html, 'const state =');
+  const dependentSources = [
+    stateSource,
+    `const ARTWORKS = ${JSON.stringify(artworks)};`,
+    getFunctionSource(html, 'appendOption'),
+    getFunctionSource(html, 'populateSelect'),
+    getFunctionSource(html, 'getWorksForUnit'),
+    getFunctionSource(html, 'renderDependentFilterOptions'),
+  ].join('\n');
+  const elements = {
+    periodFilter: {
+      children:[], value:'',
+      replaceChildren() { this.children = []; },
+      append(child) { this.children.push(child); },
+    },
+    typeFilter: {
+      children:[], value:'',
+      replaceChildren() { this.children = []; },
+      append(child) { this.children.push(child); },
+    },
+  };
+  const document = {
+    getElementById(id) { return elements[id]; },
+    createElement(tagName) {
+      assert.equal(tagName, 'option');
+      return { value:'', textContent:'' };
+    },
+  };
+  const filters = Function(
+    'document',
+    `"use strict"; ${dependentSources}; return { state, renderDependentFilterOptions };`,
+  )(document);
+  Object.assign(filters.state, {
+    unit:'5',
+    period:'Imperial Roman',
+    workType:'oil painting',
+  });
+  filters.renderDependentFilterOptions();
+  assert.equal(filters.state.period, '');
+  assert.equal(filters.state.workType, '');
+  assert.deepEqual(
+    elements.periodFilter.children.slice(1).map(({ value }) => value),
+    [...new Set(unit5.map(({ period }) => period))].sort((a, b) => a.localeCompare(b)),
+  );
+  assert.deepEqual(
+    elements.typeFilter.children.slice(1).map(({ value }) => value),
+    [...new Set(unit5.map(({ workType }) => workType))].sort((a, b) => a.localeCompare(b)),
+  );
+
+  const state = {
+    unit:'4', culture:'Land Art', period:'Postwar', workType:'earthwork', search:'Spiral',
+    selectedId:'ap151-spiral-jetty', selectedSiteIndex:2, expandedSiteToken:'old-site',
+    activeUnit:4, activeRegion:'unit-4-region-unitedStates', pendingFocusParentKey:'old',
+    activeDetailTab:'compare', transform:{ x:-200, y:-100, scale:2 },
+  };
+  const calls = [];
+  const selectUnit = Function(
+    'state',
+    'syncFilterControls',
+    'getWorksForUnit',
+    'fitMapToWorks',
+    'applyTransform',
+    'scheduleMarkerLayout',
+    `"use strict"; ${getFunctionSource(html, 'selectUnit')}; return selectUnit;`,
+  )(
+    state,
+    () => calls.push('sync'),
+    (unit) => {
+      assert.equal(unit, '5');
+      return unit5;
+    },
+    (works) => {
+      assert.strictEqual(works, unit5);
+      calls.push('fit');
+    },
+    () => calls.push('apply'),
+    () => calls.push('layout'),
+  );
+  selectUnit('5');
+  assert.deepEqual(state, {
+    unit:'5', culture:'all', period:'', workType:'', search:'',
+    selectedId:null, selectedSiteIndex:0, expandedSiteToken:null,
+    activeUnit:5, activeRegion:null, pendingFocusParentKey:null,
+    activeDetailTab:'quick', transform:{ x:0, y:0, scale:1 },
+  });
+  assert.deepEqual(calls, ['sync', 'fit', 'apply', 'layout']);
 });
 
 test('culture selection updates existing buttons without replacing the focused button', async () => {
@@ -1322,6 +1593,99 @@ test('every canonical Unit 3 creation site uses its reviewed exact world coordin
   }
 });
 
+test('every Unit 5 creation site uses its reviewed Americas projection and map fitting points', async () => {
+  const html = await loadHtml();
+  const unit5 = parseArtworkData(html).filter(({ unit }) => unit === 5);
+  const reviewedSites = {
+    'Chavín de Huántar, Ancash, Peru': { x:470, y:500 },
+    'Mesa Verde, Colorado, U.S.': { x:300, y:300 },
+    'Yaxchilán, Chiapas, Mexico': { x:355, y:410 },
+    'Adams County, Ohio, U.S.': { x:430, y:270 },
+    'Tenochtitlan (Mexico City), Mexico': { x:360, y:390 },
+    'Mexica realm, Central Mexico': { x:355, y:385 },
+    'Cusco, Peru': { x:480, y:505 },
+    'Inka realm, Central Andes': { x:480, y:505 },
+    'Machu Picchu, Cusco Region, Peru': { x:485, y:510 },
+    'Lenape homelands, northeastern North America': { x:420, y:280 },
+    "Kwakwaka'wakw territories, British Columbia, Canada": { x:255, y:220 },
+    'Wind River Reservation, Wyoming, U.S.': { x:330, y:285 },
+    'San Ildefonso Pueblo, New Mexico, U.S.': { x:335, y:320 },
+  };
+  const {
+    state,
+    toWorldCoordinates,
+    fitMapToWorks,
+    getVisibleWorldBounds,
+  } = loadMapFitFunctions(html);
+  const source = getObjectDeclarationSource(html, 'const SITE_WORLD_COORDINATES =');
+  const { SITE_WORLD_COORDINATES } = Function(
+    `"use strict"; ${source}; return { SITE_WORLD_COORDINATES };`,
+  )();
+
+  assert.equal(Object.keys(reviewedSites).length, 13);
+  assert.deepEqual(
+    Object.fromEntries(Object.keys(reviewedSites).map((siteName) => (
+      [siteName, SITE_WORLD_COORDINATES[siteName]]
+    ))),
+    reviewedSites,
+  );
+  for (const work of unit5) {
+    assert.deepEqual(work.coordinates, reviewedSites[work.siteName], `${work.id} canonical point`);
+    assert.deepEqual(toWorldCoordinates(work), reviewedSites[work.siteName], `${work.id} projection`);
+  }
+
+  const byRegion = Object.groupBy(unit5, ({ region }) => region);
+  const regionRanges = {
+    mesoamerica: { left:355, right:360, top:385, bottom:410 },
+    centralAndes: { left:470, right:485, top:500, bottom:510 },
+    ancestralPueblo: { left:300, right:335, top:300, bottom:320 },
+    easternWoodlands: { left:420, right:430, top:270, bottom:280 },
+    northwestCoast: { left:255, right:255, top:220, bottom:220 },
+    plainsGreatBasin: { left:330, right:330, top:285, bottom:285 },
+  };
+  for (const [region, works] of Object.entries(byRegion)) {
+    const points = works.map(toWorldCoordinates);
+    assert.deepEqual(
+      {
+        left:Math.min(...points.map(({ x }) => x)),
+        right:Math.max(...points.map(({ x }) => x)),
+        top:Math.min(...points.map(({ y }) => y)),
+        bottom:Math.max(...points.map(({ y }) => y)),
+      },
+      regionRanges[region],
+      `${region} reviewed geography`,
+    );
+  }
+
+  fitMapToWorks(unit5);
+  const expectedScale = Math.min(3, Math.max(1, Math.min(
+    1600 / (485 - 255 + 320),
+    800 / (510 - 220 + 320),
+  )));
+  assert.deepEqual(state.transform, {
+    x:0,
+    y:400 - ((220 + 510) / 2) * expectedScale,
+    scale:expectedScale,
+  });
+  const visible = getVisibleWorldBounds(state.transform);
+  for (const point of Object.values(reviewedSites)) {
+    assert.ok(point.x >= visible.left && point.x <= visible.right);
+    assert.ok(point.y >= visible.top && point.y <= visible.bottom);
+  }
+
+  const mutationHarness = Function(
+    `"use strict"; ${source}\n${getFunctionSource(html, 'toWorldCoordinates')};`
+      + ' return { SITE_WORLD_COORDINATES, toWorldCoordinates };',
+  )();
+  const missingSite = unit5[0].siteName;
+  delete mutationHarness.SITE_WORLD_COORDINATES[missingSite];
+  assert.throws(
+    () => mutationHarness.toWorldCoordinates(unit5[0]),
+    /Missing reviewed Unit 5 map projection/,
+    'a missing reviewed U5 site must fail rather than use the legacy pixel transform',
+  );
+});
+
 test('configured Unit 1 hierarchy exposes only its six regions with exact counts', async () => {
   const html = await loadHtml();
   const artworks = parseArtworkData(html);
@@ -1407,6 +1771,7 @@ test('configured Unit 2 hierarchy follows real region and site metadata', async 
       { key: 'unit-2', kind: 'unit', count: 36 },
       { key: 'unit-3', kind: 'unit', count: 51 },
       { key: 'unit-4', kind: 'unit', count: 54 },
+      { key: 'unit-5', kind: 'unit', count: 14 },
     ],
   );
 

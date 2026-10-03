@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const VERIFIER_URL = new URL('../scripts/verify-art-history-browser.mjs', import.meta.url);
@@ -18,6 +20,10 @@ const U3_BROWSER_FIXTURE = new URL('./fixtures/u3-browser.json', import.meta.url
 const U3_CANONICAL_FIXTURE = new URL('./fixtures/u3-canonical.json', import.meta.url);
 const U4_BROWSER_FIXTURE = new URL('./fixtures/u4-browser.json', import.meta.url);
 const U4_CANONICAL_FIXTURE = new URL('./fixtures/u4-canonical.json', import.meta.url);
+const U5_BROWSER_FIXTURE = new URL('./fixtures/u5-browser.json', import.meta.url);
+const U5_CANONICAL_FIXTURE = new URL('./fixtures/u5-canonical.json', import.meta.url);
+const U5_PLACEHOLDER_AUTHORITY = new URL('../data/ap-art-history-unit-5-placeholder-authority.json', import.meta.url);
+const PROJECT_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
 function projectBrowserFixture(canonical) {
   return canonical.artworks.map((work) => {
@@ -97,6 +103,18 @@ function projectU4BrowserFixture(canonical) {
       imageSourceUrl,
       ...(image.mediaStatus ? { mediaStatus: image.mediaStatus } : {}),
     })),
+  }));
+}
+
+function projectU5BrowserFixture(canonical) {
+  return canonical.artworks.map((work) => ({
+    id: work.id,
+    apNumber: work.apNumber,
+    unit: work.unit,
+    region: work.region,
+    siteName: work.siteName,
+    traditionGroup: work.traditionGroup,
+    viewIds: work.images.map(({ id }) => id),
   }));
 }
 
@@ -266,7 +284,7 @@ test('release child stage has a bounded timeout and waits for child termination'
   assert.ok(Date.now() - startedAt < 1000, 'release timeout test must not wait minutes');
 });
 
-test('private leak guards reject tracked bundles, local paths, and restricted URL hashes', async () => {
+test('private leak guards reject tracked U4/U5 bundles, local paths, and restricted URL hashes', async () => {
   const verifier = await import(PRIVATE_LEAK_VERIFIER_URL.href);
 
   assert.doesNotThrow(() => verifier.assertNoTrackedPrivatePaths([
@@ -280,13 +298,27 @@ test('private leak guards reject tracked bundles, local paths, and restricted UR
     ]),
     /tracked private-media path.*ap140-two-fridas-primary\.jpg/,
   );
+  assert.throws(
+    () => verifier.assertNoTrackedPrivatePaths([
+      'art-history-map.html',
+      '.private-media/u5/ap153-chavin-huantar-relief-sculpture.jpg',
+    ]),
+    /tracked private-media path.*u5.*ap153-chavin-huantar-relief-sculpture\.jpg/,
+  );
 
   assert.doesNotThrow(() => verifier.assertNoAbsolutePrivatePaths([
     { path: 'index.html', text: 'art-history-map.html?embed=1' },
   ]));
   for (const [path, text, expected] of [
-    ['index.html', '/Users/student/private.jpg', /index\.html.*\/Users\//],
-    ['art-history-map.html', 'file:///tmp/private.jpg', /art-history-map\.html.*file:\/\//],
+    ['index.html', ['', 'Users', 'student', 'private.jpg'].join('/'), /index\.html.*\/Users\//],
+    ['art-history-map.html', ['file', ':///tmp/private.jpg'].join(''), /art-history-map\.html.*file:\/\//],
+    ['data/leak.json', ['', 'home', 'student', 'private.jpg'].join('/'), /data\/leak\.json.*\/home\//],
+    ['docs/data-sources/leak.md', ['C', ':\\private\\u5.jpg'].join(''), /docs\/data-sources\/leak\.md.*Windows drive path/],
+    ['index.html', '%2FUsers%2Fstudent%2Fprivate.jpg', /index\.html.*\/Users\//],
+    ['art-history-map.html', 'file%3A%2F%2F%2Ftmp%2Fprivate.jpg', /art-history-map\.html.*file:\/\//],
+    ['data/leak.json', 'C%3A%5CUsers%5Cstudent%5Cprivate.jpg', /data\/leak\.json.*Windows drive path/],
+    ['scripts/leak.mjs', '%252FUsers%252Fstudent%252Fprivate.jpg', /scripts\/leak\.mjs.*\/Users\//],
+    ['world-map.html', '&#x2F;home&#x2F;student&#x2F;private.jpg', /world-map\.html.*\/home\//],
   ]) {
     assert.throws(
       () => verifier.assertNoAbsolutePrivatePaths([{ path, text }]),
@@ -296,6 +328,58 @@ test('private leak guards reject tracked bundles, local paths, and restricted UR
 
   const restrictedUrl = 'https://example.invalid/restricted-study-image.jpg';
   const restrictedHash = verifier.hashAssetUrl(restrictedUrl);
+  assert.equal(
+    verifier.hashAssetUrl('HTTPS://EXAMPLE.INVALID:443/restricted-study-image.jpg#preview'),
+    restrictedHash,
+    'restricted URL identity must ignore HTTPS/host casing, default port, and fragment',
+  );
+  for (const browserEquivalentUrl of [
+    String.raw`https:\\example.invalid\restricted-study-image.jpg`,
+    String.raw`https:/\example.invalid/restricted-study-image.jpg`,
+    String.raw`HTTPS:\\EXAMPLE.INVALID:443\restricted-study-image.jpg#preview`,
+  ]) {
+    assert.equal(
+      verifier.hashAssetUrl(browserEquivalentUrl),
+      restrictedHash,
+      'WHATWG HTTPS backslash equivalents must share the restricted URL identity',
+    );
+  }
+  assert.equal(
+    verifier.hashAssetUrl('https://example.invalid/a%2fb?q=%7e'),
+    verifier.hashAssetUrl('https://example.invalid/a%2Fb?q=%7E'),
+    'percent-triplet hexadecimal casing must not create a distinct URL identity',
+  );
+  assert.notEqual(
+    verifier.hashAssetUrl('https://example.invalid/a%2Fb?q=%7E'),
+    verifier.hashAssetUrl('https://example.invalid/a/b?q=~'),
+    'canonicalization must not decode path or query octets that a server may distinguish',
+  );
+  assert.notEqual(
+    verifier.hashAssetUrl('https://example.invalid/path?a=1&b=2'),
+    verifier.hashAssetUrl('https://example.invalid/path?b=2&a=1'),
+    'canonicalization must preserve query ordering semantics',
+  );
+  assert.doesNotThrow(() => verifier.assertNoRestrictedAssetUrls(
+    [{
+      path: 'data/distinct-url.json',
+      text: 'https://example.invalid/a%2Fb?q=%7E',
+    }],
+    new Set([verifier.hashAssetUrl('https://example.invalid/a/b?q=~')]),
+  ), 'text normalization must not decode path/query octets inside an already-visible URL');
+  assert.doesNotThrow(() => verifier.assertNoRestrictedAssetUrls(
+    [{
+      path: 'data/distinct-backslash-url.json',
+      text: String.raw`https:\\example.invalid\a%2Fb?q=%7E`,
+    }],
+    new Set([verifier.hashAssetUrl('https://example.invalid/a/b?q=~')]),
+  ), 'backslash-equivalent URLs must retain distinct path and query octets');
+  assert.doesNotThrow(() => verifier.assertNoRestrictedAssetUrls(
+    [{
+      path: 'scripts/url-template.mjs',
+      text: String.raw`const assetUrl = ` + '`https://${host}/asset.jpg`;' + String.raw` const urlPattern = /https:\/\/[^\s]+/;`,
+    }],
+    new Set([restrictedHash]),
+  ), 'non-URL source templates must not abort the tracked-text scan');
   assert.doesNotThrow(() => verifier.assertNoRestrictedAssetUrls(
     [{ path: 'art-history-map.html', text: 'https://example.org/public-source-page' }],
     new Set([restrictedHash]),
@@ -307,16 +391,511 @@ test('private leak guards reject tracked bundles, local paths, and restricted UR
     ),
     /tests\/fixtures\/leak\.json.*restricted asset URL hash/,
   );
+  for (const encodedUrl of [
+    String.raw`https:\/\/example.invalid\/restricted-study-image.jpg`,
+    'https%3A%2F%2Fexample.invalid%2Frestricted-study-image.jpg',
+    'https%253A%252F%252Fexample.invalid%252Frestricted-study-image.jpg',
+    'https&colon;&sol;&sol;example.invalid&sol;restricted-study-image.jpg',
+    'HTTPS://example.invalid/restricted-study-image.jpg',
+    'https://EXAMPLE.INVALID/restricted-study-image.jpg',
+    'https://example.invalid:443/restricted-study-image.jpg',
+    'https://example.invalid/restricted-study-image.jpg#preview',
+    'HTTPS://EXAMPLE.INVALID:443/restricted-study-image.jpg#preview',
+    String.raw`HTTPS:\/\/EXAMPLE.INVALID:443\/restricted-study-image.jpg#preview`,
+    'HTTPS%3A%2F%2FEXAMPLE.INVALID%3A443%2Frestricted-study-image.jpg%23preview',
+    'HTTPS%253A%252F%252FEXAMPLE.INVALID%253A443%252Frestricted-study-image.jpg%2523preview',
+    'HTTPS&colon;&sol;&sol;EXAMPLE.INVALID&colon;443&sol;restricted-study-image.jpg&#35;preview',
+    String.raw`https:\\example.invalid\restricted-study-image.jpg`,
+    String.raw`https:/\example.invalid/restricted-study-image.jpg`,
+    String.raw`HTTPS:\\EXAMPLE.INVALID:443\restricted-study-image.jpg#preview`,
+    String.raw`HTTPS:\\\\EXAMPLE.INVALID:443\\restricted-study-image.jpg#preview`,
+    'HTTPS%3A%5C%5CEXAMPLE.INVALID%3A443%5Crestricted-study-image.jpg%23preview',
+    'https%3A%2F%5Cexample.invalid%2Frestricted-study-image.jpg',
+    'HTTPS%253A%255C%255CEXAMPLE.INVALID%253A443%255Crestricted-study-image.jpg%2523preview',
+    'HTTPS&colon;&bsol;&bsol;EXAMPLE.INVALID&colon;443&bsol;restricted-study-image.jpg&#35;preview',
+  ]) {
+    assert.throws(
+      () => verifier.assertNoRestrictedAssetUrls(
+        [{
+          path: 'scripts/encoded-leak.mjs',
+          text: `https://example.org/public-source ${encodedUrl}`,
+        }],
+        new Set([restrictedHash]),
+      ),
+      /scripts\/encoded-leak\.mjs.*restricted asset URL hash/,
+    );
+  }
+
+  assert.ok(
+    verifier.RESTRICTED_ASSET_URL_HASHES.has(
+      '3ddd0a813d02389521bd5b64a97068b3455a8800f556a8a846a7940a89953c5a',
+    ),
+    'U5 audited restricted direct URL digest must remain guarded',
+  );
+  assert.equal(verifier.RESTRICTED_ASSET_URL_HASHES.size, 8);
 });
 
-test('release verifier runs the private leak guard before browser verification', async () => {
-  const source = await readFile(RELEASE_VERIFIER_URL, 'utf8');
-  const leakStage = source.indexOf("'private-media leak guard'");
-  const browserStage = source.indexOf("'rendered browser matrix'");
+test('tracked release text fails closed on NUL bytes and enforces a per-file size limit', async () => {
+  const verifier = await import(PRIVATE_LEAK_VERIFIER_URL.href);
+  for (const path of [
+    'index.html',
+    'art-history-map.html',
+    'data/leak.json',
+    'scripts/leak.mjs',
+  ]) {
+    const content = Buffer.concat([
+      Buffer.from('safe-prefix\0'),
+      Buffer.from('%2FUsers%2Fstudent%2Fprivate.jpg'),
+    ]);
+    assert.throws(
+      () => verifier.decodeTrackedTextContent(path, content),
+      new RegExp(`${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*NUL`),
+    );
+  }
 
-  assert.ok(leakStage >= 0, 'release verifier must include the private-media leak guard');
-  assert.ok(browserStage > leakStage, 'private-media leak guard must run before browser verification');
-  assert.match(source, /scripts\/verify-art-history-private-leaks\.mjs/);
+  assert.equal(
+    verifier.decodeTrackedTextContent('assets/reference.png', Buffer.from([0, 1, 2])),
+    null,
+    'known binary extensions are classified before text decoding',
+  );
+  assert.throws(
+    () => verifier.decodeTrackedTextContent(
+      'scripts/oversized.mjs',
+      Buffer.alloc(verifier.MAX_TRACKED_TEXT_BYTES + 1, 0x61),
+    ),
+    /scripts\/oversized\.mjs.*exceeds.*text scan limit/,
+  );
+});
+
+test('production release filtering includes world-map.html in every local-path mutation', async () => {
+  const verifier = await import(PRIVATE_LEAK_VERIFIER_URL.href);
+  const forbiddenCases = [
+    [['', 'Users', 'student', 'private.jpg'].join('/'), /world-map\.html.*\/Users\//],
+    [['', 'home', 'student', 'private.jpg'].join('/'), /world-map\.html.*\/home\//],
+    [['file', ':///tmp/private.jpg'].join(''), /world-map\.html.*file:\/\//],
+    [['D', ':\\private\\map.jpg'].join(''), /world-map\.html.*Windows drive path/],
+  ];
+
+  for (const [text, expected] of forbiddenCases) {
+    const releaseEntries = verifier.selectTrackedReleaseTextEntries([
+      { path: 'world-map.html', text },
+      { path: 'README.md', text: 'not a release file' },
+    ]);
+    assert.deepEqual(releaseEntries.map(({ path }) => path), ['world-map.html']);
+    assert.throws(
+      () => verifier.assertNoAbsolutePrivatePaths(releaseEntries),
+      expected,
+    );
+  }
+});
+
+test('runtime private-key resources bound stalled work and detach CDP before closing page, context, and browser', async () => {
+  const verifier = await import(PRIVATE_LEAK_VERIFIER_URL.href);
+  const events = [];
+  const startedAt = Date.now();
+
+  await assert.rejects(
+    Promise.race([
+      verifier.runBoundedRuntimeSession(async (session) => {
+        const browser = await session.acquire('browser', async () => ({
+          close: async () => {
+            events.push('browser.close');
+            return new Promise(() => {});
+          },
+        }));
+        const context = await session.acquire('context', async () => ({
+          browser,
+          close: async () => events.push('context.close'),
+        }));
+        const page = await session.acquire('page', async () => ({
+          context,
+          close: async () => {
+            events.push('page.close');
+            return new Promise(() => {});
+          },
+        }));
+        await session.acquire(
+          'CDP session',
+          async () => ({
+            page,
+            detach: async () => {
+              events.push('cdp.detach');
+              return new Promise(() => {});
+            },
+          }),
+          (cdp) => cdp.detach(),
+        );
+        return session.run('inspection', async () => new Promise(() => {}));
+      }, {
+        label: 'test runtime',
+        timeoutMs: 20,
+        cleanupTimeoutMs: 25,
+      }),
+      new Promise((_, reject) => setTimeout(
+        () => reject(new Error('test guard expired before runtime cleanup timeout')),
+        250,
+      )),
+    ]),
+    /test runtime timed out after 20 ms during inspection/,
+  );
+  assert.deepEqual(events, ['cdp.detach', 'page.close', 'context.close', 'browser.close']);
+  assert.ok(Date.now() - startedAt < 250, 'runtime resource cleanup must stay bounded');
+});
+
+test('U5 restricted authority matches runtime and verifier allowlists and requires null public URLs', async () => {
+  const verifier = await import(PRIVATE_LEAK_VERIFIER_URL.href);
+  const browserVerifier = await import(VERIFIER_URL.href);
+  const [authority, canonical, runtimeSource] = await Promise.all([
+    readFile(U5_PLACEHOLDER_AUTHORITY, 'utf8').then(JSON.parse),
+    readFile(U5_CANONICAL_FIXTURE, 'utf8').then(JSON.parse),
+    readFile(ART_MAP_URL, 'utf8'),
+  ]);
+  await verifier.withRuntimePrivateKeyBrowser(async (browser, session) => {
+    const runtimeKeys = await verifier.readRuntimePrivateMediaKeysInBrowser({
+      browser,
+      session,
+      html: runtimeSource,
+      label: 'canonical runtime',
+    });
+    const contract = {
+      authority,
+      canonical,
+      runtimeKeys,
+      verifierKeys: browserVerifier.U5_PRIVATE_MEDIA_KEYS,
+    };
+    assert.doesNotThrow(() => verifier.assertU5RestrictedMediaContract(contract));
+
+    const spoofingHtml = (realKeys, spoofKeys, { frozen = true } = {}) => [
+      '<!doctype html><meta charset="utf-8"><script>',
+      `const U5_PRIVATE_MEDIA_KEYS = ${frozen ? 'Object.freeze(' : ''}${JSON.stringify(realKeys)}${frozen ? ')' : ''};`,
+      `window.eval = () => ${JSON.stringify(spoofKeys)};`,
+      `Array.from = () => ${JSON.stringify(spoofKeys)};`,
+      'Array.isArray = () => true;',
+      'Object.isFrozen = () => true;',
+      `JSON.stringify = () => '${JSON.stringify(spoofKeys).replaceAll("'", "\\'")}';`,
+      "const globalThis = { eval: () => ['shadow-spoof'] };",
+      '</script>',
+    ].join('\n');
+    const wrongRealKeys = ['actual-runtime-key-is-wrong'];
+    const spoofedExpectedKeys = await verifier.readRuntimePrivateMediaKeysInBrowser({
+      browser,
+      session,
+      html: spoofingHtml(wrongRealKeys, runtimeKeys),
+      label: 'window eval spoof cannot hide wrong runtime keys',
+    });
+    assert.deepEqual(spoofedExpectedKeys, wrongRealKeys);
+    assert.throws(
+      () => verifier.assertU5RestrictedMediaContract({
+        ...contract,
+        runtimeKeys: spoofedExpectedKeys,
+      }),
+      /runtime U5 private media keys/,
+    );
+
+    const pageBuiltinSpoofs = await verifier.readRuntimePrivateMediaKeysInBrowser({
+      browser,
+      session,
+      html: spoofingHtml(runtimeKeys, ['spoofed-page-builtin-key']),
+      label: 'page builtins cannot spoof CDP serialization',
+    });
+    assert.deepEqual(pageBuiltinSpoofs, runtimeKeys);
+
+    await assert.rejects(
+      verifier.readRuntimePrivateMediaKeysInBrowser({
+        browser,
+        session,
+        html: spoofingHtml(runtimeKeys, runtimeKeys, { frozen: false }),
+        label: 'unfrozen runtime keys cannot spoof primordial checker',
+      }),
+      /runtime U5 private media keys must be frozen/,
+    );
+
+    const alternatingBindingHtml = [
+      '<!doctype html><meta charset="utf-8"><script>',
+      'let runtimeBindingReads = 0;',
+      "Object.defineProperty(this, 'U5_PRIVATE_MEDIA_KEYS', {",
+      '  configurable: false,',
+      '  get() {',
+      '    runtimeBindingReads += 1;',
+      `    return Object.freeze(runtimeBindingReads === 1 ? ${JSON.stringify(wrongRealKeys)} : ${JSON.stringify(runtimeKeys)});`,
+      '  },',
+      '});',
+      '</script>',
+    ].join('\n');
+    const alternatingBindingKeys = await verifier.readRuntimePrivateMediaKeysInBrowser({
+      browser,
+      session,
+      html: alternatingBindingHtml,
+      label: 'alternating runtime binding getter',
+    });
+    assert.deepEqual(alternatingBindingKeys, wrongRealKeys);
+    assert.throws(
+      () => verifier.assertU5RestrictedMediaContract({
+        ...contract,
+        runtimeKeys: alternatingBindingKeys,
+      }),
+      /runtime U5 private media keys/,
+    );
+
+    const rejectedRuntimeShapes = [
+      {
+        label: 'accessor-backed runtime array',
+        expression: "(() => { const keys = []; Object.defineProperty(keys, '0', { enumerable: true, get: () => 'accessor-key' }); return Object.freeze(keys); })()",
+      },
+      {
+        label: 'sparse runtime array',
+        expression: "Object.freeze(['first-key', , 'third-key'])",
+      },
+      {
+        label: 'proxied runtime array',
+        expression: "Object.freeze(new Proxy(['proxy-key'], {}))",
+      },
+      {
+        label: 'runtime array with an unexpected own property',
+        expression: "(() => { const keys = ['key']; keys.extra = 'unexpected'; return Object.freeze(keys); })()",
+      },
+      {
+        label: 'runtime array with a non-string key',
+        expression: "Object.freeze(['key', 2])",
+      },
+    ];
+    for (const { label, expression } of rejectedRuntimeShapes) {
+      await assert.rejects(
+        verifier.readRuntimePrivateMediaKeysInBrowser({
+          browser,
+          session,
+          html: `<!doctype html><meta charset="utf-8"><script>const U5_PRIVATE_MEDIA_KEYS = ${expression};</script>`,
+          label,
+        }),
+        /runtime U5 private media/,
+      );
+    }
+
+    const wrongAuthority = structuredClone(authority);
+    delete wrongAuthority['ap153-chavin-huantar::relief-sculpture'];
+    assert.throws(
+      () => verifier.assertU5RestrictedMediaContract({ ...contract, authority: wrongAuthority }),
+      /U5 placeholder authority keys/,
+    );
+
+    const leakedCanonical = structuredClone(canonical);
+    leakedCanonical.artworks
+      .find(({ apNumber }) => apNumber === 153)
+      .images
+      .find(({ id }) => id === 'relief-sculpture')
+      .imageUrl = 'https://example.invalid/restricted-public-image.jpg';
+    assert.throws(
+      () => verifier.assertU5RestrictedMediaContract({ ...contract, canonical: leakedCanonical }),
+      /ap153-chavin-huantar::relief-sculpture.*null public imageUrl/,
+    );
+
+    assert.throws(
+      () => verifier.assertU5RestrictedMediaContract({
+        ...contract,
+        runtimeKeys: runtimeKeys.slice(1),
+      }),
+      /runtime U5 private media keys/,
+    );
+
+    assert.throws(
+      () => verifier.assertU5RestrictedMediaContract({
+        ...contract,
+        verifierKeys: browserVerifier.U5_PRIVATE_MEDIA_KEYS.slice(0, -1),
+      }),
+      /browser verifier U5 private media keys/,
+    );
+
+    const fakeDeclaration = "const U5_PRIVATE_MEDIA_KEYS = Object.freeze(['decoy']);";
+    const runtimeScript = '  <script>\n    const ARTWORKS';
+    const injectScript = (script) => {
+      const mutation = runtimeSource.replace(runtimeScript, `${script}\n${runtimeScript}`);
+      assert.notEqual(mutation, runtimeSource, 'browser runtime mutation fixture');
+      return mutation;
+    };
+    for (const [label, html] of [
+      [
+        'src inline body is ignored',
+        injectScript(`<script src="data:text/javascript,void%200">${fakeDeclaration}</script>`),
+      ],
+      [
+        'classic HTML comment is a same-line JavaScript comment',
+        injectScript(`<script><!-- ${fakeDeclaration}\n</script>`),
+      ],
+      [
+        'template text and nested templates do not create an active duplicate',
+        injectScript([
+          '<script>',
+          `const templateTextDecoy = \`${fakeDeclaration}\`;`,
+          'const nestedTemplateTextDecoy = `outer ${`inner text`} tail`;',
+          '</script>',
+        ].join('\n')),
+      ],
+      [
+        'template interpolation keeps string and comment decoys inert',
+        injectScript([
+          '<script>',
+          'const interpolationTextDecoys = `value ${(() => {',
+          `  const stringDecoy = "${fakeDeclaration}";`,
+          `  // ${fakeDeclaration}`,
+          `  /* ${fakeDeclaration} */`,
+          '  return { stringDecoy };',
+          '})()}`;',
+          '</script>',
+        ].join('\n')),
+      ],
+      [
+        'template interpolation may declare a scoped local key without replacing the runtime key',
+        injectScript([
+          '<script>',
+          'const interpolationDecoy = `value ${(() => {',
+          "  const U5_PRIVATE_MEDIA_KEYS = Object.freeze(['scoped-decoy']);",
+          "  return U5_PRIVATE_MEDIA_KEYS.join('');",
+          '})()}`;',
+          'const nestedInterpolationDecoy = `outer ${`inner ${(() => {',
+          "  const U5_PRIVATE_MEDIA_KEYS = Object.freeze(['nested-scoped-decoy']);",
+          "  return U5_PRIVATE_MEDIA_KEYS.join('');",
+          '})()}`}`;',
+          '</script>',
+        ].join('\n')),
+      ],
+    ]) {
+      assert.deepEqual(
+        await verifier.readRuntimePrivateMediaKeysInBrowser({
+          browser,
+          session,
+          html,
+          label,
+        }),
+        runtimeKeys,
+      );
+    }
+
+    for (const [label, html] of [
+      [
+        'HTML-entity JavaScript type executes',
+        injectScript(`<script type="text&#x2f;javascript">${fakeDeclaration}</script>`),
+      ],
+      [
+        'regex literals before an active duplicate remain executable',
+        injectScript(
+          `<script>${String.raw`const scheme = /https?:\/\//; const brace = /}/;`} ${fakeDeclaration}</script>`,
+        ),
+      ],
+      [
+        'nested template boundaries do not hide a following active duplicate',
+        injectScript(
+          `<script>const boundary = \`outer \${\`inner\`} tail\`; ${fakeDeclaration}</script>`,
+        ),
+      ],
+    ]) {
+      await assert.rejects(
+        verifier.readRuntimePrivateMediaKeysInBrowser({
+          browser,
+          session,
+          html,
+          label,
+        }),
+        /(?:runtime U5 private media|pageerror:.*Identifier 'U5_PRIVATE_MEDIA_KEYS')/i,
+      );
+    }
+  });
+});
+
+test('release verifier keeps exact immutable Unit 5 stage descriptors', async () => {
+  const verifier = await import(RELEASE_VERIFIER_URL.href);
+  const expectedStages = [
+    'Node test suite',
+    'strict 166-work Units 1-5 validator',
+    'private-media leak guard',
+    'rendered browser matrix',
+  ];
+  const productionLabels = verifier.RELEASE_STEPS.map(({ label }) => label);
+  const expectedTestArgs = readdirSync(join(PROJECT_ROOT, 'tests'))
+    .filter((name) => name.endsWith('.test.mjs'))
+    .sort()
+    .map((name) => join('tests', name));
+  const expectedDescriptors = [
+    { label: expectedStages[0], args: ['--test', ...expectedTestArgs] },
+    {
+      label: expectedStages[1],
+      args: ['scripts/validate-art-history-data.mjs', 'art-history-map.html'],
+    },
+    { label: expectedStages[2], args: ['scripts/verify-art-history-private-leaks.mjs'] },
+    { label: expectedStages[3], args: ['scripts/verify-art-history-browser.mjs'] },
+  ].map(({ label, args }) => ({
+    label,
+    command: process.execPath,
+    args,
+    cwd: PROJECT_ROOT,
+    timeoutMs: 12 * 60 * 1000,
+    forceKillMs: 5_000,
+    stdio: 'inherit',
+  }));
+
+  assert.deepEqual(productionLabels, expectedStages);
+  assert.deepEqual(verifier.RELEASE_STEPS, expectedDescriptors);
+  for (const stage of verifier.RELEASE_STEPS) {
+    assert.deepEqual(Object.keys(stage), [
+      'label',
+      'command',
+      'args',
+      'cwd',
+      'timeoutMs',
+      'forceKillMs',
+      'stdio',
+    ]);
+    assert.equal(Object.isFrozen(stage), true);
+    assert.equal(Object.isFrozen(stage.args), true);
+  }
+  assert.doesNotThrow(() => verifier.assertExactReleaseStages(verifier.RELEASE_STEPS));
+
+  const clone = () => verifier.RELEASE_STEPS.map((stage) => ({
+    ...stage,
+    args: [...stage.args],
+  }));
+  const commandReplacement = clone();
+  commandReplacement[0].command = 'node-from-untrusted-path';
+  const deletedArgument = clone();
+  deletedArgument[1].args.pop();
+  const reorderedArguments = clone();
+  [reorderedArguments[0].args[0], reorderedArguments[0].args[1]] = [
+    reorderedArguments[0].args[1],
+    reorderedArguments[0].args[0],
+  ];
+  const extraArgument = clone();
+  extraArgument[2].args.push('--skip-scan');
+  const changedCwd = clone();
+  changedCwd[3].cwd = '/tmp';
+  const changedTimeout = clone();
+  changedTimeout[3].timeoutMs -= 1;
+  const changedForceKill = clone();
+  changedForceKill[3].forceKillMs -= 1;
+  const changedStdio = clone();
+  changedStdio[3].stdio = 'ignore';
+  const changedLabel = clone();
+  changedLabel[2].label = 'optional leak guard';
+  const extraField = clone();
+  extraField[1].skipValidation = true;
+  const duplicateStage = clone();
+  duplicateStage.splice(1, 0, { ...duplicateStage[0], args: [...duplicateStage[0].args] });
+  for (const mutation of [
+    commandReplacement,
+    deletedArgument,
+    reorderedArguments,
+    extraArgument,
+    changedCwd,
+    changedTimeout,
+    changedForceKill,
+    changedStdio,
+    changedLabel,
+    extraField,
+    duplicateStage,
+  ]) {
+    assert.throws(
+      () => verifier.assertExactReleaseStages(mutation),
+      /release stage descriptors/,
+    );
+  }
 });
 
 test('U3 assembled fault modes use an explicit allowlist', async () => {
@@ -387,6 +966,111 @@ test('duplicate-request fault observes an attempted exact reload before coalesce
     /beginExactReload[\s\S]*new Image\(\)[\s\S]*completeExactReload/,
   );
   assert.doesNotMatch(traversal, /imageRequests\.set/);
+});
+
+test('request windows exclude prior reset traffic while retaining current-work requests', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const requests = new Map([
+    ['https://example.invalid/previous-work.jpg', 1],
+  ]);
+
+  // A request from the preceding selection can arrive while filters are being
+  // reset. It belongs before the new work's stable activation boundary.
+  requests.set('https://example.invalid/previous-work.jpg', 2);
+  requests.set('https://example.invalid/reset-render.jpg', 1);
+  const boundary = verifier.snapshotRequestCounts(requests);
+
+  // Requests emitted after that boundary belong to the current work.
+  requests.set('https://example.invalid/current-work.jpg', 1);
+  requests.set('https://example.invalid/current-detail.jpg', 1);
+
+  assert.deepEqual(
+    verifier.requestCountsSince(requests, boundary),
+    new Map([
+      ['https://example.invalid/current-work.jpg', 1],
+      ['https://example.invalid/current-detail.jpg', 1],
+    ]),
+  );
+
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  const u4Traversal = source.slice(
+    source.indexOf('async function verifyU4Works'),
+    source.indexOf('async function verifyU4PrivateFallbacks'),
+  );
+  assert.match(
+    u4Traversal,
+    /resetAndActivateWork\([\s\S]*snapshotRequestCounts\(remoteImageRequests\)[\s\S]*requestCountsSince\(\s*remoteImageRequests/,
+  );
+  assert.doesNotMatch(
+    u4Traversal,
+    /remoteImageRequests\.clear\(\)|privateImageRequests\.clear\(\)/,
+  );
+});
+
+test('U5 private request aggregation excludes comparison races and counts the current work once', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const ap163Path = '.private-media/u5/ap163-bandolier-bag-primary.jpg';
+  const lifetimeRequests = new Map([[ap163Path, 1]]); // AP 162 comparison target.
+  const boundary = verifier.snapshotRequestCounts(lifetimeRequests);
+
+  lifetimeRequests.set(ap163Path, 2); // AP 163's own activation.
+  const aggregate = new Map();
+  verifier.mergeRequestCounts(
+    aggregate,
+    verifier.requestCountsSince(lifetimeRequests, boundary),
+  );
+  lifetimeRequests.set(ap163Path, 3); // Later reset/comparison traffic.
+
+  assert.deepEqual(aggregate, new Map([[ap163Path, 1]]));
+
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  const u5Traversal = source.slice(
+    source.indexOf('async function verifyU5Works'),
+    source.indexOf('async function verifyU5Page'),
+  );
+  assert.match(u5Traversal, /privateRequestBoundary\s*=\s*snapshotRequestCounts/);
+  assert.match(u5Traversal, /requestCountsSince\(\s*privateImageRequests/);
+  assert.match(u5Traversal, /mergeRequestCounts\(\s*observedPrivateImageRequests/);
+  assert.doesNotMatch(
+    u5Traversal,
+    /privateImageRequests\.get\(path\)[\s\S]*private request count/,
+  );
+});
+
+test('public request guard rejects every private-media path, not only expected U5 JPEGs', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  for (const request of [
+    'http://127.0.0.1:4173/.private-media/u5/overrides.js',
+    'http://127.0.0.1:4173/.private-media/u5/unexpected-name.webp',
+    'http://127.0.0.1:4173/.private-media/u5/ap164-transformation-mask-open.png',
+    'http://127.0.0.1:4173/.private-media/u4/ap140-two-fridas-primary.jpg',
+  ]) {
+    assert.throws(
+      () => verifier.assertNoU5RestrictedPublicRequests([request], 'public leak mutation'),
+      /public leak mutation.*private-media/,
+    );
+  }
+  assert.doesNotThrow(() => verifier.assertNoU5RestrictedPublicRequests(
+    ['https://commons.wikimedia.org/example.jpg'],
+    'public safe request',
+  ));
+});
+
+test('U5 overflow history retains a transient failure after layout later recovers', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const recoveredHistory = [
+    { checkpoint: 'AP 164 closed view', horizontalOverflow: 0 },
+    { checkpoint: 'AP 164 open view', horizontalOverflow: 18 },
+    { checkpoint: 'AP 164 after comparison', horizontalOverflow: 0 },
+  ];
+  assert.throws(
+    () => verifier.assertU5HorizontalOverflowHistory(recoveredHistory, '390px U5'),
+    /390px U5.*AP 164 open view.*18px/,
+  );
+  assert.doesNotThrow(() => verifier.assertU5HorizontalOverflowHistory(
+    recoveredHistory.map((entry) => ({ ...entry, horizontalOverflow: 0 })),
+    '390px U5 clear',
+  ));
 });
 
 for (const [faultMode, expectedFailure] of [
@@ -542,6 +1226,177 @@ test('U4 fixture validation freezes all levels and rejects every reviewed mutati
     () => verifier.assertDialogFocusRestored(false, 'U4 focus mutation'),
     /U4 focus mutation/,
   );
+});
+
+test('U5 browser fixture is the exact 14-work, 27-view canonical projection', async () => {
+  const [browserFixture, canonical] = await Promise.all([
+    readFile(U5_BROWSER_FIXTURE, 'utf8').then(JSON.parse),
+    readFile(U5_CANONICAL_FIXTURE, 'utf8').then(JSON.parse),
+  ]);
+
+  assert.deepEqual(browserFixture, projectU5BrowserFixture(canonical));
+  assert.deepEqual(
+    browserFixture.map(({ apNumber }) => apNumber),
+    Array.from({ length: 14 }, (_, index) => index + 153),
+  );
+  assert.equal(
+    browserFixture.reduce((total, work) => total + work.viewIds.length, 0),
+    27,
+  );
+});
+
+test('U5 fixture validation freezes canonical hierarchy and rejects work, view, and key mutations', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const fixture = JSON.parse(await readFile(U5_BROWSER_FIXTURE, 'utf8'));
+  const frozen = verifier.validateAndFreezeU5Works(structuredClone(fixture));
+
+  assert.equal(frozen.length, 14);
+  assert.equal(frozen.reduce((total, work) => total + work.viewIds.length, 0), 27);
+  assert.ok(Object.isFrozen(frozen));
+  assert.ok(frozen.every(Object.isFrozen));
+  assert.ok(frozen.every((work) => Object.isFrozen(work.viewIds)));
+
+  const missingWork = structuredClone(fixture);
+  missingWork.pop();
+  assert.throws(
+    () => verifier.validateAndFreezeU5Works(missingWork),
+    /14 U5 works|AP 166/,
+  );
+
+  const missingView = structuredClone(fixture);
+  missingView[0].viewIds.pop();
+  assert.throws(
+    () => verifier.validateAndFreezeU5Works(missingView),
+    /27 U5 views|AP 153|canonical projection/,
+  );
+
+  const duplicateKeySource = await readFile(U5_BROWSER_FIXTURE, 'utf8');
+  const duplicateKey = duplicateKeySource.replace(
+    '"id": "ap153-chavin-huantar",',
+    '"id": "ap153-chavin-huantar",\n    "id": "duplicate",',
+  );
+  assert.throws(
+    () => verifier.parseVerifierJson(duplicateKey, 'U5 mutation fixture'),
+    /duplicate object key "id".*\$\[0\]/,
+  );
+});
+
+test('U5 verifier guards region traversal, restricted requests, private bundle isolation, issues, overflow, and focus', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  const fixture = JSON.parse(await readFile(U5_BROWSER_FIXTURE, 'utf8'));
+  const exactRegions = [
+    'Mesoamerica · 3 pieces',
+    'Central Andes · 5 pieces',
+    'Ancestral Pueblo · 2 pieces',
+    'Eastern Woodlands · 2 pieces',
+    'Northwest Coast · 1 piece',
+    'Plains & Great Basin · 1 piece',
+  ];
+  assert.throws(
+    () => verifier.assertU5RegionTraversalCoverage(exactRegions.slice(0, -1), 'invalid region branch'),
+    /invalid region branch.*Plains & Great Basin/,
+  );
+
+  const publicRequests = fixture.flatMap((work) => work.viewIds.map((viewId) => (
+    `.private-media/u5/${work.id}-${viewId}.jpg`
+  )));
+  assert.throws(
+    () => verifier.assertNoU5RestrictedPublicRequests(publicRequests, 'public restricted request'),
+    /public restricted request.*private-media.*ap153-chavin-huantar-plan/,
+  );
+
+  const overrides = verifier.createU5PrivateOverrides();
+  assert.deepEqual(Object.keys(overrides), verifier.U5_PRIVATE_MEDIA_KEYS);
+  assert.doesNotThrow(() => verifier.validateU5PrivateOverrides(overrides));
+  const crossUnit = structuredClone(overrides);
+  crossUnit[verifier.U5_PRIVATE_MEDIA_KEYS[0]].filePath =
+    '.private-media/u4/ap140-two-fridas-primary.jpg';
+  assert.throws(
+    () => verifier.validateU5PrivateOverrides(crossUnit),
+    /cross-unit|U5 private path/,
+  );
+
+  assert.throws(
+    () => verifier.assertNoCollectedIssues(['console error: U5 mutation'], 'console mutation'),
+    /console mutation.*console error/,
+  );
+  assert.throws(
+    () => verifier.assertNoHorizontalOverflow(1, 'overflow mutation'),
+    /overflow mutation.*horizontal overflow/,
+  );
+  assert.throws(
+    () => verifier.assertDialogFocusRestored(false, 'lost focus mutation'),
+    /lost focus mutation/,
+  );
+  assert.doesNotThrow(() => verifier.assertU5HierarchySelection(
+    'Central Andes · 1 piece',
+    'Chavín de Huántar, Ancash, Peru · AP 153 · 1 piece',
+    fixture[0],
+  ));
+  assert.throws(
+    () => verifier.assertU5HierarchySelection(
+      'Central Andes · 1 piece',
+      'Wrong site · AP 153 · 1 piece',
+      fixture[0],
+    ),
+    /AP 153 site branch/,
+  );
+
+  const makeLeaf = (viewport, mode, privateMode) => ({
+    viewport,
+    mode,
+    privateMode,
+    regions: exactRegions,
+    horizontalOverflow: 0,
+    works: fixture.map((work) => ({
+      apNumber: work.apNumber,
+      mode,
+      privateMode,
+      views: work.viewIds.length,
+      tabs: 4,
+      comparisonFollowed: true,
+      overflowCheckpoints: work.viewIds.length + 8,
+    })),
+    restrictedPrivateViews: privateMode ? 11 : 0,
+    restrictedPublicRequests: 0,
+  });
+  const matrix = verifier.U5_MATRIX_VIEWPORTS.map((viewport) => ({
+    viewport,
+    public: {
+      standalone: makeLeaf(viewport, 'standalone', false),
+      embedded: makeLeaf(viewport, 'embedded', false),
+    },
+    private: {
+      standalone: makeLeaf(viewport, 'standalone', true),
+      embedded: makeLeaf(viewport, 'embedded', true),
+    },
+  }));
+  assert.doesNotThrow(() => verifier.assertU5RenderedMatrixCoverage(matrix));
+  const missingRenderedWork = structuredClone(matrix);
+  missingRenderedWork[0].public.standalone.works.pop();
+  assert.throws(
+    () => verifier.assertU5RenderedMatrixCoverage(missingRenderedWork),
+    /desktop public standalone.*14 works/,
+  );
+});
+
+test('browser verifier traverses all U5 public and private views in standalone and embedded desktop/touch modes', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+
+  assert.match(source, /u5-browser\.json/);
+  assert.match(source, /const U5_WORKS = validateAndFreezeU5Works/);
+  assert.match(source, /async function verifyU5Works\(/);
+  assert.match(source, /for \(const work of U5_RENDER_WORKS\)/);
+  assert.match(source, /async function verifyU5Standalone\(/);
+  assert.match(source, /async function verifyU5Embedded\(/);
+  assert.match(source, /U5_MATRIX_VIEWPORTS/);
+  assert.match(source, /\.private-media\/u5\/overrides\.js/);
+  assert.match(source, /installU4PrivateRoutes/);
+  assert.match(source, /Overview|速览/);
+  assert.match(source, /\{ id: 'form', label: '形式' \}/);
+  assert.match(source, /\{ id: 'context', label: '语境' \}/);
+  assert.match(source, /\{ id: 'compare', label: '比较' \}/);
+  assert.match(source, /kind:\s*'u5-fourteen-works'/);
 });
 
 test('U3 browser fixture loader validates the exact schema and freezes every level', async () => {
@@ -908,7 +1763,7 @@ test('browser verifier locks the four-Unit hierarchy and exact U1/U3 region cont
   assert.match(source, /Colonial Americas · 5 pieces/);
 });
 
-test('initial hierarchy asserts the exact ordered four markers and 152-work result count', async () => {
+test('initial hierarchy asserts the exact ordered five markers and 166-work result count', async () => {
   const source = await readFile(VERIFIER_URL, 'utf8');
   const hierarchy = source.slice(
     source.indexOf('async function assertInitialHierarchy'),
@@ -918,9 +1773,9 @@ test('initial hierarchy asserts the exact ordered four markers and 152-work resu
   assert.match(hierarchy, /assert\.deepEqual\(\s*initial,\s*\[/s);
   assert.match(
     hierarchy,
-    /'U1 · Global Prehistory · 11 pieces',[\s\S]*'U2 · Ancient Mediterranean · 36 pieces',[\s\S]*'U3 · Early Europe and Colonial Americas · 51 pieces',[\s\S]*'U4 · Later Europe and Americas · 54 pieces'/,
+    /'U1 · Global Prehistory · 11 pieces',[\s\S]*'U2 · Ancient Mediterranean · 36 pieces',[\s\S]*'U3 · Early Europe and Colonial Americas · 51 pieces',[\s\S]*'U4 · Later Europe and Americas · 54 pieces',[\s\S]*'U5 · Indigenous Americas · 14 pieces'/,
   );
-  assert.match(hierarchy, /当前显示 152 件作品/);
+  assert.match(hierarchy, /当前显示 166 件作品/);
 });
 
 test('U3 responsive traversal rejects an omitted region branch and loops all eight branches', async () => {
@@ -1106,6 +1961,10 @@ test('browser verifier loads and traverses every frozen U3 work in standalone an
 
 test('browser verifier traverses all U4 public and private views in standalone and embedded modes', async () => {
   const source = await readFile(VERIFIER_URL, 'utf8');
+  const u4Traversal = source.slice(
+    source.indexOf('async function verifyU4Standalone'),
+    source.indexOf('async function verifyU4PrivateNegativePaths'),
+  );
 
   assert.match(source, /u4-browser\.json/);
   assert.match(source, /const U4_WORKS = validateAndFreezeU4Works/);
@@ -1117,6 +1976,11 @@ test('browser verifier traverses all U4 public and private views in standalone a
   assert.match(source, /\.private-media\/u4\/overrides\.js/);
   assert.match(source, /Private image not installed/);
   assert.match(source, /kind:\s*'u4-fifty-four-works'/);
+  assert.equal(
+    u4Traversal.match(/installU5PrivateRoutes/g)?.length || 0,
+    2,
+    'U4 private standalone and embedded pages must also serve the isolated U5 bundle',
+  );
 });
 
 test('U3 traversal covers all study tabs and AP 89 comparison navigation to AP 46', async () => {
@@ -1136,13 +2000,14 @@ test('U3 traversal covers all study tabs and AP 89 comparison navigation to AP 4
 
 test('Unit changes apply the fitted SVG transform before scheduling one render frame', async () => {
   const artMap = await readFile(ART_MAP_URL, 'utf8');
-  const handler = artMap.slice(
-    artMap.indexOf("document.getElementById('unitFilter').addEventListener"),
-    artMap.indexOf("document.getElementById('periodFilter').addEventListener"),
+  const selectUnitStart = artMap.indexOf('function selectUnit(unit)');
+  const unitSelection = artMap.slice(
+    selectUnitStart,
+    artMap.indexOf('populateUnitOptions()', selectUnitStart),
   );
-  const fitIndex = handler.indexOf('fitMapToWorks(getWorksForUnit())');
-  const applyIndex = handler.indexOf('applyTransform()');
-  const scheduleIndex = handler.indexOf('scheduleMarkerLayout()');
+  const fitIndex = unitSelection.indexOf('fitMapToWorks(getWorksForUnit(unit))');
+  const applyIndex = unitSelection.indexOf('applyTransform()');
+  const scheduleIndex = unitSelection.indexOf('scheduleMarkerLayout()');
 
   assert.ok(fitIndex >= 0, 'Unit change should fit the selected Unit');
   assert.ok(applyIndex > fitIndex, 'Unit change should apply the fitted transform');
@@ -1150,7 +2015,11 @@ test('Unit changes apply the fitted SVG transform before scheduling one render f
     scheduleIndex > applyIndex,
     'Unit change should schedule rendering after the transform reaches the next frame',
   );
-  assert.equal(handler.match(/\brender\(\)/g)?.length || 0, 0, 'Unit change should not render early');
+  assert.equal(
+    unitSelection.match(/\brender\(\)/g)?.length || 0,
+    0,
+    'Unit change should not render early',
+  );
 });
 
 test('mobile standalone filter labels and selects may shrink around the complete U3 Unit option', async () => {
@@ -1255,25 +2124,23 @@ test('U1 standalone and embedded traversals exercise all study tabs and cross-Un
   );
 });
 
-test('integration copy and release labels target the complete 152-work Units 1-4 map', async () => {
-  const [homepage, artMap, releaseSource] = await Promise.all([
+test('integration copy targets the complete 166-work Units 1-5 map', async () => {
+  const [homepage, artMap] = await Promise.all([
     readFile(HOMEPAGE_URL, 'utf8'),
     readFile(ART_MAP_URL, 'utf8'),
-    readFile(RELEASE_VERIFIER_URL, 'utf8'),
   ]);
 
-  assert.match(homepage, /152 AP works · Units 1-4 · filter, compare and study/);
-  assert.match(artMap, /AP 艺术史互动地图 · Units 1-4/);
+  assert.match(homepage, /166 AP works · Units 1-5 · filter, compare and study/);
+  assert.match(artMap, /AP 艺术史互动地图 · Units 1-5/);
   assert.match(
     artMap,
-    /aria-label="完整世界地图；展示 AP 艺术史 Units 1-4 全部 152 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
+    /aria-label="完整世界地图；展示 AP 艺术史 Units 1-5 全部 166 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
   );
   assert.match(
     artMap,
-    /aria-label="AP 艺术史 Units 1-4 完整世界地图，标记全部 152 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
+    /aria-label="AP 艺术史 Units 1-5 完整世界地图，标记全部 166 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
   );
   assert.match(artMap, /count\.textContent = `当前显示 \$\{visibleWorks\.length\} 件作品`/);
-  assert.match(releaseSource, /strict 152-work Units 1-4 validator/);
 });
 
 test('copy integration preserves World History text and iframe dimensions', async () => {

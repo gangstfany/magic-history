@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
+const WORLD_MAP_PATH = new URL('../world-map.html', import.meta.url);
 const SOURCE_LEDGER_PATH = new URL(
   '../docs/art-history-sources.md',
   import.meta.url,
@@ -21,6 +23,10 @@ const UNAFFECTED_FIXTURE_PATH = new URL(
 );
 const CORRECTED_FIXTURE_PATH = new URL(
   './fixtures/u2-corrected-and-imported.json',
+  import.meta.url,
+);
+const U3_CANONICAL_PATH = new URL(
+  './fixtures/u3-canonical.json',
   import.meta.url,
 );
 const U4_MANIFEST_PATH = new URL(
@@ -43,6 +49,41 @@ const U4_LEDGER_PATH = new URL(
   '../docs/data-sources/u4-source-ledger.md',
   import.meta.url,
 );
+const U5_MANIFEST_PATH = new URL(
+  '../data/ap-art-history-unit-5-manifest.json',
+  import.meta.url,
+);
+const U5_CANONICAL_PATH = new URL(
+  './fixtures/u5-canonical.json',
+  import.meta.url,
+);
+
+const WORLD_MAP_SHA256 = '3ba8c8e3d18daa756b3ed8d9cddc1f7583fe9e74bb42a582feb65c5ed121d949';
+
+const U2_MISSING_SITE_QUALIFIER_IDS = new Set([
+  'ap17-great-pyramids-giza',
+  'ap18-king-menkaura-and-queen',
+  'ap20-temple-of-amun-re-karnak',
+  'ap21-mortuary-temple-hatshepsut',
+  'ap23-tutankhamun-innermost-coffin',
+  'ap26-athenian-agora',
+  'ap28-peplos-kore',
+  'ap35-athenian-acropolis',
+  'ap36-grave-stele-hegeso',
+  'ap38-great-altar-pergamon',
+  'ap39-house-of-the-vettii',
+  'ap40-alexander-mosaic',
+  'ap44-colosseum',
+  'ap45-forum-of-trajan',
+  'ap46-pantheon',
+  'ap47-ludovisi-battle-sarcophagus',
+]);
+
+const LIVE_CREDIT_ORDER_EXCEPTION = [
+  'ap41-seated-boxer',
+  'ap39-house-of-the-vettii',
+  'ap40-alexander-mosaic',
+];
 
 const UNAFFECTED_IDS = [
   'ap13-palette-of-king-narmer',
@@ -193,11 +234,61 @@ async function loadFixture(path) {
   return JSON.parse(await readFile(path, 'utf8'));
 }
 
-function canonicalizeArtwork(artwork) {
-  return {
-    ...artwork,
-    siteQualifier: artwork.siteQualifier ?? null,
-  };
+function projectRawFixtureArtwork(artwork) {
+  const projected = structuredClone(artwork);
+  if (U2_MISSING_SITE_QUALIFIER_IDS.has(projected.id)) {
+    assert.equal(
+      projected.siteQualifier,
+      null,
+      `${projected.id}: normalized fixture must represent a missing raw siteQualifier`,
+    );
+    delete projected.siteQualifier;
+  }
+  return projected;
+}
+
+function assertOrderedDeepEqual(actual, expected, path = '$') {
+  if (Array.isArray(actual) || Array.isArray(expected)) {
+    assert.ok(Array.isArray(actual), `${path} must remain an array`);
+    assert.ok(Array.isArray(expected), `${path} canonical value must be an array`);
+    assert.equal(actual.length, expected.length, `${path} array length`);
+    actual.forEach((item, index) => {
+      assertOrderedDeepEqual(item, expected[index], `${path}[${index}]`);
+    });
+    return;
+  }
+
+  const actualIsObject = actual !== null && typeof actual === 'object';
+  const expectedIsObject = expected !== null && typeof expected === 'object';
+  if (actualIsObject || expectedIsObject) {
+    assert.ok(actualIsObject, `${path} must remain an object`);
+    assert.ok(expectedIsObject, `${path} canonical value must be an object`);
+    const actualKeys = Object.keys(actual);
+    const expectedKeys = Object.keys(expected);
+    assert.deepEqual(actualKeys, expectedKeys, `${path} object key order`);
+    expectedKeys.forEach((key) => {
+      assertOrderedDeepEqual(actual[key], expected[key], `${path}.${key}`);
+    });
+    return;
+  }
+
+  assert.deepEqual(actual, expected, `${path} value`);
+}
+
+function assertRawArtworkRecords(actual, expected, message) {
+  assertOrderedDeepEqual(actual, expected, message);
+}
+
+function assertRawCreditRecords(actual, expected, message) {
+  assertOrderedDeepEqual(actual, expected, message);
+}
+
+function projectLiveCreditIdOrder(artworkIds) {
+  const projected = [...artworkIds];
+  const exceptionStart = projected.indexOf('ap39-house-of-the-vettii');
+  assert.notEqual(exceptionStart, -1, 'live credit order exception anchor');
+  projected.splice(exceptionStart, 3, ...LIVE_CREDIT_ORDER_EXCEPTION);
+  return projected;
 }
 
 async function assertFixtureMatches(path, expectedIds) {
@@ -209,7 +300,7 @@ async function assertFixtureMatches(path, expectedIds) {
   const actualArtworks = expectedIds.map((id) => {
     const artwork = actualById.get(id);
     assert.ok(artwork, `missing fixture artwork ${id}`);
-    return canonicalizeArtwork(artwork);
+    return artwork;
   });
   const actualCredits = Object.fromEntries(
     expectedIds.map((id) => [id, credits[id]]),
@@ -227,8 +318,16 @@ async function assertFixtureMatches(path, expectedIds) {
       `${artwork.id} fixture must contain every canonical artwork field`,
     );
   }
-  assert.deepEqual(fixture.artworks, actualArtworks);
-  assert.deepEqual(fixture.credits, actualCredits);
+  assertRawArtworkRecords(
+    actualArtworks,
+    fixture.artworks.map(projectRawFixtureArtwork),
+    'live artwork fields must match raw fixture projection',
+  );
+  assertRawCreditRecords(
+    actualCredits,
+    fixture.credits,
+    'live credits must match canonical fixture',
+  );
   assert.deepEqual(
     Object.keys(fixture.credits),
     expectedIds,
@@ -280,19 +379,20 @@ test('U1 and U2 stay field-for-field frozen after U3 import', async () => {
     ...unaffectedFixture.artworks,
     ...correctedFixture.artworks,
   ].sort((first, second) => first.apNumber - second.apNumber);
-  const expectedIds = frozenFixtures.map(({ id }) => id);
+  const rawFrozenFixtures = frozenFixtures.map(projectRawFixtureArtwork);
+  const expectedIds = rawFrozenFixtures.map(({ id }) => id);
   const liveFrozenArtworks = artworks.filter(({ unit }) => unit <= 2);
-  const canonicalLiveFrozenArtworks = liveFrozenArtworks.map((artwork) => (
-    artwork.unit === 2 ? canonicalizeArtwork(artwork) : artwork
-  ));
   const liveFrozenCredits = Object.fromEntries(
     expectedIds.map((id) => [id, credits[id]]),
   );
-  const expectedCredits = {
+  const fixtureCredits = {
     ...u1Fixture.credits,
     ...unaffectedFixture.credits,
     ...correctedFixture.credits,
   };
+  const expectedCredits = Object.fromEntries(
+    expectedIds.map((id) => [id, fixtureCredits[id]]),
+  );
 
   assert.deepEqual(
     liveFrozenArtworks.map(({ apNumber }) => apNumber),
@@ -304,12 +404,12 @@ test('U1 and U2 stay field-for-field frozen after U3 import', async () => {
     expectedIds,
     'U1/U2 must have no missing, extra, or reordered ids',
   );
-  assert.deepEqual(
-    canonicalLiveFrozenArtworks,
-    frozenFixtures,
+  assertRawArtworkRecords(
+    liveFrozenArtworks,
+    rawFrozenFixtures,
     'all U1/U2 artwork fields and media arrays must match their canonical fixtures',
   );
-  assert.deepEqual(
+  assertRawCreditRecords(
     liveFrozenCredits,
     expectedCredits,
     'all U1/U2 image credits must match their canonical fixtures',
@@ -326,7 +426,7 @@ test('all U3 comparisons resolve and retain the required cross-unit targets', as
   const ids = new Set(artworks.map(({ id }) => id));
   const u3 = artworks.filter(({ unit }) => unit === 3);
 
-  assert.equal(artworks.length, 152);
+  assert.equal(artworks.length, 166);
   assert.equal(u3.length, 51);
   for (const work of u3) {
     assert.ok(
@@ -518,12 +618,160 @@ test('U4 audited source bundle exactly matches the imported live Unit 4 projecti
 
   const liveU4Artworks = artworks.filter(({ unit }) => unit === 4);
   const liveU4Credits = Object.fromEntries(expectedWorkIds.map((id) => [id, credits[id]]));
-  assert.equal(artworks.length, 152);
+  assert.equal(artworks.length, 166);
   assert.deepEqual(liveU4Artworks, fixture.artworks);
-  assert.deepEqual(liveU4Credits, fixture.credits);
+  assertRawCreditRecords(
+    liveU4Credits,
+    fixture.credits,
+    'all live U4 credit fields and key order match the canonical fixture',
+  );
   assert.deepEqual(fixture.artworks.map(({ id }) => id), expectedWorkIds);
   assert.deepEqual(Object.keys(fixture.credits), expectedWorkIds);
   assert.deepEqual(Object.keys(rights), expectedMediaKeys);
   assert.deepEqual(Object.keys(placeholders), U4_RESTRICTED_MEDIA_KEYS);
   assert.deepEqual(ledgerKeys, expectedMediaKeys);
+});
+
+test('live U1–U4 stay frozen while U5 exactly matches its canonical fixture', async () => {
+  const [
+    { artworks, credits },
+    u1Fixture,
+    unaffectedU2Fixture,
+    correctedU2Fixture,
+    u3Fixture,
+    u4Fixture,
+    u5Manifest,
+    u5Fixture,
+  ] = await Promise.all([
+    loadActualData(),
+    loadFixture(U1_CANONICAL_PATH),
+    loadFixture(UNAFFECTED_FIXTURE_PATH),
+    loadFixture(CORRECTED_FIXTURE_PATH),
+    loadFixture(U3_CANONICAL_PATH),
+    loadFixture(U4_CANONICAL_PATH),
+    loadFixture(U5_MANIFEST_PATH),
+    loadFixture(U5_CANONICAL_PATH),
+  ]);
+  const u2Artworks = [
+    ...unaffectedU2Fixture.artworks,
+    ...correctedU2Fixture.artworks,
+  ]
+    .sort((first, second) => first.apNumber - second.apNumber)
+    .map(projectRawFixtureArtwork);
+  const expectedArtworks = [
+    ...u1Fixture.artworks,
+    ...u2Artworks,
+    ...u3Fixture.artworks,
+    ...u4Fixture.artworks,
+  ];
+  const expectedIds = expectedArtworks.map(({ id }) => id);
+  const expectedCreditIds = projectLiveCreditIdOrder(expectedIds);
+  const fixtureCredits = {
+    ...u1Fixture.credits,
+    ...unaffectedU2Fixture.credits,
+    ...correctedU2Fixture.credits,
+    ...u3Fixture.credits,
+    ...u4Fixture.credits,
+  };
+  const expectedCredits = Object.fromEntries(
+    expectedCreditIds.map((id) => [id, fixtureCredits[id]]),
+  );
+  const u5Ids = Object.values(u5Manifest).map(({ id }) => id);
+  const legacyArtworks = artworks.slice(0, 152);
+  const liveU5Artworks = artworks.slice(152);
+  const liveCreditIds = Object.keys(credits);
+  const legacyCreditIds = liveCreditIds.slice(0, expectedCreditIds.length);
+  const liveU5CreditIds = liveCreditIds.slice(expectedCreditIds.length);
+  const legacyCredits = Object.fromEntries(legacyCreditIds.map((id) => [id, credits[id]]));
+  const liveU5Credits = Object.fromEntries(liveU5CreditIds.map((id) => [id, credits[id]]));
+
+  assert.equal(artworks.length, 166, 'live data includes AP 1–166');
+  assert.deepEqual(
+    artworks.map(({ apNumber }) => apNumber),
+    Array.from({ length: 166 }, (_, index) => index + 1),
+    'live AP sequence remains exactly 1–166',
+  );
+  assert.deepEqual(
+    legacyArtworks.map(({ id }) => id),
+    expectedIds,
+    'live artwork ids remain the exact U1–U4 canonical sequence',
+  );
+  assertRawArtworkRecords(
+    legacyArtworks,
+    expectedArtworks,
+    'all live U1–U4 artwork fields and media arrays match canonical fixtures',
+  );
+  assert.deepEqual(
+    legacyCreditIds,
+    expectedCreditIds,
+    'live U1–U4 credit keys retain their exact raw order',
+  );
+  assertRawCreditRecords(
+    legacyCredits,
+    expectedCredits,
+    'all live U1–U4 credit fields match canonical fixtures',
+  );
+  assert.deepEqual(
+    Object.keys(u5Manifest),
+    Array.from({ length: 14 }, (_, index) => String(index + 153)),
+    'manifest boundary remains exactly AP 153–166',
+  );
+  assertRawArtworkRecords(
+    liveU5Artworks,
+    u5Fixture.artworks,
+    'all live U5 artwork fields and media arrays match the canonical fixture',
+  );
+  assert.deepEqual(liveU5CreditIds, u5Ids, 'live U5 credit keys retain canonical order');
+  assertRawCreditRecords(
+    liveU5Credits,
+    u5Fixture.credits,
+    'all live U5 credit fields match the canonical fixture',
+  );
+});
+
+test('world-map.html remains byte-for-byte at the pre-U5 baseline', async () => {
+  const worldMap = await readFile(WORLD_MAP_PATH);
+  assert.equal(createHash('sha256').update(worldMap).digest('hex'), WORLD_MAP_SHA256);
+});
+
+test('raw preservation rejects an explicit null added to AP17 siteQualifier', async () => {
+  const { artworks } = await loadActualData();
+  const ap17 = artworks.find(({ id }) => id === 'ap17-great-pyramids-giza');
+  assert.ok(ap17);
+  assert.equal(Object.hasOwn(ap17, 'siteQualifier'), false);
+
+  const explicitNullMutation = { ...ap17, siteQualifier: null };
+  assert.throws(
+    () => assertRawArtworkRecords([explicitNullMutation], [ap17], 'raw AP17 record'),
+    /raw AP17 record/,
+  );
+});
+
+test('raw credit preservation rejects reordered fields in a single credit object', async () => {
+  const { credits } = await loadActualData();
+  const id = 'ap1-apollo-11-stones';
+  const expected = { [id]: credits[id] };
+  const reorderedCredit = Object.fromEntries(Object.entries(credits[id]).reverse());
+
+  assert.throws(
+    () => assertRawCreditRecords({ [id]: reorderedCredit }, expected, 'single credit'),
+    /single credit/,
+  );
+});
+
+test('raw credit preservation rejects reordered fields in a credit array element', async () => {
+  const { credits } = await loadActualData();
+  const id = 'ap8-stonehenge';
+  const expected = { [id]: credits[id] };
+  const reorderedFirstCredit = Object.fromEntries(
+    Object.entries(credits[id][0]).reverse(),
+  );
+  const mutated = {
+    [id]: [reorderedFirstCredit, ...credits[id].slice(1)],
+  };
+
+  assert.throws(
+    () => assertRawCreditRecords(mutated, expected, 'credit array'),
+    /credit array/,
+  );
 });

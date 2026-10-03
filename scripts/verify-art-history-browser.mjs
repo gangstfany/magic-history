@@ -597,7 +597,37 @@ export const U4_PRIVATE_MEDIA_KEYS = Object.freeze([
   'ap152-house-new-castle-county::exterior',
   'ap152-house-new-castle-county::interior',
 ]);
-const U4_PRIVATE_SCRIPT_PATH = '.private-media/u4/overrides.js';
+export const U5_PRIVATE_MEDIA_KEYS = Object.freeze([
+  'ap153-chavin-huantar::relief-sculpture',
+  'ap155-yaxchilan::structure-40',
+  'ap156-great-serpent-mound::earthwork',
+  'ap157-templo-mayor::reconstruction',
+  'ap158-ruler-feather-headdress::primary',
+  'ap160-maize-cobs::primary',
+  'ap163-bandolier-bag::primary',
+  'ap164-transformation-mask::closed',
+  'ap164-transformation-mask::open',
+  'ap165-painted-elk-hide::primary',
+  'ap166-black-on-black-vessel::primary',
+]);
+export const PRIVATE_MEDIA_BUNDLES = Object.freeze([
+  Object.freeze({
+    unit:4,
+    globalName:'AP_ART_HISTORY_PRIVATE_MEDIA_U4',
+    scriptPath:'.private-media/u4/overrides.js',
+    pathPattern:/^\.private-media\/u4\/[a-z0-9-]+\.(?:jpe?g|png|webp)$/,
+    keys:U4_PRIVATE_MEDIA_KEYS,
+  }),
+  Object.freeze({
+    unit:5,
+    globalName:'AP_ART_HISTORY_PRIVATE_MEDIA_U5',
+    scriptPath:'.private-media/u5/overrides.js',
+    pathPattern:/^\.private-media\/u5\/[a-z0-9-]+\.(?:jpe?g|png|webp)$/,
+    keys:U5_PRIVATE_MEDIA_KEYS,
+  }),
+]);
+const U4_PRIVATE_SCRIPT_PATH = PRIVATE_MEDIA_BUNDLES[0].scriptPath;
+const U5_PRIVATE_SCRIPT_PATH = PRIVATE_MEDIA_BUNDLES[1].scriptPath;
 export const U4_REGION_LABELS = Object.freeze([
   'Southern Europe · 4 pieces',
   'France · 20 pieces',
@@ -715,6 +745,251 @@ const U4_WORKS = validateAndFreezeU4Works(parseVerifierJson(
   await readFile(join(PROJECT_ROOT, 'tests', 'fixtures', 'u4-browser.json'), 'utf8'),
   'U4 browser fixture',
 ));
+
+const U5_BROWSER_WORK_KEYS = Object.freeze([
+  'id',
+  'apNumber',
+  'unit',
+  'region',
+  'siteName',
+  'traditionGroup',
+  'viewIds',
+]);
+export const U5_REGION_LABELS = Object.freeze([
+  'Mesoamerica · 3 pieces',
+  'Central Andes · 5 pieces',
+  'Ancestral Pueblo · 2 pieces',
+  'Eastern Woodlands · 2 pieces',
+  'Northwest Coast · 1 piece',
+  'Plains & Great Basin · 1 piece',
+]);
+const U5_REGION_NAMES = Object.freeze({
+  mesoamerica: 'Mesoamerica',
+  centralAndes: 'Central Andes',
+  ancestralPueblo: 'Ancestral Pueblo',
+  easternWoodlands: 'Eastern Woodlands',
+  northwestCoast: 'Northwest Coast',
+  plainsGreatBasin: 'Plains & Great Basin',
+});
+export const U5_MATRIX_VIEWPORTS = Object.freeze([
+  Object.freeze({ width: 1440, height: 900, name: 'desktop' }),
+  Object.freeze({ width: 390, height: 844, name: 'narrow-touch' }),
+]);
+
+const U5_CANONICAL = parseVerifierJson(
+  await readFile(join(PROJECT_ROOT, 'tests', 'fixtures', 'u5-canonical.json'), 'utf8'),
+  'U5 canonical fixture',
+);
+const U5_EXPECTED_BROWSER = Object.freeze(U5_CANONICAL.artworks.map((work) => Object.freeze({
+  id: work.id,
+  apNumber: work.apNumber,
+  unit: work.unit,
+  region: work.region,
+  siteName: work.siteName,
+  traditionGroup: work.traditionGroup,
+  viewIds: Object.freeze(work.images.map(({ id }) => id)),
+})));
+
+export function validateAndFreezeU5Works(works) {
+  assert.ok(Array.isArray(works), 'U5 browser fixture must be an array');
+  assert.equal(works.length, 14, 'U5 browser fixture must contain exactly 14 U5 works');
+  const workIds = [];
+  const viewKeys = [];
+  let viewCount = 0;
+  works.forEach((work, workIndex) => {
+    const apNumber = workIndex + 153;
+    assertExactKeys(work, U5_BROWSER_WORK_KEYS, `AP ${apNumber}`);
+    assert.equal(work.apNumber, apNumber, `AP ${apNumber} sequence`);
+    assert.equal(work.unit, 5, `AP ${apNumber} Unit`);
+    for (const key of ['id', 'region', 'siteName', 'traditionGroup']) {
+      assert.equal(typeof work[key], 'string', `AP ${apNumber} ${key} type`);
+      assert.ok(work[key].trim(), `AP ${apNumber} ${key} value`);
+    }
+    assert.ok(Array.isArray(work.viewIds) && work.viewIds.length > 0, `AP ${apNumber} viewIds`);
+    workIds.push(work.id);
+    for (const viewId of work.viewIds) {
+      assert.equal(typeof viewId, 'string', `AP ${apNumber} view id type`);
+      assert.ok(viewId.trim(), `AP ${apNumber} view id value`);
+      viewKeys.push(`${work.id}::${viewId}`);
+      viewCount += 1;
+    }
+    assertExactCanonicalValue(
+      work,
+      U5_EXPECTED_BROWSER[workIndex],
+      `U5 canonical projection.AP${apNumber}`,
+    );
+    Object.freeze(work.viewIds);
+    Object.freeze(work);
+  });
+  assert.equal(viewCount, 27, 'U5 browser fixture must contain exactly 27 U5 views');
+  assertUnique(workIds, 'U5 work id');
+  assertUnique(viewKeys, 'U5 view key');
+  return Object.freeze(works);
+}
+
+const U5_WORKS = validateAndFreezeU5Works(parseVerifierJson(
+  await readFile(join(PROJECT_ROOT, 'tests', 'fixtures', 'u5-browser.json'), 'utf8'),
+  'U5 browser fixture',
+));
+const U5_RENDER_WORKS = Object.freeze(U5_WORKS.map((fixtureWork, index) => {
+  const canonicalWork = U5_CANONICAL.artworks[index];
+  assert.equal(canonicalWork.id, fixtureWork.id, `U5 render AP ${fixtureWork.apNumber} id`);
+  return Object.freeze({
+    ...canonicalWork,
+    images: Object.freeze(canonicalWork.images.map((image) => Object.freeze({ ...image }))),
+    comparisonIds: Object.freeze([...canonicalWork.comparisonIds]),
+  });
+}));
+
+export function assertU5RegionTraversalCoverage(actualLabels, label) {
+  const length = Math.max(actualLabels.length, U5_REGION_LABELS.length);
+  for (let index = 0; index < length; index += 1) {
+    assert.equal(
+      actualLabels[index],
+      U5_REGION_LABELS[index],
+      `${label} expected ${U5_REGION_LABELS[index] || 'no extra branch'} at index ${index}`,
+    );
+  }
+}
+
+export function assertU5HierarchySelection(regionLabel, siteLabel, work) {
+  assert.equal(
+    regionLabel,
+    `${U5_REGION_NAMES[work.region]} · 1 piece`,
+    `AP ${work.apNumber} region branch`,
+  );
+  assert.equal(
+    siteLabel,
+    `${work.siteName} · AP ${work.apNumber} · 1 piece`,
+    `AP ${work.apNumber} site branch`,
+  );
+}
+
+export function assertNoHorizontalOverflow(horizontalOverflow, label) {
+  assert.equal(horizontalOverflow, 0, `${label} horizontal overflow`);
+}
+
+function u5PrivatePath(identity) {
+  return `.private-media/u5/${identity.replace('::', '-')}.jpg`;
+}
+
+export function createU5PrivateOverrides() {
+  return Object.fromEntries(U5_PRIVATE_MEDIA_KEYS.map((identity) => [identity, {
+    filePath: u5PrivatePath(identity),
+    creatorOrInstitution: 'Browser verifier private study copy',
+    rightsNote: 'Private browser-verification copy',
+    rightsUrl: 'https://example.org/private-study-rights',
+  }]));
+}
+
+export function validateU5PrivateOverrides(overrides) {
+  assert.ok(overrides && typeof overrides === 'object' && !Array.isArray(overrides), 'U5 private overrides object');
+  assert.deepEqual(Object.keys(overrides), U5_PRIVATE_MEDIA_KEYS, 'U5 private override exact keys');
+  for (const identity of U5_PRIVATE_MEDIA_KEYS) {
+    const override = overrides[identity];
+    assertExactKeys(
+      override,
+      ['filePath', 'creatorOrInstitution', 'rightsNote', 'rightsUrl'],
+      `U5 private override ${identity}`,
+    );
+    assert.match(
+      override.filePath,
+      /^\.private-media\/u5\/[a-z0-9-]+\.(?:jpe?g|png|webp)$/,
+      `U5 private path ${identity} rejects cross-unit paths`,
+    );
+    assert.match(override.rightsUrl, /^https:\/\//, `U5 private rights URL ${identity}`);
+  }
+  return overrides;
+}
+
+export function assertNoU5RestrictedPublicRequests(requests, label) {
+  for (const request of requests) {
+    const requestText = String(request);
+    let decodedRequest = requestText;
+    try {
+      decodedRequest = decodeURIComponent(requestText);
+    } catch {
+      // A malformed URL is still checked in its original form.
+    }
+    assert.equal(
+      requestText.includes('.private-media/') || decodedRequest.includes('.private-media/'),
+      false,
+      `${label} requested private-media asset ${requestText}`,
+    );
+  }
+}
+
+export function assertU5HorizontalOverflowHistory(history, label) {
+  assert.ok(Array.isArray(history) && history.length > 0, `${label} overflow checkpoints`);
+  for (const entry of history) {
+    assert.equal(
+      entry.horizontalOverflow,
+      0,
+      `${label} ${entry.checkpoint} horizontal overflow: ${entry.horizontalOverflow}px`,
+    );
+  }
+  return history;
+}
+
+async function recordU5HorizontalOverflow(frame, history, checkpoint) {
+  const horizontalOverflow = await frame.evaluate(() => (
+    document.documentElement.scrollWidth - document.documentElement.clientWidth
+  ));
+  history.push({ checkpoint, horizontalOverflow });
+  return horizontalOverflow;
+}
+
+export function assertU5RenderedMatrixCoverage(matrix) {
+  assert.equal(matrix.length, U5_MATRIX_VIEWPORTS.length, 'U5 rendered matrix viewport count');
+  matrix.forEach((entry, viewportIndex) => {
+    const expectedViewport = U5_MATRIX_VIEWPORTS[viewportIndex];
+    assert.deepEqual(entry.viewport, expectedViewport, `U5 matrix viewport ${viewportIndex}`);
+    for (const [access, privateMode] of [['public', false], ['private', true]]) {
+      for (const mode of ['standalone', 'embedded']) {
+        const label = `${expectedViewport.name} ${access} ${mode}`;
+        const leaf = entry[access]?.[mode];
+        assert.ok(leaf, `${label} matrix leaf`);
+        assert.deepEqual(leaf.viewport, expectedViewport, `${label} viewport`);
+        assert.equal(leaf.mode, mode, `${label} mode`);
+        assert.equal(leaf.privateMode, privateMode, `${label} private mode`);
+        assertU5RegionTraversalCoverage(leaf.regions, `${label} regions`);
+        assertNoHorizontalOverflow(leaf.horizontalOverflow, label);
+        assert.equal(leaf.works.length, 14, `${label} must traverse 14 works`);
+        assert.deepEqual(
+          leaf.works.map(({ apNumber }) => apNumber),
+          U5_WORKS.map(({ apNumber }) => apNumber),
+          `${label} AP sequence`,
+        );
+        assert.equal(
+          leaf.works.reduce((total, work) => total + work.views, 0),
+          27,
+          `${label} must traverse 27 views`,
+        );
+        for (const work of leaf.works) {
+          assert.equal(work.mode, mode, `${label} AP ${work.apNumber} mode`);
+          assert.equal(work.privateMode, privateMode, `${label} AP ${work.apNumber} private mode`);
+          assert.equal(work.tabs, 4, `${label} AP ${work.apNumber} study tabs`);
+          assert.ok(
+            work.overflowCheckpoints >= work.views + 8,
+            `${label} AP ${work.apNumber} overflow checkpoints`,
+          );
+          assert.equal(
+            work.comparisonFollowed,
+            true,
+            `${label} AP ${work.apNumber} comparison navigation`,
+          );
+        }
+        assert.equal(
+          leaf.restrictedPrivateViews,
+          privateMode ? U5_PRIVATE_MEDIA_KEYS.length : 0,
+          `${label} restricted private view count`,
+        );
+        assert.equal(leaf.restrictedPublicRequests, 0, `${label} restricted public requests`);
+      }
+    }
+  });
+  return matrix;
+}
 
 export function assertU4RegionTraversalCoverage(actualLabels, label) {
   assert.deepEqual(actualLabels, U4_REGION_LABELS, `${label} exact U4 region branches`);
@@ -956,6 +1231,39 @@ export function assertExactImageRequests(imageRequests, work, checkpoint) {
       `${checkpoint} AP ${work.apNumber} ${image.id} request count`,
     );
   }
+}
+
+export function snapshotRequestCounts(requests) {
+  assert.ok(requests instanceof Map, 'request accounting source must be a Map');
+  return new Map(requests);
+}
+
+export function requestCountsSince(requests, boundary) {
+  assert.ok(requests instanceof Map, 'request accounting source must be a Map');
+  assert.ok(boundary instanceof Map, 'request accounting boundary must be a Map');
+  const counts = new Map();
+  for (const [url, previousCount] of boundary) {
+    assert.ok(
+      (requests.get(url) || 0) >= previousCount,
+      `request accounting count for ${url} moved backwards`,
+    );
+  }
+  for (const [url, currentCount] of requests) {
+    const count = currentCount - (boundary.get(url) || 0);
+    assert.ok(count >= 0, `request accounting count for ${url} moved backwards`);
+    if (count > 0) counts.set(url, count);
+  }
+  return counts;
+}
+
+export function mergeRequestCounts(target, requests) {
+  assert.ok(target instanceof Map, 'request aggregate must be a Map');
+  assert.ok(requests instanceof Map, 'request window must be a Map');
+  for (const [url, count] of requests) {
+    assert.ok(Number.isInteger(count) && count > 0, `request count for ${url} must be positive`);
+    target.set(url, (target.get(url) || 0) + count);
+  }
+  return target;
 }
 
 export function createImageRequestObserver(imageRequests) {
@@ -1306,8 +1614,9 @@ async function assertInitialHierarchy(frame) {
     'U2 · Ancient Mediterranean · 36 pieces',
     'U3 · Early Europe and Colonial Americas · 51 pieces',
     'U4 · Later Europe and Americas · 54 pieces',
+    'U5 · Indigenous Americas · 14 pieces',
   ]);
-  assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 152 件作品');
+  assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 166 件作品');
 }
 
 async function assertHierarchyAndDialog(page, frame) {
@@ -1748,7 +2057,7 @@ async function verifyStandalone(
     await waitForArt(page);
     assert.equal(
       (await page.locator('.page-header h1').textContent()).trim(),
-      'AP 艺术史互动地图 · Units 1-4',
+      'AP 艺术史互动地图 · Units 1-5',
     );
     await assertInitialHierarchy(page);
     let metrics = await assertCommonLayout(page, 'standalone', viewport);
@@ -1813,7 +2122,7 @@ async function selectArtAndFrame(page, useKeyboard = false) {
   await caption.waitFor({ state: 'visible' });
   assert.equal(
     (await caption.textContent()).trim(),
-    '152 AP works · Units 1-4 · filter, compare and study',
+    '166 AP works · Units 1-5 · filter, compare and study',
   );
   const iframe = page.locator('#artMapFrame');
   await iframe.waitFor({ state: 'visible' });
@@ -1908,14 +2217,20 @@ async function fillSearchThroughUi(searchInput, value, label) {
   assert.equal(actualValue, value, label);
 }
 
-async function resetAndActivateWork(page, frame, work, beforeActivate = () => {}) {
+async function resetAndActivateWork(
+  page,
+  frame,
+  work,
+  beforeActivate = () => {},
+  beforeTargetFilter = () => {},
+) {
   const unitFilter = frame.locator('#unitFilter');
   const searchInput = frame.locator('#searchInput');
   const resultCount = frame.locator('.result-count');
   const unit = work.unit || (
     work.apNumber <= 11 ? 1 : work.apNumber <= 47 ? 2 : work.apNumber <= 98 ? 3 : 4
   );
-  const unitCount = new Map([[1, 11], [2, 36], [3, 51], [4, 54]]).get(unit);
+  const unitCount = new Map([[1, 11], [2, 36], [3, 51], [4, 54], [5, 14]]).get(unit);
   await fillSearchThroughUi(searchInput, '', `AP ${work.apNumber} reset search`);
   await unitFilter.selectOption('all');
   await waitForPostTransformRender(frame);
@@ -1923,13 +2238,13 @@ async function resetAndActivateWork(page, frame, work, beforeActivate = () => {}
   assert.equal(await searchInput.inputValue(), '', `AP ${work.apNumber} Unit reset retains search`);
   assert.equal(
     (await resultCount.textContent()).trim(),
-    '当前显示 152 件作品',
+    '当前显示 166 件作品',
     `AP ${work.apNumber} search reset result`,
   );
   await frame.locator('#resetView').click();
   assert.equal(
     (await resultCount.textContent()).trim(),
-    '当前显示 152 件作品',
+    '当前显示 166 件作品',
     `AP ${work.apNumber} hierarchy reset result`,
   );
 
@@ -1941,7 +2256,10 @@ async function resetAndActivateWork(page, frame, work, beforeActivate = () => {}
     `当前显示 ${unitCount} 件作品`,
     `AP ${work.apNumber} Unit result`,
   );
-  const exactSearch = unit === 4 ? `AP ${work.apNumber}` : work.titleEn;
+  await waitForPostTransformRender(frame);
+  await page.waitForTimeout(0);
+  await beforeTargetFilter();
+  const exactSearch = unit >= 4 ? `AP ${work.apNumber}` : work.titleEn;
   await fillSearchThroughUi(searchInput, exactSearch, `AP ${work.apNumber} exact search`);
   assert.equal(
     (await resultCount.textContent()).trim(),
@@ -1952,12 +2270,22 @@ async function resetAndActivateWork(page, frame, work, beforeActivate = () => {}
   const region = frame.locator('.site-marker[data-group-kind="region"]');
   await region.waitFor();
   assert.equal(await region.count(), 1, `AP ${work.apNumber} should expose one region`);
+  const regionLabel = await region.getAttribute('aria-label');
   await region.focus();
   await page.keyboard.press('Enter');
 
   const site = frame.locator('.site-marker[data-group-kind="site"]');
   await site.waitFor();
   assert.equal(await site.count(), 1, `AP ${work.apNumber} should expose one site`);
+  if (unit === 5) {
+    assertU5HierarchySelection(
+      regionLabel,
+      await site.getAttribute('aria-label'),
+      work,
+    );
+  }
+  await waitForPostTransformRender(frame);
+  await page.waitForTimeout(0);
   await beforeActivate();
   await site.focus();
   await page.keyboard.press('Space');
@@ -1996,7 +2324,7 @@ async function installU4PrivateRoutes(
       await route.fulfill({
         status: 200,
         contentType: 'text/javascript; charset=utf-8',
-        body: `window.AP_ART_HISTORY_PRIVATE_MEDIA = Object.freeze(${JSON.stringify(overrides)});`,
+        body: `window.AP_ART_HISTORY_PRIVATE_MEDIA_U4 = Object.freeze(${JSON.stringify(overrides)});`,
       });
       return;
     }
@@ -2040,9 +2368,18 @@ async function verifyU4Works(
   const results = [];
   const privateOverrides = createU4PrivateOverrides();
   for (const work of U4_WORKS) {
-    remoteImageRequests.clear();
-    privateImageRequests.clear();
-    await resetAndActivateWork(page, frame, work);
+    let remoteRequestBoundary;
+    let privateRequestBoundary;
+    await resetAndActivateWork(
+      page,
+      frame,
+      work,
+      () => {},
+      () => {
+        remoteRequestBoundary = snapshotRequestCounts(remoteImageRequests);
+        privateRequestBoundary = snapshotRequestCounts(privateImageRequests);
+      },
+    );
     const summary = frame.locator('.selected-summary');
     assert.equal(
       (await summary.locator('[data-selected-artwork-title]').textContent()).trim(),
@@ -2132,22 +2469,30 @@ async function verifyU4Works(
       );
     }
 
+    const currentRemoteImageRequests = requestCountsSince(
+      remoteImageRequests,
+      remoteRequestBoundary,
+    );
     const publicViews = work.images.filter(({ imageUrl }) => imageUrl !== null);
-    assert.equal(remoteImageRequests.size, publicViews.length, `${mode} AP ${work.apNumber} public request set`);
+    assert.equal(currentRemoteImageRequests.size, publicViews.length, `${mode} AP ${work.apNumber} public request set`);
     for (const image of publicViews) {
       assert.equal(
-        remoteImageRequests.get(image.imageUrl),
+        currentRemoteImageRequests.get(image.imageUrl),
         1,
         `${mode} AP ${work.apNumber} ${image.id} request count`,
       );
     }
+    const currentPrivateImageRequests = requestCountsSince(
+      privateImageRequests,
+      privateRequestBoundary,
+    );
     const privateViews = privateMode
       ? work.images.filter(({ mediaStatus }) => mediaStatus === 'rightsRestricted')
       : [];
-    assert.equal(privateImageRequests.size, privateViews.length, `${mode} AP ${work.apNumber} private request set`);
+    assert.equal(currentPrivateImageRequests.size, privateViews.length, `${mode} AP ${work.apNumber} private request set`);
     for (const image of privateViews) {
       const path = privatePathForU4(`${work.id}::${image.id}`);
-      assert.equal(privateImageRequests.get(path), 1, `${mode} AP ${work.apNumber} ${image.id} private request`);
+      assert.equal(currentPrivateImageRequests.get(path), 1, `${mode} AP ${work.apNumber} ${image.id} private request`);
     }
     results.push({
       apNumber: work.apNumber,
@@ -2909,10 +3254,14 @@ async function verifyU4Standalone(browser, baseUrl, privateMode = false) {
     const issues = installErrorCollection(page, label);
     const remoteImageRequests = new Map();
     const privateImageRequests = new Map();
+    const u5PrivateImageRequests = new Map();
     await mockRemoteImages(page, (url) => {
       remoteImageRequests.set(url, (remoteImageRequests.get(url) || 0) + 1);
     });
-    if (privateMode) await installU4PrivateRoutes(page, privateImageRequests);
+    if (privateMode) {
+      await installU4PrivateRoutes(page, privateImageRequests);
+      await installU5PrivateRoutes(page, u5PrivateImageRequests);
+    }
     await page.goto(
       `${baseUrl}/art-history-map.html${privateMode ? '?privateMedia=1' : ''}`,
       { waitUntil: 'load' },
@@ -2927,6 +3276,7 @@ async function verifyU4Standalone(browser, baseUrl, privateMode = false) {
       label,
       { privateMode },
     );
+    assert.equal(u5PrivateImageRequests.size, 0, `${label} U5 private image isolation`);
     assertNoCollectedIssues(issues, label);
     return { viewport, regions, works };
   });
@@ -2940,10 +3290,14 @@ async function verifyU4Embedded(browser, baseUrl, privateMode = false) {
     const issues = installErrorCollection(page, label);
     const remoteImageRequests = new Map();
     const privateImageRequests = new Map();
+    const u5PrivateImageRequests = new Map();
     await mockRemoteImages(page, (url) => {
       remoteImageRequests.set(url, (remoteImageRequests.get(url) || 0) + 1);
     });
-    if (privateMode) await installU4PrivateRoutes(page, privateImageRequests);
+    if (privateMode) {
+      await installU4PrivateRoutes(page, privateImageRequests);
+      await installU5PrivateRoutes(page, u5PrivateImageRequests);
+    }
     await page.goto(
       `${baseUrl}/index.html${privateMode ? '?privateMedia=1' : ''}`,
       { waitUntil: 'load' },
@@ -2962,6 +3316,7 @@ async function verifyU4Embedded(browser, baseUrl, privateMode = false) {
       label,
       { privateMode },
     );
+    assert.equal(u5PrivateImageRequests.size, 0, `${label} U5 private image isolation`);
     assertNoCollectedIssues(issues, label);
     return { viewport, regions, works };
   });
@@ -2996,6 +3351,492 @@ async function verifyU4PrivateNegativePaths(browser, baseUrl) {
     },
   );
   return { missingScript, missingImage, status: 'Private image not installed' };
+}
+
+async function installU5PrivateRoutes(
+  page,
+  privateImageRequests,
+  { includeScript = true, includeImages = true, missingIdentity = null } = {},
+) {
+  const overrides = validateU5PrivateOverrides(createU5PrivateOverrides());
+  await page.route('**/.private-media/u5/**', async (route) => {
+    const requestUrl = new URL(route.request().url());
+    if (requestUrl.pathname.endsWith(U5_PRIVATE_SCRIPT_PATH)) {
+      if (!includeScript) {
+        await route.fulfill({ status: 404, body: '' });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/javascript; charset=utf-8',
+        body: `window.AP_ART_HISTORY_PRIVATE_MEDIA_U5 = Object.freeze(${JSON.stringify(overrides)});`,
+      });
+      return;
+    }
+    const localPath = requestUrl.pathname.replace(/^\//, '');
+    privateImageRequests.set(localPath, (privateImageRequests.get(localPath) || 0) + 1);
+    if (!includeImages || (missingIdentity && localPath === u5PrivatePath(missingIdentity))) {
+      await route.fulfill({ status: 404, body: '' });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/svg+xml',
+      body: IMAGE_FIXTURE,
+    });
+  });
+  return overrides;
+}
+
+async function verifyU5RegionBranches(frame, mode) {
+  await frame.locator('#unitFilter').selectOption('5');
+  await waitForPostTransformRender(frame);
+  assert.equal(
+    (await frame.locator('.result-count').textContent()).trim(),
+    '当前显示 14 件作品',
+    `${mode} U5 result count`,
+  );
+  const regionLabels = await frame
+    .locator('.site-marker[data-group-kind="region"]')
+    .evaluateAll((markers) => markers.map((marker) => marker.getAttribute('aria-label')));
+  assertU5RegionTraversalCoverage(regionLabels, `${mode} U5 regions`);
+  return regionLabels;
+}
+
+async function verifyU5StudyTabsAndComparison(page, frame, work, mode, recordOverflow) {
+  const expectedTabs = [
+    { id: 'quick', label: '速览' },
+    { id: 'form', label: '形式' },
+    { id: 'context', label: '语境' },
+    { id: 'compare', label: '比较' },
+  ];
+  const tabs = frame.locator('.detail-tab');
+  assert.equal(await tabs.count(), expectedTabs.length, `${mode} AP ${work.apNumber} tab count`);
+  assert.deepEqual(
+    await tabs.allTextContents(),
+    expectedTabs.map(({ label }) => label),
+    `${mode} AP ${work.apNumber} tab labels`,
+  );
+  await recordOverflow(`${mode} AP ${work.apNumber} before tabs`);
+  for (const { id } of expectedTabs) {
+    const tab = frame.locator(`#detail-tab-${id}`);
+    await tab.click();
+    assert.equal(await tab.getAttribute('aria-selected'), 'true', `${mode} AP ${work.apNumber} ${id} tab`);
+    assert.equal(
+      await frame.locator('#detail-tabpanel').getAttribute('aria-labelledby'),
+      `detail-tab-${id}`,
+      `${mode} AP ${work.apNumber} ${id} panel owner`,
+    );
+    assert.ok(
+      (await frame.locator('#detail-tabpanel').textContent()).trim().length > 0,
+      `${mode} AP ${work.apNumber} ${id} panel content`,
+    );
+    await recordOverflow(`${mode} AP ${work.apNumber} after ${id} tab`);
+  }
+
+  const comparisonCard = frame.locator('.comparison-card').first();
+  assert.equal(await comparisonCard.count(), 1, `${mode} AP ${work.apNumber} comparison card`);
+  assert.equal(
+    await comparisonCard.getAttribute('data-comparison-id'),
+    work.comparisonIds[0],
+    `${mode} AP ${work.apNumber} comparison target`,
+  );
+  const targetMeta = (await comparisonCard.locator('span').first().textContent()).trim();
+  const targetApNumber = Number(targetMeta.match(/AP #(\d+)/)?.[1]);
+  assert.ok(Number.isInteger(targetApNumber), `${mode} AP ${work.apNumber} comparison AP number`);
+  await recordOverflow(`${mode} AP ${work.apNumber} before comparison`);
+  await comparisonCard.focus();
+  await comparisonCard.click();
+  const heading = frame.locator('[data-selected-artwork-title]');
+  await heading.waitFor();
+  assert.equal(
+    (await frame.locator('.work-meta').textContent()).trim().split(' · ')[0],
+    `AP #${targetApNumber}`,
+    `${mode} AP ${work.apNumber} comparison navigation`,
+  );
+  assert.equal(await frame.locator('#searchInput').inputValue(), '');
+  assert.equal(
+    await frame.evaluate(() => document.activeElement === document.querySelector('[data-selected-artwork-title]')),
+    true,
+    `${mode} AP ${work.apNumber} comparison target focus`,
+  );
+  await recordOverflow(`${mode} AP ${work.apNumber} after comparison`);
+  await resetAndActivateWork(page, frame, work);
+  await recordOverflow(`${mode} AP ${work.apNumber} restored after comparison`);
+  return true;
+}
+
+async function verifyU5Works(
+  page,
+  frame,
+  remoteImageRequests,
+  privateImageRequests,
+  allRequests,
+  mode,
+  {
+    privateMode = false,
+    overflowHistory = [],
+    resetRequestCache = async () => {},
+  } = {},
+) {
+  const results = [];
+  const observedPrivateImageRequests = new Map();
+  const privateOverrides = validateU5PrivateOverrides(createU5PrivateOverrides());
+  for (const work of U5_RENDER_WORKS) {
+    const overflowCheckpointStart = overflowHistory.length;
+    let remoteRequestBoundary;
+    let privateRequestBoundary;
+    await resetAndActivateWork(
+      page,
+      frame,
+      work,
+      () => {},
+      async () => {
+        await resetRequestCache();
+        remoteRequestBoundary = snapshotRequestCounts(remoteImageRequests);
+        privateRequestBoundary = snapshotRequestCounts(privateImageRequests);
+      },
+    );
+    const recordOverflow = (checkpoint) => recordU5HorizontalOverflow(
+      frame,
+      overflowHistory,
+      checkpoint,
+    );
+    const summary = frame.locator('.selected-summary');
+    assert.equal(
+      (await summary.locator('[data-selected-artwork-title]').textContent()).trim(),
+      work.titleEn,
+      `${mode} AP ${work.apNumber} English title`,
+    );
+    assert.equal(
+      (await summary.locator('.work-title-zh').textContent()).trim(),
+      work.titleZh,
+      `${mode} AP ${work.apNumber} Chinese subtitle`,
+    );
+    const viewButtons = summary.locator('.image-view-switcher button');
+    assert.equal(
+      await viewButtons.count(),
+      work.images.length > 1 ? work.images.length : 0,
+      `${mode} AP ${work.apNumber} view button count`,
+    );
+    if (work.images.length > 1) {
+      assert.deepEqual(
+        await viewButtons.allTextContents(),
+        work.images.map(({ label }) => label),
+        `${mode} AP ${work.apNumber} ordered view labels`,
+      );
+    }
+
+    for (let imageIndex = 0; imageIndex < work.images.length; imageIndex += 1) {
+      const expected = work.images[imageIndex];
+      const identity = `${work.id}::${expected.id}`;
+      const restricted = expected.mediaStatus === 'rightsRestricted';
+      if (work.images.length > 1 && imageIndex > 0) await viewButtons.nth(imageIndex).click();
+      if (work.images.length > 1) {
+        assert.deepEqual(
+          await viewButtons.evaluateAll((buttons) => (
+            buttons.map((button) => button.getAttribute('aria-pressed'))
+          )),
+          work.images.map((image, index) => String(index === imageIndex)),
+          `${mode} ${identity} pressed state`,
+        );
+      }
+
+      if (restricted && !privateMode) {
+        const placeholder = summary.locator('.rights-placeholder');
+        await placeholder.waitFor();
+        assert.match(
+          (await placeholder.textContent()).trim(),
+          /Image unavailable in the public version/,
+          `${mode} ${identity} public placeholder`,
+        );
+        assert.equal(
+          await placeholder.locator('.rights-placeholder-source').getAttribute('href'),
+          expected.imageSourceUrl,
+          `${mode} ${identity} official source`,
+        );
+        assert.equal(await summary.locator('.artwork-image-button').count(), 0);
+        assert.equal(await frame.locator('#imageDialog').getAttribute('open'), null);
+        await recordOverflow(`${mode} AP ${work.apNumber} ${expected.id} view`);
+        continue;
+      }
+
+      const expectedImageUrl = restricted
+        ? privateOverrides[identity].filePath
+        : expected.imageUrl;
+      const imageButton = summary.locator('.artwork-image-button');
+      const image = imageButton.locator('img');
+      await waitForVerifierImage(image, `${mode} ${identity} ${expectedImageUrl}`);
+      assert.equal(await image.getAttribute('src'), expectedImageUrl, `${mode} ${identity} image URL`);
+      assert.equal(await image.getAttribute('alt'), expected.imageAlt, `${mode} ${identity} image alt`);
+      const inlineLinks = summary.locator('.image-credit-host .image-credit a');
+      assert.equal(await inlineLinks.count(), 2, `${mode} ${identity} credit links`);
+      assert.equal(
+        await inlineLinks.nth(1).getAttribute('href'),
+        expected.imageSourceUrl,
+        `${mode} ${identity} source link`,
+      );
+      if (restricted) {
+        assert.equal(
+          await inlineLinks.nth(0).getAttribute('href'),
+          privateOverrides[identity].rightsUrl,
+          `${mode} ${identity} private rights link`,
+        );
+      }
+
+      await imageButton.focus();
+      await imageButton.click();
+      const dialog = frame.locator('#imageDialog');
+      await dialog.waitFor({ state: 'visible' });
+      const dialogImage = frame.locator('#dialogImage');
+      await waitForVerifierImage(dialogImage, `${mode} ${identity} dialog ${expectedImageUrl}`);
+      assert.equal(await dialogImage.getAttribute('src'), expectedImageUrl);
+      assert.equal(await dialogImage.getAttribute('alt'), expected.imageAlt);
+      assert.equal(await frame.locator('#dialogSource').getAttribute('href'), expected.imageSourceUrl);
+      await frame.locator('#dialogClose').click();
+      await dialog.waitFor({ state: 'hidden' });
+      assertDialogFocusRestored(
+        await frame.evaluate(() => document.activeElement?.classList.contains('artwork-image-button')),
+        `${mode} ${identity}`,
+      );
+      await recordOverflow(`${mode} AP ${work.apNumber} ${expected.id} view`);
+    }
+
+    const currentRemoteImageRequests = requestCountsSince(
+      remoteImageRequests,
+      remoteRequestBoundary,
+    );
+    const publicViews = work.images.filter(({ imageUrl }) => imageUrl !== null);
+    assert.equal(
+      currentRemoteImageRequests.size,
+      publicViews.length,
+      `${mode} AP ${work.apNumber} public image request set`,
+    );
+    for (const image of publicViews) {
+      assert.equal(
+        currentRemoteImageRequests.get(image.imageUrl),
+        1,
+        `${mode} AP ${work.apNumber} ${image.id} public request count`,
+      );
+    }
+    const privateViews = privateMode
+      ? work.images.filter(({ mediaStatus }) => mediaStatus === 'rightsRestricted')
+      : [];
+    const currentPrivateImageRequests = requestCountsSince(
+      privateImageRequests,
+      privateRequestBoundary,
+    );
+    assert.equal(
+      currentPrivateImageRequests.size,
+      privateViews.length,
+      `${mode} AP ${work.apNumber} private image request set`,
+    );
+    for (const image of privateViews) {
+      const path = u5PrivatePath(`${work.id}::${image.id}`);
+      assert.equal(
+        currentPrivateImageRequests.get(path),
+        1,
+        `${mode} AP ${work.apNumber} ${image.id} private request count`,
+      );
+    }
+    mergeRequestCounts(observedPrivateImageRequests, currentPrivateImageRequests);
+    const comparisonFollowed = await verifyU5StudyTabsAndComparison(
+      page,
+      frame,
+      work,
+      mode,
+      recordOverflow,
+    );
+    results.push({
+      apNumber: work.apNumber,
+      mode,
+      privateMode,
+      views: work.images.length,
+      tabs: 4,
+      comparisonFollowed,
+      overflowCheckpoints: overflowHistory.length - overflowCheckpointStart,
+    });
+  }
+  assert.equal(
+    observedPrivateImageRequests.size,
+    privateMode ? U5_PRIVATE_MEDIA_KEYS.length : 0,
+    `${mode} U5 exact private request set`,
+  );
+  if (privateMode) {
+    for (const identity of U5_PRIVATE_MEDIA_KEYS) {
+      const path = u5PrivatePath(identity);
+      assert.equal(
+        observedPrivateImageRequests.get(path),
+        1,
+        `${mode} ${identity} private request count`,
+      );
+    }
+  }
+  if (!privateMode) assertNoU5RestrictedPublicRequests(allRequests, `${mode} U5 public mode`);
+  return results;
+}
+
+async function verifyU5Page(browser, baseUrl, viewport, mode, privateMode = false) {
+  return withBrowserContext(browser, {
+    viewport: { width: viewport.width, height: viewport.height },
+    reducedMotion: 'reduce',
+    hasTouch: viewport.name === 'narrow-touch',
+  }, async (context) => {
+    const page = await context.newPage();
+    const cacheControlSession = await context.newCDPSession(page);
+    await cacheControlSession.send('Network.enable');
+    await cacheControlSession.send('Network.setCacheDisabled', { cacheDisabled: true });
+    const label = `U5 ${viewport.name} ${mode} ${privateMode ? 'private' : 'public'}`;
+    const issues = installErrorCollection(page, label);
+    const remoteImageRequests = new Map();
+    const privateImageRequests = new Map();
+    const u4PrivateImageRequests = new Map();
+    const allRequests = [];
+    const overflowHistory = [];
+    page.on('request', (request) => allRequests.push(request.url()));
+    await mockRemoteImages(page, (url) => {
+      remoteImageRequests.set(url, (remoteImageRequests.get(url) || 0) + 1);
+    });
+    if (privateMode) {
+      await installU4PrivateRoutes(page, u4PrivateImageRequests);
+      await installU5PrivateRoutes(page, privateImageRequests);
+    }
+
+    let frame = page;
+    if (mode === 'standalone') {
+      await page.goto(
+        `${baseUrl}/art-history-map.html${privateMode ? '?privateMedia=1' : ''}`,
+        { waitUntil: 'load' },
+      );
+      await waitForArt(page);
+    } else {
+      await page.goto(
+        `${baseUrl}/index.html${privateMode ? '?privateMedia=1' : ''}`,
+        { waitUntil: 'load' },
+      );
+      await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
+      await page.waitForFunction(() => (
+        document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
+      ));
+      ({ frame } = await selectArtAndFrame(page, true));
+    }
+
+    const regions = await verifyU5RegionBranches(frame, label);
+    const works = await verifyU5Works(
+      page,
+      frame,
+      remoteImageRequests,
+      privateImageRequests,
+      allRequests,
+      mode,
+      {
+        privateMode,
+        overflowHistory,
+        resetRequestCache: () => cacheControlSession.send('Network.clearBrowserCache'),
+      },
+    );
+    assertU5HorizontalOverflowHistory(overflowHistory, label);
+    const metrics = await geometry(frame);
+    assertNoHorizontalOverflow(metrics.horizontalOverflow, label);
+    assertNoCollectedIssues(issues, label);
+    assert.equal(
+      u4PrivateImageRequests.size,
+      0,
+      `${label} must not request U4 private images while traversing U5`,
+    );
+    return {
+      viewport,
+      mode,
+      privateMode,
+      regions,
+      horizontalOverflow: metrics.horizontalOverflow,
+      works,
+      restrictedPrivateViews: privateMode ? U5_PRIVATE_MEDIA_KEYS.length : 0,
+      restrictedPublicRequests: 0,
+    };
+  });
+}
+
+async function verifyU5Standalone(browser, baseUrl, viewport, privateMode = false) {
+  return verifyU5Page(browser, baseUrl, viewport, 'standalone', privateMode);
+}
+
+async function verifyU5Embedded(browser, baseUrl, viewport, privateMode = false) {
+  return verifyU5Page(browser, baseUrl, viewport, 'embedded', privateMode);
+}
+
+async function verifyU5PrivateNegativePaths(browser, baseUrl) {
+  const viewport = U5_MATRIX_VIEWPORTS[0];
+  const missingIdentity = 'ap164-transformation-mask::open';
+  assert.ok(U5_PRIVATE_MEDIA_KEYS.includes(missingIdentity), 'AP 164 open private fixture');
+  return withBrowserContext(
+    browser,
+    {
+      viewport: { width: viewport.width, height: viewport.height },
+      reducedMotion: 'reduce',
+    },
+    async (context) => {
+      const page = await context.newPage();
+      const privateImageRequests = new Map();
+      await mockRemoteImages(page);
+      await installU4PrivateRoutes(page, new Map());
+      await installU5PrivateRoutes(page, privateImageRequests, { missingIdentity });
+      await page.goto(`${baseUrl}/art-history-map.html?privateMedia=1`, { waitUntil: 'load' });
+      await waitForArt(page);
+      const work = U5_RENDER_WORKS.find(({ apNumber }) => apNumber === 164);
+      await resetAndActivateWork(page, page, work);
+      const viewButtons = page.locator('.image-view-switcher button');
+      assert.deepEqual(await viewButtons.allTextContents(), ['Closed state', 'Open state']);
+      const closedIdentity = 'ap164-transformation-mask::closed';
+      const closedPath = u5PrivatePath(closedIdentity);
+      const closedImage = page.locator('.artwork-image-button img');
+      await waitForVerifierImage(closedImage, 'U5 AP 164 closed fallback setup');
+      assert.equal(await closedImage.getAttribute('src'), closedPath);
+      await viewButtons.nth(1).click();
+      const placeholder = page.locator('.rights-placeholder');
+      await placeholder.waitFor();
+      assert.match(await placeholder.textContent(), /Private image not installed/);
+      assert.equal(await page.locator('.artwork-image-button').count(), 0);
+      assert.equal(await page.locator(`img[src="${closedPath}"]`).count(), 0);
+      assert.equal(await page.locator('#imageDialog').getAttribute('open'), null);
+      assert.deepEqual(
+        await viewButtons.evaluateAll((buttons) => (
+          buttons.map((button) => button.getAttribute('aria-pressed'))
+        )),
+        ['false', 'true'],
+      );
+      assert.equal(
+        privateImageRequests.get(closedPath),
+        1,
+        'U5 AP 164 closed private request count',
+      );
+      assert.equal(
+        privateImageRequests.get(u5PrivatePath(missingIdentity)),
+        1,
+        'U5 missing private image request count',
+      );
+      return { missingIdentity, status: 'Private image not installed' };
+    },
+  );
+}
+
+async function runU5RenderedMatrix(browser, baseUrl) {
+  const matrix = [];
+  for (const viewport of U5_MATRIX_VIEWPORTS) {
+    matrix.push({
+      viewport,
+      public: {
+        standalone: await verifyU5Standalone(browser, baseUrl, viewport),
+        embedded: await verifyU5Embedded(browser, baseUrl, viewport),
+      },
+      private: {
+        standalone: await verifyU5Standalone(browser, baseUrl, viewport, true),
+        embedded: await verifyU5Embedded(browser, baseUrl, viewport, true),
+      },
+    });
+  }
+  assertU5RenderedMatrixCoverage(matrix);
+  return matrix;
 }
 
 async function verifyU1Standalone(browser, baseUrl) {
@@ -3049,7 +3890,7 @@ async function verifyImportedWorksStandalone(browser, baseUrl) {
     await waitForArt(page);
     assert.equal(
       (await page.locator('.page-header h1').textContent()).trim(),
-      'AP 艺术史互动地图 · Units 1-4',
+      'AP 艺术史互动地图 · Units 1-5',
     );
     const works = await verifyNineImportedWorks(page, page, imageRequests, 'standalone');
     assert.deepEqual(issues, []);
@@ -3131,6 +3972,24 @@ export async function runFocusedWarningVerification() {
     verify: async ({ server, browser }) => (
       verifyResponsiveWarningRegression(browser, server.baseUrl)
     ),
+  });
+}
+
+export async function runFocusedU5Verification() {
+  const playwright = await discoverPlaywright();
+  const executablePath = await discoverBrowser(playwright.chromium);
+  return runManagedVerification({
+    startServer: () => startStaticServer(),
+    launchBrowser: () => playwright.chromium.launch({
+      executablePath,
+      headless: true,
+      args: ['--disable-gpu', '--no-sandbox'],
+    }),
+    verify: async ({ server, browser }) => ({
+      kind: 'u5-fourteen-works',
+      matrix: await runU5RenderedMatrix(browser, server.baseUrl),
+      negativePaths: await verifyU5PrivateNegativePaths(browser, server.baseUrl),
+    }),
   });
 }
 
@@ -3320,6 +4179,16 @@ export async function runVerification() {
         },
         negativePaths: u4PrivateNegativePaths,
       });
+      const u5Matrix = await runU5RenderedMatrix(browser, server.baseUrl);
+      const u5PrivateNegativePaths = await verifyU5PrivateNegativePaths(
+        browser,
+        server.baseUrl,
+      );
+      report.push({
+        kind: 'u5-fourteen-works',
+        matrix: u5Matrix,
+        negativePaths: u5PrivateNegativePaths,
+      });
       const standaloneImported = await verifyImportedWorksStandalone(browser, server.baseUrl);
       const embeddedImported = await verifyImportedWorksEmbedded(browser, server.baseUrl);
       report.push({
@@ -3344,6 +4213,7 @@ if (isMain) {
       if (process.argv.includes('--warning-regression-only')) {
         return runFocusedWarningVerification();
       }
+      if (process.argv.includes('--u5-only')) return runFocusedU5Verification();
       return runVerification();
     })
     .then((report) => {

@@ -1,0 +1,164 @@
+{
+  "ap153-chavin-huantar::plan": {
+    "creatorOrInstitution": "Simon chara / Wikimedia Commons",
+    "licenseName": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "releaseClass": "open"
+  },
+  "ap153-chavin-huantar::lanzon-stela": {
+    "creatorOrInstitution": "Frenchguy / Wikimedia Commons",
+    "licenseName": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "releaseClass": "open"
+  },
+  "ap153-chavin-huantar::relief-sculpture": {
+    "creatorOrInstitution": "Charles & Josette Lenars / Corbis",
+    "licenseName": "Rights-managed; no portable public image permission verified",
+    "licenseUrl": "https://www.gettyimages.com/eula",
+    "releaseClass": "restricted"
+  },
+  "ap153-chavin-huantar::nose-ornament": {
+    "creatorOrInstitution": "Cleveland Museum of Art / Gary Kirchenbauer",
+    "licenseName": "CC0 1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "releaseClass": "open"
+  },
+  "ap154-mesa-verde::cliff-dwellings": {
+    "creatorOrInstitution": "U.S. National Park Service",
+    "licenseName": "U.S. federal public domain / NPS use conditions",
+    "licenseUrl": "https://www.nps.gov/aboutus/disclaimer.htm",
+    "releaseClass": "open"
+  },
+  "ap155-yaxchilan::structure-40": {
+    "creatorOrInstitution": "Ian Graham / Peabody Museum of Archaeology and Ethnology",
+    "licenseName": "Limited personal and educational use; no portable public release verified",
+    "licenseUrl": "https://peabody.harvard.edu/terms-use",
+    "releaseClass": "restricted"
+  },
+  "ap155-yaxchilan::lintel-25-structure-23": {
+    "creatorOrInstitution": "Gary Todd / Wikimedia Commons",
+    "licenseName": "CC0 1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "releaseClass": "open"
+  },
+  "ap155-yaxchilan::structure-33": {
+    "creatorOrInstitution": "Arian Zwegers / Wikimedia Commons",
+    "licenseName": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+    "releaseClass": "open"
+  },
+  "ap156-great-serpent-mound::earthwork": {
+    "creatorOrInstitution": "Ohio History Connection and Shawnee Tribe community authority",
+    "licenseName": "Rights retained; sacred-site public reproduction not cleared",
+    "licenseUrl": "https://ohiomemory.ohiohistory.org/about-ohio-memory/rights-reproductions",
+    "releaseClass": "restricted"
+  },
+  "ap157-templo-mayor::reconstruction": {
+    "creatorOrInstitution": "Museo del Templo Mayor model; photograph by s shepherd (schizoform)",
+    "licenseName": "Photograph CC BY 2.0; modern model rights not verified for portable release",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Templo_Mayor_Tenochtitlan.jpg",
+    "releaseClass": "restricted"
+  },
+  "ap157-templo-mayor::coyolxauhqui-stone": {
+    "creatorOrInstitution": "José Luiz Bernardes Ribeiro / Wikimedia Commons",
+    "licenseName": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "releaseClass": "open"
+  },
+  "ap157-templo-mayor::calendar-stone": {
+    "creatorOrInstitution": "Neeta Lind / Wikimedia Commons",
+    "licenseName": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "releaseClass": "open"
+  },
+  "ap157-templo-mayor::olmec-style-mask": {
+    "creatorOrInstitution": "Gary Todd / Wikimedia Commons",
+    "licenseName": "CC0 1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "releaseClass": "open"
+  },
+  "ap158-ruler-feather-headdress::primary": {
+    "creatorOrInstitution": "Weltmuseum Wien; unknown Mexica featherworkers",
+    "licenseName": "Museum copyright and cultural patrimony; no portable public permission verified",
+    "licenseUrl": "https://www.weltmuseumwien.at/en/imprint/",
+    "releaseClass": "restricted"
+  },
+  "ap159-city-cusco::city-plan": {
+    "creatorOrInstitution": "Wellcome Collection / Clements Markham",
+    "licenseName": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "releaseClass": "open"
+  },
+  "ap159-city-cusco::qorikancha-santo-domingo": {
+    "creatorOrInstitution": "Miguel Francisco Rueda Ñañez / Wikimedia Commons",
+    "licenseName": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "releaseClass": "open"
+  },
+  "ap159-city-cusco::saqsa-waman-walls": {
+    "creatorOrInstitution": "Bcasterline / Wikimedia Commons",
+    "licenseName": "Public domain — author release",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Walls_at_Sacsayhuaman.jpg",
+    "releaseClass": "open"
+  },
+  "ap160-maize-cobs::primary": {
+    "creatorOrInstitution": "Claudia Obrocki / bpk / Ethnologisches Museum, Staatliche Museen zu Berlin",
+    "licenseName": "Rights-managed institutional photograph; no portable public permission verified",
+    "licenseUrl": "https://doi.org/10.4000/bifea.8301",
+    "releaseClass": "restricted"
+  },
+  "ap161-machu-picchu::city": {
+    "creatorOrInstitution": "Diego Delso / Wikimedia Commons",
+    "licenseName": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "releaseClass": "open"
+  },
+  "ap161-machu-picchu::observatory": {
+    "creatorOrInstitution": "Cédric Liénart / Wikimedia Commons",
+    "licenseName": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
+    "releaseClass": "open"
+  },
+  "ap161-machu-picchu::intihuatana-stone": {
+    "creatorOrInstitution": "McKay Savage / Wikimedia Commons",
+    "licenseName": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+    "releaseClass": "open"
+  },
+  "ap162-all-toqapu-tunic::primary": {
+    "creatorOrInstitution": "Unknown Inka weaver / Dumbarton Oaks / Wikimedia Commons",
+    "licenseName": "Public Domain Mark 1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "releaseClass": "open"
+  },
+  "ap163-bandolier-bag::primary": {
+    "creatorOrInstitution": "Unknown Lenape/Delaware maker / National Museum of the American Indian",
+    "licenseName": "Usage Conditions Apply; publication permission required",
+    "licenseUrl": "https://www.si.edu/object/shoulder-bagbandolier-bag%3ANMAI_227689",
+    "releaseClass": "restricted"
+  },
+  "ap164-transformation-mask::closed": {
+    "creatorOrInstitution": "Unknown Kwakwa̱ka̱ʼwakw artist / Musée du quai Branly–Jacques Chirac",
+    "licenseName": "Museum image rights and community cultural permission not cleared",
+    "licenseUrl": "https://www.amisquaibranly.fr/wp-content/uploads/2024/10/20241014_cls-restaurations_masque-a-transformation.pdf",
+    "releaseClass": "restricted"
+  },
+  "ap164-transformation-mask::open": {
+    "creatorOrInstitution": "Unknown Kwakwa̱ka̱ʼwakw artist / Musée du quai Branly–Jacques Chirac",
+    "licenseName": "Museum image rights; inherited family and clan authority not cleared",
+    "licenseUrl": "https://www.amisquaibranly.fr/wp-content/uploads/2024/10/20241014_cls-restaurations_masque-a-transformation.pdf",
+    "releaseClass": "restricted"
+  },
+  "ap165-painted-elk-hide::primary": {
+    "creatorOrInstitution": "Katsikodi; photograph by Addison Doty / School for Advanced Research",
+    "licenseName": "Copyright School for Advanced Research; no portable permission verified",
+    "licenseUrl": "https://emuseum.sarsf.org/objects/1568/untitled",
+    "releaseClass": "restricted"
+  },
+  "ap166-black-on-black-vessel::primary": {
+    "creatorOrInstitution": "Maria Martínez and Julian Martínez; photograph © Barbara Gonzales",
+    "licenseName": "All rights reserved; no portable public permission verified",
+    "licenseUrl": "https://apcentral.collegeboard.org/media/pdf/ap-art-history-course-and-exam-description.pdf",
+    "releaseClass": "restricted"
+  }
+}

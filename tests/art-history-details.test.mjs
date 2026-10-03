@@ -54,7 +54,7 @@ const PRIVATE_OVERRIDE_FIELDS = [
   'rightsNote',
   'rightsUrl',
 ];
-const PRIVATE_MEDIA_KEYS = [
+const EXPECTED_U4_PRIVATE_MEDIA_KEYS = [
   'ap140-two-fridas::primary',
   'ap143-dream-alameda-central::primary',
   'ap146-marilyn-diptych::primary',
@@ -63,6 +63,19 @@ const PRIVATE_MEDIA_KEYS = [
   'ap150-lipstick-caterpillar-tracks::primary',
   'ap152-house-new-castle-county::exterior',
   'ap152-house-new-castle-county::interior',
+];
+const EXPECTED_U5_PRIVATE_MEDIA_KEYS = [
+  'ap153-chavin-huantar::relief-sculpture',
+  'ap155-yaxchilan::structure-40',
+  'ap156-great-serpent-mound::earthwork',
+  'ap157-templo-mayor::reconstruction',
+  'ap158-ruler-feather-headdress::primary',
+  'ap160-maize-cobs::primary',
+  'ap163-bandolier-bag::primary',
+  'ap164-transformation-mask::closed',
+  'ap164-transformation-mask::open',
+  'ap165-painted-elk-hide::primary',
+  'ap166-black-on-black-vessel::primary',
 ];
 const REQUIRED_U3_COMPARISON_NOTES = [
   {
@@ -279,6 +292,135 @@ function getFunctionSource(html, functionName) {
   assert.fail(`unterminated ${functionName}()`);
 }
 
+function getPrivateMediaRuntimeSource(html) {
+  const start = html.indexOf('const U4_PRIVATE_MEDIA_KEYS = Object.freeze([');
+  assert.notEqual(start, -1, 'missing production U4 private media descriptor source');
+  const end = html.indexOf('const PRIVATE_MEDIA_MODE =', start);
+  assert.notEqual(end, -1, 'missing production private media mode boundary');
+  return html.slice(start, end);
+}
+
+function evaluatePrivateMediaRuntimeSource(source) {
+  return Function(
+    `"use strict"; ${source}; return {
+      U4_PRIVATE_MEDIA_KEYS,
+      U5_PRIVATE_MEDIA_KEYS,
+      PRIVATE_MEDIA_BUNDLES,
+    };`,
+  )();
+}
+
+function extractPrivateMediaRuntime(html) {
+  return evaluatePrivateMediaRuntimeSource(getPrivateMediaRuntimeSource(html));
+}
+
+function assertPrivateMediaDescriptorContract(runtime, u5Authority) {
+  assert.deepEqual(runtime.U4_PRIVATE_MEDIA_KEYS, EXPECTED_U4_PRIVATE_MEDIA_KEYS);
+  assert.deepEqual(runtime.U5_PRIVATE_MEDIA_KEYS, Object.keys(u5Authority));
+  assert.deepEqual(runtime.U5_PRIVATE_MEDIA_KEYS, EXPECTED_U5_PRIVATE_MEDIA_KEYS);
+  assert.equal(runtime.PRIVATE_MEDIA_BUNDLES.length, 2);
+  const expected = [
+    {
+      unit:4,
+      globalName:'AP_ART_HISTORY_PRIVATE_MEDIA_U4',
+      scriptPath:'.private-media/u4/overrides.js',
+      pathSource:'^\\.private-media\\/u4\\/[a-z0-9-]+\\.(?:jpe?g|png|webp)$',
+      keys:EXPECTED_U4_PRIVATE_MEDIA_KEYS,
+    },
+    {
+      unit:5,
+      globalName:'AP_ART_HISTORY_PRIVATE_MEDIA_U5',
+      scriptPath:'.private-media/u5/overrides.js',
+      pathSource:'^\\.private-media\\/u5\\/[a-z0-9-]+\\.(?:jpe?g|png|webp)$',
+      keys:EXPECTED_U5_PRIVATE_MEDIA_KEYS,
+    },
+  ];
+  runtime.PRIVATE_MEDIA_BUNDLES.forEach((bundle, index) => {
+    assert.ok(Object.isFrozen(bundle), `production U${bundle.unit} descriptor frozen`);
+    assert.deepEqual(
+      {
+        unit:bundle.unit,
+        globalName:bundle.globalName,
+        scriptPath:bundle.scriptPath,
+        pathSource:bundle.pathPattern.source,
+        keys:bundle.keys,
+      },
+      expected[index],
+      `production U${expected[index].unit} private descriptor`,
+    );
+    assert.strictEqual(bundle.keys, index === 0
+      ? runtime.U4_PRIVATE_MEDIA_KEYS
+      : runtime.U5_PRIVATE_MEDIA_KEYS);
+  });
+}
+
+function createPrivateMediaLoaderHarness(html, routes = {}, privateMode = true) {
+  const requests = [];
+  const window = {};
+  const document = {
+    createElement(tagName) {
+      assert.equal(tagName, 'script');
+      return {
+        src:'',
+        onload:null,
+        onerror:null,
+        removed:false,
+        remove() { this.removed = true; },
+      };
+    },
+    head:{
+      append(script) {
+        requests.push(script.src);
+        const route = routes[script.src] ?? { type:'error' };
+        if (route.type === 'timeout') return;
+        queueMicrotask(() => {
+          if (route.type === 'load') {
+            window[route.globalName] = route.value;
+            script.onload?.();
+          } else {
+            script.onerror?.();
+          }
+        });
+      },
+    },
+  };
+  const runtime = extractPrivateMediaRuntime(html);
+  const sources = [
+    'isPlainObject',
+    'assertExactPrivateFields',
+    'assertHttpsUrl',
+    'validatePrivateMediaOverrides',
+    'loadPrivateBundle',
+    'mergePrivateMediaBundles',
+    'loadPrivateMediaOverrides',
+  ].map((name) => {
+    const source = getFunctionSource(html, name);
+    return name === 'loadPrivateMediaOverrides'
+      ? source.replace('function loadPrivateMediaOverrides', 'async function loadPrivateMediaOverrides')
+      : source;
+  }).join('\n');
+  const api = Function(
+    'document',
+    'window',
+    'PRIVATE_OVERRIDE_FIELDS',
+    'PRIVATE_MEDIA_BUNDLES',
+    'PRIVATE_MEDIA_MODE',
+    `"use strict"; ${sources}; return {
+      validatePrivateMediaOverrides,
+      loadPrivateBundle,
+      mergePrivateMediaBundles,
+      loadPrivateMediaOverrides,
+    };`,
+  )(
+    document,
+    window,
+    PRIVATE_OVERRIDE_FIELDS,
+    runtime.PRIVATE_MEDIA_BUNDLES,
+    privateMode,
+  );
+  return { ...api, requests, window, runtime, bundles:runtime.PRIVATE_MEDIA_BUNDLES };
+}
+
 class FakeNode {
   constructor(tagName = '#text', ownerDocument = null, value = '') {
     this.tagName = tagName.toUpperCase();
@@ -483,6 +625,7 @@ function createDetailHarness(
     'PRIVATE_MEDIA_MODE',
     `"use strict";
       let imageDialogTrigger = null;
+      let artworkMediaRenderGeneration = 0;
       let syncedControls = null;
       const formatArtworkMeta = () => 'meta';
       const createStudyBlock = (title, ...paragraphs) => {
@@ -516,6 +659,9 @@ function createDetailHarness(
         renderArtworkDetails,
         getDialogTrigger: () => imageDialogTrigger,
         isDialogOpen: () => imageDialog.open,
+        closeDialog: () => imageDialog.close(),
+        getDialogMedia: () => document.getElementById('dialogMedia'),
+        getActiveElement: () => document.activeElement,
         getSelectedSiteIndex: () => state.selectedSiteIndex,
         createComparisonAngle,
         renderSelected: render,
@@ -579,22 +725,22 @@ test('detail view exposes four accessible study tabs', async () => {
   }
 });
 
-test('standalone map copy and accessible map labels cover all 152 Units 1-4 works worldwide', async () => {
+test('standalone map copy and accessible map labels cover all 166 Units 1-5 works worldwide', async () => {
   const html = await loadHtml();
 
-  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-4<\/h1>/);
+  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-5<\/h1>/);
   assert.doesNotMatch(html, /<h1>[^<]*Unit 2 古代地中海[^<]*<\/h1>/);
   assert.match(
     html,
-    /<p class="subtitle">Units 1-4：从全球史前艺术、古代地中海到 U4 Later Europe and Americas，以地点连接全部 152 件作品、传统与历史语境。<\/p>/,
+    /<p class="subtitle">Units 1-5：从全球史前艺术、古代地中海到 U5 Indigenous Americas，以地点连接全部 166 件作品、传统与历史语境。<\/p>/,
   );
   assert.match(
     html,
-    /<section id="mapPanel" class="map-panel" aria-label="完整世界地图；展示 AP 艺术史 Units 1-4 全部 152 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布">/,
+    /<section id="mapPanel" class="map-panel" aria-label="完整世界地图；展示 AP 艺术史 Units 1-5 全部 166 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布">/,
   );
   assert.match(
     html,
-    /<svg class="map-svg"[^>]+aria-label="AP 艺术史 Units 1-4 完整世界地图，标记全部 152 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布">/,
+    /<svg class="map-svg"[^>]+aria-label="AP 艺术史 Units 1-5 完整世界地图，标记全部 166 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布">/,
   );
   assert.doesNotMatch(html, /Units 1-2/);
   assert.doesNotMatch(html, /当前作品地点集中在古代地中海/);
@@ -628,6 +774,29 @@ test('Unit 3 detail metadata keeps precise traditions distinct from broad filter
   assert.doesNotMatch(metadata, /中世纪与伊斯兰/);
   assert.equal(chartres.culture, 'frenchGothic');
   assert.equal(chartres.traditionGroup, 'medievalIslamic');
+});
+
+test('Unit 5 detail metadata resolves every precise culture without undefined labels', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data').filter(({ unit }) => unit === 5);
+  const traditionStart = html.indexOf('const TRADITION_LABELS =');
+  const traditionEnd = html.indexOf('const UNIT_FILTER_CONFIG =', traditionStart);
+  const sources = [
+    html.slice(traditionStart, traditionEnd),
+    getFunctionSource(html, 'getCultureLabel'),
+    getFunctionSource(html, 'formatArtworkMeta'),
+  ].join('\n');
+  const { TRADITION_LABELS, formatArtworkMeta } = Function(
+    `"use strict"; ${sources}; return { TRADITION_LABELS, formatArtworkMeta };`,
+  )();
+
+  assert.equal(artworks.length, 14);
+  for (const work of artworks) {
+    assert.ok(TRADITION_LABELS[work.culture], `missing ${work.culture}`);
+    const metadata = formatArtworkMeta(work);
+    assert.doesNotMatch(metadata, /undefined/);
+    assert.match(metadata, new RegExp(`· ${TRADITION_LABELS[work.culture].labelZh.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} ·`));
+  }
 });
 
 test('Unit 3 detail location rows render every exact provenance qualifier', async () => {
@@ -915,56 +1084,272 @@ test('image dialog supports labelled media, attribution, and focus restoration',
   assert.match(html, /focusTarget\?\.focus\(\)/);
 });
 
-test('private media overrides accept only approved U4 keys and local relative image paths', async () => {
+test('private media bundle constants preserve exact U4 keys and match the U5 authority order', async () => {
   const html = await loadHtml();
-  const validatePrivateMediaOverrides = Function(
-    'PRIVATE_MEDIA_KEYS',
-    'PRIVATE_OVERRIDE_FIELDS',
-    `"use strict"; ${getFunctionSource(html, 'validatePrivateMediaOverrides')}; return validatePrivateMediaOverrides;`,
-  )(PRIVATE_MEDIA_KEYS, PRIVATE_OVERRIDE_FIELDS);
+  const authority = JSON.parse(await readFile(
+    new URL('../data/ap-art-history-unit-5-placeholder-authority.json', import.meta.url),
+    'utf8',
+  ));
+  const runtime = extractPrivateMediaRuntime(html);
+  const verifier = await import('../scripts/verify-art-history-browser.mjs');
+
+  assertPrivateMediaDescriptorContract(runtime, authority);
+  assert.deepEqual(verifier.U4_PRIVATE_MEDIA_KEYS, runtime.U4_PRIVATE_MEDIA_KEYS);
+  assert.deepEqual(verifier.U5_PRIVATE_MEDIA_KEYS, runtime.U5_PRIVATE_MEDIA_KEYS);
+  assert.deepEqual(
+    verifier.PRIVATE_MEDIA_BUNDLES.map((bundle) => ({
+      unit:bundle.unit,
+      globalName:bundle.globalName,
+      scriptPath:bundle.scriptPath,
+      pathSource:bundle.pathPattern.source,
+      keys:bundle.keys,
+    })),
+    runtime.PRIVATE_MEDIA_BUNDLES.map((bundle) => ({
+      unit:bundle.unit,
+      globalName:bundle.globalName,
+      scriptPath:bundle.scriptPath,
+      pathSource:bundle.pathPattern.source,
+      keys:bundle.keys,
+    })),
+    'browser verifier descriptors must exactly match the production runtime',
+  );
+});
+
+test('private media descriptor contract rejects missing, reordered, and misrouted production source', async () => {
+  const html = await loadHtml();
+  const authority = JSON.parse(await readFile(
+    new URL('../data/ap-art-history-unit-5-placeholder-authority.json', import.meta.url),
+    'utf8',
+  ));
+  const source = getPrivateMediaRuntimeSource(html);
+  const mutations = [
+    source.replace("      'ap166-black-on-black-vessel::primary'\n", ''),
+    source.replace('AP_ART_HISTORY_PRIVATE_MEDIA_U5', 'AP_ART_HISTORY_PRIVATE_MEDIA_U4'),
+    source.replace("scriptPath:'.private-media/u5/overrides.js'", "scriptPath:'.private-media/u5/wrong.js'"),
+    source.replace(
+      'pathPattern:/^\\.private-media\\/u5\\/',
+      'pathPattern:/^\\.private-media\\/u4\\/',
+    ),
+    source
+      .replace('ap153-chavin-huantar::relief-sculpture', '__FIRST_U5_KEY__')
+      .replace('ap155-yaxchilan::structure-40', 'ap153-chavin-huantar::relief-sculpture')
+      .replace('__FIRST_U5_KEY__', 'ap155-yaxchilan::structure-40'),
+  ];
+
+  for (const mutatedSource of mutations) {
+    assert.throws(
+      () => assertPrivateMediaDescriptorContract(
+        evaluatePrivateMediaRuntimeSource(mutatedSource),
+        authority,
+      ),
+      assert.AssertionError,
+    );
+  }
+});
+
+test('unit-scoped private override validation is exact, strict, and fail-closed', async () => {
+  const html = await loadHtml();
+  const harness = createPrivateMediaLoaderHarness(html);
+  const { validatePrivateMediaOverrides } = harness;
   const validEntry = {
     filePath:'.private-media/u4/two-fridas.jpg',
     creatorOrInstitution:'Private study copy',
     rightsNote:'Local educational reference only',
     rightsUrl:'https://example.org/rights',
   };
-  const valid = validatePrivateMediaOverrides({ [PRIVATE_MEDIA_KEYS[0]]:validEntry });
+  const u4 = harness.bundles[0];
+  const u5 = harness.bundles[1];
+  const valid = validatePrivateMediaOverrides({ [EXPECTED_U4_PRIVATE_MEDIA_KEYS[0]]:validEntry }, u4);
 
-  assert.deepEqual(valid, { [PRIVATE_MEDIA_KEYS[0]]:validEntry });
+  assert.deepEqual(valid, { [EXPECTED_U4_PRIVATE_MEDIA_KEYS[0]]:validEntry });
   assert.ok(Object.isFrozen(valid));
-  assert.ok(Object.isFrozen(valid[PRIVATE_MEDIA_KEYS[0]]));
-  assert.deepEqual(validatePrivateMediaOverrides(null), {});
-  assert.throws(() => validatePrivateMediaOverrides([]), /must be an object/);
+  assert.ok(Object.isFrozen(valid[EXPECTED_U4_PRIVATE_MEDIA_KEYS[0]]));
+  assert.deepEqual(validatePrivateMediaOverrides(null, u4), {});
+  assert.throws(() => validatePrivateMediaOverrides([], u4), /U4.*must be a plain object/);
   assert.throws(
-    () => validatePrivateMediaOverrides({ 'ap1-apollo-11-stones::primary':validEntry }),
-    /Unapproved private media key/,
+    () => validatePrivateMediaOverrides(Object.create({ inherited:true }), u4),
+    /U4.*must be a plain object/,
+  );
+  assert.throws(
+    () => validatePrivateMediaOverrides({ [EXPECTED_U5_PRIVATE_MEDIA_KEYS[0]]:validEntry }, u4),
+    /Unapproved U4 private media key/,
+  );
+  assert.throws(
+    () => validatePrivateMediaOverrides({ [EXPECTED_U4_PRIVATE_MEDIA_KEYS[0]]:{
+      ...validEntry,
+      filePath:'.private-media/u5/two-fridas.jpg',
+    } }, u5),
+    /Unapproved U5 private media key/,
   );
   for (const filePath of [
     'https://example.org/image.jpg',
     '/Users/student/image.jpg',
     '.private-media/u4/../image.jpg',
     '.private-media/u3/image.jpg',
+    '.private-media/u5/image.jpg',
     '.private-media/u4/image.svg',
+    '.private-media/u4/image.jpg?download=1',
+    '.private-media/u4/image.jpg#view',
   ]) {
     assert.throws(
       () => validatePrivateMediaOverrides({
-        [PRIVATE_MEDIA_KEYS[0]]:{ ...validEntry, filePath },
-      }),
+        [EXPECTED_U4_PRIVATE_MEDIA_KEYS[0]]:{ ...validEntry, filePath },
+      }, u4),
       /invalid private path/,
       filePath,
     );
   }
+  for (const entry of [
+    { ...validEntry, extra:'nope' },
+    {
+      filePath:validEntry.filePath,
+      creatorOrInstitution:validEntry.creatorOrInstitution,
+      rightsNote:validEntry.rightsNote,
+    },
+  ]) {
+    assert.throws(
+      () => validatePrivateMediaOverrides({ [EXPECTED_U4_PRIVATE_MEDIA_KEYS[0]]:entry }, u4),
+      /schema mismatch/,
+    );
+  }
+  for (const rightsUrl of [
+    'javascript:alert(1)',
+    'http://example.org/rights',
+    'https:example.org/rights',
+    'HTTPS://example.org/rights',
+    'https://',
+    'https://example.org/with space',
+    'https://example.org/with\nnewline',
+  ]) {
+    assert.throws(
+      () => validatePrivateMediaOverrides({
+        [EXPECTED_U4_PRIVATE_MEDIA_KEYS[0]]:{ ...validEntry, rightsUrl },
+      }, u4),
+      /expected HTTPS URL/,
+      rightsUrl,
+    );
+  }
+});
+
+test('public mode performs no private requests', async () => {
+  const html = await loadHtml();
+  const harness = createPrivateMediaLoaderHarness(html, {}, false);
+
+  assert.deepEqual(await harness.loadPrivateMediaOverrides(1), {});
+  assert.deepEqual(harness.requests, []);
+});
+
+test('private loader supports U4-only, U5-only, and both isolated bundles', async () => {
+  const html = await loadHtml();
+  const u4Entry = {
+    filePath:'.private-media/u4/two-fridas.jpg',
+    creatorOrInstitution:'U4 study copy',
+    rightsNote:'Local only',
+    rightsUrl:'https://example.org/u4-rights',
+  };
+  const u5Entry = {
+    filePath:'.private-media/u5/chavin-relief.jpg',
+    creatorOrInstitution:'U5 study copy',
+    rightsNote:'Local only',
+    rightsUrl:'https://example.org/u5-rights',
+  };
+  const scenarios = [
+    {
+      name:'U4 only',
+      routes:{
+        '.private-media/u4/overrides.js':{
+          type:'load', globalName:'AP_ART_HISTORY_PRIVATE_MEDIA_U4',
+          value:{ [EXPECTED_U4_PRIVATE_MEDIA_KEYS[0]]:u4Entry },
+        },
+      },
+      expected:{ [EXPECTED_U4_PRIVATE_MEDIA_KEYS[0]]:u4Entry },
+    },
+    {
+      name:'U5 only',
+      routes:{
+        '.private-media/u5/overrides.js':{
+          type:'load', globalName:'AP_ART_HISTORY_PRIVATE_MEDIA_U5',
+          value:{ [EXPECTED_U5_PRIVATE_MEDIA_KEYS[0]]:u5Entry },
+        },
+      },
+      expected:{ [EXPECTED_U5_PRIVATE_MEDIA_KEYS[0]]:u5Entry },
+    },
+    {
+      name:'both',
+      routes:{
+        '.private-media/u4/overrides.js':{
+          type:'load', globalName:'AP_ART_HISTORY_PRIVATE_MEDIA_U4',
+          value:{ [EXPECTED_U4_PRIVATE_MEDIA_KEYS[0]]:u4Entry },
+        },
+        '.private-media/u5/overrides.js':{
+          type:'load', globalName:'AP_ART_HISTORY_PRIVATE_MEDIA_U5',
+          value:{ [EXPECTED_U5_PRIVATE_MEDIA_KEYS[0]]:u5Entry },
+        },
+      },
+      expected:{
+        [EXPECTED_U4_PRIVATE_MEDIA_KEYS[0]]:u4Entry,
+        [EXPECTED_U5_PRIVATE_MEDIA_KEYS[0]]:u5Entry,
+      },
+    },
+  ];
+  for (const scenario of scenarios) {
+    const harness = createPrivateMediaLoaderHarness(html, scenario.routes);
+    const loaded = await harness.loadPrivateMediaOverrides(5);
+    assert.deepEqual(loaded, scenario.expected, scenario.name);
+    assert.ok(Object.isFrozen(loaded), `${scenario.name} frozen merge`);
+    assert.deepEqual(harness.requests, harness.bundles.map(({ scriptPath }) => scriptPath));
+    assert.equal(harness.window.AP_ART_HISTORY_PRIVATE_MEDIA_U4, undefined);
+    assert.equal(harness.window.AP_ART_HISTORY_PRIVATE_MEDIA_U5, undefined);
+  }
+});
+
+test('one private bundle error or timeout does not discard the other bundle', async () => {
+  const html = await loadHtml();
+  const u5Entry = {
+    filePath:'.private-media/u5/chavin-relief.jpg',
+    creatorOrInstitution:'U5 study copy',
+    rightsNote:'Local only',
+    rightsUrl:'https://example.org/u5-rights',
+  };
+  for (const failureType of ['error', 'timeout']) {
+    const harness = createPrivateMediaLoaderHarness(html, {
+      '.private-media/u4/overrides.js':{ type:failureType },
+      '.private-media/u5/overrides.js':{
+        type:'load', globalName:'AP_ART_HISTORY_PRIVATE_MEDIA_U5',
+        value:{ [EXPECTED_U5_PRIVATE_MEDIA_KEYS[0]]:u5Entry },
+      },
+    });
+    assert.deepEqual(
+      await harness.loadPrivateMediaOverrides(2),
+      { [EXPECTED_U5_PRIVATE_MEDIA_KEYS[0]]:u5Entry },
+      failureType,
+    );
+  }
+});
+
+test('bundle validation failures and duplicate identities fail closed', async () => {
+  const html = await loadHtml();
+  const entry = {
+    filePath:'.private-media/u5/chavin-relief.jpg',
+    creatorOrInstitution:'U5 study copy',
+    rightsNote:'Local only',
+    rightsUrl:'https://example.org/u5-rights',
+  };
+  const harness = createPrivateMediaLoaderHarness(html, {
+    '.private-media/u4/overrides.js':{ type:'error' },
+    '.private-media/u5/overrides.js':{
+      type:'load', globalName:'AP_ART_HISTORY_PRIVATE_MEDIA_U5',
+      value:{ [EXPECTED_U4_PRIVATE_MEDIA_KEYS[0]]:entry },
+    },
+  });
+
+  assert.deepEqual(await harness.loadPrivateMediaOverrides(5), {});
   assert.throws(
-    () => validatePrivateMediaOverrides({
-      [PRIVATE_MEDIA_KEYS[0]]:{ ...validEntry, extra:'nope' },
-    }),
-    /schema mismatch/,
-  );
-  assert.throws(
-    () => validatePrivateMediaOverrides({
-      [PRIVATE_MEDIA_KEYS[0]]:{ ...validEntry, rightsUrl:'javascript:alert(1)' },
-    }),
-    /expected HTTPS URL/,
+    () => harness.mergePrivateMediaBundles([
+      { duplicate:entry },
+      { duplicate:{ ...entry } },
+    ]),
+    /Duplicate private media identity/,
   );
 });
 
@@ -1045,6 +1430,22 @@ test('rights-restricted views render a noninteractive public placeholder and opt
   assert.match(privateSummary.querySelector('.image-credit-host').textContent, /Private study copy/);
   imageButton.click();
   assert.equal(privateHarness.isDialogOpen(), true);
+  privateHarness.closeDialog();
+  assert.equal(privateHarness.isDialogOpen(), false);
+
+  const failedPrivateImage = imageButton.querySelector('img');
+  failedPrivateImage.listeners.error[0]({ target:failedPrivateImage });
+  const fallback = privateSummary.querySelector('.rights-placeholder');
+  assert.ok(fallback, 'missing local image must restore the public rights placeholder');
+  assert.match(fallback.textContent, /Private image not installed/);
+  assert.equal(privateSummary.querySelectorAll('img').length, 0);
+  assert.equal(privateSummary.querySelector('.artwork-image-button'), null);
+  assert.equal(privateHarness.isDialogOpen(), false);
+  assert.strictEqual(privateHarness.getActiveElement(), fallback);
+  assert.equal(
+    fallback.querySelector('.rights-placeholder-source').href,
+    work.images[0].imageSourceUrl,
+  );
 });
 
 test('private mode without an installed override retains the placeholder with a local status', async () => {
@@ -1057,6 +1458,147 @@ test('private mode without an installed override retains the placeholder with a 
 
   assert.match(summary.querySelector('.rights-placeholder').textContent, /Private image not installed/);
   assert.equal(summary.querySelectorAll('img').length, 0);
+});
+
+test('Unit 5 restricted media keeps its public placeholder and accepts only an ephemeral U5 local view', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const work = artworks.find(({ id }) => id === 'ap153-chavin-huantar');
+  const publicMedia = work.images.find(({ id }) => id === 'relief-sculpture');
+  const publicHarness = createDetailHarness(html, artworks, credits);
+  const publicSummary = publicHarness.renderArtworkDetails(work, { works:[work] });
+  const reliefButton = publicSummary.querySelector('.image-view-switcher').children[
+    work.images.indexOf(publicMedia)
+  ];
+
+  reliefButton.click();
+  assert.ok(publicSummary.querySelector('.rights-placeholder'));
+  assert.equal(publicSummary.querySelectorAll('img').length, 0);
+
+  const identity = `${work.id}::${publicMedia.id}`;
+  const override = {
+    filePath:'.private-media/u5/chavin-relief.jpg',
+    creatorOrInstitution:'Private U5 study copy',
+    rightsNote:'Local educational reference only',
+    rightsUrl:'https://example.org/u5-rights',
+  };
+  const privateHarness = createDetailHarness(
+    html,
+    artworks,
+    credits,
+    {},
+    { [identity]:override },
+    true,
+  );
+  const privateSummary = privateHarness.renderArtworkDetails(work, { works:[work] });
+  const privateSwitcher = privateSummary.querySelector('.image-view-switcher');
+  privateSwitcher.children[work.images.indexOf(publicMedia)].click();
+
+  const privateImageButton = privateSummary.querySelector('.artwork-image-button');
+  assert.equal(privateImageButton.querySelector('img').src, override.filePath);
+  assert.equal(publicMedia.imageUrl, null);
+  assert.equal(publicMedia.mediaStatus, 'rightsRestricted');
+
+  privateImageButton.click();
+  assert.equal(privateHarness.isDialogOpen(), true);
+  const dialogImage = privateHarness.getDialogMedia().querySelector('img');
+  assert.equal(dialogImage.src, override.filePath);
+  for (const listener of [...dialogImage.listeners.error]) {
+    listener({ target:dialogImage });
+  }
+
+  const placeholder = privateSummary.querySelector('.rights-placeholder');
+  assert.equal(privateHarness.isDialogOpen(), false);
+  assert.equal(privateHarness.getDialogMedia().children.length, 0);
+  assert.ok(placeholder, 'modal private failure must restore the public placeholder inline');
+  assert.equal(placeholder.tabIndex, -1);
+  assert.strictEqual(privateHarness.getActiveElement(), placeholder);
+  assert.equal(privateSummary.querySelectorAll('img').length, 0);
+  assert.strictEqual(privateSummary.querySelector('.image-view-switcher'), privateSwitcher);
+
+  privateSwitcher.children[0].click();
+  assert.equal(privateSummary.querySelector('img').src, work.images[0].imageUrl);
+  assert.equal(privateSummary.querySelector('.rights-placeholder'), null);
+});
+
+test('a stale private inline error cannot replace or focus away from the current public view', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const work = artworks.find(({ id }) => id === 'ap153-chavin-huantar');
+  const restrictedIndex = work.images.findIndex(({ id }) => id === 'relief-sculpture');
+  const identity = `${work.id}::${work.images[restrictedIndex].id}`;
+  const harness = createDetailHarness(html, artworks, credits, {}, {
+    [identity]:{
+      filePath:'.private-media/u5/chavin-relief.jpg',
+      creatorOrInstitution:'Private U5 study copy',
+      rightsNote:'Local educational reference only',
+      rightsUrl:'https://example.org/u5-rights',
+    },
+  }, true);
+  const summary = harness.renderArtworkDetails(work, { works:[work] });
+  const switcher = summary.querySelector('.image-view-switcher');
+  switcher.children[restrictedIndex].click();
+  const stalePrivateImage = summary.querySelector('img');
+
+  switcher.children[0].click();
+  const currentPublicButton = summary.querySelector('.artwork-image-button');
+  const currentPublicImage = currentPublicButton.querySelector('img');
+  currentPublicButton.focus();
+  for (const listener of [...stalePrivateImage.listeners.error]) {
+    listener({ target:stalePrivateImage });
+  }
+
+  assert.strictEqual(summary.querySelector('.artwork-image-button'), currentPublicButton);
+  assert.strictEqual(summary.querySelector('img'), currentPublicImage);
+  assert.equal(currentPublicImage.src, work.images[0].imageUrl);
+  assert.equal(summary.querySelector('.rights-placeholder'), null);
+  assert.equal(switcher.children[0].getAttribute('aria-pressed'), 'true');
+  assert.equal(switcher.children[restrictedIndex].getAttribute('aria-pressed'), 'false');
+  assert.strictEqual(harness.getActiveElement(), currentPublicButton);
+
+  switcher.children[1].click();
+  assert.equal(summary.querySelector('img').src, work.images[1].imageUrl);
+  assert.equal(switcher.children[1].getAttribute('aria-pressed'), 'true');
+});
+
+test('a stale private modal error cannot close or clear a newer public modal', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const work = artworks.find(({ id }) => id === 'ap153-chavin-huantar');
+  const restrictedIndex = work.images.findIndex(({ id }) => id === 'relief-sculpture');
+  const identity = `${work.id}::${work.images[restrictedIndex].id}`;
+  const harness = createDetailHarness(html, artworks, credits, {}, {
+    [identity]:{
+      filePath:'.private-media/u5/chavin-relief.jpg',
+      creatorOrInstitution:'Private U5 study copy',
+      rightsNote:'Local educational reference only',
+      rightsUrl:'https://example.org/u5-rights',
+    },
+  }, true);
+  const summary = harness.renderArtworkDetails(work, { works:[work] });
+  const switcher = summary.querySelector('.image-view-switcher');
+  switcher.children[restrictedIndex].click();
+  summary.querySelector('.artwork-image-button').click();
+  const stalePrivateDialogImage = harness.getDialogMedia().querySelector('img');
+  harness.closeDialog();
+
+  switcher.children[0].click();
+  summary.querySelector('.artwork-image-button').click();
+  const currentPublicDialogImage = harness.getDialogMedia().querySelector('img');
+  const currentModalFocus = harness.getActiveElement();
+  for (const listener of [...stalePrivateDialogImage.listeners.error]) {
+    listener({ target:stalePrivateDialogImage });
+  }
+
+  assert.equal(harness.isDialogOpen(), true);
+  assert.strictEqual(harness.getDialogMedia().querySelector('img'), currentPublicDialogImage);
+  assert.equal(currentPublicDialogImage.src, work.images[0].imageUrl);
+  assert.strictEqual(harness.getActiveElement(), currentModalFocus);
+  assert.equal(summary.querySelector('.rights-placeholder'), null);
+  assert.equal(switcher.children[0].getAttribute('aria-pressed'), 'true');
 });
 
 test('all Unit 4 details preserve bilingual hierarchy, study tabs, and required view controls', async () => {
@@ -1118,6 +1660,75 @@ test('Monticello keeps a real cross-unit Pantheon comparison and navigation clea
   assert.equal(harness.getState().search, '');
   assert.equal(harness.getState().selectedId, pantheon.id);
   assert.equal(harness.getDetailPanel().ownerDocument.activeElement?.textContent, pantheon.titleEn);
+});
+
+test('Unit 5 comparison cards clear filters and restore focus within U5 and across units', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const maize = artworks.find(({ id }) => id === 'ap160-maize-cobs');
+  const chavin = artworks.find(({ id }) => id === 'ap153-chavin-huantar');
+  const whiteTemple = artworks.find(({ id }) => id === 'ap12-white-temple-ziggurat');
+  const withinUnit = createDetailHarness(html, artworks, credits, {
+    unit:'5',
+    culture:'Ancient Central Andes',
+    period:'Late Horizon Andes',
+    workType:'Ritual metalwork',
+    search:'maize',
+    selectedId:maize.id,
+    selectedSiteIndex:1,
+    expandedSiteToken:'u5-central-andes',
+    activeUnit:5,
+    activeRegion:'unit-5-region-centralAndes',
+    pendingFocusParentKey:'unit-5-region-centralAndes',
+    activeDetailTab:'compare',
+  });
+
+  withinUnit.renderSelected();
+  const maizeHeading = withinUnit.getDetailPanel().querySelector('#detailTitle');
+  maizeHeading.focus();
+  const chavinCard = withinUnit.getDetailPanel().find(
+    ({ dataset }) => dataset.comparisonId === chavin.id,
+  );
+  assert.ok(chavinCard, 'AP 160 must expose its within-U5 AP 153 comparison');
+  chavinCard.click();
+  assert.deepEqual(withinUnit.getState(), {
+    unit:'5', culture:'all', period:'', workType:'', search:'',
+    selectedId:chavin.id, selectedSiteIndex:0, expandedSiteToken:null,
+    activeUnit:5, activeRegion:null, pendingFocusParentKey:null,
+    activeDetailTab:'quick',
+  });
+  assertCurrentDetailHeadingFocus(withinUnit.getDetailPanel(), chavin.titleEn);
+
+  const crossUnit = createDetailHarness(html, artworks, credits, {
+    unit:'5',
+    culture:'Ancient Central Andes',
+    period:'Early Horizon Andes',
+    workType:'Ceremonial complex and ritual objects',
+    search:'Lanzón',
+    selectedId:chavin.id,
+    selectedSiteIndex:0,
+    expandedSiteToken:'u5-chavin',
+    activeUnit:5,
+    activeRegion:'unit-5-region-centralAndes',
+    pendingFocusParentKey:'unit-5-region-centralAndes',
+    activeDetailTab:'compare',
+  });
+  crossUnit.renderSelected();
+  const chavinHeading = crossUnit.getDetailPanel().querySelector('#detailTitle');
+  chavinHeading.focus();
+  const whiteTempleCard = crossUnit.getDetailPanel().find(
+    ({ dataset }) => dataset.comparisonId === whiteTemple.id,
+  );
+  assert.ok(whiteTempleCard, 'AP 153 must expose its cross-unit AP 12 comparison');
+  whiteTempleCard.click();
+  assert.deepEqual(crossUnit.getState(), {
+    unit:'2', culture:'all', period:'', workType:'', search:'',
+    selectedId:whiteTemple.id, selectedSiteIndex:0, expandedSiteToken:null,
+    activeUnit:2, activeRegion:null, pendingFocusParentKey:null,
+    activeDetailTab:'quick',
+  });
+  assertCurrentDetailHeadingFocus(crossUnit.getDetailPanel(), whiteTemple.titleEn);
 });
 
 test('normalizes legacy single images and preserves explicit image arrays', async () => {
@@ -1395,13 +2006,18 @@ test('source worksheet parser rejects rows with missing or extra cells', () => {
   );
 });
 
-test('keeps all 152 loaded works, the complete Unit 2 id set, and one credit per image', async () => {
+test('keeps all 166 loaded works, complete imported ids, and one credit per image', async () => {
   const html = await loadHtml();
   const artworks = parseJsonBlock(html, 'artwork-data');
   const credits = parseJsonBlock(html, 'image-credit-data');
   const artworkIds = artworks.map(({ id }) => id);
 
-  assert.equal(artworks.length, 152);
+  assert.equal(artworks.length, 166);
+  assert.equal(artworks.filter(({ unit }) => unit === 5).length, 14);
+  assert.deepEqual(
+    artworks.filter(({ unit }) => unit === 5).map(({ apNumber }) => apNumber),
+    Array.from({ length: 14 }, (_, index) => index + 153),
+  );
   for (const id of ORIGINAL_ARTWORK_IDS) {
     assert.ok(artworkIds.includes(id), `missing original artwork ${id}`);
   }

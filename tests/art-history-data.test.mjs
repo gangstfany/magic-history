@@ -20,6 +20,7 @@ const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const U1_CANONICAL_PATH = new URL('./fixtures/u1-canonical.json', import.meta.url);
 const U3_CANONICAL_PATH = new URL('./fixtures/u3-canonical.json', import.meta.url);
 const U4_CANONICAL_PATH = new URL('./fixtures/u4-canonical.json', import.meta.url);
+const U5_CANONICAL_PATH = new URL('./fixtures/u5-canonical.json', import.meta.url);
 const U3_MANIFEST_PATH = new URL(
   '../data/ap-art-history-unit-3-manifest.json',
   import.meta.url,
@@ -36,14 +37,24 @@ const U4_PLACEHOLDERS_PATH = new URL(
   '../data/ap-art-history-unit-4-public-placeholders.json',
   import.meta.url,
 );
+const U5_RIGHTS_PATH = new URL(
+  '../data/ap-art-history-unit-5-rights.json',
+  import.meta.url,
+);
+const U5_PLACEHOLDERS_PATH = new URL(
+  '../data/ap-art-history-unit-5-placeholder-authority.json',
+  import.meta.url,
+);
 const MANIFEST_PATHS = {
   1: new URL('../data/ap-art-history-unit-1-manifest.json', import.meta.url),
   2: new URL('../data/ap-art-history-unit-2-manifest.json', import.meta.url),
   3: U3_MANIFEST_PATH,
   4: new URL('../data/ap-art-history-unit-4-manifest.json', import.meta.url),
+  5: new URL('../data/ap-art-history-unit-5-manifest.json', import.meta.url),
 };
 const EXPECTED_COMPLETE_AP_NUMBERS = Array.from({ length: 98 }, (_, index) => index + 1);
-const EXPECTED_LIVE_AP_NUMBERS = Array.from({ length: 152 }, (_, index) => index + 1);
+const EXPECTED_LIVE_AP_NUMBERS = Array.from({ length: 166 }, (_, index) => index + 1);
+const EXPECTED_RELEASE_AP_NUMBERS = Array.from({ length: 166 }, (_, index) => index + 1);
 const EXPECTED_U2_AP_NUMBERS = Array.from({ length: 36 }, (_, index) => index + 12);
 const EXPECTED_U1_MANIFEST = [
   '1|ap1-apollo-11-stones|Apollo 11 stones',
@@ -659,6 +670,73 @@ async function loadCompleteUnits1234Fixture() {
   };
 }
 
+async function loadCompleteUnits12345Fixture() {
+  const [live, unit5, manifest5, rights3, rights4, rights5, placeholders4, placeholders5]
+    = await Promise.all([
+      loadDocumentData(),
+      readFile(U5_CANONICAL_PATH, 'utf8').then(JSON.parse),
+      readFile(MANIFEST_PATHS[5], 'utf8').then(JSON.parse),
+      readFile(U3_RIGHTS_PATH, 'utf8').then(JSON.parse),
+      readFile(U4_RIGHTS_PATH, 'utf8').then(JSON.parse),
+      readFile(U5_RIGHTS_PATH, 'utf8').then(JSON.parse),
+      readFile(U4_PLACEHOLDERS_PATH, 'utf8').then(JSON.parse),
+      readFile(U5_PLACEHOLDERS_PATH, 'utf8').then(JSON.parse),
+    ]);
+  const manifests = Object.fromEntries(await Promise.all(
+    [1, 2, 3, 4].map(async (unit) => [
+      unit,
+      JSON.parse(await readFile(MANIFEST_PATHS[unit], 'utf8')),
+    ]),
+  ));
+  const canonicalU5Ids = unit5.artworks.map(({ id }) => id);
+  const liveU5 = live.artworks.filter(({ unit }) => unit === 5);
+  let artworks;
+  let credits;
+  if (liveU5.length) {
+    assert.equal(live.artworks.length, 166, 'live U5 authority requires exactly AP 1–166');
+    assertOrderedDeepEqual(liveU5, unit5.artworks, '$.fixtureHelper.liveU5.artworks');
+    const liveU5CreditIds = Object.keys(live.credits).slice(-canonicalU5Ids.length);
+    assert.deepEqual(liveU5CreditIds, canonicalU5Ids, 'live U5 credit key order');
+    assertOrderedDeepEqual(
+      Object.fromEntries(liveU5CreditIds.map((id) => [id, live.credits[id]])),
+      unit5.credits,
+      '$.fixtureHelper.liveU5.credits',
+    );
+    artworks = structuredClone(live.artworks);
+    credits = structuredClone(live.credits);
+  } else {
+    assert.equal(live.artworks.length, 152, 'pre-import fixture boundary must end at AP 152');
+    assert.ok(
+      canonicalU5Ids.every((id) => !Object.hasOwn(live.credits, id)),
+      'pre-import credits must not already contain U5',
+    );
+    artworks = [...structuredClone(live.artworks), ...structuredClone(unit5.artworks)];
+    credits = { ...structuredClone(live.credits), ...structuredClone(unit5.credits) };
+  }
+  return {
+    artworks,
+    credits,
+    manifests: { ...manifests, 5: manifest5 },
+    rights: { 3: rights3, 4: rights4, 5: rights5 },
+    placeholders: { 4: placeholders4, 5: placeholders5 },
+  };
+}
+
+function findUnit5Media(fixture, mediaKey) {
+  const [artworkId, viewId] = mediaKey.split('::');
+  const artwork = fixture.artworks.find(({ id }) => id === artworkId);
+  const index = artwork.images.findIndex(({ id }) => id === viewId);
+  return { artwork, media: artwork.images[index], index };
+}
+
+function mutateUnit5CreditAndRights(fixture, mediaKey, patch) {
+  const { artwork, index } = findUnit5Media(fixture, mediaKey);
+  const rawCredit = fixture.credits[artwork.id];
+  const credit = Array.isArray(rawCredit) ? rawCredit[index] : rawCredit;
+  Object.assign(credit, patch);
+  Object.assign(fixture.rights[5][mediaKey], patch);
+}
+
 function patchAlignedUnit3Credit(fixture, mediaKey, patch) {
   const [artworkId, viewId] = mediaKey.split('::');
   const artwork = fixture.artworks.find(({ id }) => id === artworkId);
@@ -669,8 +747,8 @@ function patchAlignedUnit3Credit(fixture, mediaKey, patch) {
   Object.assign(fixture.rights[mediaKey], patch);
 }
 
-async function loadValidatedLiveUnits1234() {
-  return loadAndValidate();
+async function loadValidatedLiveArtworks() {
+  return loadDocumentData().then(({ artworks }) => artworks);
 }
 
 function assertInvalidArtworkError(operation, patterns, label) {
@@ -734,16 +812,29 @@ test('CLI rejects an empty Units 1-2 dataset instead of reporting success', asyn
   }
 });
 
-test('loads exactly AP 1–152 in official order while preserving the AP 12–47 manifest', async () => {
-  const artworks = await loadAndValidate();
+test('loads exactly AP 1–166 with the canonical Unit 5 projection and preserved Unit 2 manifest', async () => {
+  const [{ artworks, credits }, unit5] = await Promise.all([
+    loadDocumentData(),
+    readFile(U5_CANONICAL_PATH, 'utf8').then(JSON.parse),
+  ]);
   const manifest = await loadManifest();
+  const liveU5 = artworks.filter(({ unit }) => unit === 5);
+  const unit5Ids = unit5.artworks.map(({ id }) => id);
+  const liveU5Credits = Object.fromEntries(unit5Ids.map((id) => [id, credits[id]]));
+  const unit5Media = liveU5.flatMap(({ images }) => images);
 
-  assert.equal(artworks.length, 152);
+  assert.equal(artworks.length, 166);
   assert.deepEqual(
     artworks.map(({ apNumber }) => apNumber),
     EXPECTED_LIVE_AP_NUMBERS,
     'artwork-data must remain in official AP order',
   );
+  assertOrderedDeepEqual(liveU5, unit5.artworks, '$.liveU5.artworks');
+  assertOrderedDeepEqual(liveU5Credits, unit5.credits, '$.liveU5.credits');
+  assert.equal(liveU5.length, 14, 'live U5 work count');
+  assert.equal(unit5Media.length, 27, 'live U5 view count');
+  assert.equal(unit5Media.filter(({ imageUrl }) => imageUrl !== null).length, 16);
+  assert.equal(unit5Media.filter(({ imageUrl }) => imageUrl === null).length, 11);
   assert.deepEqual(
     artworks.filter(({ unit }) => unit === 2).map(({ apNumber }) => apNumber),
     EXPECTED_U2_AP_NUMBERS,
@@ -759,13 +850,39 @@ test('loads exactly AP 1–152 in official order while preserving the AP 12–47
   );
 });
 
-test('strict live loader accepts the complete AP 1–152 document by default', async () => {
-  const artworks = await loadAndValidate();
+test('complete Units 1–5 fixture helper emits AP 1–166 once without duplicating live U5', async () => {
+  const [fixture, unit5] = await Promise.all([
+    loadCompleteUnits12345Fixture(),
+    readFile(U5_CANONICAL_PATH, 'utf8').then(JSON.parse),
+  ]);
+  const fixtureU5 = fixture.artworks.filter(({ unit }) => unit === 5);
 
-  assert.deepEqual(
-    artworks.map(({ apNumber }) => apNumber),
-    EXPECTED_LIVE_AP_NUMBERS,
+  assert.equal(fixture.artworks.length, 166);
+  assert.deepEqual(fixture.artworks.map(({ apNumber }) => apNumber), EXPECTED_RELEASE_AP_NUMBERS);
+  assert.equal(new Set(fixture.artworks.map(({ id }) => id)).size, 166, 'unique work ids');
+  assert.equal(fixtureU5.length, 14, 'one canonical U5 set');
+  assertOrderedDeepEqual(fixtureU5, unit5.artworks, '$.fixtureHelper.artworks');
+  assertOrderedDeepEqual(
+    Object.fromEntries(unit5.artworks.map(({ id }) => [id, fixture.credits[id]])),
+    unit5.credits,
+    '$.fixtureHelper.credits',
   );
+});
+
+test('strict loader accepts the assembled complete AP 1–166 release by default', async () => {
+  const fixture = await loadCompleteUnits12345Fixture();
+  const directory = await mkdtemp(join(tmpdir(), 'art-history-validator-u5-release-'));
+  const htmlPath = await writeFixtureHtml(directory, fixture.artworks, fixture.credits);
+
+  try {
+    const artworks = await loadAndValidate(htmlPath);
+    assert.deepEqual(
+      artworks.map(({ apNumber }) => apNumber),
+      EXPECTED_RELEASE_AP_NUMBERS,
+    );
+  } finally {
+    await rm(directory, { recursive: true });
+  }
 });
 
 test('strict live loader rejects a duplicate raw artwork property key', async () => {
@@ -787,14 +904,14 @@ test('strict live loader rejects a duplicate raw artwork property key', async ()
 });
 
 test('strict live loader rejects a duplicate raw top-level image credit key', async () => {
-  const html = await readFile(HTML_PATH, 'utf8');
-  const creditValue = JSON.stringify(
-    JSON.parse(html.match(/<script id="image-credit-data" type="application\/json">([\s\S]*?)<\/script>/)[1])['ap48-catacomb-priscilla'],
-  );
+  const fixture = await loadCompleteUnits12345Fixture();
+  const directory = await mkdtemp(join(tmpdir(), 'art-history-duplicate-credit-key-'));
+  const cleanHtmlPath = await writeFixtureHtml(directory, fixture.artworks, fixture.credits);
+  const html = await readFile(cleanHtmlPath, 'utf8');
+  const creditValue = JSON.stringify(fixture.credits['ap48-catacomb-priscilla']);
   const scriptStart = /(<script id="image-credit-data" type="application\/json">\s*\{)/;
   assert.match(html, scriptStart, 'image-credit-data mutation target must exist');
 
-  const directory = await mkdtemp(join(tmpdir(), 'art-history-duplicate-credit-key-'));
   const htmlPath = await writeRawFixtureHtml(
     directory,
     html.replace(
@@ -992,15 +1109,6 @@ test('validator accepts the complete AP 1–98 fixture with exact artwork and cr
     validateImageCredits(fixture.credits, fixture.artworks, fixture.rights),
     fixture.credits,
   );
-
-  const directory = await mkdtemp(join(tmpdir(), 'art-history-validator-u3-'));
-  const htmlPath = await writeFixtureHtml(directory, fixture.artworks, fixture.credits);
-  try {
-    const loaded = await loadAndValidate(htmlPath);
-    assert.deepEqual(loaded.map(({ apNumber }) => apNumber), EXPECTED_COMPLETE_AP_NUMBERS);
-  } finally {
-    await rm(directory, { recursive: true });
-  }
 });
 
 test('validator rejects missing AP 48, extra AP 99, and a duplicate AP number', async () => {
@@ -1605,14 +1713,6 @@ test('validator accepts the complete rights-safe AP 1–152 fixture', async () =
   assert.equal(restricted.length, 8);
   assert.ok(restricted.every(({ imageUrl }) => imageUrl === null));
 
-  const directory = await mkdtemp(join(tmpdir(), 'art-history-validator-u4-'));
-  const htmlPath = await writeFixtureHtml(directory, fixture.artworks, fixture.credits);
-  try {
-    const loaded = await loadAndValidate(htmlPath);
-    assert.equal(loaded.length, 152);
-  } finally {
-    await rm(directory, { recursive: true });
-  }
 });
 
 test('validator rejects missing, extra, and duplicate Unit 4 AP numbers', async () => {
@@ -1719,6 +1819,453 @@ test('validator rejects Unit 4 placeholder leaks, status drift, and wrong restri
     ),
     new RegExp(`${restrictedKey}.*creatorOrInstitution.*credit mismatch`, 'i'),
   );
+});
+
+test('validator accepts the complete rights-safe AP 1–166 release without changing Units 1–4', async () => {
+  const [fixture, live] = await Promise.all([
+    loadCompleteUnits12345Fixture(),
+    loadDocumentData(),
+  ]);
+
+  assert.deepEqual(fixture.artworks.map(({ apNumber }) => apNumber), EXPECTED_RELEASE_AP_NUMBERS);
+  assert.equal(fixture.artworks.length, 166);
+  assert.equal(fixture.artworks.filter(({ unit }) => unit === 5).length, 14);
+  assert.equal(
+    fixture.artworks.filter(({ unit }) => unit === 5).flatMap(({ images }) => images).length,
+    27,
+  );
+  const unit5Media = fixture.artworks.filter(({ unit }) => unit === 5).flatMap(({ images }) => images);
+  assert.equal(unit5Media.filter(({ imageUrl }) => imageUrl !== null).length, 16);
+  assert.equal(unit5Media.filter(({ imageUrl }) => imageUrl === null).length, 11);
+  assert.deepEqual(
+    [...new Set(fixture.artworks.filter(({ unit }) => unit === 5).map(({ region }) => region))].sort(),
+    ['ancestralPueblo', 'centralAndes', 'easternWoodlands', 'mesoamerica', 'northwestCoast', 'plainsGreatBasin'],
+  );
+  assert.deepEqual(
+    [...new Set(fixture.artworks.filter(({ unit }) => unit === 5)
+      .map(({ traditionGroup }) => traditionGroup))].sort(),
+    ['Ancient Central Andes', 'Ancient Mesoamerica', 'Ancient North America', 'Native North America'],
+  );
+  assert.ok(unit5Media.filter(({ imageUrl }) => imageUrl === null)
+    .every(({ mediaStatus }) => mediaStatus === 'rightsRestricted'));
+  assert.deepEqual(fixture.artworks.slice(0, 152), live.artworks.slice(0, 152));
+  assert.deepEqual(
+    Object.fromEntries(fixture.artworks.slice(0, 152).map(({ id }) => [id, fixture.credits[id]])),
+    Object.fromEntries(live.artworks.slice(0, 152).map(({ id }) => [id, live.credits[id]])),
+  );
+  assertOrderedDeepEqual(
+    fixture.artworks.slice(152),
+    live.artworks.slice(152),
+    '$.release.liveU5.artworks',
+  );
+  assert.deepEqual(
+    Object.keys(fixture.rights[5]),
+    fixture.artworks.filter(({ unit }) => unit === 5).flatMap((artwork) => (
+      artwork.images.map(({ id }) => `${artwork.id}::${id}`)
+    )),
+  );
+  assert.deepEqual(
+    Object.keys(fixture.placeholders[5]),
+    fixture.artworks.filter(({ unit }) => unit === 5).flatMap((artwork) => (
+      artwork.images.flatMap((media) => (
+        media.imageUrl === null ? [`${artwork.id}::${media.id}`] : []
+      ))
+    )),
+  );
+
+  assert.equal(
+    validateArtworks(fixture.artworks, fixture.manifests, fixture.placeholders),
+    fixture.artworks,
+  );
+  assert.equal(
+    validateImageCredits(fixture.credits, fixture.artworks, fixture.rights, fixture.placeholders),
+    fixture.credits,
+  );
+});
+
+test('validator rejects missing AP 153, extra AP 167, and duplicate AP 166', async () => {
+  const fixture = await loadCompleteUnits12345Fixture();
+  const missing = fixture.artworks.filter(({ apNumber }) => apNumber !== 153);
+  const extra = [
+    ...fixture.artworks,
+    { ...structuredClone(fixture.artworks.at(-1)), id: 'ap167-extra', apNumber: 167 },
+  ];
+  const duplicate = structuredClone(fixture.artworks);
+  duplicate[164].apNumber = 166;
+
+  assertInvalidArtworkError(
+    () => validateArtworks(missing, fixture.manifests, fixture.placeholders),
+    [/166 works|1\.\.166|received 165/i, /Unit|official/i],
+    'missing AP153',
+  );
+  assertInvalidArtworkError(
+    () => validateArtworks(extra, fixture.manifests, fixture.placeholders),
+    [/166 works|1\.\.166|received 167/i, /Unit|official/i],
+    'extra AP167',
+  );
+  assertInvalidArtworkError(
+    () => validateArtworks(duplicate, fixture.manifests, fixture.placeholders),
+    [/duplicate AP number 166/i],
+    'duplicate AP166',
+  );
+});
+
+test('validator freezes every Unit 5 manifest identity, context field, and media order', async () => {
+  const fixture = await loadCompleteUnits12345Fixture();
+  const mutations = [
+    ['title', (copy) => { copy.manifests[5][153].titleEn = 'Wrong title'; }, /AP 153.*manifest title/i],
+    ['site', (copy) => { copy.manifests[5][154].siteName = 'Wrong site'; }, /AP 154.*siteName/i],
+    ['region', (copy) => { copy.manifests[5][155].region = 'centralAndes'; }, /AP 155.*region/i],
+    ['tradition', (copy) => { copy.manifests[5][156].traditionGroup = 'Native North America'; }, /AP 156.*traditionGroup/i],
+    ['qualifier', (copy) => { copy.manifests[5][158].provenanceQualifier = 'Wrong qualifier'; }, /ap158.*provenanceQualifier|AP 158.*qualifier/i],
+    ['view order', (copy) => { copy.artworks.find(({ apNumber }) => apNumber === 157).images.reverse(); }, /AP 157.*required views.*Unit 5/i],
+    ['manifest field order', (copy) => {
+      copy.manifests[5][153] = Object.fromEntries(Object.entries(copy.manifests[5][153]).reverse());
+    }, /Unit 5 manifest AP 153.*schema.*first mismatch/i],
+    ['invalid region', (copy) => {
+      copy.manifests[5][164].region = 'invalidRegion';
+      copy.artworks.find(({ apNumber }) => apNumber === 164).region = 'invalidRegion';
+    }, /ap164-transformation-mask.*region.*Unit 5/i],
+    ['invalid tradition', (copy) => {
+      copy.manifests[5][165].traditionGroup = 'Invalid tradition';
+      copy.artworks.find(({ apNumber }) => apNumber === 165).traditionGroup = 'Invalid tradition';
+    }, /ap165-painted-elk-hide.*four approved Unit 5 traditions/i],
+  ];
+
+  for (const [label, mutate, pattern] of mutations) {
+    const copy = structuredClone(fixture);
+    mutate(copy);
+    assertInvalidArtworkError(
+      () => validateArtworks(copy.artworks, copy.manifests, copy.placeholders),
+      [pattern],
+      `Unit 5 ${label}`,
+    );
+  }
+});
+
+test('validator enforces the exact Unit 5 restricted placeholder authority', async () => {
+  const fixture = await loadCompleteUnits12345Fixture();
+  const restrictedKey = Object.keys(fixture.placeholders[5])[0];
+  const openKey = Object.keys(fixture.rights[5]).find((key) => (
+    fixture.rights[5][key].releaseClass === 'open'
+  ));
+
+  const missingAuthority = structuredClone(fixture);
+  delete missingAuthority.placeholders[5][restrictedKey];
+  assertInvalidArtworkError(
+    () => validateImageCredits(
+      missingAuthority.credits,
+      missingAuthority.artworks,
+      missingAuthority.rights,
+      missingAuthority.placeholders,
+    ),
+    [/Unit 5.*placeholder keys/i, /missing/i, new RegExp(restrictedKey)],
+    'missing restricted key',
+  );
+
+  const extraAuthority = structuredClone(fixture);
+  extraAuthority.placeholders[5][openKey] = structuredClone(
+    Object.values(extraAuthority.placeholders[5])[0],
+  );
+  assertInvalidArtworkError(
+    () => validateImageCredits(
+      extraAuthority.credits,
+      extraAuthority.artworks,
+      extraAuthority.rights,
+      extraAuthority.placeholders,
+    ),
+    [/Unit 5.*placeholder keys/i, /extra/i, new RegExp(openKey)],
+    'extra restricted key',
+  );
+
+  const unknownAuthority = structuredClone(fixture);
+  unknownAuthority.placeholders[5]['ap999-unknown::primary'] = structuredClone(
+    Object.values(unknownAuthority.placeholders[5])[0],
+  );
+  assertInvalidArtworkError(
+    () => validateImageCredits(
+      unknownAuthority.credits,
+      unknownAuthority.artworks,
+      unknownAuthority.rights,
+      unknownAuthority.placeholders,
+    ),
+    [/Unit 5.*placeholder keys/i, /extra/i, /ap999-unknown::primary/i],
+    'unknown restricted key',
+  );
+});
+
+test('validator blocks Unit 5 placeholder URL leaks, null/status drift, and restricted non-null media', async () => {
+  const fixture = await loadCompleteUnits12345Fixture();
+  const restrictedKey = Object.keys(fixture.placeholders[5])[0];
+  const openKey = Object.keys(fixture.rights[5]).find((key) => (
+    fixture.rights[5][key].releaseClass === 'open'
+  ));
+
+  for (const [label, mutate, pattern] of [
+    ['URL leak', (copy) => { findUnit5Media(copy, restrictedKey).media.imageUrl = 'https://invalid.test/leak.jpg'; }, new RegExp(`${restrictedKey}.*public placeholder`, 'i')],
+    ['missing status', (copy) => { delete findUnit5Media(copy, restrictedKey).media.mediaStatus; }, new RegExp(`${restrictedKey}.*(?:raw media schema|public placeholder)`, 'i')],
+    ['wrong status', (copy) => { findUnit5Media(copy, restrictedKey).media.mediaStatus = 'available'; }, new RegExp(`${restrictedKey}.*public placeholder`, 'i')],
+    ['unapproved null', (copy) => { findUnit5Media(copy, openKey).media.imageUrl = null; }, new RegExp(`${openKey.split('::')[0]}.*imageUrl.*non-empty`, 'i')],
+    ['non-null restricted', (copy) => { findUnit5Media(copy, restrictedKey).media.imageUrl = 'https://example.com/restricted.jpg'; }, new RegExp(`${restrictedKey}.*public placeholder`, 'i')],
+    ['malformed media HTTPS', (copy) => { findUnit5Media(copy, openKey).media.imageUrl = 'http://invalid.test/image.jpg'; }, new RegExp(`${openKey.split('::')[0]}.*imageUrl.*HTTPS`, 'i')],
+  ]) {
+    const copy = structuredClone(fixture);
+    mutate(copy);
+    assertInvalidArtworkError(
+      () => validateArtworks(copy.artworks, copy.manifests, copy.placeholders),
+      [pattern],
+      `Unit 5 ${label}`,
+    );
+  }
+});
+
+test('validator enforces exact Unit 5 rights keys, credits, schemas, URLs, and release triples', async () => {
+  const fixture = await loadCompleteUnits12345Fixture();
+  const firstKey = Object.keys(fixture.rights[5])[0];
+
+  const missing = structuredClone(fixture);
+  delete missing.rights[5][firstKey];
+  assertInvalidArtworkError(
+    () => validateImageCredits(missing.credits, missing.artworks, missing.rights, missing.placeholders),
+    [/Unit 5.*rights audit/i, /missing/i, new RegExp(firstKey)],
+    'missing U5 rights key',
+  );
+
+  const extraKey = 'ap999-extra::primary';
+  const extra = structuredClone(fixture);
+  extra.rights[5][extraKey] = structuredClone(extra.rights[5][firstKey]);
+  assertInvalidArtworkError(
+    () => validateImageCredits(extra.credits, extra.artworks, extra.rights, extra.placeholders),
+    [/Unit 5.*rights audit/i, /extra/i, new RegExp(extraKey)],
+    'extra U5 rights key',
+  );
+
+  const creditMismatch = structuredClone(fixture);
+  creditMismatch.rights[5][firstKey].creatorOrInstitution = 'Wrong institution';
+  assertInvalidArtworkError(
+    () => validateImageCredits(
+      creditMismatch.credits,
+      creditMismatch.artworks,
+      creditMismatch.rights,
+      creditMismatch.placeholders,
+    ),
+    [new RegExp(`${firstKey}.*creatorOrInstitution.*credit mismatch`, 'i')],
+    'U5 credit mismatch',
+  );
+
+  const wrongCreditShape = structuredClone(fixture);
+  wrongCreditShape.credits['ap153-chavin-huantar'] = wrongCreditShape.credits['ap153-chavin-huantar'][0];
+  assertInvalidArtworkError(
+    () => validateImageCredits(
+      wrongCreditShape.credits,
+      wrongCreditShape.artworks,
+      wrongCreditShape.rights,
+      wrongCreditShape.placeholders,
+    ),
+    [/ap153-chavin-huantar.*multi-media.*array/i],
+    'U5 credit shape',
+  );
+
+  const malformedHttps = structuredClone(fixture);
+  mutateUnit5CreditAndRights(malformedHttps, firstKey, { licenseUrl: 'http://invalid.test/license' });
+  assertInvalidArtworkError(
+    () => validateImageCredits(
+      malformedHttps.credits,
+      malformedHttps.artworks,
+      malformedHttps.rights,
+      malformedHttps.placeholders,
+    ),
+    [new RegExp(`${firstKey}.*licenseUrl.*HTTPS`, 'i')],
+    'U5 malformed HTTPS license',
+  );
+
+  const wrongPolicy = structuredClone(fixture);
+  mutateUnit5CreditAndRights(wrongPolicy, firstKey, {
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+  });
+  assertInvalidArtworkError(
+    () => validateImageCredits(
+      wrongPolicy.credits,
+      wrongPolicy.artworks,
+      wrongPolicy.rights,
+      wrongPolicy.placeholders,
+    ),
+    [new RegExp(`${firstKey}.*approved release policy`, 'i')],
+    'U5 wrong release triple',
+  );
+
+  const wrongReleaseClass = structuredClone(fixture);
+  wrongReleaseClass.rights[5][firstKey].releaseClass = 'restricted';
+  assertInvalidArtworkError(
+    () => validateImageCredits(
+      wrongReleaseClass.credits,
+      wrongReleaseClass.artworks,
+      wrongReleaseClass.rights,
+      wrongReleaseClass.placeholders,
+    ),
+    [new RegExp(`${firstKey}.*approved release policy`, 'i')],
+    'U5 wrong release class',
+  );
+});
+
+test('validator resolves Unit 5 comparisons and rejects duplicate U5 alt/source identities', async () => {
+  const fixture = await loadCompleteUnits12345Fixture();
+
+  const unresolved = structuredClone(fixture);
+  unresolved.artworks.find(({ apNumber }) => apNumber === 153).comparisonIds = ['ap999-missing'];
+  unresolved.artworks.find(({ apNumber }) => apNumber === 153).comparisonNotes = {
+    'ap999-missing': '比较仪式功能与建筑形式。',
+  };
+  assertInvalidArtworkError(
+    () => validateArtworks(unresolved.artworks, unresolved.manifests, unresolved.placeholders),
+    [/ap153-chavin-huantar.*comparisonIds.*ap999-missing/i],
+    'U5 unresolved comparison',
+  );
+
+  const duplicateAlt = structuredClone(fixture);
+  const chavinAlt = duplicateAlt.artworks.find(({ apNumber }) => apNumber === 153);
+  chavinAlt.images[1].imageAlt = chavinAlt.images[0].imageAlt;
+  assertInvalidArtworkError(
+    () => validateArtworks(duplicateAlt.artworks, duplicateAlt.manifests, duplicateAlt.placeholders),
+    [/Unit 5.*duplicate imageAlt.*ap153-chavin-huantar::lanzon-stela.*plan/i],
+    'U5 duplicate alt',
+  );
+
+  const duplicateSource = structuredClone(fixture);
+  const chavinSource = duplicateSource.artworks.find(({ apNumber }) => apNumber === 153);
+  chavinSource.images[1].imageSourceUrl = chavinSource.images[0].imageSourceUrl;
+  assertInvalidArtworkError(
+    () => validateArtworks(duplicateSource.artworks, duplicateSource.manifests, duplicateSource.placeholders),
+    [/Unit 5.*duplicate imageSourceUrl.*ap153-chavin-huantar::lanzon-stela.*plan/i],
+    'U5 duplicate source',
+  );
+});
+
+test('validator rejects pseudo-HTTPS Unit 5 media and rights URLs with exact view context', async () => {
+  const fixture = await loadCompleteUnits12345Fixture();
+  const publicKey = Object.keys(fixture.rights[5]).find((key) => (
+    fixture.rights[5][key].releaseClass === 'open'
+  ));
+
+  for (const [label, mutate, pattern] of [
+    ['public image URL', (copy) => {
+      findUnit5Media(copy, publicKey).media.imageUrl = 'https:///missing-host';
+    }, new RegExp(`${publicKey}.*imageUrl.*HTTPS`, 'i')],
+    ['public source URL', (copy) => {
+      findUnit5Media(copy, publicKey).media.imageSourceUrl = 'https:example.com/path';
+    }, new RegExp(`${publicKey}.*imageSourceUrl.*HTTPS`, 'i')],
+  ]) {
+    const copy = structuredClone(fixture);
+    mutate(copy);
+    assertInvalidArtworkError(
+      () => validateArtworks(copy.artworks, copy.manifests, copy.placeholders),
+      [pattern],
+      `Unit 5 pseudo-HTTPS ${label}`,
+    );
+  }
+
+  const malformedRights = structuredClone(fixture);
+  mutateUnit5CreditAndRights(malformedRights, publicKey, {
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/\n',
+  });
+  assertInvalidArtworkError(
+    () => validateImageCredits(
+      malformedRights.credits,
+      malformedRights.artworks,
+      malformedRights.rights,
+      malformedRights.placeholders,
+    ),
+    [new RegExp(`${publicKey}.*licenseUrl.*HTTPS`, 'i')],
+    'Unit 5 pseudo-HTTPS rights URL',
+  );
+});
+
+test('validator enforces strict finished bilingual Unit 5 study contracts', async () => {
+  const fixture = await loadCompleteUnits12345Fixture();
+  const cases = [
+    ['unfinished title', (work) => { work.titleZh = 'TBD'; }, /ap153-chavin-huantar\.titleZh.*unfinished/i],
+    ['unfinished study', (work) => { work.function = 'TODO 待补'; }, /ap153-chavin-huantar\.function.*unfinished/i],
+    ['missing Han', (work) => { work.content = 'Finished English-only content'; }, /ap153-chavin-huantar\.content.*Han|Chinese/i],
+    ['duplicate anchors', (work) => { work.recognitionAnchors[1] = work.recognitionAnchors[0]; }, /ap153-chavin-huantar\.recognitionAnchors.*duplicate/i],
+    ['too many anchors', (work) => { work.recognitionAnchors.push('第四个识别锚点', '第五个识别锚点'); }, /ap153-chavin-huantar\.recognitionAnchors.*2\.\.4/i],
+    ['duplicate keywords', (work) => { work.keywords[1] = work.keywords[0]; }, /ap153-chavin-huantar\.keywords.*duplicate/i],
+    ['unfinished keyword', (work) => { work.keywords[0] = 'placeholder'; }, /ap153-chavin-huantar\.keywords\[0\].*unfinished/i],
+    ['no Han keyword', (work) => { work.keywords = ['Chavin', 'Lanzon', 'Pilgrimage']; }, /ap153-chavin-huantar\.keywords.*Han|Chinese/i],
+    ['self comparison', (work) => {
+      work.comparisonIds = [work.id];
+      work.comparisonNotes = { [work.id]: '比较仪式功能和建筑形式。' };
+    }, /ap153-chavin-huantar\.comparisonIds.*self/i],
+    ['duplicate comparison', (work) => { work.comparisonIds.push(work.comparisonIds[0]); }, /ap153-chavin-huantar\.comparisonIds.*duplicate/i],
+    ['comparison note order', (work) => {
+      work.comparisonIds.push('ap46-pantheon');
+      work.comparisonNotes = {
+        'ap46-pantheon': '比较两者的仪式空间形式。',
+        [work.comparisonIds[0]]: work.comparisonNotes[work.comparisonIds[0]],
+      };
+    }, /ap153-chavin-huantar\.comparisonNotes.*first mismatch/i],
+    ['unfinished comparison note', (work) => {
+      work.comparisonNotes[work.comparisonIds[0]] = 'TODO 待补';
+    }, /ap153-chavin-huantar\.comparisonNotes.*unfinished/i],
+    ['comparison note without basis', (work) => {
+      work.comparisonNotes[work.comparisonIds[0]] = '这是一条完整的中文说明。';
+    }, /ap153-chavin-huantar\.comparisonNotes.*explicit comparison basis/i],
+  ];
+
+  for (const [label, mutate, pattern] of cases) {
+    const copy = structuredClone(fixture);
+    mutate(copy.artworks.find(({ apNumber }) => apNumber === 153));
+    assertInvalidArtworkError(
+      () => validateArtworks(copy.artworks, copy.manifests, copy.placeholders),
+      [pattern],
+      `Unit 5 study ${label}`,
+    );
+  }
+});
+
+test('validator rejects unfinished values in every Unit 5 descriptive metadata field', async () => {
+  const fixture = await loadCompleteUnits12345Fixture();
+  const fields = ['culture', 'period', 'artistCulture', 'date', 'medium', 'workType'];
+
+  for (const field of fields) {
+    const copy = structuredClone(fixture);
+    copy.artworks.find(({ apNumber }) => apNumber === 153)[field] = 'TBD';
+    assertInvalidArtworkError(
+      () => validateArtworks(copy.artworks, copy.manifests, copy.placeholders),
+      [new RegExp(`ap153-chavin-huantar\\.${field}.*unfinished`, 'i')],
+      `Unit 5 unfinished ${field}`,
+    );
+  }
+});
+
+test('validator requires exact ordered raw Unit 5 media schemas with exact view context', async () => {
+  const fixture = await loadCompleteUnits12345Fixture();
+  const publicKey = Object.keys(fixture.rights[5]).find((key) => (
+    fixture.rights[5][key].releaseClass === 'open'
+  ));
+  const restrictedKey = Object.keys(fixture.placeholders[5])[0];
+  const cases = [
+    ['unexpected public field', publicKey, (media) => { media.unexpected = true; }],
+    ['missing public field', publicKey, (media) => { delete media.imageAlt; }],
+    ['reordered public fields', publicKey, (media, holder) => {
+      const reversed = Object.fromEntries(Object.entries(media).reverse());
+      Object.keys(media).forEach((key) => delete media[key]);
+      Object.assign(media, reversed);
+      holder.expected = 'first mismatch';
+    }],
+    ['missing restricted status', restrictedKey, (media) => { delete media.mediaStatus; }],
+    ['wrong restricted status', restrictedKey, (media) => { media.mediaStatus = 'available'; }],
+  ];
+
+  for (const [label, mediaKey, mutate] of cases) {
+    const copy = structuredClone(fixture);
+    const holder = { expected: 'schema|mediaStatus|public placeholder' };
+    mutate(findUnit5Media(copy, mediaKey).media, holder);
+    assertInvalidArtworkError(
+      () => validateArtworks(copy.artworks, copy.manifests, copy.placeholders),
+      [new RegExp(mediaKey), new RegExp(holder.expected, 'i')],
+      `Unit 5 raw media ${label}`,
+    );
+  }
 });
 
 test('validator reports exact missing and extra Unit 3 rights media keys', async () => {
@@ -2038,7 +2585,7 @@ test('validator enforces unit ranges, regions, AP order, coordinates, and compar
 });
 
 test('imports the exact nine missing works with approved classification metadata', async () => {
-  const artworks = await loadValidatedLiveUnits1234();
+  const artworks = await loadValidatedLiveArtworks();
 
   for (const expected of EXPECTED_NEW_WORKS) {
     const artwork = artworks.find(({ id }) => id === expected.id);
@@ -2052,15 +2599,16 @@ test('imports the exact nine missing works with approved classification metadata
   }
 });
 
-test('assigns exactly 11, 36, 51, and 54 works to Units 1, 2, 3, and 4', async () => {
-  const artworks = await loadValidatedLiveUnits1234();
+test('assigns exactly 11, 36, 51, 54, and 14 works to Units 1 through 5', async () => {
+  const artworks = await loadValidatedLiveArtworks();
 
   assert.equal(artworks.filter(({ unit }) => unit === 1).length, 11);
   assert.equal(artworks.filter(({ unit }) => unit === 2).length, 36);
   assert.equal(artworks.filter(({ unit }) => unit === 3).length, 51);
   assert.equal(artworks.filter(({ unit }) => unit === 4).length, 54);
+  assert.equal(artworks.filter(({ unit }) => unit === 5).length, 14);
   for (const artwork of artworks) {
-    assert.ok([1, 2, 3, 4].includes(artwork.unit), `${artwork.id} must be in Unit 1, 2, 3, or 4`);
+    assert.ok([1, 2, 3, 4, 5].includes(artwork.unit), `${artwork.id} must be in Unit 1, 2, 3, 4, or 5`);
     assert.equal(typeof artwork.culture, 'string', `${artwork.id} must have a culture`);
     assert.ok(artwork.culture.trim(), `${artwork.id} must have a non-empty culture`);
     assert.equal(typeof artwork.region, 'string', `${artwork.id} must have a region`);
@@ -2089,7 +2637,7 @@ test('keeps one image per Unit 1 work except Stonehenge with exactly two', async
 });
 
 test('uses unique artwork ids and AP numbers', async () => {
-  const artworks = await loadValidatedLiveUnits1234();
+  const artworks = await loadValidatedLiveArtworks();
   const ids = artworks.map(({ id }) => id);
   const apNumbers = artworks.map(({ apNumber }) => apNumber);
 
@@ -2098,7 +2646,7 @@ test('uses unique artwork ids and AP numbers', async () => {
 });
 
 test('resolves comparison ids and keeps coordinates inside the map', async () => {
-  const artworks = await loadValidatedLiveUnits1234();
+  const artworks = await loadValidatedLiveArtworks();
   const ids = new Set(artworks.map(({ id }) => id));
 
   for (const artwork of artworks) {
@@ -2111,7 +2659,7 @@ test('resolves comparison ids and keeps coordinates inside the map', async () =>
 });
 
 test('keeps the approved AP 27 source coordinates', async () => {
-  const artworks = await loadValidatedLiveUnits1234();
+  const artworks = await loadValidatedLiveArtworks();
   const kouros = artworks.find(({ id }) => id === 'ap27-anavysos-kouros');
 
   assert.deepEqual(kouros?.coordinates, { x: 405, y: 285 });

@@ -5,7 +5,6 @@ import { readFile } from 'node:fs/promises';
 const HTML_PATH = new URL('../index.html', import.meta.url);
 const ART_HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const WORLD_HTML_PATH = new URL('../world-map.html', import.meta.url);
-const RELEASE_VERIFIER_PATH = new URL('../scripts/verify-art-history-release.mjs', import.meta.url);
 
 async function loadHtml() {
   return readFile(HTML_PATH, 'utf8');
@@ -141,44 +140,39 @@ test('homepage subject pills expose keyboard button semantics', async () => {
   );
 });
 
-test('map caption describes all 152 Units 1-4 works and preserves the World History caption', async () => {
+test('map caption describes all 166 Units 1-5 works and preserves the World History caption', async () => {
   const html = await loadHtml();
 
   assert.match(html, /id="homeMapCaption"/);
   assert.match(html, /homeMapCaption\.textContent = key === 'art'/);
   assert.match(
     html,
-    /\? '152 AP works · Units 1-4 · filter, compare and study'/,
+    /\? '166 AP works · Units 1-5 · filter, compare and study'/,
   );
   assert.match(html, /: '5 regions · 233 events · 104 pins · 6 trade routes'/);
   assert.match(html, /homeMapCaption\.hidden = !s\.live/);
 });
 
-test('Art map copy and release stage identify the complete Units 1-4 scope', async () => {
-  const [artHtml, releaseSource] = await Promise.all([
-    readFile(ART_HTML_PATH, 'utf8'),
-    readFile(RELEASE_VERIFIER_PATH, 'utf8'),
-  ]);
+test('Art map copy identifies the complete Units 1-5 scope', async () => {
+  const artHtml = await readFile(ART_HTML_PATH, 'utf8');
 
-  assert.match(artHtml, /<title>AP 艺术史互动地图 · Units 1-4<\/title>/);
-  assert.match(artHtml, /<h1>AP 艺术史互动地图 · Units 1-4<\/h1>/);
+  assert.match(artHtml, /<title>AP 艺术史互动地图 · Units 1-5<\/title>/);
+  assert.match(artHtml, /<h1>AP 艺术史互动地图 · Units 1-5<\/h1>/);
   assert.match(
     artHtml,
-    /Units 1-4[^<]*U4 Later Europe and Americas/,
+    /Units 1-5[^<]*U5 Indigenous Americas/,
   );
   assert.match(
     artHtml,
-    /aria-label="完整世界地图；展示 AP 艺术史 Units 1-4 全部 152 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
+    /aria-label="完整世界地图；展示 AP 艺术史 Units 1-5 全部 166 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
   );
   assert.match(
     artHtml,
-    /aria-label="AP 艺术史 Units 1-4 完整世界地图，标记全部 152 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
+    /aria-label="AP 艺术史 Units 1-5 完整世界地图，标记全部 166 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
   );
   assert.match(artHtml, /count\.textContent = `当前显示 \$\{visibleWorks\.length\} 件作品`/);
-  assert.match(artHtml, /Explore all 152 AP works across Units 1-4/);
-  assert.doesNotMatch(artHtml, /Units 1-2/);
-  assert.match(releaseSource, /strict 152-work Units 1-4 validator/);
-  assert.match(releaseSource, /\['scripts\/validate-art-history-data\.mjs'/);
+  assert.match(artHtml, /Explore all 166 AP works across Units 1-5/);
+  assert.doesNotMatch(artHtml, /Units 1-4/);
 });
 
 test('private media mode propagates to the Art iframe only when explicitly requested', async () => {
@@ -186,11 +180,49 @@ test('private media mode propagates to the Art iframe only when explicitly reque
 
   assert.equal((html.match(/src="art-history-map\.html\?embed=1"/g) || []).length, 1);
   assert.doesNotMatch(html, /src="art-history-map\.html\?embed=1&privateMedia=1"/);
-  assert.match(html, /const hostParams = new URLSearchParams\(window\.location\.search\)/);
-  assert.match(html, /hostParams\.get\('privateMedia'\) === '1'/);
-  assert.match(html, /new URL\(artMapFrame\.getAttribute\('src'\), window\.location\.href\)/);
+  assert.match(html, /function buildArtHistoryUrl\(search\)/);
+  assert.match(html, /const hostParams = new URLSearchParams\(search\)/);
+  assert.match(html, /new URL\('art-history-map\.html\?embed=1', window\.location\.href\)/);
+  assert.match(html, /if \(hostParams\.get\('privateMedia'\) === '1'\)/);
   assert.match(html, /artUrl\.searchParams\.set\('privateMedia', '1'\)/);
-  assert.match(html, /artMapFrame\.src = `\$\{artUrl\.pathname\.split\('\/'\)\.pop\(\)\}\?\$\{artUrl\.searchParams\}`/);
+  assert.match(html, /const artHistoryUrl = buildArtHistoryUrl\(window\.location\.search\)/);
+  assert.match(html, /if \(artHistoryUrl !== artMapFrame\.getAttribute\('src'\)\) artMapFrame\.src = artHistoryUrl/);
+  assert.doesNotMatch(html, /artUrl\.searchParams\.set\((?!'privateMedia')/);
+
+  const functionSource = html.match(
+    /function buildArtHistoryUrl\(search\) \{[\s\S]*?^  \}/m,
+  )?.[0];
+  assert.ok(functionSource, 'missing buildArtHistoryUrl implementation');
+  const buildArtHistoryUrl = Function(
+    'window',
+    `${functionSource}; return buildArtHistoryUrl;`,
+  )({ location: { href: 'https://example.test/index.html' } });
+  assert.equal(buildArtHistoryUrl(''), 'art-history-map.html?embed=1');
+  assert.equal(
+    buildArtHistoryUrl('?privateMedia=1'),
+    'art-history-map.html?embed=1&privateMedia=1',
+  );
+  assert.equal(buildArtHistoryUrl('?privateMedia=0'), 'art-history-map.html?embed=1');
+  assert.equal(buildArtHistoryUrl('?privateMedia=1&debug=1'), 'art-history-map.html?embed=1&privateMedia=1');
+  assert.equal(buildArtHistoryUrl('?debug=1'), 'art-history-map.html?embed=1');
+});
+
+test('homepage preserves the World History typography and navigation labels', async () => {
+  const html = await loadHtml();
+
+  assert.match(
+    html,
+    /font-family: "PingFang SC", "Hiragino Sans GB", -apple-system, "Helvetica Neue", sans-serif/,
+  );
+  assert.match(
+    html,
+    /\.serif \{ font-family: "Big Caslon", "Iowan Old Style", Georgia, "Palatino Linotype", "Songti SC", serif; \}/,
+  );
+  assert.match(
+    html,
+    /<ul class="navlinks">[\s\S]*?>Home<\/[\s\S]*?>Maps<\/[\s\S]*?>Subjects<\/[\s\S]*?>Teacher&rsquo;s pack<\/[\s\S]*?>About us<\//,
+  );
+  assert.match(html, /<div class="map-card-head">History World Map<\/div>/);
 });
 
 test('homepage preserves the established iframe dimensions for Art and World maps', async () => {

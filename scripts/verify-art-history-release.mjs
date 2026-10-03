@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
+import assert from 'node:assert/strict';
 import { readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  RELEASE_STAGE_FORCE_KILL_MS,
   RELEASE_STAGE_TIMEOUT_MS,
   runReleaseStage,
 } from './art-history-release-stage.mjs';
@@ -14,25 +16,56 @@ const tests = readdirSync(join(PROJECT_ROOT, 'tests'))
   .sort()
   .map((name) => join('tests', name));
 
-const steps = [
-  ['Node test suite', ['--test', ...tests]],
-  [
-    'strict 152-work Units 1-4 validator',
-    ['scripts/validate-art-history-data.mjs', 'art-history-map.html'],
-  ],
-  ['private-media leak guard', ['scripts/verify-art-history-private-leaks.mjs']],
-  ['rendered browser matrix', ['scripts/verify-art-history-browser.mjs']],
-];
+export const EXPECTED_RELEASE_STAGE_LABELS = Object.freeze([
+  'Node test suite',
+  'strict 166-work Units 1-5 validator',
+  'private-media leak guard',
+  'rendered browser matrix',
+]);
+
+function releaseStage(label, args) {
+  return Object.freeze({
+    label,
+    command: process.execPath,
+    args: Object.freeze(args),
+    cwd: PROJECT_ROOT,
+    timeoutMs: RELEASE_STAGE_TIMEOUT_MS,
+    forceKillMs: RELEASE_STAGE_FORCE_KILL_MS,
+    stdio: 'inherit',
+  });
+}
+
+const EXPECTED_RELEASE_STAGES = Object.freeze([
+  releaseStage(EXPECTED_RELEASE_STAGE_LABELS[0], ['--test', ...tests]),
+  releaseStage(EXPECTED_RELEASE_STAGE_LABELS[1], [
+    'scripts/validate-art-history-data.mjs',
+    'art-history-map.html',
+  ]),
+  releaseStage(EXPECTED_RELEASE_STAGE_LABELS[2], [
+    'scripts/verify-art-history-private-leaks.mjs',
+  ]),
+  releaseStage(EXPECTED_RELEASE_STAGE_LABELS[3], [
+    'scripts/verify-art-history-browser.mjs',
+  ]),
+]);
+
+export const RELEASE_STEPS = EXPECTED_RELEASE_STAGES;
+
+export function assertExactReleaseStages(steps) {
+  assert.deepEqual(
+    steps,
+    EXPECTED_RELEASE_STAGES,
+    'release stage descriptors',
+  );
+}
+
+export const assertExactReleaseStageOrder = assertExactReleaseStages;
 
 export async function runReleaseVerification() {
-  for (const [label, args] of steps) {
-    process.stdout.write(`\n[release] ${label}\n`);
-    await runReleaseStage({
-      label,
-      args,
-      cwd: PROJECT_ROOT,
-      timeoutMs: RELEASE_STAGE_TIMEOUT_MS,
-    });
+  assertExactReleaseStages(RELEASE_STEPS);
+  for (const stage of RELEASE_STEPS) {
+    process.stdout.write(`\n[release] ${stage.label}\n`);
+    await runReleaseStage(stage);
   }
   process.stdout.write('\nRelease verification passed.\n');
 }

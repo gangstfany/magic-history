@@ -494,12 +494,16 @@ nav.topnav {
   const todayPick = document.getElementById('todayPick');
   const worldMapFrame = document.getElementById('worldMapFrame');
   const artMapFrame = document.getElementById('artMapFrame');
-  const hostParams = new URLSearchParams(window.location.search);
-  if (hostParams.get('privateMedia') === '1') {
-    const artUrl = new URL(artMapFrame.getAttribute('src'), window.location.href);
-    artUrl.searchParams.set('privateMedia', '1');
-    artMapFrame.src = `${artUrl.pathname.split('/').pop()}?${artUrl.searchParams}`;
+  function buildArtHistoryUrl(search) {
+    const hostParams = new URLSearchParams(search);
+    const artUrl = new URL('art-history-map.html?embed=1', window.location.href);
+    if (hostParams.get('privateMedia') === '1') {
+      artUrl.searchParams.set('privateMedia', '1');
+    }
+    return `${artUrl.pathname.split('/').pop()}?${artUrl.searchParams}`;
   }
+  const artHistoryUrl = buildArtHistoryUrl(window.location.search);
+  if (artHistoryUrl !== artMapFrame.getAttribute('src')) artMapFrame.src = artHistoryUrl;
   const mapCard = document.querySelector('.map-card');
   const mapCardHead = document.querySelector('.map-card-head');
   const homeMapCaption = document.getElementById('homeMapCaption');
@@ -725,7 +729,7 @@ nav.topnav {
     if (mapCardHead) mapCardHead.textContent = key === 'art' ? 'AP Art History Map' : 'History World Map';
     if (homeMapCaption) {
       homeMapCaption.textContent = key === 'art'
-        ? '152 AP works · Units 1-4 · filter, compare and study'
+        ? '166 AP works · Units 1-5 · filter, compare and study'
         : '5 regions · 233 events · 104 pins · 6 trade routes';
       homeMapCaption.hidden = !s.live;
     }
