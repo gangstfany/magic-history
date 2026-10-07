@@ -53,7 +53,7 @@ const MANIFEST_PATHS = {
   5: new URL('../data/ap-art-history-unit-5-manifest.json', import.meta.url),
 };
 const EXPECTED_COMPLETE_AP_NUMBERS = Array.from({ length: 98 }, (_, index) => index + 1);
-const EXPECTED_LIVE_AP_NUMBERS = Array.from({ length: 166 }, (_, index) => index + 1);
+const EXPECTED_LIVE_AP_NUMBERS = Array.from({ length: 180 }, (_, index) => index + 1);
 const EXPECTED_RELEASE_AP_NUMBERS = Array.from({ length: 166 }, (_, index) => index + 1);
 const EXPECTED_U2_AP_NUMBERS = Array.from({ length: 36 }, (_, index) => index + 12);
 const EXPECTED_U1_MANIFEST = [
@@ -693,17 +693,18 @@ async function loadCompleteUnits12345Fixture() {
   let artworks;
   let credits;
   if (liveU5.length) {
-    assert.equal(live.artworks.length, 166, 'live U5 authority requires exactly AP 1–166');
+    assert.equal(live.artworks.length, 180, 'live release requires exactly AP 1–180');
+    assert.deepEqual(live.artworks.slice(0, 166).map(({ apNumber }) => apNumber), EXPECTED_RELEASE_AP_NUMBERS);
     assertOrderedDeepEqual(liveU5, unit5.artworks, '$.fixtureHelper.liveU5.artworks');
-    const liveU5CreditIds = Object.keys(live.credits).slice(-canonicalU5Ids.length);
+    const liveU5CreditIds = Object.keys(live.credits).slice(152, 166);
     assert.deepEqual(liveU5CreditIds, canonicalU5Ids, 'live U5 credit key order');
     assertOrderedDeepEqual(
       Object.fromEntries(liveU5CreditIds.map((id) => [id, live.credits[id]])),
       unit5.credits,
       '$.fixtureHelper.liveU5.credits',
     );
-    artworks = structuredClone(live.artworks);
-    credits = structuredClone(live.credits);
+    artworks = structuredClone(live.artworks.slice(0, 166));
+    credits = structuredClone(Object.fromEntries(artworks.map(({ id }) => [id, live.credits[id]])));
   } else {
     assert.equal(live.artworks.length, 152, 'pre-import fixture boundary must end at AP 152');
     assert.ok(
@@ -812,7 +813,7 @@ test('CLI rejects an empty Units 1-2 dataset instead of reporting success', asyn
   }
 });
 
-test('loads exactly AP 1–166 with the canonical Unit 5 projection and preserved Unit 2 manifest', async () => {
+test('loads exactly AP 1–180 with the canonical Unit 5 projection and preserved AP 1–166', async () => {
   const [{ artworks, credits }, unit5] = await Promise.all([
     loadDocumentData(),
     readFile(U5_CANONICAL_PATH, 'utf8').then(JSON.parse),
@@ -823,11 +824,16 @@ test('loads exactly AP 1–166 with the canonical Unit 5 projection and preserve
   const liveU5Credits = Object.fromEntries(unit5Ids.map((id) => [id, credits[id]]));
   const unit5Media = liveU5.flatMap(({ images }) => images);
 
-  assert.equal(artworks.length, 166);
+  assert.equal(artworks.length, 180);
   assert.deepEqual(
     artworks.map(({ apNumber }) => apNumber),
     EXPECTED_LIVE_AP_NUMBERS,
     'artwork-data must remain in official AP order',
+  );
+  assert.deepEqual(
+    artworks.slice(0, 166).map(({ apNumber }) => apNumber),
+    EXPECTED_RELEASE_AP_NUMBERS,
+    'first 166 works must preserve the U1–U5 AP order independently of U6',
   );
   assertOrderedDeepEqual(liveU5, unit5.artworks, '$.liveU5.artworks');
   assertOrderedDeepEqual(liveU5Credits, unit5.credits, '$.liveU5.credits');
@@ -869,16 +875,16 @@ test('complete Units 1–5 fixture helper emits AP 1–166 once without duplicat
   );
 });
 
-test('strict loader accepts the assembled complete AP 1–166 release by default', async () => {
-  const fixture = await loadCompleteUnits12345Fixture();
-  const directory = await mkdtemp(join(tmpdir(), 'art-history-validator-u5-release-'));
+test('strict loader accepts the complete AP 1–180 live release by default', async () => {
+  const fixture = await loadDocumentData();
+  const directory = await mkdtemp(join(tmpdir(), 'art-history-validator-u6-release-'));
   const htmlPath = await writeFixtureHtml(directory, fixture.artworks, fixture.credits);
 
   try {
     const artworks = await loadAndValidate(htmlPath);
     assert.deepEqual(
       artworks.map(({ apNumber }) => apNumber),
-      EXPECTED_RELEASE_AP_NUMBERS,
+      EXPECTED_LIVE_AP_NUMBERS,
     );
   } finally {
     await rm(directory, { recursive: true });
@@ -904,7 +910,7 @@ test('strict live loader rejects a duplicate raw artwork property key', async ()
 });
 
 test('strict live loader rejects a duplicate raw top-level image credit key', async () => {
-  const fixture = await loadCompleteUnits12345Fixture();
+  const fixture = await loadDocumentData();
   const directory = await mkdtemp(join(tmpdir(), 'art-history-duplicate-credit-key-'));
   const cleanHtmlPath = await writeFixtureHtml(directory, fixture.artworks, fixture.credits);
   const html = await readFile(cleanHtmlPath, 'utf8');
@@ -1855,7 +1861,7 @@ test('validator accepts the complete rights-safe AP 1–166 release without chan
   );
   assertOrderedDeepEqual(
     fixture.artworks.slice(152),
-    live.artworks.slice(152),
+    live.artworks.slice(152, 166),
     '$.release.liveU5.artworks',
   );
   assert.deepEqual(
@@ -2599,7 +2605,7 @@ test('imports the exact nine missing works with approved classification metadata
   }
 });
 
-test('assigns exactly 11, 36, 51, 54, and 14 works to Units 1 through 5', async () => {
+test('assigns exactly 11, 36, 51, 54, 14, and 14 works to Units 1 through 6', async () => {
   const artworks = await loadValidatedLiveArtworks();
 
   assert.equal(artworks.filter(({ unit }) => unit === 1).length, 11);
@@ -2607,8 +2613,9 @@ test('assigns exactly 11, 36, 51, 54, and 14 works to Units 1 through 5', async 
   assert.equal(artworks.filter(({ unit }) => unit === 3).length, 51);
   assert.equal(artworks.filter(({ unit }) => unit === 4).length, 54);
   assert.equal(artworks.filter(({ unit }) => unit === 5).length, 14);
+  assert.equal(artworks.filter(({ unit }) => unit === 6).length, 14);
   for (const artwork of artworks) {
-    assert.ok([1, 2, 3, 4, 5].includes(artwork.unit), `${artwork.id} must be in Unit 1, 2, 3, 4, or 5`);
+    assert.ok([1, 2, 3, 4, 5, 6].includes(artwork.unit), `${artwork.id} must be in Unit 1, 2, 3, 4, 5, or 6`);
     assert.equal(typeof artwork.culture, 'string', `${artwork.id} must have a culture`);
     assert.ok(artwork.culture.trim(), `${artwork.id} must have a non-empty culture`);
     assert.equal(typeof artwork.region, 'string', `${artwork.id} must have a region`);

@@ -24,6 +24,72 @@ const REQUIRED_VIEWS = new Map([
   [180, ['primary']],
 ]);
 
+async function loadLiveWorks() {
+  const html = await readFile(HTML_URL, 'utf8');
+  const block = html.match(/<script id="artwork-data" type="application\/json">([\s\S]*?)<\/script>/);
+  assert.ok(block, 'live artwork-data JSON block');
+  return JSON.parse(block[1]);
+}
+
+test('live map imports all 14 bilingual U6 works and 23 ordered manifest views', async () => {
+  const [allWorks, manifest] = await Promise.all([
+    loadLiveWorks(), readFile(MANIFEST_URL, 'utf8').then(JSON.parse),
+  ]);
+  assert.equal(allWorks.length, 180);
+  const works = allWorks.filter(({ unit }) => unit === 6);
+  assert.equal(works.length, 14);
+  assert.deepEqual(works.map(({ apNumber }) => apNumber), [...REQUIRED_VIEWS.keys()]);
+  assert.equal(works.flatMap(({ images }) => images).length, 23);
+  const validIds = new Set(allWorks.map(({ id }) => id));
+  for (const work of works) {
+    const expected = manifest[work.apNumber];
+    for (const field of ['id', 'titleEn', 'region', 'siteName', 'traditionGroup']) {
+      assert.equal(work[field], expected[field], `AP ${work.apNumber} ${field}`);
+    }
+    assert.equal(work.provenanceQualifier ?? null, expected.provenanceQualifier);
+    assert.deepEqual(work.images.map(({ id }) => id), expected.requiredViewIds);
+    for (const field of ['titleEn', 'titleZh', 'culture', 'date', 'medium', 'function', 'form', 'content', 'context']) {
+      assert.equal(typeof work[field], 'string', `AP ${work.apNumber} ${field} type`);
+      assert.ok(work[field].trim(), `AP ${work.apNumber} ${field} nonempty`);
+    }
+    assert.match(work.titleZh, /[\u4e00-\u9fff]/);
+    assert.ok(work.recognitionAnchors.length >= 2 && work.recognitionAnchors.length <= 4);
+    assert.ok(work.comparisonIds.some((id) => validIds.has(id) && id !== work.id));
+    for (const media of work.images) {
+      assert.match(media.imageSourceUrl, /^https:\/\//);
+      if (media.imageUrl === null) {
+        assert.equal(typeof media.mediaStatus, 'string');
+        assert.ok(media.mediaStatus.trim());
+      } else {
+        assert.match(media.imageUrl, /^https:\/\//);
+      }
+    }
+  }
+});
+
+test('live U6 media and credit metadata match the frozen ledger exactly', async () => {
+  const [allWorks, html, ledger] = await Promise.all([
+    loadLiveWorks(), readFile(HTML_URL, 'utf8'), readFile(LEDGER_URL, 'utf8'),
+  ]);
+  const credits = JSON.parse(html.match(/<script id="image-credit-data" type="application\/json">([\s\S]*?)<\/script>/)[1]);
+  const rows = ledger.split('\n').filter((line) => /^\| \d+ \|/.test(line))
+    .map((line) => line.split('|').slice(1, -1).map((cell) => cell.trim()));
+  const works = allWorks.filter(({ unit }) => unit === 6);
+  assert.equal(works.length, 14);
+  const mediaByKey = new Map(works.flatMap((work) => work.images.map((media, index) => [
+    `${work.id}::${media.id}`, { media, credit: Array.isArray(credits[work.id]) ? credits[work.id][index] : credits[work.id] },
+  ])));
+  assert.equal(works.flatMap(({ images }) => images).filter(({ imageUrl }) => imageUrl !== null).length, 2);
+  for (const row of rows) {
+    const { media, credit } = mediaByKey.get(`${row[1]}::${row[2]}`);
+    assert.equal(media.imageUrl, row[5].startsWith('https://') ? row[5] : null);
+    assert.equal(media.imageSourceUrl, row[6].match(/\((https:\/\/[^)]+)\)/)[1]);
+    assert.equal(credit.creatorOrInstitution, row[7]);
+    assert.ok(credit.licenseName.trim());
+    assert.match(credit.licenseUrl, /^https:\/\//);
+  }
+});
+
 test('Unit 6 manifest freezes AP 167-180 and all 23 ordered views', async () => {
   const manifest = JSON.parse(await readFile(MANIFEST_URL, 'utf8'));
   const expectedIds = [...REQUIRED_VIEWS.keys()].map(String);

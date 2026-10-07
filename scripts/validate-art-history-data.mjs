@@ -8,6 +8,7 @@ const ACTIVE_MANIFESTS = Object.freeze([
   ['U3', 'data/ap-art-history-unit-3-manifest.json'],
   ['U4', 'data/ap-art-history-unit-4-manifest.json'],
   ['U5', 'data/ap-art-history-unit-5-manifest.json'],
+  ['U6', 'data/ap-art-history-unit-6-manifest.json'],
 ]);
 const MANIFEST_URLS = Object.freeze(Object.fromEntries(
   ACTIVE_MANIFESTS.map(([unitLabel, relativePath]) => [
@@ -24,8 +25,8 @@ const PLACEHOLDER_AUTHORITY_URLS = Object.freeze({
   4: new URL('../data/ap-art-history-unit-4-public-placeholders.json', import.meta.url),
   5: new URL('../data/ap-art-history-unit-5-placeholder-authority.json', import.meta.url),
 });
-const EXPECTED_ARTWORK_COUNT = 166;
-const EXPECTED_LAST_AP_NUMBER = 166;
+const EXPECTED_ARTWORK_COUNT = 180;
+const EXPECTED_LAST_AP_NUMBER = 180;
 const U3_REGION_COUNTS = Object.freeze({
   italyVatican: 18,
   france: 5,
@@ -84,6 +85,12 @@ const UNIT_RULES = Object.freeze({
       'northwestCoast',
       'plainsGreatBasin',
     ]),
+  }),
+  6: Object.freeze({
+    start: 167,
+    end: 180,
+    count: 14,
+    regions: new Set(['southernAfrica', 'westAfrica', 'centralAfrica']),
   }),
 });
 const REQUIRED_FIELDS = [
@@ -490,12 +497,12 @@ function validateManifests(manifests) {
 
   const unitKeys = Object.keys(manifests);
   const activeUnits = unitKeys.length >= 2
-    && unitKeys.length <= 5
+    && unitKeys.length <= 6
     && unitKeys.every((key, index) => key === String(index + 1))
     ? unitKeys.map(Number)
     : null;
   if (!activeUnits) {
-    fail('official manifests must contain exactly sequential Units 1-2, Units 1-3, Units 1-4, or Units 1-5');
+    fail('official manifests must contain exactly sequential Units 1-2, Units 1-3, Units 1-4, Units 1-5, or Units 1-6');
   }
 
   for (const unit of activeUnits) {
@@ -515,7 +522,7 @@ function validateManifests(manifests) {
       { orderSensitive: false },
     );
 
-    const entryFields = unit === 4 || unit === 5
+    const entryFields = unit === 4 || unit === 5 || unit === 6
       ? [
         'id',
         'titleEn',
@@ -538,7 +545,7 @@ function validateManifests(manifests) {
         Object.keys(entry),
         entryFields,
         `${context} entry must use the exact manifest schema`,
-        { orderSensitive: unit === 5 },
+        { orderSensitive: unit === 5 || unit === 6 },
       );
       for (const field of entryFields.filter(
         (field) => field !== 'requiredViewIds' && field !== 'provenanceQualifier',
@@ -548,13 +555,13 @@ function validateManifests(manifests) {
         }
       }
       if (
-        (unit === 4 || unit === 5)
+        (unit === 4 || unit === 5 || unit === 6)
         && entry.provenanceQualifier !== null
         && (typeof entry.provenanceQualifier !== 'string' || entry.provenanceQualifier.trim() === '')
       ) {
         fail(`${context}.provenanceQualifier must be null or a non-empty string`);
       }
-      if (unit === 3 || unit === 4 || unit === 5) {
+      if (unit === 3 || unit === 4 || unit === 5 || unit === 6) {
         if (
           !Array.isArray(entry.requiredViewIds)
           || entry.requiredViewIds.length === 0
@@ -626,7 +633,7 @@ function validateArtworkMedia(
     if (artwork.images.length === 0) {
       fail(`${label}.images must not be empty`);
     }
-  } else if (artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5) {
+  } else if (artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) {
     fail(`${label}.images must be a non-empty array for Unit ${artwork.unit}`);
   } else {
     for (const field of LEGACY_MEDIA_FIELDS) {
@@ -637,7 +644,7 @@ function validateArtworkMedia(
   }
 
   const media = normalizeArtworkMedia(artwork);
-  const expectedMediaCount = artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5
+  const expectedMediaCount = artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6
     ? expectedManifest.requiredViewIds.length
     : artwork.unit === 1 && artwork.apNumber === 8
       ? 2
@@ -657,23 +664,25 @@ function validateArtworkMedia(
     }
     const auditedUnit = artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5;
     const rawMedia = Array.isArray(artwork.images) ? artwork.images[index] : null;
-    const viewId = auditedUnit
+    const manifestMediaUnit = auditedUnit || artwork.unit === 6;
+    const viewId = manifestMediaUnit
       ? rawMedia?.id ?? expectedManifest?.requiredViewIds?.[index]
       : 'primary';
     const mediaKey = `${artwork.id}::${viewId}`;
     const restrictedPlaceholder = (artwork.unit === 4 || artwork.unit === 5)
       && placeholders
       && Object.hasOwn(placeholders, mediaKey);
-    const mediaContext = artwork.unit === 5
-      ? `Unit 5 ${mediaKey}`
+    const u6Placeholder = artwork.unit === 6 && item.imageUrl === null;
+    const mediaContext = artwork.unit === 5 || artwork.unit === 6
+      ? `Unit ${artwork.unit} ${mediaKey}`
       : `${label}.media[${index}]`;
-    if (artwork.unit === 5) {
+    if (artwork.unit === 5 || artwork.unit === 6) {
       if (!rawMedia || typeof rawMedia !== 'object' || Array.isArray(rawMedia)) {
         fail(`${mediaContext} raw media must be an object`);
       }
       validateExactKeys(
         Object.keys(rawMedia),
-        restrictedPlaceholder ? U5_RESTRICTED_MEDIA_FIELDS : U5_PUBLIC_MEDIA_FIELDS,
+        restrictedPlaceholder || u6Placeholder ? U5_RESTRICTED_MEDIA_FIELDS : U5_PUBLIC_MEDIA_FIELDS,
         `${mediaContext} must use the exact ordered raw media schema`,
       );
     }
@@ -686,6 +695,13 @@ function validateArtworkMedia(
       if (item.imageUrl !== null || item.mediaStatus !== 'rightsRestricted') {
         fail(`Unit ${artwork.unit} ${mediaKey} restricted media must be a public placeholder`);
       }
+    } else if (u6Placeholder) {
+      if (typeof item.mediaStatus !== 'string' || item.mediaStatus.trim() === '') {
+        fail(`${mediaContext}.mediaStatus must be a non-empty string for a Unit 6 placeholder`);
+      }
+      if (!isHttpsUrl(item.imageSourceUrl)) {
+        fail(`${mediaContext}.imageSourceUrl must be an HTTPS URL for a Unit 6 placeholder`);
+      }
     } else {
       if (typeof item.imageUrl !== 'string' || item.imageUrl.trim() === '') {
         fail(`${mediaContext}.imageUrl must be a non-empty string`);
@@ -694,7 +710,7 @@ function validateArtworkMedia(
         fail(`${mediaContext}.mediaStatus is only allowed for a reviewed Unit 4 or Unit 5 placeholder`);
       }
     }
-    if (auditedUnit) {
+    if (manifestMediaUnit) {
       if (typeof viewId !== 'string' || viewId.trim() === '') {
         fail(`${label}.media[${index}].id must be a non-empty string`);
       }
@@ -702,6 +718,8 @@ function validateArtworkMedia(
         fail(`${label} contains duplicate view id ${viewId}`);
       }
       viewIds.add(viewId);
+    }
+    if (auditedUnit) {
       for (const field of ['imageUrl', 'imageSourceUrl', 'imageAlt']) {
         if (
           item[field] === null
@@ -717,11 +735,11 @@ function validateArtworkMedia(
         auditedMediaOwners[field].set(item[field], mediaKey);
       }
     }
-    if (item.imageUrl !== null && !(auditedUnit ? isHttpsUrl(item.imageUrl) : isHttpUrl(item.imageUrl))) {
-      fail(`${mediaContext}.imageUrl must be an ${auditedUnit ? 'HTTPS' : 'HTTP(S)'} URL`);
+    if (item.imageUrl !== null && !(manifestMediaUnit ? isHttpsUrl(item.imageUrl) : isHttpUrl(item.imageUrl))) {
+      fail(`${mediaContext}.imageUrl must be an ${manifestMediaUnit ? 'HTTPS' : 'HTTP(S)'} URL`);
     }
-    if (!(auditedUnit ? isHttpsUrl(item.imageSourceUrl) : isHttpUrl(item.imageSourceUrl))) {
-      fail(`${mediaContext}.imageSourceUrl must be an ${auditedUnit ? 'HTTPS' : 'HTTP(S)'} URL`);
+    if (!(manifestMediaUnit ? isHttpsUrl(item.imageSourceUrl) : isHttpUrl(item.imageSourceUrl))) {
+      fail(`${mediaContext}.imageSourceUrl must be an ${manifestMediaUnit ? 'HTTPS' : 'HTTP(S)'} URL`);
     }
     if (item.imageUrl !== null && imageUrls.has(item.imageUrl)) {
       fail(`${label} contains duplicate media imageUrl ${item.imageUrl}`);
@@ -739,7 +757,7 @@ function validateArtworkMedia(
     }
   }
 
-  if (artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5) {
+  if (artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) {
     validateExactKeys(
       normalizedMediaIds(artwork),
       expectedManifest.requiredViewIds,
@@ -757,10 +775,10 @@ export function validateArtworks(artworks, manifests, placeholders) {
     const rule = UNIT_RULES[unit];
     return Array.from({ length: rule.count }, (_, index) => rule.start + index);
   });
-  const expectedArtworkCount = activeUnits.includes(5)
+  const expectedArtworkCount = activeUnits.includes(6)
     ? EXPECTED_ARTWORK_COUNT
     : expectedApNumbers.length;
-  const expectedLastApNumber = activeUnits.includes(5)
+  const expectedLastApNumber = activeUnits.includes(6)
     ? EXPECTED_LAST_AP_NUMBER
     : expectedApNumbers.at(-1);
   const unitLabel = `1-${activeUnits.length}`;
@@ -868,7 +886,7 @@ export function validateArtworks(artworks, manifests, placeholders) {
         fail(`${label}.provenanceQualifier is only allowed for the six reviewed broad-provenance Unit 3 works`);
       }
     }
-    if (artwork.unit === 4 || artwork.unit === 5) {
+    if (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) {
       if (typeof artwork.traditionGroup !== 'string' || artwork.traditionGroup.trim() === '') {
         fail(`${label}.traditionGroup must be a non-empty Unit ${artwork.unit} tradition group`);
       }
@@ -906,17 +924,17 @@ export function validateArtworks(artworks, manifests, placeholders) {
         `AP ${artwork.apNumber} manifest title must be "${expected.titleEn}"; received "${artwork.titleEn}"`,
       );
     }
-    if ((artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5) && artwork.region !== expected.region) {
+    if ((artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) && artwork.region !== expected.region) {
       fail(
         `AP ${artwork.apNumber} manifest region must be ${expected.region}; received ${artwork.region}`,
       );
     }
-    if ((artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5) && artwork.siteName !== expected.siteName) {
+    if ((artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) && artwork.siteName !== expected.siteName) {
       fail(
         `AP ${artwork.apNumber} manifest siteName must be "${expected.siteName}"; received "${artwork.siteName}"`,
       );
     }
-    if (artwork.unit === 4 || artwork.unit === 5) {
+    if (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) {
       if (artwork.traditionGroup !== expected.traditionGroup) {
         fail(`AP ${artwork.apNumber} manifest traditionGroup must be ${expected.traditionGroup}; received ${artwork.traditionGroup}`);
       }
@@ -951,7 +969,7 @@ export function validateArtworks(artworks, manifests, placeholders) {
       artwork.recognitionAnchors,
       'recognitionAnchors',
       label,
-      { minimum: artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 ? 2 : 1 },
+      { minimum: artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 ? 2 : 1 },
     );
     validateStringArray(
       artwork.comparisonIds,
@@ -963,7 +981,7 @@ export function validateArtworks(artworks, manifests, placeholders) {
       artwork.keywords,
       'keywords',
       label,
-      { minimum: artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 ? 3 : 1 },
+      { minimum: artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 ? 3 : 1 },
     );
     if (artwork.unit === 5) {
       validateUnit5StudyContract(artwork);
@@ -1016,7 +1034,7 @@ export function validateArtworks(artworks, manifests, placeholders) {
       if (!ids.has(comparisonId)) {
         fail(`${artwork.id}.comparisonIds references unknown id ${comparisonId}`);
       }
-      if (artwork.unit === 4 || artwork.unit === 5) {
+      if (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) {
         const note = artwork.comparisonNotes[comparisonId];
         if (typeof note !== 'string' || note.trim() === '') {
           fail(`${artwork.id}.comparisonNotes must define ${comparisonId}`);
@@ -1024,7 +1042,7 @@ export function validateArtworks(artworks, manifests, placeholders) {
       }
     }
     if (
-      (artwork.unit === 4 || artwork.unit === 5)
+      (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6)
       && Object.keys(artwork.comparisonNotes).some(
         (comparisonId) => !artwork.comparisonIds.includes(comparisonId),
       )
@@ -1398,16 +1416,16 @@ export function validateImageCredits(credits, artworks, rightsAudit, placeholder
     }
     const creditSignatures = new Set();
     for (const [index, credit] of creditEntries.entries()) {
-      const creditContext = artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5
+      const creditContext = artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6
         ? `${artwork.id}::${normalizedMediaIds(artwork)[index]}`
         : `${artwork.id} image credit ${index + 1}`;
       if (!credit || typeof credit !== 'object' || Array.isArray(credit)) {
         fail(`${creditContext} image credit must be an object`);
       }
-      if (artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5) {
+      if (artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) {
         validateExactKeys(
-          artwork.unit === 5 ? Object.keys(credit) : Object.keys(credit).sort(),
-          artwork.unit === 5 ? CREDIT_FIELDS : CREDIT_FIELDS.toSorted(),
+          artwork.unit === 5 || artwork.unit === 6 ? Object.keys(credit) : Object.keys(credit).sort(),
+          artwork.unit === 5 || artwork.unit === 6 ? CREDIT_FIELDS : CREDIT_FIELDS.toSorted(),
           `${creditContext} image credit must use the exact credit schema`,
         );
       }
@@ -1619,6 +1637,7 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
     unit3ManifestSource,
     unit4ManifestSource,
     unit5ManifestSource,
+    unit6ManifestSource,
     unit3RightsSource,
     unit4RightsSource,
     unit5RightsSource,
@@ -1631,6 +1650,7 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
     readFile(MANIFEST_URLS[3], 'utf8'),
     readFile(MANIFEST_URLS[4], 'utf8'),
     readFile(MANIFEST_URLS[5], 'utf8'),
+    readFile(MANIFEST_URLS[6], 'utf8'),
     readFile(AUDITED_RIGHTS_URLS[3], 'utf8'),
     readFile(AUDITED_RIGHTS_URLS[4], 'utf8'),
     readFile(AUDITED_RIGHTS_URLS[5], 'utf8'),
@@ -1656,6 +1676,7 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
     3: parseJson(unit3ManifestSource, 'official Unit 3 manifest'),
     4: parseJson(unit4ManifestSource, 'official Unit 4 manifest'),
     5: parseJson(unit5ManifestSource, 'official Unit 5 manifest'),
+    6: parseJson(unit6ManifestSource, 'official Unit 6 manifest'),
   };
   const placeholders = {
     4: parseJson(unit4PlaceholdersSource, 'Unit 4 public placeholder authority'),
