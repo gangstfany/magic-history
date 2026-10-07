@@ -7,6 +7,17 @@ const MANIFEST_URL = new URL('../data/ap-art-history-unit-6-manifest.json', impo
 const ENGLISH_URL = new URL('../docs/content/ap-art-history-unit-6-english.md', import.meta.url);
 const LEDGER_URL = new URL('../docs/data-sources/u6-source-ledger.md', import.meta.url);
 
+const PUBLIC_LICENSE_BY_VIEW = Object.freeze({
+  'ap167-great-zimbabwe::conical-tower': Object.freeze({
+    licenseName: 'CC BY 3.0; credit Fanny Schertzer, link license, indicate changes',
+    licenseUrl: 'https://creativecommons.org/licenses/by/3.0/',
+  }),
+  'ap168-great-mosque-djenne::monday-market': Object.freeze({
+    licenseName: 'CC BY 2.0; credit Emilio Labrador, link license, indicate changes',
+    licenseUrl: 'https://creativecommons.org/licenses/by/2.0/',
+  }),
+});
+
 const REQUIRED_VIEWS = new Map([
   [167, ['conical-tower', 'circular-wall']],
   [168, ['mosque', 'monday-market']],
@@ -80,13 +91,21 @@ test('live U6 media and credit metadata match the frozen ledger exactly', async 
     `${work.id}::${media.id}`, { media, credit: Array.isArray(credits[work.id]) ? credits[work.id][index] : credits[work.id] },
   ])));
   assert.equal(works.flatMap(({ images }) => images).filter(({ imageUrl }) => imageUrl !== null).length, 2);
+  assert.equal(Object.keys(PUBLIC_LICENSE_BY_VIEW).length, 2);
   for (const row of rows) {
-    const { media, credit } = mediaByKey.get(`${row[1]}::${row[2]}`);
+    const mediaKey = `${row[1]}::${row[2]}`;
+    const { media, credit } = mediaByKey.get(mediaKey);
     assert.equal(media.imageUrl, row[5].startsWith('https://') ? row[5] : null);
     assert.equal(media.imageSourceUrl, row[6].match(/\((https:\/\/[^)]+)\)/)[1]);
     assert.equal(credit.creatorOrInstitution, row[7]);
     assert.ok(credit.licenseName.trim());
     assert.match(credit.licenseUrl, /^https:\/\//);
+    if (media.imageUrl !== null) {
+      const expectedLicense = PUBLIC_LICENSE_BY_VIEW[mediaKey];
+      assert.ok(expectedLicense, `${mediaKey} public image must have a pinned license`);
+      assert.equal(credit.licenseName, expectedLicense.licenseName, `${mediaKey} licenseName`);
+      assert.equal(credit.licenseUrl, expectedLicense.licenseUrl, `${mediaKey} licenseUrl`);
+    }
   }
 });
 
