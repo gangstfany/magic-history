@@ -87,6 +87,10 @@ test('Unit 6 English edition covers every work once with complete study sections
     for (const heading of [
       '### Identification', '### Function', '### Content', '### Form',
       '### Context', '### Recognition Anchors', '### Comparisons', '### Required Views and Sources',
-    ]) assert.match(section, new RegExp(`^${heading}$`, 'm'), `AP ${apNumber} ${heading}`);
+    ]) {
+      assert.match(section, new RegExp(`^${heading}$`, 'm'), `AP ${apNumber} ${heading}`);
+      const body = section.split(`${heading}\n`)[1]?.split(/^### /m)[0].trim() ?? '';
+      assert.ok(body, `AP ${apNumber} ${heading} must have nonempty body content`);
+    }
   }
 });

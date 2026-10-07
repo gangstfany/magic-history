@@ -259,7 +259,7 @@ AP #175, Bundu mask: both express valued womanhood through masquerade. Pwo is da
 
 - `primary`: Female (Pwo) mask; no additional performance view is required by this manifest. PLACEHOLDER — reusable image not yet verified
 
-Factual sources: [Smarthistory](https://smarthistory.org/female-pwo-mask/), [Smithsonian face-mask record](https://www.si.edu/object/nmafa_85-15-20).
+Factual sources: [Smarthistory](https://smarthistory.org/female-pwo-mask/), [Smithsonian face-mask record](https://africa.si.edu/collection/object/nmafa_85-15-20).
 
 ## AP #174 · Portrait mask (Mblo)
 
@@ -333,7 +333,7 @@ AP #173, Pwo mask: both embody ideals of womanhood, but the Sande performer is f
 - `mask`: Bundu / sowei helmet mask. PLACEHOLDER — reusable image not yet verified
 - `performance-context`: Sande masquerade with costume. PLACEHOLDER — reusable image not yet verified
 
-Factual sources: [Smarthistory](https://smarthistory.org/bundu-sowei-helmet-mask/), [Smithsonian helmet-mask record](https://www.si.edu/object/helmet-mask%3Anmafa_2012-11-1).
+Factual sources: [Smarthistory](https://smarthistory.org/bundu-sowei-helmet-mask/), [Smithsonian helmet-mask record](https://africa.si.edu/collection/object/nmafa_2012-11-1).
 
 ## AP #176 · Ikenga (shrine figure)
 
