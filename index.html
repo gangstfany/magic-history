@@ -51,10 +51,10 @@ html, body {
 .frame {
   min-height: 100%;
   display: flex; align-items: center; justify-content: center;
-  padding: clamp(14px, 3vw, 40px);
+  padding: clamp(14px, 2vw, 24px);
 }
 .card {
-  width: 100%; max-width: 1100px;
+  width: 100%; max-width: 1280px;
   background: var(--card);
   border-radius: 22px;
   box-shadow: 0 30px 70px rgba(33,31,28,0.18), 0 2px 0 rgba(255,255,255,0.4) inset;
@@ -169,17 +169,24 @@ nav.topnav {
   border: 1px solid var(--line); background: var(--card);
   box-shadow: var(--shadow-md, 0 6px 20px rgba(28,33,40,0.10));
 }
+.map-card[data-subject="world"] { width: calc(100% - 32px); max-width: none; }
 .map-card-head { display: flex; align-items: center; gap: 12px; margin: 0; padding: 11px 20px; font-size: 15px; font-weight: 800; color: #8b3a2f; border-bottom: 1px solid var(--line); background: #fffdf8; }
 /* 标题行的常驻入口:三组功能原本只在事件面板空态里露出,学生点开某一站后就再也找不到 */
 .map-card-head .hdr-menu { display: flex; gap: 6px; margin-left: auto; }
 .map-card-head .hdr-btn { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .map-card-head .hdr-btn:hover { border-color: var(--ink-soft); }
 .map-card-head .hdr-btn:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.map-card-head .hdr-btn[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
 /* ---- 满宽地图工具栏(时期 + 主题 + 搜索),横跨地图与事件面板之上。
        版式与艺术史地图那条筛选栏一致:标签在上、控件在下,44px 触摸高度 ---- */
 .map-toolbar-host { position: relative; display: flex; flex-wrap: wrap; align-items: end; gap: 12px 18px; padding: 14px 18px; background: #fffdf8; border-bottom: 1px solid var(--line); }
+.map-card[data-subject="world"] .map-toolbar-host {
+  display: grid; grid-template-columns: minmax(168px, 220px) minmax(240px, 1fr) auto;
+  align-items: end; gap: 12px 16px;
+}
 .map-toolbar-host[hidden] { display: none; }
 .mth-field { display: grid; gap: 5px; color: var(--ink-soft); font-size: 12px; font-weight: 600; }
+.mth-field-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 /* 时期/搜索是定宽控件;主题吃掉整行剩余空间,药丸在自己这一格里换行 */
 .mth-field-search { flex: 0 1 auto; }
 .mth-field-cats { flex: 1 1 320px; min-width: 0; }
@@ -196,6 +203,25 @@ nav.topnav {
 .mth-cat:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
 .mth-cat .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .mth-cat[aria-pressed="false"] { opacity: 0.4; }
+.mth-theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 15px; border: 1px solid var(--line); border-radius: 9px;
+  background: var(--card); color: var(--ink); font: inherit; font-size: 13px; font-weight: 800;
+  cursor: pointer; white-space: nowrap;
+}
+.mth-theme-toggle:hover { border-color: var(--ink-soft); }
+.mth-theme-toggle:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.mth-theme-toggle[aria-expanded="true"] { border-color: var(--terracotta); background: #fff; }
+.mth-theme-active { min-width: 24px; padding: 2px 7px; border-radius: 999px; background: rgba(33,31,28,.08); font-size: 11px; }
+.mth-theme-chevron { transition: transform .15s ease; }
+.mth-theme-toggle[aria-expanded="true"] .mth-theme-chevron { transform: rotate(180deg); }
+.mth-theme-panel {
+  position: absolute; top: calc(100% - 6px); right: 18px; z-index: 20;
+  width: min(560px, calc(100% - 36px)); padding: 12px;
+  border: 1px solid var(--line); border-radius: 12px; background: #fffdf8;
+  box-shadow: 0 12px 28px rgba(33,31,28,.16);
+}
+.mth-theme-panel[hidden] { display: none; }
 .mth-search { position: relative; display: flex; align-items: center; }
 .mth-search input { width: 200px; max-width: 46vw; padding-right: 34px; }
 .mth-search input::placeholder { color: #9b9382; font-weight: 500; }
@@ -204,19 +230,23 @@ nav.topnav {
 .mth-clear { position: absolute; right: 6px; width: 28px; height: 28px; border: none; border-radius: 50%; background: rgba(33,31,28,0.09); color: #555; font-size: 15px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .mth-clear::before { content: ""; position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }
 .mth-clear[hidden] { display: none; }   /* display:flex 会盖掉 [hidden] 的 UA 样式,得显式关掉 */
-.mth-count { flex: 0 0 auto; margin-left: auto; align-self: end; padding-bottom: 13px; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
-/* 计数是状态显示,不该参与挤占布局:一律钉在右上角,与标签行齐平。
-   窄屏时第一行标签左侧只有"时期"两字,右上角是空的,不会打架。 */
-.mth-count { position: absolute; top: 15px; right: 16px; margin: 0; padding: 0; }
+.mth-count { font-size: 11.5px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
 @media (max-width: 720px) {
   .map-toolbar-host { padding: 12px 14px; gap: 10px 14px; }
-  .mth-count { top: 13px; right: 14px; font-size: 11.5px; }
+  .map-card[data-subject="world"] .map-toolbar-host { grid-template-columns: minmax(0, 1fr); }
   .mth-field { gap: 4px; }
   .mth-cats { gap: 6px; }
+  .mth-search input, .map-toolbar-host select, .mth-theme-toggle { width: 100%; max-width: none; }
+  .mth-theme-panel { right: 14px; width: calc(100% - 28px); }
 }
 .mth-count:empty { display: none; }
 .map-events-split { display: flex; align-items: stretch; height: min(540px, 62vh); }
+.map-card[data-subject="world"] .map-events-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(380px, 34%, 430px);
+}
 .home-map-wrap { position: relative; flex: 0 0 66.67%; height: 100%; overflow: hidden; border-right: 1px solid var(--line); background: #efe7d6; }
+.map-card[data-subject="world"] .home-map-wrap { min-width: 0; }
 .subject-map-frame { display: none; width: 100%; height: 100%; border: 0; }
 .subject-map-frame.active { display: block; }
 .map-card[data-subject="art"] .map-events-split { height: min(760px, 78vh); }
@@ -261,7 +291,9 @@ nav.topnav {
 @keyframes sk-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 /* ---- 右侧事件面板:与地图等高、内部滚动;点标点后该站事件在这里完整显示(单列) ---- */
-.home-events { flex: 1 1 0; min-width: 0; height: 100%; overflow-y: auto; background: var(--card); }
+/* overscroll-behavior: contain —— 面板滚到头之后不要把滚动交给外层页面,
+   否则学生在右栏读链条,读到底整个首页跟着往下窜。 */
+.home-events { flex: 1 1 0; min-width: 0; height: 100%; overflow-y: auto; overscroll-behavior: contain; background: var(--card); }
 .home-events .he-empty { padding: 52px 22px; text-align: center; color: var(--ink-soft); font-size: 13px; line-height: 1.75; }
 .home-events .event-head { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin: 0; padding: 16px 20px 13px; border-bottom: 1px solid var(--line); background: var(--card); position: sticky; top: 0; z-index: 1; }
 .home-events .event-head .badge { width: 32px; height: 32px; border-radius: 8px; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
@@ -324,28 +356,99 @@ nav.topnav {
 
 /* ---- 商路行程面板(从地图镜像过来) ---- */
 .home-events .route-panel { padding: 16px 20px 14px; border-bottom: 1px solid var(--line); background: #fffdf8; }
+/* 标题与切换器是导航,必须常驻:面板会自动滚到当前环,不吸顶的话学生一落地就看不到
+   自己在哪条链、能往哪切(实测落地 scrollTop 632,标题和切换器都在视口外)。 */
+/* 吸顶块要满宽出血:负外边距抵掉 .route-panel 的 16px/20px 内边距,再用等量内边距把文字放回原位。
+   否则背景两侧各短 20px,内容会从缝里滚过去;上内边距只有 2px 时标题几乎贴着边框。
+   背景用 inherit 跟 .route-panel 取同一个值 —— 写 var(--card) 会差出一档(#f9f4e8 vs #fffdf8),
+   看起来就像面板上贴了一块独立色块。 */
+.home-events .rt-top { position: sticky; top: 0; z-index: 3; background: inherit;
+  margin: -16px -20px 0; padding: 16px 20px 13px;
+  box-shadow: 0 7px 9px -9px rgba(43,33,24,.45); }
+.home-events .chain-panel-toggle { position: sticky; top: 0; z-index: 4; display: flex; flex-wrap: wrap; gap: 6px; margin: -16px -20px 12px; padding: 16px 20px 10px; background: #fffdf8; }
+.home-events .chain-panel-toggle button { flex: 1 1 112px; min-width: 0; min-height: 36px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink-soft); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.home-events .chain-panel-toggle button:hover { border-color: var(--ink-soft); }
+.home-events .chain-panel-toggle button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: #fff; }
+.home-events .chain-panel-toggle button:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.home-events .chain-route-panel .rt-top { top: 62px; margin-top: 0; }
+.home-events .course-mainline { padding: 16px 20px 20px; border-bottom: 1px solid var(--line); background: #fffdf8; }
+.home-events .course-mainline-head { margin: 0 0 13px; }
+.home-events .course-mainline-title { font-size: 17px; font-weight: 800; }
+.home-events .course-mainline-subtitle { margin: 5px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.55; }
+.home-events .course-mainline-sequence { display: flex; flex-direction: column; align-items: stretch; min-width: 0; }
+.home-events .mainline-segment { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; width: 100%; min-width: 0; padding: 12px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--card); color: var(--ink); font: inherit; text-align: left; }
+.home-events button.mainline-segment { cursor: pointer; }
+.home-events button.mainline-segment:hover { border-color: var(--ink-soft); background: #fffaf0; }
+.home-events button.mainline-segment:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+.home-events .mainline-segment.active { border-color: #76539a; box-shadow: 0 0 0 1px rgba(118,83,154,.22); }
+.home-events .mainline-node { width: 11px; height: 11px; border-radius: 50%; background: #76539a; box-shadow: 0 0 0 4px rgba(118,83,154,.12); }
+.home-events .mainline-copy { min-width: 0; }
+.home-events .mainline-name { display: block; overflow-wrap: anywhere; font-size: 12.5px; font-weight: 800; line-height: 1.5; }
+.home-events .mainline-units { display: block; margin-top: 3px; color: var(--ink-soft); font-size: 11px; font-weight: 700; }
+.home-events .mainline-rings { color: var(--ink-soft); font-size: 11px; font-weight: 800; white-space: nowrap; }
+.home-events .mainline-bridge { position: relative; margin: 0 0 0 18px; padding: 10px 9px 10px 20px; border-left: 2px solid #287f83; color: var(--ink-soft); font-size: 11.5px; line-height: 1.55; overflow-wrap: anywhere; }
+.home-events .mainline-bridge::before { content: "↓"; position: absolute; left: -8px; top: 50%; transform: translateY(-50%); padding: 1px 2px; background: #fffdf8; color: #287f83; font-weight: 900; }
+.home-events .mainline-segment-pending { border-style: dashed; background: var(--paper); color: var(--ink-soft); }
+.home-events .mainline-segment-pending .mainline-node { background: var(--ink-faint); box-shadow: none; }
 .home-events .rt-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .home-events .rt-name { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
 .home-events .rt-progress { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
 .home-events .rt-blurb { margin: 9px 0 0; font-size: 13px; line-height: 1.7; color: var(--ink); }
 .home-events .rt-exam { margin: 7px 0 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-soft); }
-.home-events .rt-exam span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(201,113,79,0.14); color: #a8552f; font-size: 11px; font-weight: 800; }
+.home-events .rt-exam span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(43,33,24,0.09); color: var(--ink); font-size: 11px; font-weight: 800; }
+.home-events .rt-seam { margin: 12px 0 0; padding: 11px 13px; border-left: 3px solid #287f83; border-radius: 0 8px 8px 0; background: rgba(40,127,131,0.08); color: var(--ink); }
+.home-events .rt-seam + .rt-stops { margin-top: 10px; }
+.home-events .rt-stops + .rt-seam { margin-top: 12px; }
+.home-events .rt-seam-label { color: #176369; font-size: 11px; font-weight: 800; letter-spacing: .055em; text-transform: uppercase; }
+.home-events .rt-seam-copy { margin: 5px 0 0; font-size: 12px; line-height: 1.65; color: var(--ink-soft); overflow-wrap: anywhere; }
+.home-events .rt-seam-action { display: inline-flex; align-items: center; min-height: 34px; margin: 8px 0 0; padding: 0 11px; border: 1px solid rgba(40,127,131,0.45); border-radius: 8px; background: rgba(255,255,255,0.62); color: #176369; font: inherit; font-size: 12px; font-weight: 800; line-height: 1.35; text-align: left; white-space: normal; cursor: pointer; }
+.home-events .rt-seam-action:hover { border-color: #287f83; background: rgba(255,255,255,0.88); }
+.home-events .rt-seam-action:focus-visible { outline: 2px solid #287f83; outline-offset: 2px; }
+.home-events .rt-seam-pending { display: inline-block; margin: 7px 0 0; color: #176369; font-size: 11.5px; font-weight: 700; }
+@media (max-width: 720px) {
+  .home-events .rt-seam { padding: 10px 11px; }
+  .home-events .rt-seam-action { width: 100%; justify-content: center; }
+}
 .home-events .rt-stops { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; }
 .home-events .rt-stop { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .home-events .rt-stop .rt-dot { width: 7px; height: 7px; border-radius: 50%; background: #b7ae9c; }
 .home-events .rt-stop .rt-num { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
 .home-events .rt-stop.done { opacity: .62; }
-.home-events .rt-stop.done .rt-dot { background: #8fa878; }
-.home-events .rt-stop.now { border-color: #8b1a1a; box-shadow: 0 0 0 2px rgba(139,26,26,0.14); }
-.home-events .rt-stop.now .rt-dot { background: #8b1a1a; }
+.home-events .rt-stop.done .rt-dot { background: var(--ink-soft); }
+/* 因果链一律不用主题色:GOV/ECN/CDI/SIO/TEC 已占掉红绿紫橙深蓝,链条再用就分不清
+   紫圆点到底是「文化与宗教」还是「因果链」。状态改用填充与环线表达。 */
+.home-events .rt-stop.now { border-color: var(--ink); box-shadow: 0 0 0 2px rgba(43,33,24,0.13); }
+.home-events .rt-stop.now .rt-dot { background: var(--ink); }
 /* 因果链:竖排 + 箭头机制 */
-.home-events .rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; }
+/* sticky 控制条会盖住最后一环,给链条留出它的高度(8 环时正好压住交棒下一单元那环) */
+.home-events .rt-stops-chain { flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 52px; }
 .home-events .rt-stops-chain .rt-stop { justify-content: flex-start; text-align: left; }
+/* 链内切换器:主干链与补充链各占一行,标签列等宽,两个控件左右边缘对齐 —— 之前四块东西
+   各自为政地堆着,窄栏里显得很挤。层级靠"一个是常驻按钮、一个是多选下拉"来分。 */
+.home-events .rt-switch { display: flex; flex-direction: column; gap: 6px; margin: 9px 0 0; }
+.home-events .rt-pick { display: flex; align-items: center; gap: 9px; }
+.home-events .rt-pick-lb { flex: 0 0 42px; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); }
+.home-events .rt-spine { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 34px;
+  padding: 0 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--card);
+  font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; text-align: left; }
+.home-events .rt-spine:hover { border-color: var(--ink-soft); }
+.home-events .rt-spine.on { border-color: var(--ink); background: rgba(43,33,24,0.05); }
+.home-events .rt-spine .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; background: var(--ink) !important; }
+.home-events .rs-name { flex: 1 1 auto; min-width: 0; }
+.home-events .rt-branch-select { flex: 1 1 auto; min-width: 0; font: inherit; min-height: 34px; border: 1px solid var(--line);
+  border-radius: 8px; padding: 4px 8px; color: var(--ink); background: var(--card); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.home-events .rt-branch-select:hover { border-color: var(--ink-soft); }
+.home-events .rt-switch-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); cursor: pointer; text-align: left; }
+.home-events .rt-switch-chip:hover { border-color: var(--ink-soft); }
+.home-events .rt-switch-chip.on { color: var(--ink); border-color: var(--ink); background: rgba(43,33,24,0.05); }
+/* 支线空心环、骨架条实心点:同为中性色,靠填充区分层级 */
+.home-events .rt-switch-chip .rc-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; background: transparent !important; box-shadow: inset 0 0 0 1.5px var(--ink-soft); }
+.home-events .rt-switch-chip .rc-count, .home-events .rt-spine .rc-count { font-size: 10.5px; }
 .home-events .rt-stop .rt-sub { margin-left: 7px; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
 .home-events .rt-link { display: flex; gap: 8px; padding: 7px 0 7px 13px; margin: 2px 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
-.home-events .rt-arrow { flex: 0 0 auto; color: #5a2d7a; font-weight: 800; }
+.home-events .rt-arrow { flex: 0 0 auto; color: var(--ink); font-weight: 800; }
 .home-events .rt-evidence { margin: 11px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
-.home-events .rt-evidence span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(90,45,122,0.13); color: #5a2d7a; font-size: 11px; font-weight: 800; }
+.home-events .rt-evidence span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 5px; background: rgba(43,33,24,0.09); color: var(--ink); font-size: 11px; font-weight: 800; }
 .home-events .chain-chip .rc-dot { box-shadow: 0 0 0 3px rgba(90,45,122,0.12); }
 /* 同 world-map.html:链条长到超过右栏高度时,控制条吸底,"下一站"始终在手边 */
 .home-events .rt-ctrl { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; position: sticky; bottom: 0; padding: 11px 0 6px; background: var(--card); }
@@ -354,19 +457,138 @@ nav.topnav {
 .home-events .rt-btn.ghost { color: var(--ink-soft); }
 .home-events .rt-btn[disabled] { opacity: .38; cursor: default; }
 .home-events .rt-stop:focus-visible, .home-events .rt-btn:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
+/* ---- Unit 1 location study (cloned from the embedded map panel) ---- */
+.home-events .location-study-entry { display: flex; justify-content: center; margin: 8px 18px 22px; }
+.home-events .location-study-open { min-height: 44px; white-space: normal; }
+.home-events .location-study-open:focus-visible { outline: 3px solid #28708a; outline-offset: 2px; }
+.home-events .location-study-view { display: grid; gap: 14px; min-width: 0; padding: 16px 18px 22px; overflow-wrap: anywhere; }
+.home-events .location-study-back { justify-self: start; min-height: 44px; white-space: normal; }
+.home-events .location-study-title { margin: 0; color: var(--ink); font-size: 22px; line-height: 1.25; letter-spacing: -0.01em; }
+.home-events .location-study-title:focus { border-radius: 4px; outline: 3px solid #28708a; outline-offset: 4px; }
+.home-events .location-study-context { margin: -6px 0 0; color: var(--ink-soft); font-size: 12px; font-weight: 700; }
+.home-events .location-study-list { display: grid; gap: 10px; min-width: 0; }
+.home-events .location-study-item { min-width: 0; border: 1px solid var(--line); border-radius: 11px; background: var(--card); box-shadow: 0 1px 2px rgba(33,31,28,0.06); overflow: hidden; }
+.home-events .location-study-toggle { display: grid; grid-template-columns: minmax(82px, auto) minmax(0, 1fr); gap: 5px 12px; width: 100%; min-height: 44px; padding: 13px 15px; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.home-events .location-study-toggle:hover { background: #fffaf0; }
+.home-events .location-study-toggle[aria-expanded="true"] { background: #f7efe0; }
+.home-events .location-study-toggle:focus-visible { position: relative; z-index: 1; outline: 3px solid #28708a; outline-offset: -3px; }
+.home-events .location-study-date { grid-row: 1 / span 3; color: var(--terracotta); font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.home-events .location-study-name { min-width: 0; font-size: 14px; line-height: 1.35; }
+.home-events .location-study-summary { min-width: 0; color: var(--ink-soft); font-size: 12.5px; font-weight: 500; line-height: 1.55; }
+.home-events .location-study-main { min-width: 0; color: #176369; font-size: 11.5px; font-weight: 800; line-height: 1.45; }
+.home-events .location-study-detail { display: grid; gap: 16px; min-width: 0; padding: 18px 17px 20px; border-top: 2px solid #b85e3c; background: #fffaf0; overflow-wrap: anywhere; }
+.home-events .location-study-detail header, .home-events .location-study-detail section, .home-events .location-study-detail p, .home-events .location-study-detail ul, .home-events .location-study-detail dl { min-width: 0; margin: 0; }
+.home-events .location-study-detail-header { display: grid; gap: 7px; padding-bottom: 14px; border-bottom: 1px solid #decfbd; }
+.home-events .location-study-eyebrow { color: #9a472c; font-size: 11px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+.home-events .location-study-topics, .home-events .location-study-themes, .home-events .location-study-exam-skills { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.home-events .location-study-topic, .home-events .location-study-theme { display: inline-flex; align-items: center; min-height: 26px; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; line-height: 1.2; }
+.home-events .location-study-topic { border: 1px solid #d7b299; color: #874228; background: #fff4e7; }
+.home-events .location-study-theme { border: 1px solid color-mix(in srgb, var(--study-theme-color, #8b1a1a) 55%, #fff); color: #fff; background: var(--study-theme-color, #8b1a1a); }
+.home-events .location-study-exam-skills-block { display: grid; gap: 5px; min-width: 0; }
+.home-events .location-study-exam-skills-label { color: #176369; font-size: 11px; font-weight: 800; line-height: 1.2; }
+.home-events .location-study-exam-skill { display: inline-flex; align-items: center; min-height: 26px; padding: 3px 8px; border: 1px solid #91bec1; border-radius: 999px; color: #176369; background: #edf6f7; font-size: 11px; font-weight: 800; line-height: 1.2; }
+.home-events .location-study-unit-card { min-width: 0; border: 1px solid var(--line); border-left: 4px solid #28708a; border-radius: 11px; background: var(--card); box-shadow: 0 1px 2px rgba(33,31,28,0.06); overflow: hidden; overflow-wrap: anywhere; }
+.home-events .location-study-unit-card[data-study-unit-card="synthesis"] { border-left-color: #b85e3c; }
+.home-events .location-study-unit-card details { min-width: 0; }
+.home-events .location-study-unit-card summary { position: relative; display: grid; gap: 5px; min-width: 0; min-height: 44px; padding: 12px 46px 13px 14px; color: var(--ink); cursor: pointer; list-style: none; }
+.home-events .location-study-unit-card summary::-webkit-details-marker { display: none; }
+.home-events .location-study-unit-card summary::after { content: "+"; position: absolute; top: 13px; right: 13px; display: inline-grid; place-items: center; width: 24px; height: 24px; border: 1px solid #28708a; border-radius: 50%; color: #176369; font-size: 17px; font-weight: 700; line-height: 1; }
+.home-events .location-study-unit-card[data-study-unit-card="synthesis"] summary::after { border-color: #b85e3c; color: #9a472c; }
+.home-events .location-study-unit-card details[open] summary::after { content: "−"; }
+.home-events .location-study-unit-card summary:focus-visible { position: relative; z-index: 1; outline: 3px solid #28708a; outline-offset: -3px; }
+.home-events .location-study-unit-role { min-width: 0; color: #176369; font-size: 11px; font-weight: 800; letter-spacing: .06em; line-height: 1.3; text-transform: uppercase; }
+.home-events .location-study-unit-card[data-study-unit-card="synthesis"] .location-study-unit-role { color: #9a472c; }
+.home-events .location-study-unit-title { min-width: 0; font-size: 15px; font-weight: 800; line-height: 1.35; }
+.home-events .location-study-unit-summary { min-width: 0; color: var(--ink-soft); font-size: 12.5px; font-weight: 500; line-height: 1.6; }
+.home-events .location-study-unit-body { display: grid; gap: 9px; min-width: 0; padding: 0 14px 15px; border-top: 1px solid var(--line); }
+.home-events .location-study-unit-body p, .home-events .location-study-unit-body ul { min-width: 0; margin: 0; color: var(--ink-soft); font-size: 12.5px; line-height: 1.6; }
+.home-events .location-study-unit-body p { padding-top: 12px; }
+.home-events .location-study-unit-body ul { padding-left: 20px; }
+.home-events .location-study-unit-body li + li { margin-top: 5px; }
+.home-events .location-study-detail-title { margin: 2px 0 0; color: #4b271c; font-size: 19px; line-height: 1.3; }
+.home-events .location-study-detail-date { color: #9a472c; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.home-events .location-study-core { display: grid; gap: 13px; min-width: 0; }
+.home-events .location-study-core section { display: grid; gap: 5px; }
+.home-events .location-study-core h3, .home-events .location-study-connection-group h4 { margin: 0; color: #5a2c20; font-size: 12px; line-height: 1.4; }
+.home-events .location-study-detail p, .home-events .location-study-detail li, .home-events .location-study-detail dd { color: var(--ink-soft); font-size: 12.5px; line-height: 1.65; }
+.home-events .location-study-region { padding: 9px 11px; border: 1px solid #d8bba7; border-radius: 8px; background: #fffdf8; font-weight: 750; }
+.home-events .location-study-exam { padding: 11px 12px; border-left: 4px solid #28708a; border-radius: 7px; background: #edf6f7; }
+.home-events .location-study-disclosures { min-width: 0; border-top: 1px solid #d8c9b8; }
+.home-events .location-study-disclosure { min-width: 0; border-bottom: 1px solid #d8c9b8; }
+.home-events .location-study-disclosure summary { display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 44px; padding: 7px 2px; color: #5a2c20; font-size: 12.5px; font-weight: 850; cursor: pointer; list-style: none; }
+.home-events .location-study-disclosure summary::-webkit-details-marker { display: none; }
+.home-events .location-study-disclosure summary::before { content: "+"; display: inline-grid; place-items: center; flex: 0 0 22px; width: 22px; height: 22px; border: 1px solid #b85e3c; border-radius: 50%; font-size: 16px; line-height: 1; }
+.home-events .location-study-disclosure[open] summary::before { content: "−"; }
+.home-events .location-study-disclosure summary:focus-visible, .home-events .location-study-connection:focus-visible { outline: 3px solid #28708a; outline-offset: 2px; }
+.home-events .location-study-disclosure-body { min-width: 0; padding: 2px 2px 14px 33px; }
+.home-events .location-study-detail ul { padding-left: 20px; }
+.home-events .location-study-detail li + li { margin-top: 5px; }
+.home-events .location-study-term-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; container: study-terms / inline-size; }
+.home-events .location-study-term-grid > div { display: grid; grid-template-columns: minmax(105px, .42fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.home-events .location-study-term-grid > div, .home-events .location-study-people > div { min-width: 0; padding: 9px 10px; border: 1px solid #e2d4c4; border-radius: 7px; background: #fffdf8; }
+.home-events .location-study-detail dt { font-size: 12.5px; font-weight: 850; }
+.home-events .location-study-detail dd { margin: 3px 0 0; }
+.home-events .location-study-term-grid dt { min-width: 0; overflow-wrap: anywhere; }
+.home-events .location-study-term-grid dd { margin-top: 0; }
+@container study-terms (max-width: 300px) {
+  .home-events .location-study-term-grid > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
+.home-events .location-study-people { display: grid; gap: 8px; }
+.home-events .location-study-connections { display: grid; gap: 13px; min-width: 0; }
+.home-events .location-study-connection-group { display: grid; gap: 7px; min-width: 0; }
+.home-events .location-study-connection-list { display: grid; gap: 8px; min-width: 0; }
+.home-events .location-study-connection { display: grid; gap: 3px; width: 100%; min-width: 0; min-height: 44px; padding: 9px 10px; border: 1px solid #bd765b; border-radius: 8px; background: #fffdf8; color: var(--ink); font: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.home-events .location-study-connection:hover { background: #fff1e3; }
+.home-events .location-study-connection strong { color: #773a27; font-size: 12.5px; }
+.home-events .location-study-connection span { color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+@media (max-width: 560px) {
+  .home-events .location-study-view { padding: 14px 14px 20px; }
+  .home-events .location-study-toggle { grid-template-columns: minmax(0, 1fr); }
+  .home-events .location-study-date { grid-row: auto; }
+  .home-events .location-study-disclosure-body { padding-left: 2px; }
+}
 /* 空态里的商路入口 */
-.home-events .route-picker-title { margin: 22px 0 0; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
 .home-events .route-picker { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 12px 0 0; }
 .home-events .route-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .home-events .route-chip:hover { border-color: var(--ink-soft); }
-.home-events .route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; }
+/* flex 基准写死,否则窄面板下圆点被压成椭圆,看着像没对齐 */
+.home-events .route-chip .rc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
+.home-events .rc-count { white-space: nowrap; color: var(--ink-soft); font-weight: 600; }
+.home-events .map-panel-tabs { display: flex; gap: 8px; padding: 0 0 12px; }
+.home-events .map-panel-tabs button { position: relative; isolation: isolate; min-height: 44px; padding: 0 14px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.home-events .map-panel-tabs button::before { content: ""; position: absolute; inset: 3px 0; z-index: -1; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); }
+.home-events .map-panel-tabs button:hover::before { border-color: var(--terracotta); }
+.home-events .map-panel-tabs button[aria-pressed="true"] { color: #fff; }
+.home-events .map-panel-tabs button[aria-pressed="true"]::before { border-color: var(--terracotta); background: var(--terracotta); }
+.home-events .map-panel-tabs button:focus-visible { outline: 3px solid #28708a; outline-offset: 2px; }
 
 .home-events .search-none { padding: 46px 22px; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--ink-soft); line-height: 1.8; }
 .home-events .search-none span { font-size: 12px; font-weight: 600; color: var(--ink-faint, #9b9382); }
 
 /* 窗口 < 900px:2:1 分栏会把事件栏压得太窄,自动改成上下叠——地图在上、事件在下,两块都固定高度,模块整体大小不随点击变 */
+/* At intermediate widths, preserve a readable APWH detail panel by stacking it below the map. */
+@media (min-width: 901px) and (max-width: 1050px) {
+  .map-card[data-subject="world"] .map-events-split {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    grid-template-columns: none;
+  }
+  .map-card[data-subject="world"] .home-map-wrap {
+    flex: none;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .map-card[data-subject="world"] .home-events {
+    flex: none;
+    height: auto;
+    overflow-y: auto;
+  }
+}
 @media (max-width: 900px) {
   .map-events-split { flex-direction: column; height: auto; }
+  .map-card[data-subject="world"] .map-events-split { display: flex; grid-template-columns: none; }
   .home-map-wrap { flex: none; height: 300px; border-right: none; border-bottom: 1px solid var(--line); }
   .home-events { flex: none; height: 46vh; overflow-y: auto; }
   .map-card[data-subject="art"] .map-events-split { height: auto; }
@@ -500,22 +722,26 @@ nav.topnav {
       <div class="map-card" data-subject="world">
         <h2 class="map-card-head"><span id="mapCardTitle">History World Map</span>
           <span class="hdr-menu" id="mapHdrMenu">
-            <button type="button" class="hdr-btn" data-open-picker="chain">因果链</button>
-            <button type="button" class="hdr-btn" data-open-picker="route">商路</button>
-            <button type="button" class="hdr-btn" data-open-picker="quiz">练习</button>
+            <button type="button" class="hdr-btn" data-learning-view="chain" aria-pressed="true">因果链</button>
+            <button type="button" class="hdr-btn" data-learning-view="map" aria-pressed="false">地图</button>
+            <button type="button" class="hdr-btn" data-learning-view="practice" aria-pressed="false">练习</button>
           </span>
         </h2>
-        <!-- 满宽工具栏:搜索 + 主题筛选,驱动 iframe 内地图(由 JS 从地图的 __mapFilter 建起) -->
+        <!-- Main 紧凑工具栏:Unit + 搜索常驻,主题按需展开;筛选状态仍由 iframe 的 __mapFilter 管理 -->
         <div class="map-toolbar-host" id="mapToolbarHost" role="group" aria-label="筛选历史事件" hidden>
-          <label class="mth-field">时期<select id="hostPeriod" aria-label="按时期筛选"></select></label>
-          <label class="mth-field mth-field-search">搜索
+          <label class="mth-field">Unit<select id="hostPeriod" aria-label="按 Unit 筛选"></select></label>
+          <label class="mth-field mth-field-search"><span class="mth-field-label">搜索 <span class="mth-count" id="hostCount" role="status"></span></span>
             <span class="mth-search">
               <input type="search" id="hostSearch" placeholder="地点 / 事件 / 关键词" aria-label="搜索历史地点与事件" autocomplete="off">
               <button type="button" class="mth-clear" id="hostClear" aria-label="清除搜索" hidden>&times;</button>
             </span>
           </label>
-          <div class="mth-field mth-field-cats">主题<div class="mth-cats" id="hostCats" role="group" aria-label="按主题筛选(可多选)"></div></div>
-          <div class="mth-count" id="hostCount" role="status"></div>
+          <button type="button" class="mth-theme-toggle" id="hostThemeToggle" aria-expanded="false" aria-controls="hostThemePanel">
+            主题筛选 <span class="mth-theme-active" id="hostThemeActive">0/0</span><span class="mth-theme-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="mth-theme-panel" id="hostThemePanel" hidden>
+            <div class="mth-cats" id="hostCats" role="group" aria-label="按主题筛选(可多选)"></div>
+          </div>
         </div>
         <div class="map-events-split">
           <div class="home-map-wrap" id="home-map-embed">
@@ -535,11 +761,7 @@ nav.topnav {
           </div>
           <!-- 右侧事件面板:点左边地图的数字标点,该站事件在这里完整显示 -->
           <div id="home-events" class="home-events" role="region" aria-label="历史事件" aria-live="polite">
-            <div class="he-empty">点地图上的数字标点，<br>这里会显示那一站的历史事件
-              <!-- 因果链/商路的清单只留标题行那两个按钮一处入口,空态里不再重复铺一遍 -->
-              <div class="route-picker-title">Practice</div>
-              <div id="homePracticeBlock"></div>
-            </div>
+            <div class="he-empty">点地图上的数字标点，<br>这里会显示那一站的历史事件</div>
           </div>
         </div>
       </div>
@@ -628,6 +850,12 @@ nav.topnav {
   </div>
 </div>
 
+<script src="data/apwh-u4-location-study.js"></script>
+<script src="data/apwh-u5-location-study.js"></script>
+<script src="data/apwh-u6-location-study.js"></script>
+<script src="data/apwh-u7-location-study.js"></script>
+<script src="data/apwh-u8-location-study.js"></script>
+<script src="data/apwh-u9-location-study.js"></script>
 <script>
 (function () {
   const views = document.querySelectorAll('.view');
@@ -737,34 +965,83 @@ nav.topnav {
   const reduceMotionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
   const prefersReducedMotion = () => reduceMotionMQ.matches;
   const homeEvents = document.getElementById('home-events');
-  const HOME_EVENTS_EMPTY = homeEvents ? homeEvents.innerHTML : '';  // 空状态提示,复位时用
-  // 这份快照是在练习 chip 填进去之前拍的,所以每次用它复位后都得把 chip 补回来,
-  // 否则退出商路会看到一个只剩标题、下面空荡荡的空态。
-  // 因果链和商路的清单不在空态里,由标题行的 因果链 / 商路 两个按钮打开(见 data-open-picker)。
-  // 练习区要显示错题数,每次回到空态都得重新问一次地图
-  function fillHomePractice() {
-    const box = document.getElementById('homePracticeBlock');
-    if (!box || !hostApi || !hostApi.quizStats) return;
-    const st = hostApi.quizStats();
-    box.innerHTML = `<div class="route-picker">`
-      + `<button type="button" class="route-chip quiz-chip" data-quiz-start="all">`
-      + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span style="color:var(--ink-soft);font-weight:600">时期 · 地区</span></button>`
-      + (st.review ? `<button type="button" class="route-chip quiz-chip" data-quiz-start="review">`
-          + `<span class="rc-dot" style="background:#d9a441"></span>只练错题<span style="color:var(--ink-soft);font-weight:600">${st.review} 条</span></button>` : '')
-      + `</div>`
-      + (st.practiced ? `<div class="qz-stats">已练 ${st.practiced} 条 · 待复习 ${st.review} 条`
-          + (st.review ? ` · <button type="button" class="qz-link" data-quiz-book="1">看错题本</button>` : '')
-          + ` · <button type="button" class="qz-link" data-quiz-reset="1">清空记录</button></div>` : '');
+  const escapeHomeStudyText = value => String(value || '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[ch]);
+  const HOME_STUDY_GLOBAL_BY_UNIT = Object.freeze({
+    u1: 'APWH_U1_LOCATION_STUDY',
+    u2: 'APWH_U2_LOCATION_STUDY',
+    u3: 'APWH_U3_LOCATION_STUDY',
+    u4: 'APWH_U4_LOCATION_STUDY',
+    u5: 'APWH_U5_LOCATION_STUDY',
+    u6: 'APWH_U6_LOCATION_STUDY',
+    u7: 'APWH_U7_LOCATION_STUDY',
+    u8: 'APWH_U8_LOCATION_STUDY',
+    u9: 'APWH_U9_LOCATION_STUDY',
+  });
+
+  function homeStudyExamSkillsHTML(skills) {
+    const tags = skills.map(skill => `<span class="location-study-exam-skill" data-study-exam-skill>`
+      + `${escapeHomeStudyText(skill)}</span>`).join('');
+    return `<span class="location-study-exam-skills-block">`
+      + `<span class="location-study-exam-skills-label" data-study-exam-skills-label>Exam Skills</span>`
+      + `<span class="location-study-exam-skills">${tags}</span></span>`;
   }
+
+  function homeStudyUnitCardHTML(card) {
+    const takeaways = card.takeaways.map(takeaway => `<li data-study-unit-takeaway>`
+      + `${escapeHomeStudyText(takeaway)}</li>`).join('');
+    return `<article class="location-study-unit-card" data-study-unit-card="${escapeHomeStudyText(card.kind)}">`
+      + `<details data-study-unit-disclosure="${escapeHomeStudyText(card.kind)}">`
+      + `<summary><span class="location-study-unit-role">${escapeHomeStudyText(card.role)}</span>`
+      + `<span class="location-study-unit-title">${escapeHomeStudyText(card.title)}</span>`
+      + `<span class="location-study-unit-summary">${escapeHomeStudyText(card.summary)}</span>`
+      + homeStudyExamSkillsHTML(card.examSkills) + `</summary>`
+      + `<div class="location-study-unit-body"><p data-study-unit-prompt>${escapeHomeStudyText(card.prompt)}</p>`
+      + `<ul>${takeaways}</ul></div></details></article>`;
+  }
+
+  function renderHomeStudyBookends() {
+    const view = homeEvents?.querySelector('[data-location-study-view]');
+    const list = view?.querySelector('.location-study-list');
+    if (!view || !list) return;
+    const unitId = String(view.dataset.locationStudyUnit || '');
+    const globalName = HOME_STUDY_GLOBAL_BY_UNIT[unitId];
+    let api;
+    try { api = globalName && worldMapFrame.contentWindow[globalName]; } catch {}
+    if (!api || api.unitId !== unitId) {
+      throw new Error(`Invalid homepage ${unitId || 'unknown Unit'} study API`);
+    }
+    const contextCard = api.getUnitCard('context');
+    const synthesisCard = api.getUnitCard('synthesis');
+    if (!contextCard || !synthesisCard) {
+      throw new Error(`Invalid homepage Unit ${api.unitNumber} study bookends: missing context or synthesis card`);
+    }
+    list.querySelectorAll(':scope > [data-study-unit-card]').forEach(card => card.remove());
+    list.insertAdjacentHTML('afterbegin', homeStudyUnitCardHTML(contextCard));
+    list.insertAdjacentHTML('beforeend', homeStudyUnitCardHTML(synthesisCard));
+  }
+
   function resetHomeEvents() {
     if (!homeEvents) return;
-    homeEvents.innerHTML = HOME_EVENTS_EMPTY;
-    fillHomePractice();
+    homeEvents.setAttribute('aria-label', '历史事件');
+    homeEvents.innerHTML = `<div class="he-empty">点地图上的数字标点，<br>这里会显示那一站的历史事件</div>`;
+  }
+
+  function clearEmbeddedWorldSizing() {
+    if (!worldMapFrame) return;
+    worldMapFrame.style.height = '';
+    const wrap = worldMapFrame.closest('.home-map-wrap');
+    const split = worldMapFrame.closest('.map-events-split');
+    if (wrap) wrap.style.height = '';
+    if (split) split.style.height = '';
+    if (homeEvents) homeEvents.style.height = '';
   }
 
   // 把内嵌地图收拾成"只剩地图、填满整格":隐藏 world-map 自带的表头和事件区,让地图区撑满 iframe
   function styleEmbeddedMap() {
     if (!worldMapFrame) return;
+    if (selectedSubject !== 'world') { clearEmbeddedWorldSizing(); return; }
     let doc;
     try { doc = worldMapFrame.contentDocument; } catch (err) { return; }
     if (!doc) return;
@@ -772,9 +1049,19 @@ nav.topnav {
     const ez = doc.querySelector('.event-zone'); if (ez) ez.style.display = 'none';
     // 首页用父页面满宽工具栏(见 #mapToolbarHost),隐藏 iframe 内部那个,避免挤在窄地图列里
     const tb = doc.querySelector('.map-toolbar'); if (tb) tb.style.display = 'none';
-    // 表头/工具栏/事件区都隐藏了,地图区高度 = iframe 可视高度 => 地图铺满整格
+    // 首页 iframe 必须同时容纳地图和 Timeline Dock，不能让地图吞掉整个视口把 Dock 挤到裁切区外。
     const mz = doc.querySelector('.map-zone');
-    if (mz) { mz.style.flex = '0 0 auto'; mz.style.height = doc.documentElement.clientHeight + 'px'; }
+    if (mz) { mz.style.flex = '0 0 auto'; mz.style.height = (window.innerWidth <= 900 ? 300 : 500) + 'px'; }
+    const study = doc.querySelector('#mapStudyView');
+    const wrap = worldMapFrame.closest('.home-map-wrap');
+    const split = worldMapFrame.closest('.map-events-split');
+    if (study && wrap && split) {
+      const height = Math.ceil(study.getBoundingClientRect().height);
+      worldMapFrame.style.height = height + 'px';
+      wrap.style.height = height + 'px';
+      split.style.height = window.innerWidth <= 1050 ? 'auto' : height + 'px';
+      if (homeEvents) homeEvents.style.height = height + 'px';
+    }
   }
 
   // 读 iframe 里刚渲染好的事件,渲染到右侧面板;没选中事件时显示空状态提示
@@ -783,14 +1070,42 @@ nav.topnav {
     let doc;
     try { doc = worldMapFrame.contentDocument; } catch (err) { return; }
     if (!doc) return;
+    const api = worldMapFrame.contentWindow.__mapFilter;
+    const state = api?.getLearningState?.();
+    const studyState = api?.getLocationStudyUiState?.();
+    const pendingRestore = studyState?.pendingRestore;
+    const studyRestore = pendingRestore
+      && Number.isSafeInteger(pendingRestore.restoreToken) && pendingRestore.restoreToken > 0
+      && Number.isFinite(pendingRestore.scrollTop) && pendingRestore.scrollTop >= 0
+      && typeof pendingRestore.invokerTargetId === 'string' && pendingRestore.invokerTargetId
+      && typeof pendingRestore.studyId === 'string' && pendingRestore.studyId === studyState.studyId
+      && typeof pendingRestore.locationNumber === 'string' && pendingRestore.locationNumber
+      ? { restoreToken: pendingRestore.restoreToken, scrollTop: pendingRestore.scrollTop,
+          invokerTargetId: pendingRestore.invokerTargetId, studyId: pendingRestore.studyId,
+          locationNumber: pendingRestore.locationNumber }
+      : null;
+    const zone = doc.querySelector('#eventZone');
     const panel = doc.querySelector('.event-panel');
-    const hasEvent = panel && panel.classList.contains('show') && panel.innerHTML.trim();
-    if (hasEvent) {
-      homeEvents.innerHTML = panel.innerHTML;
-      homeEvents.scrollTop = 0;
+    const empty = doc.querySelector('.event-empty');
+    if (!state || !zone) { resetHomeEvents(); return; }
+    document.querySelectorAll('.map-card-head [data-learning-view]').forEach(button =>
+      button.setAttribute('aria-pressed', String(button.dataset.learningView === state.view)));
+    homeEvents.setAttribute('aria-label', state.label);
+    let tabsHTML = '';
+    if (state.view === 'map') {
+      const tabs = doc.querySelector('#mapPanelTabs')?.cloneNode(true);
+      if (tabs) { tabs.removeAttribute('id'); tabs.hidden = false; tabsHTML = tabs.outerHTML; }
+    }
+    const panelHTML = panel?.classList.contains('show') && panel.innerHTML.trim() ? panel.innerHTML : '';
+    const emptyHTML = !panelHTML && empty && getComputedStyle(empty).display !== 'none'
+      ? `<div class="he-empty">${empty.innerHTML}</div>` : '';
+    homeEvents.innerHTML = tabsHTML + panelHTML + emptyHTML;
+    renderHomeStudyBookends();
+    if (homeEvents.innerHTML.trim()) {
+      homeEvents.scrollTop = studyRestore ? studyRestore.scrollTop : 0;
       // 因果链的骨架比右栏高得多(Unit 2→3 有 10 环),每步都复位到顶会把"当前这一环"留在屏幕外。
       // 与 world-map.html 的 goToStop 同一处理:滚到当前环,直接写 scrollTop(不用 smooth)。
-      const nowStop = homeEvents.querySelector('.rt-stops-chain .rt-stop.now');
+      const nowStop = !studyRestore && homeEvents.querySelector('.rt-stops-chain .rt-stop.now');
       if (nowStop) {
         const offset = nowStop.getBoundingClientRect().top - homeEvents.getBoundingClientRect().top;
         homeEvents.scrollTop = Math.max(0, offset - 140);
@@ -799,19 +1114,19 @@ nav.topnav {
       if (window.matchMedia('(max-width: 720px)').matches) {
         homeEvents.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
       }
-    } else {
-      resetHomeEvents();
-    }
+      return studyRestore;
+    } else resetHomeEvents();
+    return null;
   }
 
   // 右侧面板是 innerHTML 拷过来的,iframe 里绑的监听不会跟过来,所以这边自己代理一层:
   // 点搜索结果条 => 让地图执行"点地块→点标点",再把结果换成那一站的事件卡
-  document.querySelectorAll('.map-card-head [data-open-picker]').forEach(b =>
+  document.querySelectorAll('.map-card-head [data-learning-view]').forEach(b =>
     b.addEventListener('click', () => {
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
-      if (win && win.__mapFilter && win.__mapFilter.openPicker) {
-        win.__mapFilter.openPicker(b.dataset.openPicker);
-        setTimeout(syncHomeEvents, 140);
+      if (win && win.__mapFilter && win.__mapFilter.setLearningView) {
+        win.__mapFilter.setLearningView(b.dataset.learningView);
+        syncHomeEvents();
       }
     }));
 
@@ -819,8 +1134,9 @@ nav.topnav {
     const openHitFromHome = card => {
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
       if (!win || !win.__mapFilter) return;
-      win.__mapFilter.openHit(card.dataset.pin, card.dataset.region);
-      setTimeout(syncHomeEvents, 80);
+      const open = win.__mapFilter.openEventInMap || win.__mapFilter.openHit;
+      open(card.dataset.pin, card.dataset.region, card.dataset.eventKey);
+      syncHomeEvents();
     };
     homeEvents.addEventListener('click', e => {
       const card = e.target.closest('.event-card.is-result');
@@ -828,11 +1144,91 @@ nav.topnav {
       // 商路:入口 chip / 站点 / 上一站下一站播放退出 —— 面板是拷过来的,监听不会跟过来,这边代理
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
       if (!win || !win.__mapFilter) return;
+      const studyConnection = e.target.closest('[data-study-connection]');
+      if (studyConnection && win.__mapFilter.openLocationStudyConnection) {
+        const disclosure = studyConnection.closest('details[data-study-id][data-study-disclosure]');
+        if (disclosure && win.__mapFilter.setLocationStudyDisclosure) {
+          win.__mapFilter.setLocationStudyDisclosure(disclosure.dataset.studyId,
+            disclosure.dataset.studyDisclosure, disclosure.open);
+        }
+        if (win.__mapFilter.openLocationStudyConnection(studyConnection.dataset.studyConnection,
+          { scrollTop: homeEvents.scrollTop })) {
+          syncHomeEvents();
+          homeEvents.querySelector('.location-study-title')?.focus();
+        }
+        return;
+      }
+      const studyConnectionBack = e.target.closest('[data-study-connection-back]');
+      if (studyConnectionBack && win.__mapFilter.backLocationStudyConnection) {
+        if (win.__mapFilter.backLocationStudyConnection()) {
+          const restore = syncHomeEvents();
+          if (restore) {
+            homeEvents.scrollTop = restore.scrollTop;
+            const invoker = homeEvents.querySelector(
+              `[data-study-connection="${CSS.escape(restore.invokerTargetId)}"]`);
+            if (invoker) {
+              try { invoker.focus({ preventScroll: true }); }
+              catch (err) { try { invoker.focus(); } catch (focusErr) {} }
+              if (document.activeElement === invoker) {
+                win.__mapFilter.completeLocationStudyRestore?.(restore.restoreToken);
+              }
+            }
+          }
+        }
+        return;
+      }
+      const studyOpen = e.target.closest('[data-location-study-open]');
+      if (studyOpen && win.__mapFilter.openLocationStudy) {
+        const number = studyOpen.dataset.locationStudyOpen;
+        if (win.__mapFilter.openLocationStudy(number)) {
+          syncHomeEvents();
+          homeEvents.querySelector('.location-study-title')?.focus();
+        }
+        return;
+      }
+      const studyToggle = e.target.closest('[data-study-event]');
+      if (studyToggle && win.__mapFilter.toggleLocationStudy) {
+        const studyId = studyToggle.dataset.studyEvent;
+        if (win.__mapFilter.toggleLocationStudy(studyId)) {
+          syncHomeEvents();
+          homeEvents.querySelector(`[data-study-event="${CSS.escape(studyId)}"]`)?.focus();
+        }
+        return;
+      }
+      const studyBack = e.target.closest('[data-location-study-back]');
+      if (studyBack && win.__mapFilter.backLocationStudy) {
+        if (win.__mapFilter.backLocationStudy()) {
+          syncHomeEvents();
+          homeEvents.querySelector('[data-location-study-open]')?.focus();
+        }
+        return;
+      }
+      const chainPanelView = e.target.closest('[data-chain-panel-view]');
+      if (chainPanelView && win.__mapFilter.setChainPanelView) {
+        win.__mapFilter.setChainPanelView(chainPanelView.dataset.chainPanelView);
+        syncHomeEvents();
+        return;
+      }
+      const mainlineChain = e.target.closest('[data-mainline-chain]');
+      if (mainlineChain && win.__mapFilter.openMainlineChain) {
+        win.__mapFilter.openMainlineChain(mainlineChain.dataset.mainlineChain);
+        syncHomeEvents();
+        return;
+      }
+      const chainBoundary = e.target.closest('[data-chain-boundary]');
+      if (chainBoundary && win.__mapFilter.openChainBoundary) {
+        win.__mapFilter.openChainBoundary(
+          chainBoundary.dataset.chainBoundary,
+          chainBoundary.dataset.boundaryStep
+        );
+        syncHomeEvents();
+        return;
+      }
       const qs = e.target.closest('[data-quiz-start]');
       if (qs) { win.__mapFilter.startQuiz(qs.dataset.quizStart); setTimeout(syncHomeEvents, 140); return; }
       if (e.target.closest('[data-quiz-book]')) { win.__mapFilter.quizBook(); setTimeout(syncHomeEvents, 140); return; }
       if (e.target.closest('[data-quiz-reset]')) {
-        if (confirm('清空练习记录?错题本和已练条数都会归零。')) { win.__mapFilter.quizReset(); fillHomePractice(); }
+        if (confirm('清空练习记录?错题本和已练条数都会归零。')) { win.__mapFilter.quizReset(); syncHomeEvents(); }
         return;
       }
       const qp = e.target.closest('[data-quiz-period]');
@@ -843,12 +1239,44 @@ nav.topnav {
       if (qm) { win.__mapFilter.quizTerm(qm.dataset.quizTerm); setTimeout(syncHomeEvents, 140); return; }
       const qz = e.target.closest('[data-quiz-action]');
       if (qz) { win.__mapFilter.quizAction(qz.dataset.quizAction); setTimeout(syncHomeEvents, 140); return; }
+      const mapMode = e.target.closest('[data-map-mode]');
+      if (mapMode && win.__mapFilter.setMapMode) {
+        win.__mapFilter.setMapMode(mapMode.dataset.mapMode);
+        syncHomeEvents();
+        return;
+      }
+      const routePickerAction = e.target.closest('[data-route-picker-action]');
+      if (routePickerAction && win.__mapFilter.setMapMode) {
+        win.__mapFilter.setMapMode(routePickerAction.dataset.routePickerAction);
+        setTimeout(syncHomeEvents, 140);
+        return;
+      }
       const go = e.target.closest('[data-route-go]');
       if (go) { win.__mapFilter.enterRoute(go.dataset.routeGo); setTimeout(syncHomeEvents, 120); return; }
       const step = e.target.closest('[data-route-step]');
       if (step) { win.__mapFilter.routeStep(+step.dataset.routeStep); setTimeout(syncHomeEvents, 120); return; }
       const act = e.target.closest('[data-route-action]');
       if (act) { win.__mapFilter.routeAction(act.dataset.routeAction); setTimeout(syncHomeEvents, 120); }
+    });
+    homeEvents.addEventListener('toggle', e => {
+      const disclosure = e.target.closest?.('details[data-study-disclosure][data-study-id]');
+      if (!disclosure || !homeEvents.contains(disclosure)) return;
+      let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
+      const setter = win?.__mapFilter?.setLocationStudyDisclosure;
+      if (!setter) return;
+      const accepted = setter(disclosure.dataset.studyId,
+        disclosure.dataset.studyDisclosure, disclosure.open);
+      if (!accepted) syncHomeEvents();
+    }, true);
+    // 补充链下拉走 change,不走 click。win 要在处理器内部现取 —— 它是上面 click 处理器的局部变量,
+    // 不是闭包里的共享值;直接引用会 ReferenceError 且整条处理器静默失效。
+    homeEvents.addEventListener('change', e => {
+      const pick = e.target.closest('[data-chain-pick]');
+      if (!pick || !pick.value) return;
+      let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
+      if (!win || !win.__mapFilter) return;
+      win.__mapFilter.enterRoute(pick.value);
+      setTimeout(syncHomeEvents, 120);
     });
     homeEvents.addEventListener('keydown', e => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -878,12 +1306,36 @@ nav.topnav {
   // 但输入框/清除键是首页的静态元素,监听只能绑一次,不然重载几次就叠几层。
   let hostApi = null;             // 当前这一份地图 API,重载后会被换掉
   let hostStaticBound = false;    // 静态元素的监听是否已绑
+  let hostSearchTimer = null;
+  const hostThemeToggle = document.getElementById('hostThemeToggle');
+  const hostThemePanel = document.getElementById('hostThemePanel');
+  const hostThemeActive = document.getElementById('hostThemeActive');
+
+  function setHostThemesExpanded(expanded) {
+    const next = Boolean(expanded && selectedSubject === 'world');
+    if (hostThemeToggle) hostThemeToggle.setAttribute('aria-expanded', String(next));
+    if (hostThemePanel) hostThemePanel.hidden = !next;
+  }
+
+  function updateHostThemeCount() {
+    const buttons = [...document.querySelectorAll('#hostCats .mth-cat')];
+    const active = buttons.filter(button => button.getAttribute('aria-pressed') === 'true').length;
+    if (hostThemeActive) hostThemeActive.textContent = `${active}/${buttons.length}`;
+  }
+
+  if (hostThemeToggle) {
+    hostThemeToggle.addEventListener('click', () =>
+      setHostThemesExpanded(hostThemeToggle.getAttribute('aria-expanded') !== 'true'));
+  }
+
   function buildHostToolbar() {
     const host = document.getElementById('mapToolbarHost');
     let api;
     try { api = worldMapFrame.contentWindow.__mapFilter; } catch (err) { return; }
     if (!host || !api) return;                 // 地图还没暴露 API(还在加载),等下次 load
     if (api === hostApi) return;               // 同一份,已经接好了
+    clearTimeout(hostSearchTimer);
+    hostSearchTimer = null;
     hostApi = api;
 
     const searchInput = document.getElementById('hostSearch');
@@ -900,7 +1352,7 @@ nav.topnav {
     fill(periodSel, api.getPeriodOptions());
     if (api.onRouteStep) api.onRouteStep(() => syncHomeEvents());
     if (api.onQuizStep) api.onQuizStep(() => syncHomeEvents());
-    fillHomePractice();
+    syncHomeEvents();
     // 主题药丸:多选。重建而非追加,免得 iframe 重载后越堆越多
     catsBox.innerHTML = '';
     api.getCats().forEach(c => {
@@ -914,36 +1366,59 @@ nav.topnav {
         const active = hostApi.toggleCat(c.abbr);
         catsBox.querySelectorAll('.mth-cat').forEach(b =>
           b.setAttribute('aria-pressed', active.has(b.dataset.cat) ? 'true' : 'false'));
+        updateHostThemeCount();
       });
       catsBox.appendChild(btn);
     });
+    updateHostThemeCount();
 
     if (!hostStaticBound) {
       hostStaticBound = true;
-      let t;
       searchInput.addEventListener('input', () => {
-        clearBtn.hidden = !searchInput.value.trim();
-        clearTimeout(t); t = setTimeout(() => hostApi && hostApi.setQuery(searchInput.value.trim()), 120);
+        const query = searchInput.value.trim();
+        clearBtn.hidden = !query;
+        clearTimeout(hostSearchTimer);
+        hostSearchTimer = null;
+        if (!query) {
+          if (hostApi) hostApi.setQuery('');
+          return;
+        }
+        hostSearchTimer = setTimeout(() => hostApi && hostApi.setQuery(query), 120);
       });
       clearBtn.addEventListener('click', () => {
+        clearTimeout(hostSearchTimer);
+        hostSearchTimer = null;
         searchInput.value = ''; clearBtn.hidden = true;
         if (hostApi) hostApi.setQuery('');
         searchInput.focus();
       });
-      periodSel.addEventListener('change', () => hostApi && hostApi.setPeriod(periodSel.value));
+      periodSel.addEventListener('change', () => {
+        clearTimeout(hostSearchTimer);
+        hostSearchTimer = null;
+        if (!hostApi) return;
+        const nextPeriod = periodSel.value;
+        hostApi.setQuery(searchInput.value.trim());
+        hostApi.setPeriod(nextPeriod);
+      });
     }
     // 地图重载后原来的筛选状态已经没了,这边的控件一起复位,免得界面显示"Period 2"但地图是全量
     searchInput.value = ''; clearBtn.hidden = true; countBox.textContent = '';
     periodSel.value = '';
     // 地图那边一改筛选就重铺结果列表,这边跟着把它镜像到右侧事件面板;
     // 同时把两个下拉回同步到地图的真实状态 —— 状态若被程序改动(如 reset),控件不会显示成过期值。
-    // 搜索框不在此列:它的值是用户正在敲的原文,而状态里存的是规范化后的小写版本,回写会把人家的输入改掉。
+    // 用户输入时不抢写输入框；但学习视图内部为跨地点跳转暂时清除/恢复筛选时，
+    // 首页控件也必须反映真实查询状态，不能显示一个已经不再生效的旧关键词。
     api.onCountChange(text => {
       countBox.textContent = text || '';
       const st = api.getState();
+      if (document.activeElement !== searchInput && searchInput.value !== st.query) {
+        searchInput.value = st.query;
+        clearBtn.hidden = !st.query;
+      }
       if (periodSel.value !== st.period) periodSel.value = st.period;
       catsBox.querySelectorAll('.mth-cat').forEach(b =>
         b.setAttribute('aria-pressed', st.cats.has(b.dataset.cat) ? 'true' : 'false'));
+      updateHostThemeCount();
       syncHomeEvents();
     });
     updateHostToolbarVisibility();
@@ -954,6 +1429,7 @@ nav.topnav {
   function updateHostToolbarVisibility() {
     const host = document.getElementById('mapToolbarHost');
     if (host) host.hidden = !(hostApi && selectedSubject === 'world');
+    if (selectedSubject !== 'world') setHostThemesExpanded(false);
   }
 
   // 点卡片:滚到地图 + 在地图里模拟"点那个地区→点那个标点",跟手动点一样弹出事件卡片和路线动画
@@ -1062,6 +1538,7 @@ nav.topnav {
     const s = SUBJECTS[key];
     if (!s) return;
     selectedSubject = key;
+    if (key !== 'world') clearEmbeddedWorldSizing();
     clearTimeout(loadTimer);
     mapRetry.classList.remove('show');
     subjPills.forEach(p => p.classList.toggle('active', p.dataset.subj === key));
@@ -1082,6 +1559,7 @@ nav.topnav {
       showLiveFrame(s);
       if (homeEvents) homeEvents.hidden = key !== 'world';
       if (key === 'world') {
+        styleEmbeddedMap();
         // 切走再切回来时,面板里往往还是离开前那一站的事件卡,而工具栏上的筛选还在 ——
         // 两边对不上。让地图按当前筛选重算一遍:有筛选就回到结果列表,没有就回到空态。
         if (hostApi && hostApi.refresh) hostApi.refresh();
