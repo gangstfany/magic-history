@@ -656,6 +656,7 @@ function createDetailHarness(
       return {
         getArtworkImages,
         getArtworkImageCredits,
+        createRightsPlaceholder,
         renderArtworkDetails,
         getDialogTrigger: () => imageDialogTrigger,
         isDialogOpen: () => imageDialog.open,
@@ -1515,6 +1516,27 @@ test('all Unit 6 unresolved views show honest reusable-image status in public an
     }
   }
   assert.equal(checkedViews, 42, '21 unresolved views checked in both modes');
+});
+
+test('Unit 6 unresolved placeholders use alternate status wording even when privateMissing is true', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const work = artworks.find(({ unit, images }) => unit === 6 && images.some(({ imageUrl }) => imageUrl === null));
+  const media = structuredClone(work.images.find(({ imageUrl }) => imageUrl === null));
+  media.mediaStatus = '图像复用待确认 — Reuse verification pending.';
+
+  for (const privateMode of [false, true]) {
+    const harness = createDetailHarness(html, artworks, credits, {}, {}, privateMode);
+    for (const privateMissing of [false, true]) {
+      const panel = harness.createRightsPlaceholder(work, media, privateMissing);
+      assert.equal(panel.find(({ tagName }) => tagName === 'H3').textContent, 'Reusable image not yet verified');
+      assert.equal(panel.querySelector('p').textContent, media.mediaStatus);
+      assert.equal(panel.getAttribute('aria-label'), `${work.titleEn}: reusable image not yet verified`);
+      assert.doesNotMatch(panel.textContent, /版权限制|私人学习模式可显示|Private image not installed/);
+      assert.equal(panel.querySelector('.private-media-missing'), null);
+    }
+  }
 });
 
 test('Unit 5 rights placeholders preserve public wording and private-missing status', async () => {

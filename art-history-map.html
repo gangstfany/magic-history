@@ -12707,7 +12707,8 @@
     }
 
     function createRightsPlaceholder(work, media, privateMissing = false) {
-      const reuseUnverified = media.mediaStatus === '可复用图片尚未核实 · Reusable image not yet verified';
+      const reuseUnverified = work.unit === 6 && media.imageUrl === null
+        && typeof media.mediaStatus === 'string' && media.mediaStatus.trim();
       // An unverified reusable view is not evidence of an installed private image.
       const expectedPrivateMissing = privateMissing && !reuseUnverified;
       const panel = document.createElement('section');

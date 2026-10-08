@@ -82,6 +82,8 @@ function loadMapFitFunctions(html) {
     getFunctionSource(html, 'toWorldCoordinates'),
     getFunctionSource(html, 'clampTransform'),
     getFunctionSource(html, 'getVisibleWorldBounds'),
+    getFunctionSource(html, 'getMapScreenScale'),
+    getFunctionSource(html, 'zoomAroundPoint'),
     getFunctionSource(html, 'fitMapToWorks'),
   ].join('\n');
   return Function(
@@ -89,7 +91,9 @@ function loadMapFitFunctions(html) {
       state,
       toWorldCoordinates,
       fitMapToWorks,
-      getVisibleWorldBounds
+      getVisibleWorldBounds,
+      getMapScreenScale,
+      zoomAroundPoint
     };`,
   )();
 }
@@ -1365,14 +1369,22 @@ test('Unit 6 region and site layouts retain every marker without overlap across 
   const transform = fit.state.transform;
   const bounds = fit.getVisibleWorldBounds(transform);
   for (const [width, height] of [[349, 446.59375], [350, 478], [451, 618], [900, 600]]) {
-    const scale = Math.min(width / 1600, height / 800) * transform.scale;
+    const screenScale = fit.getMapScreenScale(width, height, transform.scale);
+    const regionGroups = helpers.layoutMapGroups(works, transform.scale, screenScale, branch, bounds);
     const layouts = [
-      { groups:helpers.layoutMapGroups(works, transform.scale, scale, branch, bounds), expected:regions },
-      ...regions.map((region) => {
+      { groups:regionGroups, expected:regions },
+      ...regionGroups.map((region) => {
         const regionBranch = { ...branch, activeRegion:region.key };
+        const regionTransform = fit.zoomAroundPoint(
+          transform,
+          Math.max(2.5, transform.scale),
+          { x:region.displayX, y:region.displayY },
+        );
+        const siteScreenScale = fit.getMapScreenScale(width, height, regionTransform.scale);
+        const regionBounds = fit.getVisibleWorldBounds(regionTransform);
         return {
-          groups:helpers.layoutMapGroups(works, 2.5, scale * 2.5, regionBranch),
-          expected:helpers.buildMapGroups(works, 2.5, regionBranch),
+          groups:helpers.layoutMapGroups(works, regionTransform.scale, siteScreenScale, regionBranch, regionBounds),
+          expected:helpers.buildMapGroups(works, regionTransform.scale, regionBranch),
         };
       }),
     ];
