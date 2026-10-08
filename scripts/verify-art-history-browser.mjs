@@ -16,6 +16,61 @@ export const REQUIRED_VIEWPORTS = Object.freeze([
   { width: 665, height: 700 },
 ]);
 
+export const U6_SMOKE_VIEWPORTS = Object.freeze([
+  Object.freeze({ width: 1365, height: 768, mode: 'standalone' }),
+  Object.freeze({ width: 390, height: 844, mode: 'standalone' }),
+  Object.freeze({ width: 1024, height: 768, mode: 'embedded' }),
+]);
+
+const U6_TAB_IDS = Object.freeze(['quick', 'form', 'context', 'compare']);
+const U6_REGION_LABELS = Object.freeze([
+  'Southern Africa · 1 piece', 'West Africa · 7 pieces', 'Central Africa · 6 pieces',
+]);
+const U6_VIEW_IDS = Object.freeze([
+  ['conical-tower', 'circular-wall'], ['mosque', 'monday-market'],
+  ['wall-plaque', 'oba-context'], ['golden-stool', 'stool-context'],
+  ['ndop', 'ruler-context'], ['primary'], ['primary'],
+  ['mask', 'performance-context'], ['mask', 'performance-context'], ['primary'],
+  ['memory-board', 'contextual'], ['mask', 'performance-context'], ['primary'], ['primary'],
+].map(Object.freeze));
+
+export function assertU6SmokeCoverage(report) {
+  assert.equal(report.kind, 'u6-fourteen-works', 'U6 smoke result kind');
+  assert.equal(report.cases.length, 3, 'U6 smoke exact three cases');
+  for (const [caseIndex, entry] of report.cases.entries()) {
+    const label = `U6 case ${caseIndex}`;
+    assert.deepEqual(entry.viewport, U6_SMOKE_VIEWPORTS[caseIndex], `${label} viewport/mode`);
+    assert.deepEqual(entry.regions, U6_REGION_LABELS, `${label} region counts`);
+    assert.deepEqual(entry.works.map(({ apNumber }) => apNumber),
+      Array.from({ length: 14 }, (_, index) => 167 + index), `${label} numeric AP traversal`);
+    for (const [workIndex, work] of entry.works.entries()) {
+      assert.equal(work.selected, true, `${label} AP ${work.apNumber} selected through UI`);
+      assert.deepEqual(work.viewIds, U6_VIEW_IDS[workIndex], `${label} AP ${work.apNumber} required views`);
+      assert.deepEqual(work.tabIds, U6_TAB_IDS, `${label} AP ${work.apNumber} all four tabs`);
+    }
+    assert.equal(entry.workCount, 14, `${label} work count`);
+    assert.equal(entry.viewCount, 23, `${label} required view count`);
+    assert.equal(entry.tabCount, 56, `${label} tab visit count`);
+    assert.equal(entry.viewButtonActivations, 18, `${label} multi-view button activations`);
+    assert.equal(entry.singleViewSelections, 5, `${label} sole primary view selections`);
+    assert.equal(entry.comparison.fromApNumber, 167, `${label} comparison origin`);
+    assert.ok(entry.comparison.targetId, `${label} comparison target`);
+    assert.equal(entry.comparison.followed, true, `${label} comparison followed`);
+    assert.equal(entry.comparison.returned, true, `${label} comparison returned`);
+    assert.equal(entry.dialog.apNumber, 167, `${label} public dialog work`);
+    assert.equal(entry.dialog.viewId, 'conical-tower', `${label} public dialog view`);
+    assertDialogFocusRestored(entry.dialog.focusRestored, label);
+    assertNoHorizontalOverflow(entry.horizontalOverflow, label);
+    assertNoHorizontalOverflow(entry.hostHorizontalOverflow, `${label} host`);
+    assert.ok(entry.overflowHistory.length, `${label} overflow checkpoints`);
+    for (const checkpoint of entry.overflowHistory) {
+      assertNoHorizontalOverflow(checkpoint.horizontalOverflow, `${label} ${checkpoint.checkpoint}`);
+      assertNoHorizontalOverflow(checkpoint.hostHorizontalOverflow, `${label} host ${checkpoint.checkpoint}`);
+    }
+    assertNoCollectedIssues(entry.issues, label);
+  }
+}
+
 export const BOUNDARY_VIEWPORTS = Object.freeze([
   { width: 519, height: 700 },
   { width: 520, height: 700 },
@@ -1615,8 +1670,9 @@ async function assertInitialHierarchy(frame) {
     'U3 · Early Europe and Colonial Americas · 51 pieces',
     'U4 · Later Europe and Americas · 54 pieces',
     'U5 · Indigenous Americas · 14 pieces',
+    'U6 · Africa · 14 pieces',
   ]);
-  assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 166 件作品');
+  assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 180 件作品');
 }
 
 async function assertHierarchyAndDialog(page, frame) {
@@ -2057,7 +2113,7 @@ async function verifyStandalone(
     await waitForArt(page);
     assert.equal(
       (await page.locator('.page-header h1').textContent()).trim(),
-      'AP 艺术史互动地图 · Units 1-5',
+      'AP 艺术史互动地图 · Units 1-6',
     );
     await assertInitialHierarchy(page);
     let metrics = await assertCommonLayout(page, 'standalone', viewport);
@@ -2122,7 +2178,7 @@ async function selectArtAndFrame(page, useKeyboard = false) {
   await caption.waitFor({ state: 'visible' });
   assert.equal(
     (await caption.textContent()).trim(),
-    '166 AP works · Units 1-5 · filter, compare and study',
+    '180 AP works · Units 1-6 · filter, compare and study',
   );
   const iframe = page.locator('#artMapFrame');
   await iframe.waitFor({ state: 'visible' });
@@ -2230,7 +2286,7 @@ async function resetAndActivateWork(
   const unit = work.unit || (
     work.apNumber <= 11 ? 1 : work.apNumber <= 47 ? 2 : work.apNumber <= 98 ? 3 : 4
   );
-  const unitCount = new Map([[1, 11], [2, 36], [3, 51], [4, 54], [5, 14]]).get(unit);
+  const unitCount = new Map([[1, 11], [2, 36], [3, 51], [4, 54], [5, 14], [6, 14]]).get(unit);
   await fillSearchThroughUi(searchInput, '', `AP ${work.apNumber} reset search`);
   await unitFilter.selectOption('all');
   await waitForPostTransformRender(frame);
@@ -2238,13 +2294,13 @@ async function resetAndActivateWork(
   assert.equal(await searchInput.inputValue(), '', `AP ${work.apNumber} Unit reset retains search`);
   assert.equal(
     (await resultCount.textContent()).trim(),
-    '当前显示 166 件作品',
+    '当前显示 180 件作品',
     `AP ${work.apNumber} search reset result`,
   );
   await frame.locator('#resetView').click();
   assert.equal(
     (await resultCount.textContent()).trim(),
-    '当前显示 166 件作品',
+    '当前显示 180 件作品',
     `AP ${work.apNumber} hierarchy reset result`,
   );
 
@@ -3890,7 +3946,7 @@ async function verifyImportedWorksStandalone(browser, baseUrl) {
     await waitForArt(page);
     assert.equal(
       (await page.locator('.page-header h1').textContent()).trim(),
-      'AP 艺术史互动地图 · Units 1-5',
+      'AP 艺术史互动地图 · Units 1-6',
     );
     const works = await verifyNineImportedWorks(page, page, imageRequests, 'standalone');
     assert.deepEqual(issues, []);
@@ -3942,6 +3998,175 @@ async function verifyResponsiveWarningRegression(browser, baseUrl) {
   return { viewport, warningRejected: true, errorRejected: true };
 }
 
+async function selectU6Work(page, frame, work) {
+  await fillSearchThroughUi(frame.locator('#searchInput'), '', `AP ${work.apNumber} clear search`);
+  await frame.locator('#unitFilter').selectOption('6');
+  await frame.locator('#resetView').click();
+  await fillSearchThroughUi(frame.locator('#searchInput'), `AP ${work.apNumber}`, `AP ${work.apNumber} search`);
+  assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 1 件作品');
+  const region = frame.locator('.site-marker[data-group-kind="region"]');
+  assert.equal(await region.count(), 1, `AP ${work.apNumber} exact region`);
+  const regionName = { southernAfrica: 'Southern Africa', westAfrica: 'West Africa', centralAfrica: 'Central Africa' }[work.region];
+  assert.equal(await region.getAttribute('aria-label'), `${regionName} · 1 piece`);
+  await region.focus();
+  await page.keyboard.press('Enter');
+  const site = frame.locator('.site-marker[data-group-kind="site"]');
+  await site.waitFor();
+  assert.equal(await site.count(), 1, `AP ${work.apNumber} exact site`);
+  assert.equal(await site.getAttribute('aria-label'), `${work.siteName} · AP ${work.apNumber} · 1 piece`);
+  await site.focus();
+  await page.keyboard.press('Space');
+  const heading = frame.locator('[data-selected-artwork-title]');
+  await heading.waitFor();
+  assert.equal((await heading.textContent()).trim(), work.titleEn, `AP ${work.apNumber} selected title`);
+  assert.equal((await frame.locator('.work-meta').textContent()).trim().split(' · ')[0], `AP #${work.apNumber}`);
+}
+
+async function verifyU6SmokeCase(browser, baseUrl, viewport, works) {
+  return withBrowserContext(browser, {
+    viewport: { width: viewport.width, height: viewport.height },
+    reducedMotion: 'reduce',
+    hasTouch: viewport.width === 390,
+  }, async (context) => {
+    const page = await context.newPage();
+    const label = `U6 ${viewport.mode} ${viewport.width}x${viewport.height}`;
+    const issues = installErrorCollection(page, label);
+    // Deterministic media transport, shared with the full verifier. URL/alt/source
+    // contracts below still check the actual rendered public image or placeholder.
+    await mockRemoteImages(page);
+    let frame = page;
+    if (viewport.mode === 'standalone') {
+      await page.goto(`${baseUrl}/art-history-map.html`, { waitUntil: 'load' });
+      await waitForArt(frame);
+    } else {
+      await page.goto(`${baseUrl}/index.html`, { waitUntil: 'load' });
+      await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
+      ({ frame } = await selectArtAndFrame(page, true));
+    }
+    await frame.locator('#unitFilter').selectOption('6');
+    await waitForPostTransformRender(frame);
+    assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 14 件作品');
+    const regions = await frame.locator('.site-marker[data-group-kind="region"]')
+      .evaluateAll((markers) => markers.map((marker) => marker.getAttribute('aria-label')));
+    assert.deepEqual(regions, U6_REGION_LABELS, `${label} exact three regions`);
+    const overflowHistory = [];
+    const recordOverflow = async (checkpoint) => {
+      await waitForPostTransformRender(frame);
+      const measure = () => document.documentElement.scrollWidth - document.documentElement.clientWidth;
+      const horizontalOverflow = await frame.evaluate(measure);
+      const hostHorizontalOverflow = await page.evaluate(measure);
+      assertNoHorizontalOverflow(horizontalOverflow, `${label} ${checkpoint}`);
+      assertNoHorizontalOverflow(hostHorizontalOverflow, `${label} host ${checkpoint}`);
+      overflowHistory.push({ checkpoint, horizontalOverflow, hostHorizontalOverflow });
+    };
+    await recordOverflow('regions');
+    const evidence = [];
+    let comparison;
+    let dialog;
+    let viewButtonActivations = 0;
+    let singleViewSelections = 0;
+    for (const work of works) {
+      await selectU6Work(page, frame, work);
+      await recordOverflow(`AP ${work.apNumber} selected`);
+      const summary = frame.locator('.selected-summary');
+      assert.equal((await summary.locator('.work-title-zh').textContent()).trim(), work.titleZh);
+      const viewButtons = summary.locator('.image-view-switcher button');
+      assert.equal(await viewButtons.count(), work.images.length > 1 ? work.images.length : 0);
+      if (work.images.length > 1) {
+        assert.deepEqual(await viewButtons.allTextContents(), work.images.map(({ label: viewLabel }) => viewLabel));
+      }
+      const viewIds = [];
+      for (const [imageIndex, expected] of work.images.entries()) {
+        const identity = `AP ${work.apNumber} ${expected.id}`;
+        if (work.images.length > 1) {
+          await viewButtons.nth(imageIndex).click();
+          viewButtonActivations += 1;
+          assert.deepEqual(await viewButtons.evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-pressed'))),
+            work.images.map((_, index) => String(index === imageIndex)), `${label} ${identity} active view`);
+        } else {
+          // The existing UI exposes a sole primary view via its site control,
+          // without a redundant one-item switcher. selectU6Work activated it.
+          singleViewSelections += 1;
+        }
+        if (expected.imageUrl === null) {
+          const placeholder = summary.locator('.rights-placeholder');
+          await placeholder.waitFor();
+          assert.match(await placeholder.textContent(), /Reusable image not yet verified/);
+          assert.ok((await placeholder.textContent()).includes(expected.mediaStatus), `${label} ${identity} status`);
+          assert.equal(await placeholder.locator('.rights-placeholder-source').getAttribute('href'), expected.imageSourceUrl);
+          assert.equal(await summary.locator('.artwork-image-button').count(), 0);
+          assert.equal(await frame.locator('#imageDialog').getAttribute('open'), null);
+        } else {
+          const trigger = summary.locator('.artwork-image-button');
+          const image = trigger.locator('img');
+          await waitForVerifierImage(image, `${label} ${identity}`);
+          assert.equal(await image.getAttribute('src'), expected.imageUrl);
+          assert.equal(await image.getAttribute('alt'), expected.imageAlt);
+          assert.equal(await summary.locator('.image-credit a').nth(1).getAttribute('href'), expected.imageSourceUrl);
+          if (work.apNumber === 167 && expected.id === 'conical-tower') {
+            await trigger.focus();
+            await trigger.click();
+            await frame.locator('#imageDialog').waitFor({ state: 'visible' });
+            await waitForVerifierImage(frame.locator('#dialogImage'), `${label} ${identity} dialog`);
+            assert.equal(await frame.locator('#dialogImage').getAttribute('src'), expected.imageUrl);
+            assert.equal(await frame.locator('#dialogSource').getAttribute('href'), expected.imageSourceUrl);
+            await recordOverflow('public image dialog open');
+            await frame.locator('#dialogClose').click();
+            await frame.locator('#imageDialog').waitFor({ state: 'hidden' });
+            const focusRestored = await trigger.evaluate((element) => document.activeElement === element);
+            assertDialogFocusRestored(focusRestored, `${label} ${identity}`);
+            dialog = { apNumber: work.apNumber, viewId: expected.id, focusRestored };
+          }
+        }
+        viewIds.push(expected.id);
+        await recordOverflow(identity);
+      }
+      const tabIds = [];
+      assert.equal(await frame.locator('.detail-tab').count(), 4);
+      for (const id of U6_TAB_IDS) {
+        const tab = frame.locator(`#detail-tab-${id}`);
+        await tab.click();
+        assert.equal(await tab.getAttribute('aria-selected'), 'true', `${label} AP ${work.apNumber} ${id}`);
+        const panel = frame.locator('#detail-tabpanel');
+        assert.equal(await panel.getAttribute('aria-labelledby'), `detail-tab-${id}`);
+        assert.ok((await panel.textContent()).trim().length > 0);
+        tabIds.push(id);
+        await recordOverflow(`AP ${work.apNumber} ${id} tab`);
+      }
+      if (work.apNumber === 167) {
+        const card = frame.locator('.comparison-card').first();
+        const targetId = await card.getAttribute('data-comparison-id');
+        assert.equal(targetId, work.comparisonIds[0], `${label} comparison target`);
+        const targetApNumber = Number((await card.locator('span').first().textContent()).match(/AP #(\d+)/)?.[1]);
+        assert.ok(Number.isInteger(targetApNumber));
+        await card.click();
+        assert.equal((await frame.locator('.work-meta').textContent()).trim().split(' · ')[0], `AP #${targetApNumber}`);
+        assert.equal(await frame.locator('#searchInput').inputValue(), '');
+        await recordOverflow('comparison followed');
+        await selectU6Work(page, frame, work);
+        await recordOverflow('comparison returned');
+        comparison = { fromApNumber: work.apNumber, targetId, targetApNumber, followed: true, returned: true };
+      }
+      evidence.push({ apNumber: work.apNumber, selected: true, viewIds, tabIds });
+    }
+    await recordOverflow('final');
+    assertNoCollectedIssues(issues, label);
+    assert.equal(viewButtonActivations, 18, `${label} every multi-view button activated`);
+    assert.equal(singleViewSelections, 5, `${label} every sole primary view selected`);
+    const final = overflowHistory.at(-1);
+    return {
+      viewport, regions, works: evidence,
+      workCount: evidence.length,
+      viewCount: evidence.reduce((count, work) => count + work.viewIds.length, 0),
+      tabCount: evidence.reduce((count, work) => count + work.tabIds.length, 0),
+      viewButtonActivations, singleViewSelections, comparison, dialog,
+      horizontalOverflow: final.horizontalOverflow,
+      hostHorizontalOverflow: final.hostHorizontalOverflow,
+      overflowHistory, issues,
+    };
+  });
+}
+
 export async function runFocusedImportedVerification() {
   const playwright = await discoverPlaywright();
   const executablePath = await discoverBrowser(playwright.chromium);
@@ -3990,6 +4215,40 @@ export async function runFocusedU5Verification() {
       matrix: await runU5RenderedMatrix(browser, server.baseUrl),
       negativePaths: await verifyU5PrivateNegativePaths(browser, server.baseUrl),
     }),
+  });
+}
+
+export async function runFocusedU6Verification() {
+  const html = await readFile(join(PROJECT_ROOT, 'art-history-map.html'), 'utf8');
+  const dataBlock = html.match(/<script id="artwork-data" type="application\/json">([\s\S]*?)<\/script>/);
+  assert.ok(dataBlock, 'U6 artwork-data block');
+  const works = parseVerifierJson(dataBlock[1], 'U6 artwork data')
+    .filter(({ unit }) => unit === 6).sort((left, right) => left.apNumber - right.apNumber);
+  const manifest = parseVerifierJson(await readFile(join(PROJECT_ROOT, 'data', 'ap-art-history-unit-6-manifest.json'), 'utf8'), 'U6 manifest');
+  assert.deepEqual(works.map(({ apNumber }) => apNumber), Array.from({ length: 14 }, (_, index) => 167 + index));
+  for (const [index, work] of works.entries()) {
+    const expected = manifest[work.apNumber];
+    for (const field of ['id', 'titleEn', 'region', 'siteName']) {
+      assert.equal(work[field], expected[field], `U6 AP ${work.apNumber} manifest ${field}`);
+    }
+    assert.deepEqual(work.images.map(({ id }) => id), U6_VIEW_IDS[index]);
+    assert.deepEqual(expected.requiredViewIds, U6_VIEW_IDS[index]);
+  }
+  const playwright = await discoverPlaywright();
+  const executablePath = await discoverBrowser(playwright.chromium);
+  return runManagedVerification({
+    startServer: () => startStaticServer(),
+    launchBrowser: () => playwright.chromium.launch({
+      executablePath, headless: true, args: ['--disable-gpu', '--no-sandbox'],
+    }),
+    verify: async ({ server, browser }) => {
+      const report = { kind: 'u6-fourteen-works', cases: [] };
+      for (const viewport of U6_SMOKE_VIEWPORTS) {
+        report.cases.push(await verifyU6SmokeCase(browser, server.baseUrl, viewport, works));
+      }
+      assertU6SmokeCoverage(report);
+      return report;
+    },
   });
 }
 
@@ -4213,6 +4472,7 @@ if (isMain) {
       if (process.argv.includes('--warning-regression-only')) {
         return runFocusedWarningVerification();
       }
+      if (process.argv.includes('--u6-only')) return runFocusedU6Verification();
       if (process.argv.includes('--u5-only')) return runFocusedU5Verification();
       return runVerification();
     })

@@ -25,6 +25,99 @@ const U5_CANONICAL_FIXTURE = new URL('./fixtures/u5-canonical.json', import.meta
 const U5_PLACEHOLDER_AUTHORITY = new URL('../data/ap-art-history-unit-5-placeholder-authority.json', import.meta.url);
 const PROJECT_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
+const U6_EXPECTED_VIEW_IDS = [
+  ['conical-tower', 'circular-wall'], ['mosque', 'monday-market'],
+  ['wall-plaque', 'oba-context'], ['golden-stool', 'stool-context'],
+  ['ndop', 'ruler-context'], ['primary'], ['primary'],
+  ['mask', 'performance-context'], ['mask', 'performance-context'], ['primary'],
+  ['memory-board', 'contextual'], ['mask', 'performance-context'], ['primary'], ['primary'],
+];
+
+test('U6 smoke exports the exact immutable standalone desktop/mobile and embedded matrix', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  assert.deepEqual(verifier.U6_SMOKE_VIEWPORTS, [
+    { width: 1365, height: 768, mode: 'standalone' },
+    { width: 390, height: 844, mode: 'standalone' },
+    { width: 1024, height: 768, mode: 'embedded' },
+  ]);
+  assert.ok(Object.isFrozen(verifier.U6_SMOKE_VIEWPORTS));
+  assert.ok(verifier.U6_SMOKE_VIEWPORTS.every(Object.isFrozen));
+  assert.equal(typeof verifier.runFocusedU6Verification, 'function');
+});
+
+test('U6 smoke evidence requires three cases, numeric AP 167-180, 23 views, every tab and UI round trips', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  assert.equal(typeof verifier.assertU6SmokeCoverage, 'function');
+  const report = {
+    kind: 'u6-fourteen-works',
+    cases: verifier.U6_SMOKE_VIEWPORTS.map((viewport) => ({
+      viewport,
+      regions: ['Southern Africa · 1 piece', 'West Africa · 7 pieces', 'Central Africa · 6 pieces'],
+      works: U6_EXPECTED_VIEW_IDS.map((viewIds, index) => ({
+        apNumber: 167 + index,
+        selected: true,
+        viewIds,
+        tabIds: ['quick', 'form', 'context', 'compare'],
+      })),
+      workCount: 14, viewCount: 23, tabCount: 56,
+      viewButtonActivations: 18, singleViewSelections: 5,
+      comparison: { fromApNumber: 167, targetId: 'ap11-shaman', followed: true, returned: true },
+      dialog: { apNumber: 167, viewId: 'conical-tower', focusRestored: true },
+      horizontalOverflow: 0, hostHorizontalOverflow: 0,
+      overflowHistory: [{ checkpoint: 'initial', horizontalOverflow: 0, hostHorizontalOverflow: 0 }],
+      issues: [],
+    })),
+  };
+  assert.doesNotThrow(() => verifier.assertU6SmokeCoverage(report));
+  const mutations = [
+    ['missing case', (copy) => copy.cases.pop()],
+    ['missing work', (copy) => copy.cases[0].works.pop()],
+    ['wrong AP order', (copy) => copy.cases[0].works.reverse()],
+    ['unselected work', (copy) => { copy.cases[0].works[0].selected = false; }],
+    ['wrong view', (copy) => { copy.cases[0].works[0].viewIds[0] = 'wrong'; }],
+    ['missing tab', (copy) => copy.cases[0].works[0].tabIds.pop()],
+    ['unclicked view button', (copy) => { copy.cases[0].viewButtonActivations = 17; }],
+    ['unselected sole primary view', (copy) => { copy.cases[0].singleViewSelections = 4; }],
+    ['wrong region', (copy) => { copy.cases[0].regions[1] = 'West Africa · 6 pieces'; }],
+    ['comparison not returned', (copy) => { copy.cases[0].comparison.returned = false; }],
+    ['lost dialog focus', (copy) => { copy.cases[0].dialog.focusRestored = false; }],
+    ['overflow', (copy) => { copy.cases[0].horizontalOverflow = 1; }],
+    ['transient overflow', (copy) => { copy.cases[0].overflowHistory[0].horizontalOverflow = 1; }],
+    ['host overflow', (copy) => { copy.cases[2].hostHorizontalOverflow = 1; }],
+    ['page error', (copy) => copy.cases[0].issues.push('pageerror: U6 failure')],
+    ['console error', (copy) => copy.cases[0].issues.push('console error: U6 failure')],
+  ];
+  for (const [label, mutate] of mutations) {
+    const copy = structuredClone(report);
+    mutate(copy);
+    assert.throws(() => verifier.assertU6SmokeCoverage(copy), undefined, label);
+  }
+});
+
+test('focused U6 runner uses real hierarchy, tabs, views, comparison and dialog controls without changing default CLI routing', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  assert.match(source, /export async function runFocusedU6Verification\(/);
+  const focused = source.slice(source.indexOf('export async function runFocusedU6Verification'), source.indexOf('export async function runFocusedU3FaultVerification'));
+  for (const helper of ['discoverPlaywright', 'discoverBrowser', 'startStaticServer', 'runManagedVerification']) {
+    assert.ok(focused.includes(helper), `focused lifecycle reuses ${helper}`);
+  }
+  const smoke = source.slice(source.indexOf('async function selectU6Work'), source.indexOf('export async function runFocusedImportedVerification'));
+  for (const control of ['#unitFilter', '#searchInput', 'data-group-kind="region"', 'data-group-kind="site"', '.detail-tab', '.image-view-switcher button', '.comparison-card', '#dialogClose']) {
+    assert.ok(smoke.includes(control), `U6 interacts with ${control}`);
+  }
+  assert.match(smoke, /for \(const work of works\)/);
+  assert.match(smoke, /for \(const \[imageIndex, expected\] of work\.images\.entries\(\)\)/);
+  assert.match(smoke, /for \(const id of U6_TAB_IDS\)/);
+  assert.match(smoke, /aria-pressed/);
+  assert.match(smoke, /assertDialogFocusRestored/);
+  assert.match(smoke, /document\.activeElement === element/);
+  assert.match(smoke, /assertNoHorizontalOverflow/);
+  assert.match(smoke, /installErrorCollection/);
+  assert.match(smoke, /assertNoCollectedIssues/);
+  assert.match(source, /if \(process\.argv\.includes\('--u6-only'\)\) return runFocusedU6Verification\(\);/);
+  assert.match(source, /if \(process\.argv\.includes\('--u5-only'\)\) return runFocusedU5Verification\(\);\s*return runVerification\(\);/);
+});
+
 function projectBrowserFixture(canonical) {
   return canonical.artworks.map((work) => {
     const media = Array.isArray(work.images)
@@ -801,11 +894,11 @@ test('U5 restricted authority matches runtime and verifier allowlists and requir
   });
 });
 
-test('release verifier keeps exact immutable Unit 5 stage descriptors', async () => {
+test('release verifier keeps exact immutable Units 1-6 stage descriptors', async () => {
   const verifier = await import(RELEASE_VERIFIER_URL.href);
   const expectedStages = [
     'Node test suite',
-    'strict 166-work Units 1-5 validator',
+    'strict 180-work Units 1-6 validator',
     'private-media leak guard',
     'rendered browser matrix',
   ];
@@ -1763,7 +1856,7 @@ test('browser verifier locks the four-Unit hierarchy and exact U1/U3 region cont
   assert.match(source, /Colonial Americas · 5 pieces/);
 });
 
-test('initial hierarchy asserts the exact ordered five markers and 166-work result count', async () => {
+test('initial hierarchy asserts the exact ordered six markers and 180-work result count', async () => {
   const source = await readFile(VERIFIER_URL, 'utf8');
   const hierarchy = source.slice(
     source.indexOf('async function assertInitialHierarchy'),
@@ -1775,7 +1868,8 @@ test('initial hierarchy asserts the exact ordered five markers and 166-work resu
     hierarchy,
     /'U1 · Global Prehistory · 11 pieces',[\s\S]*'U2 · Ancient Mediterranean · 36 pieces',[\s\S]*'U3 · Early Europe and Colonial Americas · 51 pieces',[\s\S]*'U4 · Later Europe and Americas · 54 pieces',[\s\S]*'U5 · Indigenous Americas · 14 pieces'/,
   );
-  assert.match(hierarchy, /当前显示 166 件作品/);
+  assert.match(hierarchy, /'U5 · Indigenous Americas · 14 pieces',[\s\S]*'U6 · Africa · 14 pieces'/);
+  assert.match(hierarchy, /当前显示 180 件作品/);
 });
 
 test('U3 responsive traversal rejects an omitted region branch and loops all eight branches', async () => {
@@ -2124,23 +2218,36 @@ test('U1 standalone and embedded traversals exercise all study tabs and cross-Un
   );
 });
 
-test('integration copy targets the complete 166-work Units 1-5 map', async () => {
+test('integration copy targets the complete 180-work Units 1-6 map', async () => {
   const [homepage, artMap] = await Promise.all([
     readFile(HOMEPAGE_URL, 'utf8'),
     readFile(ART_MAP_URL, 'utf8'),
   ]);
 
-  assert.match(homepage, /166 AP works · Units 1-5 · filter, compare and study/);
-  assert.match(artMap, /AP 艺术史互动地图 · Units 1-5/);
+  assert.match(homepage, /180 AP works · Units 1-6 · filter, compare and study/);
+  assert.match(artMap, /AP 艺术史互动地图 · Units 1-6/);
   assert.match(
     artMap,
-    /aria-label="完整世界地图；展示 AP 艺术史 Units 1-5 全部 166 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
+    /aria-label="完整世界地图；展示 AP 艺术史 Units 1-6 全部 180 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布，包含 U6 Africa（非洲）"/,
   );
   assert.match(
     artMap,
-    /aria-label="AP 艺术史 Units 1-5 完整世界地图，标记全部 166 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布"/,
+    /aria-label="AP 艺术史 Units 1-6 完整世界地图，标记全部 180 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布，包含 U6 Africa（非洲）"/,
   );
   assert.match(artMap, /count\.textContent = `当前显示 \$\{visibleWorks\.length\} 件作品`/);
+});
+
+test('full and focused legacy browser paths all use the 180-work Units 1-6 release copy', async () => {
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  assert.equal(source.includes('Units 1-5'), false, 'no stale title/caption assertions in legacy paths');
+  assert.equal(source.includes('当前显示 166 件作品'), false, 'no stale reset counts in legacy paths');
+  for (const [start, end] of [
+    ['async function verifyStandalone(', 'async function selectArtAndFrame('],
+    ['async function verifyImportedWorksStandalone(', 'async function verifyImportedWorksEmbedded('],
+  ]) {
+    assert.ok(source.slice(source.indexOf(start), source.indexOf(end))
+      .includes('AP 艺术史互动地图 · Units 1-6'), `${start} updated title assertion`);
+  }
 });
 
 test('copy integration preserves World History text and iframe dimensions', async () => {
