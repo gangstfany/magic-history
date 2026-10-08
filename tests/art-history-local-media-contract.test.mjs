@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -20,7 +20,7 @@ function fixture(t, unit = 6) {
     creatorOrInstitution: 'Museum', sourcePageUrl: 'https://example.org/source',
     originalFileUrl: open ? 'https://example.org/image.webp' : null,
     localAssetPath: open ? localAssetPath : null,
-    licenseClass: open ? 'cc-by' : 'unresolved', licenseName: open ? 'CC BY 4.0' : 'Unverified',
+    licenseClass: open ? 'cc-by' : 'restricted', licenseName: open ? 'CC BY 4.0' : 'Unverified',
     licenseUrl: open ? 'https://creativecommons.org/licenses/by/4.0/' : null,
     releaseClass: open ? 'open' : 'restricted', accessedOn: '2026-10-08',
     identityNote: 'Verified identity', derivativeNote: 'No changes',
@@ -56,6 +56,7 @@ const mutations = [
   ['zero size file', (d) => writeFileSync(join(d.rootDir, Object.values(d.rights)[0].localAssetPath), ''), /size/],
   ['open media mismatch', (d) => { d.artworks[0].images[0].imageUrl = null; }, /alignment/],
   ['restricted without authority', (d) => { d.authority = {}; }, /authority/],
+  ['contradictory restricted license', (d) => { Object.values(d.rights)[1].licenseClass = 'cc-by'; }, /restricted license class/],
   ['restricted authority mismatch', (d) => { Object.values(d.authority)[0].imageSourceName = 'Other'; }, /authority/],
   ['insecure authority URL', (d) => { Object.values(d.authority)[0].imageSourceUrl = 'http://example.org'; }, /HTTPS/],
   ['missing live view', (d) => { d.artworks[0].images.pop(); }, /view/],
@@ -67,4 +68,29 @@ for (const path of ['http://example.org/a.jpg', '/tmp/a.jpg', '.private-media/a.
 for (const [name, mutate, error] of mutations) test(`rejects ${name}`, (t) => {
   const data = fixture(t); mutate(data);
   assert.throws(() => assertLocalMediaContract(data), error);
+});
+
+for (const targetType of ['private', 'outside']) test(`rejects canonical alias to ${targetType} media`, (t) => {
+  const data = fixture(t);
+  const targetRoot = targetType === 'private' ? join(data.rootDir, '.private-media') : mkdtempSync(join(tmpdir(), 'outside-media-'));
+  if (targetType === 'outside') t.after(() => rmSync(targetRoot, { recursive: true, force: true }));
+  else mkdirSync(targetRoot);
+  const target = join(targetRoot, 'private.webp');
+  writeFileSync(target, 'private image');
+  const alias = join(data.rootDir, Object.values(data.rights)[0].localAssetPath);
+  rmSync(alias);
+  symlinkSync(target, alias);
+  assert.throws(() => assertLocalMediaContract(data), /repository-local|public asset subtree|private-media/);
+});
+
+test('duplicate asset error identifies path and both owning media keys', (t) => {
+  const data = fixture(t);
+  const [first, second] = Object.keys(data.rights);
+  data.rights[second].localAssetPath = data.rights[first].localAssetPath;
+  assert.throws(() => assertLocalMediaContract(data), (error) => {
+    assert.ok(error.message.includes(data.rights[first].localAssetPath));
+    assert.ok(error.message.includes(first));
+    assert.ok(error.message.includes(second));
+    return true;
+  });
 });

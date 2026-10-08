@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { realpathSync, statSync } from 'node:fs';
-import { join, relative, isAbsolute } from 'node:path';
+import { join, relative, isAbsolute, sep } from 'node:path';
 
 export const ALLOWED_OPEN_LICENSE_CLASSES = Object.freeze([
   'public-domain', 'cc0', 'cc-by', 'cc-by-sa',
@@ -34,12 +34,12 @@ export function assertLocalMediaContract({ manifest, artworks, rights, authority
     assert.deepEqual(matches[0].images.map(({ id }) => id), work.requiredViewIds, `${work.id} live view order`);
     for (const view of matches[0].images) live.set(`${work.id}::${view.id}`, { view, unit: matches[0].unit });
   }
-  const assets = new Set();
+  const assets = new Map();
   // Check duplicates first so reuse is diagnosed even when its filename is for another view.
-  for (const row of Object.values(rights)) {
+  for (const [key, row] of Object.entries(rights)) {
     if (row.localAssetPath === null) continue;
-    assert.ok(!assets.has(row.localAssetPath), 'duplicate local asset path');
-    assets.add(row.localAssetPath);
+    assert.ok(!assets.has(row.localAssetPath), `duplicate local asset path ${row.localAssetPath}: ${assets.get(row.localAssetPath)} and ${key}`);
+    assets.set(row.localAssetPath, key);
   }
   for (const key of keys) {
     const row = rights[key];
@@ -69,12 +69,15 @@ export function assertLocalMediaContract({ manifest, artworks, rights, authority
       const file = join(rootDir, row.localAssetPath);
       let stats;
       try {
-        const rel = relative(realpathSync(rootDir), realpathSync(file));
-        assert.ok(!rel.startsWith('..') && !isAbsolute(rel), `${key} file must stay repository-local`);
+        const resolvedFile = realpathSync(file);
+        assert.ok(!resolvedFile.split(sep).includes('.private-media'), `${key} file must not resolve to .private-media`);
+        const rel = relative(join(realpathSync(rootDir), `assets/art-history/u${unit}`), resolvedFile);
+        assert.ok(!rel.startsWith('..') && !isAbsolute(rel), `${key} file must stay in its public asset subtree`);
         stats = statSync(file);
       } catch (error) { throw new Error(`${key} local file invalid: ${error.message}`); }
       assert.ok(stats.isFile() && stats.size > 0 && stats.size <= MAX_LOCAL_MEDIA_BYTES, `${key} local file size must be 1..${MAX_LOCAL_MEDIA_BYTES} bytes`);
     } else {
+      assert.equal(row.licenseClass, 'restricted', `${key} restricted license class required`);
       assert.equal(row.localAssetPath, null, `${key} restricted media-path alignment`);
       assert.equal(row.originalFileUrl, null, `${key} restricted original file alignment`);
       assert.equal(view.imageUrl, null, `${key} restricted media-path alignment`);
