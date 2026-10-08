@@ -1,0 +1,115 @@
+"""Deterministic, offline WebP preparation for public U5/U6 media.
+
+Opaque images use quality 88 down to a floor of 60, in two-point steps.
+If that floor (or lossless alpha) cannot meet the byte budget, fail rather
+than silently degrading further. Sources are never modified.
+"""
+import argparse
+from dataclasses import dataclass
+import os
+from pathlib import Path
+import tempfile
+
+from PIL import Image, ImageOps
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+QUALITY_FLOOR = 60
+
+
+@dataclass(frozen=True)
+class OptimizationResult:
+    width: int
+    height: int
+    byte_count: int
+    relative_path: str
+
+
+def _destination(path):
+    path = Path(path)
+    if '..' in path.parts or '.private-media' in path.parts:
+        raise ValueError('Destination cannot contain traversal or .private-media')
+    absolute = path if path.is_absolute() else REPOSITORY_ROOT / path
+    try:
+        relative = absolute.relative_to(REPOSITORY_ROOT)
+    except ValueError:
+        raise ValueError('Destination must be inside repository U5/U6 assets') from None
+    if (relative.parts[:3] not in [('assets', 'art-history', 'u5'),
+                                  ('assets', 'art-history', 'u6')]
+            or len(relative.parts) < 4 or absolute.suffix.lower() != '.webp'):
+        raise ValueError('Destination must be a .webp inside assets/art-history/u5 or u6')
+    # Reject symlink escape as well as lexical escape, including unit-root links.
+    if absolute.resolve() != absolute:
+        raise ValueError('Destination must not follow symlinks')
+    return absolute, relative.as_posix()
+
+
+def optimize_image(source, destination, *, max_edge=2000,
+                   max_bytes=1_572_864, replace=False):
+    """Optimize into an allowed repository destination; publish atomically."""
+    if (not isinstance(max_edge, int) or isinstance(max_edge, bool) or max_edge <= 0
+            or not isinstance(max_bytes, int) or isinstance(max_bytes, bool)
+            or max_bytes <= 0):
+        raise ValueError('max_edge and max_bytes must be positive integers')
+    destination, relative_path = _destination(destination)
+    if destination.exists() and not replace:
+        raise FileExistsError(f'Destination already exists: {destination}')
+    with Image.open(source) as opened:
+        image = ImageOps.exif_transpose(opened)
+        image.thumbnail((max_edge, max_edge), Image.Resampling.LANCZOS)
+        if 'A' in image.getbands() or 'transparency' in image.info:
+            rgba = image.convert('RGBA')
+            has_alpha = rgba.getchannel('A').getextrema()[0] < 255
+            image = rgba if has_alpha else rgba.convert('RGB')
+        else:
+            has_alpha = False
+            image = image.convert('RGB')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=f'.{destination.name}.', suffix='.tmp', dir=destination.parent)
+        os.close(descriptor)
+        temporary = Path(temporary_name)
+        try:
+            qualities = [None] if has_alpha else range(88, QUALITY_FLOOR - 1, -2)
+            for quality in qualities:
+                options = {'lossless': True} if has_alpha else {'quality': quality}
+                image.save(temporary, format='WEBP', **options)
+                byte_count = temporary.stat().st_size
+                if byte_count <= max_bytes:
+                    break
+            else:
+                raise ValueError(f'Cannot meet byte budget {max_bytes}; '
+                                 f'lossless alpha or quality floor {QUALITY_FLOOR} required')
+            with Image.open(temporary) as verified:
+                verified.load()
+                if (verified.format != 'WEBP' or verified.size != image.size
+                        or verified.mode != ('RGBA' if has_alpha else 'RGB')):
+                    raise ValueError('Saved WebP failed integrity/dimension/mode verification')
+            if replace:
+                os.replace(temporary, destination)
+            else:
+                # Atomic no-clobber publication: even a concurrent writer is safe.
+                os.link(temporary, destination)
+            return OptimizationResult(image.width, image.height, byte_count, relative_path)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--source', required=True, help='Source image path (may be outside repository)')
+    parser.add_argument('--destination', required=True, help='Output .webp in assets/art-history/u5 or u6')
+    parser.add_argument('--max-edge', type=int, default=2000, help='Maximum width/height in pixels (default: 2000)')
+    parser.add_argument('--max-bytes', type=int, default=1_572_864, help='Maximum output bytes (default: 1572864)')
+    parser.add_argument('--replace', action='store_true', help='Allow replacement of an existing destination')
+    args = parser.parse_args()
+    try:
+        result = optimize_image(args.source, args.destination, max_edge=args.max_edge,
+                                max_bytes=args.max_bytes, replace=args.replace)
+    except (OSError, ValueError) as error:
+        parser.exit(1, f'Optimization failed: {error}\n')
+    print(f'{result.relative_path}: {result.width}x{result.height}, {result.byte_count} bytes')
+
+
+if __name__ == '__main__':
+    main()
