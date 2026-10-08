@@ -18,7 +18,7 @@ const tests = readdirSync(join(PROJECT_ROOT, 'tests'))
 
 export const EXPECTED_RELEASE_STAGE_LABELS = Object.freeze([
   'Node test suite',
-  'strict 166-work Units 1-5 validator',
+  'strict 180-work Units 1-6 validator',
   'private-media leak guard',
   'rendered browser matrix',
 ]);

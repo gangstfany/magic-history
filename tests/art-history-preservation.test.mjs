@@ -426,7 +426,7 @@ test('all U3 comparisons resolve and retain the required cross-unit targets', as
   const ids = new Set(artworks.map(({ id }) => id));
   const u3 = artworks.filter(({ unit }) => unit === 3);
 
-  assert.equal(artworks.length, 166);
+  assert.equal(artworks.length, 180);
   assert.equal(u3.length, 51);
   for (const work of u3) {
     assert.ok(
@@ -618,7 +618,7 @@ test('U4 audited source bundle exactly matches the imported live Unit 4 projecti
 
   const liveU4Artworks = artworks.filter(({ unit }) => unit === 4);
   const liveU4Credits = Object.fromEntries(expectedWorkIds.map((id) => [id, credits[id]]));
-  assert.equal(artworks.length, 166);
+  assert.equal(artworks.length, 180);
   assert.deepEqual(liveU4Artworks, fixture.artworks);
   assertRawCreditRecords(
     liveU4Credits,
@@ -678,18 +678,18 @@ test('live U1–U4 stay frozen while U5 exactly matches its canonical fixture', 
   );
   const u5Ids = Object.values(u5Manifest).map(({ id }) => id);
   const legacyArtworks = artworks.slice(0, 152);
-  const liveU5Artworks = artworks.slice(152);
+  const liveU5Artworks = artworks.slice(152, 166);
   const liveCreditIds = Object.keys(credits);
   const legacyCreditIds = liveCreditIds.slice(0, expectedCreditIds.length);
-  const liveU5CreditIds = liveCreditIds.slice(expectedCreditIds.length);
+  const liveU5CreditIds = liveCreditIds.slice(expectedCreditIds.length, expectedCreditIds.length + u5Ids.length);
   const legacyCredits = Object.fromEntries(legacyCreditIds.map((id) => [id, credits[id]]));
   const liveU5Credits = Object.fromEntries(liveU5CreditIds.map((id) => [id, credits[id]]));
 
-  assert.equal(artworks.length, 166, 'live data includes AP 1–166');
+  assert.equal(artworks.length, 180, 'live data includes AP 1–180');
   assert.deepEqual(
     artworks.map(({ apNumber }) => apNumber),
-    Array.from({ length: 166 }, (_, index) => index + 1),
-    'live AP sequence remains exactly 1–166',
+    Array.from({ length: 180 }, (_, index) => index + 1),
+    'live AP sequence remains exactly 1–180',
   );
   assert.deepEqual(
     legacyArtworks.map(({ id }) => id),

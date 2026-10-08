@@ -5,17 +5,23 @@ import { readFile } from 'node:fs/promises';
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const loadHtml = () => readFile(HTML_PATH, 'utf8');
 
-test('standalone document copy introduces the complete 166-work Units 1-5 map', async () => {
+test('standalone document copy introduces the complete 180-work Units 1-6 map', async () => {
   const html = await loadHtml();
 
-  assert.match(html, /<title>AP 艺术史互动地图 · Units 1-5<\/title>/);
-  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-5<\/h1>/);
-  assert.match(
-    html,
-    /<p class="subtitle">Units 1-5：从全球史前艺术、古代地中海到 U5 Indigenous Americas，以地点连接全部 166 件作品、传统与历史语境。<\/p>/,
-  );
+  assert.match(html, /<title>AP 艺术史互动地图 · Units 1-6<\/title>/);
+  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-6<\/h1>/);
+
   assert.doesNotMatch(html, /Units 1-2/);
   assert.doesNotMatch(html, /AP 艺术史 · Unit 2 古代地中海/);
+});
+
+test('Chinese subtitle connects all 180 works across Units 1-6 including U6 Africa', async () => {
+  const html = await loadHtml();
+
+  assert.match(
+    html,
+    /<p class="subtitle">Units 1-6：从全球史前艺术、古代地中海到 U5 Indigenous Americas 与 U6 Africa（非洲），以地点连接全部 180 件作品、传统与历史语境。<\/p>/,
+  );
 });
 
 function getFunctionSource(html, functionName) {
