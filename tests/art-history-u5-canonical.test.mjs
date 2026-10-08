@@ -899,20 +899,20 @@ test('live map imports the exact ordered AP 153–166 canonical projection', asy
   const liveU5 = artworks.filter(({ unit }) => unit === 5);
   const expectedIds = fixture.artworks.map(({ id }) => id);
   const liveCreditIds = Object.keys(credits);
-  const liveU5CreditIds = liveCreditIds.slice(-expectedIds.length);
+  const liveU5CreditIds = liveCreditIds.slice(152, 166);
   const liveU5Credits = Object.fromEntries(liveU5CreditIds.map((id) => [id, credits[id]]));
   const flattenedViews = liveU5.flatMap((work) => work.images.map((image) => image));
   const restrictedViews = flattenedViews.filter(({ mediaStatus }) => mediaStatus === 'rightsRestricted');
   const publicViews = flattenedViews.filter(({ imageUrl }) => imageUrl !== null);
 
   assertOrderedDeepEqual(liveU5, fixture.artworks, '$.liveU5.artworks');
-  assert.equal(liveCreditIds.length, 166, 'live credit total');
+  assert.equal(liveCreditIds.length, 180, 'live credit total');
   assert.deepEqual(liveU5CreditIds, expectedIds, 'live U5 credit key order');
   assertOrderedDeepEqual(liveU5Credits, fixture.credits, '$.liveU5.credits');
-  assert.equal(artworks.length, 166, 'live artwork total');
+  assert.equal(artworks.length, 180, 'live artwork total');
   assert.deepEqual(
     artworks.map(({ apNumber }) => apNumber),
-    Array.from({ length: 166 }, (_, index) => index + 1),
+    Array.from({ length: 180 }, (_, index) => index + 1),
     'live AP sequence',
   );
   assert.equal(flattenedViews.length, 27, 'live U5 view count');
