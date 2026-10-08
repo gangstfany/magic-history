@@ -60,6 +60,21 @@ class OptimizeImageTests(unittest.TestCase):
         with Image.open(self.destination) as output:
             self.assertEqual(output.getpixel((0, 0)), (123, 77, 42, 128))
 
+    def test_transparency_disappearing_on_resize_accepts_opaque_decoded_mode(self):
+        source = Path(self.sources.name) / 'sparse-alpha.png'
+        image = Image.new('RGBA', (100, 100), (123, 77, 42, 255))
+        image.putpixel((0, 0), (123, 77, 42, 0))
+        image.save(source)
+        expected = image.copy()
+        expected.thumbnail((1, 1), Image.Resampling.LANCZOS)
+        self.assertEqual(expected.getchannel('A').getextrema(), (255, 255))
+        result = optimize_image(source, self.destination, max_edge=1)
+        self.assertEqual((result.width, result.height), (1, 1))
+        self.assertIn(b'VP8L', self.destination.read_bytes())
+        with Image.open(self.destination) as output:
+            self.assertEqual(output.mode, 'RGB')
+            self.assertEqual(output.getpixel((0, 0)), expected.convert('RGB').getpixel((0, 0)))
+
     def test_noisy_photo_uses_lossy_webp_with_bounded_quality_and_bytes(self):
         source = Path(self.sources.name) / 'noise.png'
         image = Image.frombytes('RGB', (256, 256), random.Random(7).randbytes(256*256*3))

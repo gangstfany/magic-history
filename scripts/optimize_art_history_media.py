@@ -105,6 +105,10 @@ def optimize_image(source, destination, *, max_edge=2000,
             has_alpha = False
             image = image.convert('RGB')
         image.thumbnail((max_edge, max_edge), Image.Resampling.LANCZOS)
+        # Downsampling can erase sparse transparency. WebP then decodes as RGB,
+        # while the source-based lossless encoding policy remains unchanged.
+        expected_mode = ('RGBA' if has_alpha and
+                         image.getchannel('A').getextrema()[0] < 255 else 'RGB')
         temporary_name = f'.{destination.name}.{secrets.token_hex(16)}.tmp'
         descriptor = os.open(temporary_name,
                              os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
@@ -128,7 +132,7 @@ def optimize_image(source, destination, *, max_edge=2000,
                 with Image.open(output) as verified:
                     verified.load()
                     if (verified.format != 'WEBP' or verified.size != image.size
-                            or verified.mode != ('RGBA' if has_alpha else 'RGB')):
+                            or verified.mode != expected_mode):
                         raise ValueError('Saved WebP failed integrity/dimension/mode verification')
             _existing_destination(parent_fd, destination.name, source_stat, replace)
             if replace:
