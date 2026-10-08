@@ -5,10 +5,12 @@ If that floor (or lossless alpha) cannot meet the byte budget, fail rather
 than silently degrading further. Sources are never modified.
 """
 import argparse
+from contextlib import contextmanager
 from dataclasses import dataclass
 import os
 from pathlib import Path
-import tempfile
+import secrets
+import stat
 
 from PIL import Image, ImageOps
 
@@ -44,6 +46,43 @@ def _destination(path):
     return absolute, relative.as_posix()
 
 
+@contextmanager
+def _parent_directory(destination):
+    """Walk from filesystem root without following any directory symlinks."""
+    if not hasattr(os, 'O_NOFOLLOW') or not hasattr(os, 'O_DIRECTORY'):
+        raise OSError('Secure directory-descriptor operations are unavailable')
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    descriptor = os.open(destination.anchor, flags)
+    try:
+        for part in destination.parent.parts[1:]:
+            try:
+                child = os.open(part, flags, dir_fd=descriptor)
+            except FileNotFoundError:
+                try:
+                    os.mkdir(part, dir_fd=descriptor)
+                except FileExistsError:
+                    pass
+                child = os.open(part, flags, dir_fd=descriptor)
+            os.close(descriptor)
+            descriptor = child
+        yield descriptor
+    finally:
+        os.close(descriptor)
+
+
+def _existing_destination(parent_fd, name, source_stat, replace):
+    try:
+        existing = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    if stat.S_ISLNK(existing.st_mode):
+        raise ValueError('Destination must not be a symlink')
+    if os.path.samestat(existing, source_stat):
+        raise ValueError('Source and destination identify the same file')
+    if not replace:
+        raise FileExistsError(f'Destination already exists: {name}')
+
+
 def optimize_image(source, destination, *, max_edge=2000,
                    max_bytes=1_572_864, replace=False):
     """Optimize into an allowed repository destination; publish atomically."""
@@ -52,11 +91,12 @@ def optimize_image(source, destination, *, max_edge=2000,
             or max_bytes <= 0):
         raise ValueError('max_edge and max_bytes must be positive integers')
     destination, relative_path = _destination(destination)
-    if destination.exists() and not replace:
-        raise FileExistsError(f'Destination already exists: {destination}')
-    with Image.open(source) as opened:
+    with _parent_directory(destination) as parent_fd, open(source, 'rb') as source_file:
+        source_stat = os.fstat(source_file.fileno())
+        _existing_destination(parent_fd, destination.name, source_stat, replace)
+        opened = Image.open(source_file)
         image = ImageOps.exif_transpose(opened)
-        image.thumbnail((max_edge, max_edge), Image.Resampling.LANCZOS)
+        opened.close()
         if 'A' in image.getbands() or 'transparency' in image.info:
             rgba = image.convert('RGBA')
             has_alpha = rgba.getchannel('A').getextrema()[0] < 255
@@ -64,35 +104,47 @@ def optimize_image(source, destination, *, max_edge=2000,
         else:
             has_alpha = False
             image = image.convert('RGB')
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        descriptor, temporary_name = tempfile.mkstemp(
-            prefix=f'.{destination.name}.', suffix='.tmp', dir=destination.parent)
-        os.close(descriptor)
-        temporary = Path(temporary_name)
+        image.thumbnail((max_edge, max_edge), Image.Resampling.LANCZOS)
+        temporary_name = f'.{destination.name}.{secrets.token_hex(16)}.tmp'
+        descriptor = os.open(temporary_name,
+                             os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                             0o600, dir_fd=parent_fd)
         try:
-            qualities = [None] if has_alpha else range(88, QUALITY_FLOOR - 1, -2)
-            for quality in qualities:
-                options = {'lossless': True} if has_alpha else {'quality': quality}
-                image.save(temporary, format='WEBP', **options)
-                byte_count = temporary.stat().st_size
-                if byte_count <= max_bytes:
-                    break
-            else:
-                raise ValueError(f'Cannot meet byte budget {max_bytes}; '
-                                 f'lossless alpha or quality floor {QUALITY_FLOOR} required')
-            with Image.open(temporary) as verified:
-                verified.load()
-                if (verified.format != 'WEBP' or verified.size != image.size
-                        or verified.mode != ('RGBA' if has_alpha else 'RGB')):
-                    raise ValueError('Saved WebP failed integrity/dimension/mode verification')
+            with os.fdopen(descriptor, 'w+b') as output:
+                qualities = [None] if has_alpha else range(88, QUALITY_FLOOR - 1, -2)
+                for quality in qualities:
+                    output.seek(0)
+                    output.truncate()
+                    options = {'lossless': True} if has_alpha else {'quality': quality}
+                    image.save(output, format='WEBP', **options)
+                    output.flush()
+                    byte_count = os.fstat(output.fileno()).st_size
+                    if byte_count <= max_bytes:
+                        break
+                else:
+                    raise ValueError(f'Cannot meet byte budget {max_bytes}; '
+                                     f'lossless alpha or quality floor {QUALITY_FLOOR} required')
+                output.seek(0)
+                with Image.open(output) as verified:
+                    verified.load()
+                    if (verified.format != 'WEBP' or verified.size != image.size
+                            or verified.mode != ('RGBA' if has_alpha else 'RGB')):
+                        raise ValueError('Saved WebP failed integrity/dimension/mode verification')
+            _existing_destination(parent_fd, destination.name, source_stat, replace)
             if replace:
-                os.replace(temporary, destination)
+                os.replace(temporary_name, destination.name,
+                           src_dir_fd=parent_fd, dst_dir_fd=parent_fd)
             else:
                 # Atomic no-clobber publication: even a concurrent writer is safe.
-                os.link(temporary, destination)
+                os.link(temporary_name, destination.name,
+                        src_dir_fd=parent_fd, dst_dir_fd=parent_fd,
+                        follow_symlinks=False)
             return OptimizationResult(image.width, image.height, byte_count, relative_path)
         finally:
-            temporary.unlink(missing_ok=True)
+            try:
+                os.unlink(temporary_name, dir_fd=parent_fd)
+            except FileNotFoundError:
+                pass
 
 
 def main():
