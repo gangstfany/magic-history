@@ -512,7 +512,7 @@ test('official AP unit helpers use every published unit boundary', async () => {
   assert.equal(getUnitById('2'), null);
 });
 
-test('Unit filter configuration, tradition labels, and map regions cover Units 1 through 5', async () => {
+test('Unit filter configuration, tradition labels, and map regions cover Units 1 through 6', async () => {
   const html = await loadHtml();
   const configSource = [
     getObjectDeclarationSource(html, 'const TRADITION_LABELS ='),
@@ -556,6 +556,15 @@ test('Unit filter configuration, tradition labels, and map regions cover Units 1
           'Ancient Central Andes',
           'Ancient North America',
           'Native North America',
+        ],
+      },
+      6: {
+        showCultureFilters: true,
+        cultureIds: [
+          'African Architecture',
+          'Royal & Court Arts',
+          'Performance & Masquerade',
+          'Power, Memory & Ancestors',
         ],
       },
     },
@@ -1233,6 +1242,153 @@ test('Unit 4 exposes nine exact regions, four movement groups, and every canonic
   );
 });
 
+test('Unit 6 freezes four bilingual classifications and labels every exact culture and tradition', async () => {
+  const html = await loadHtml();
+  const works = parseArtworkData(html).filter(({ unit }) => unit === 6);
+  const source = [
+    getObjectDeclarationSource(html, 'const TRADITION_LABELS ='),
+    getObjectDeclarationSource(html, 'const UNIT_FILTER_CONFIG ='),
+    getObjectDeclarationSource(html, 'const MAP_REGIONS ='),
+  ].join('\n');
+  const { TRADITION_LABELS, UNIT_FILTER_CONFIG, MAP_REGIONS } = Function(
+    `${source}; return { TRADITION_LABELS, UNIT_FILTER_CONFIG, MAP_REGIONS };`,
+  )();
+  const expectedLabels = {
+    'African Architecture': { labelEn:'African Architecture', labelZh:'非洲建筑' },
+    'Royal & Court Arts': { labelEn:'Royal & Court Arts', labelZh:'王权与宫廷艺术' },
+    'Performance & Masquerade': { labelEn:'Performance & Masquerade', labelZh:'表演与假面传统' },
+    'Power, Memory & Ancestors': { labelEn:'Power, Memory & Ancestors', labelZh:'力量、记忆与祖先' },
+  };
+  assert.ok(UNIT_FILTER_CONFIG[6], 'missing U6 filter configuration');
+  assert.equal(UNIT_FILTER_CONFIG[6].showCultureFilters, true);
+  assert.deepEqual(UNIT_FILTER_CONFIG[6].cultureIds, Object.keys(expectedLabels));
+  assert.deepEqual(Object.fromEntries(Object.keys(expectedLabels).map((key) => (
+    [key, TRADITION_LABELS[key]]
+  ))), expectedLabels);
+  assert.deepEqual(Object.keys(MAP_REGIONS).filter((key) => MAP_REGIONS[key].unitIds.includes(6)),
+    ['southernAfrica', 'westAfrica', 'centralAfrica']);
+  assert.equal(new Set(works.map(({ culture }) => culture)).size, 14);
+  for (const key of new Set(works.flatMap(({ culture, traditionGroup }) => [culture, traditionGroup]))) {
+    assert.ok(TRADITION_LABELS[key]?.labelEn?.trim(), `missing English label: ${key}`);
+    assert.ok(TRADITION_LABELS[key]?.labelZh?.trim(), `missing Chinese label: ${key}`);
+    assert.ok(Object.isFrozen(TRADITION_LABELS[key]));
+  }
+  const { filterWorks } = loadPureFunctions(html, ['normalize', 'filterWorks'],
+    ['const TRADITION_LABELS =', 'const MAP_REGIONS =']);
+  for (const [culture, { labelZh }] of Object.entries(expectedLabels)) {
+    const expected = works.filter((work) => work.traditionGroup === culture);
+    assert.deepEqual(filterWorks(works, { unit:'6', culture, search:'' }), expected);
+    assert.deepEqual(filterWorks(works, { unit:'6', culture:'all', search:labelZh }), expected);
+  }
+});
+
+function loadUnit6MapHelpers(html) {
+  return loadPureFunctions(html, [
+    'compactApNumbers', 'formatApGroupLabel', 'formatPieceCount', 'createSiteToken',
+    'getUnitById', 'getApUnitNumber', 'getMapGroupText', 'toWorldCoordinates',
+    'groupBySite', 'groupByConfiguredRegion', 'getMapHierarchyLevel', 'groupByRegionGrid',
+    'buildMapGroups', 'buildMapGroupCandidates', 'getMarkerMetrics', 'getMarkerBounds',
+    'markerBoundsOverlap', 'expandMarkerBounds', 'createSpatialHash',
+    'findNearestAvailableMarkerSlot', 'layoutSiteMarkers', 'layoutMapGroups',
+  ], ['const AP_UNITS =', 'const MAP_REGIONS =', 'const SITE_WORLD_COORDINATES =']);
+}
+
+test('Unit 6 hierarchy is three counted regions then exact creation-context sites and AP pins', async () => {
+  const html = await loadHtml();
+  const works = parseArtworkData(html).filter(({ unit }) => unit === 6);
+  const manifest = JSON.parse(await readFile(new URL('../data/ap-art-history-unit-6-manifest.json', import.meta.url), 'utf8'));
+  const helpers = loadUnit6MapHelpers(html);
+  const overview = helpers.buildMapGroups(works, 1, { selectedUnit:'all' });
+  assert.equal(overview.length, 1);
+  assert.deepEqual(helpers.getMapGroupText(overview[0]), { title:'U6', subtitle:'Africa · 14 pieces' });
+  const regions = helpers.buildMapGroups(works, 1, { selectedUnit:'6', activeUnit:6 });
+  assert.deepEqual(regions.map(({ regionId, works }) => [regionId, works.length]), [
+    ['southernAfrica', 1], ['westAfrica', 7], ['centralAfrica', 6],
+  ]);
+  assert.deepEqual(regions.map(helpers.getMapGroupText), [
+    { title:'Southern Africa', subtitle:'1 piece' },
+    { title:'West Africa', subtitle:'7 pieces' },
+    { title:'Central Africa', subtitle:'6 pieces' },
+  ]);
+  const pins = [];
+  for (const region of regions) {
+    const sites = helpers.buildMapGroups(works, 2.5, {
+      selectedUnit:'6', activeUnit:6, activeRegion:region.key,
+    });
+    assert.deepEqual(sites.map(({ siteName }) => siteName).sort(),
+      Object.values(manifest).filter((row) => row.region === region.regionId).map(({ siteName }) => siteName).sort());
+    for (const site of sites) {
+      assert.equal(site.kind, 'site');
+      assert.equal(site.parentKey, region.key);
+      assert.equal(site.works.length, 1);
+      const work = site.works[0];
+      assert.equal(site.apLabel, String(work.apNumber));
+      assert.equal(site.apGroupLabel, `AP ${work.apNumber}`);
+      assert.equal(site.siteName, manifest[work.apNumber].siteName);
+      const metrics = helpers.getMarkerMetrics(site.apLabel, true, 0.5);
+      assert.equal(metrics.visualWidth, metrics.visualHeight, 'single AP pins retain circular metrics');
+      pins.push(work.apNumber);
+    }
+  }
+  assert.deepEqual(pins.sort((a, b) => a - b), Array.from({ length:14 }, (_, index) => 167 + index));
+});
+
+test('all 14 Unit 6 sites have stable distinct reviewed Africa projections', async () => {
+  const html = await loadHtml();
+  const works = parseArtworkData(html).filter(({ unit }) => unit === 6);
+  const source = getObjectDeclarationSource(html, 'const SITE_WORLD_COORDINATES =');
+  const { SITE_WORLD_COORDINATES } = Function(`${source}; return { SITE_WORLD_COORDINATES };`)();
+  const { toWorldCoordinates } = loadMapFitFunctions(html);
+  const points = [];
+  for (const work of works) {
+    const point = SITE_WORLD_COORDINATES[work.siteName];
+    assert.ok(point, `missing reviewed U6 projection: ${work.siteName}`);
+    assert.deepEqual(point, work.coordinates, `${work.siteName} frozen creation-context projection`);
+    assert.deepEqual(toWorldCoordinates(work), point);
+    assert.ok(point.x >= 0 && point.x <= 1600 && point.y >= 0 && point.y <= 800);
+    assert.ok(point.x >= 750 && point.x <= 950 && point.y >= 330 && point.y <= 500,
+      `${work.siteName} must remain inside its African geographic envelope`);
+    points.push(`${point.x},${point.y}`);
+  }
+  assert.equal(new Set(points).size, 14, 'different creation-context anchors must not be identical');
+});
+
+test('Unit 6 region and site layouts retain every marker without overlap across mobile and desktop scales', async () => {
+  const html = await loadHtml();
+  const works = parseArtworkData(html).filter(({ unit }) => unit === 6);
+  const helpers = loadUnit6MapHelpers(html);
+  const branch = { selectedUnit:'6', activeUnit:6 };
+  const regions = helpers.buildMapGroups(works, 1, branch);
+  assert.equal(regions.length, 3, 'all U6 configured region capsules must exist');
+  const fit = loadMapFitFunctions(html);
+  fit.fitMapToWorks(works);
+  const transform = fit.state.transform;
+  const bounds = fit.getVisibleWorldBounds(transform);
+  for (const [width, height] of [[349, 446.59375], [350, 478], [451, 618], [900, 600]]) {
+    const scale = Math.min(width / 1600, height / 800) * transform.scale;
+    const layouts = [
+      { groups:helpers.layoutMapGroups(works, transform.scale, scale, branch, bounds), expected:regions },
+      ...regions.map((region) => {
+        const regionBranch = { ...branch, activeRegion:region.key };
+        return {
+          groups:helpers.layoutMapGroups(works, 2.5, scale * 2.5, regionBranch),
+          expected:helpers.buildMapGroups(works, 2.5, regionBranch),
+        };
+      }),
+    ];
+    for (const { groups, expected } of layouts) {
+      assert.deepEqual(groups.map(({ key }) => key).sort(), expected.map(({ key }) => key).sort(), `${width}px retains markers`);
+      assert.equal(new Set(groups.map(({ displayX, displayY }) => `${displayX},${displayY}`)).size, groups.length);
+      for (let index = 0; index < groups.length; index += 1) {
+        for (let other = index + 1; other < groups.length; other += 1) {
+          assert.equal(helpers.markerBoundsOverlap(groups[index].bounds, groups[other].bounds), false,
+            `${width}px ${groups[index].siteName} overlaps ${groups[other].siteName}`);
+        }
+      }
+    }
+  }
+});
+
 test('Unit 5 hierarchy is six regions then creation-context sites and official AP pins', async () => {
   const html = await loadHtml();
   const unit5 = parseArtworkData(html).filter(({ unit }) => unit === 5);
@@ -1772,6 +1928,7 @@ test('configured Unit 2 hierarchy follows real region and site metadata', async 
       { key: 'unit-3', kind: 'unit', count: 51 },
       { key: 'unit-4', kind: 'unit', count: 54 },
       { key: 'unit-5', kind: 'unit', count: 14 },
+      { key: 'unit-6', kind: 'unit', count: 14 },
     ],
   );
 

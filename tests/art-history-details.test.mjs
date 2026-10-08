@@ -799,6 +799,28 @@ test('Unit 5 detail metadata resolves every precise culture without undefined la
   }
 });
 
+test('Unit 6 detail metadata resolves every exact culture and tradition in both languages', async () => {
+  const html = await loadHtml();
+  const works = parseJsonBlock(html, 'artwork-data').filter(({ unit }) => unit === 6);
+  const start = html.indexOf('const TRADITION_LABELS =');
+  const end = html.indexOf('const UNIT_FILTER_CONFIG =', start);
+  const sources = [html.slice(start, end), getFunctionSource(html, 'getCultureLabel'),
+    getFunctionSource(html, 'formatArtworkMeta')].join('\n');
+  const { TRADITION_LABELS, formatArtworkMeta } = Function(
+    `${sources}; return { TRADITION_LABELS, formatArtworkMeta };`,
+  )();
+  assert.equal(works.length, 14);
+  for (const work of works) {
+    for (const key of [work.culture, work.traditionGroup]) {
+      assert.ok(TRADITION_LABELS[key]?.labelEn?.trim(), `${key} English`);
+      assert.ok(TRADITION_LABELS[key]?.labelZh?.trim(), `${key} Chinese`);
+    }
+    const metadata = formatArtworkMeta(work);
+    assert.doesNotMatch(metadata, /undefined/);
+    assert.ok(metadata.includes(TRADITION_LABELS[work.culture].labelZh));
+  }
+});
+
 test('Unit 3 detail location rows render every exact provenance qualifier', async () => {
   const html = await loadHtml();
   const artworks = parseJsonBlock(html, 'artwork-data');
@@ -1460,6 +1482,64 @@ test('private mode without an installed override retains the placeholder with a 
   assert.equal(summary.querySelectorAll('img').length, 0);
 });
 
+test('all Unit 6 unresolved views show honest reusable-image status in public and private modes', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  let checkedViews = 0;
+  for (const privateMode of [false, true]) {
+    const harness = createDetailHarness(html, artworks, credits, {}, {}, privateMode);
+    for (const work of artworks.filter(({ unit }) => unit === 6)) {
+      const summary = harness.renderArtworkDetails(work, { works:[work] });
+      for (const [index, media] of work.images.entries()) {
+        if (media.imageUrl) continue;
+        const switcher = summary.querySelector('.image-view-switcher');
+        if (switcher) switcher.children[index].click();
+        const panel = summary.querySelector('.rights-placeholder');
+        assert.ok(panel, `${work.id} ${media.id}`);
+        assert.ok(panel.textContent.includes(media.mediaStatus), 'must visibly use the media item status');
+        assert.match(panel.textContent, /Reusable image not yet verified/);
+        assert.match(panel.textContent, /可复用图片尚未核实/);
+        assert.doesNotMatch(panel.textContent, /版权限制|私人学习模式可显示|Private image not installed/);
+        assert.equal(panel.querySelector('.private-media-missing'), null);
+        assert.equal(summary.querySelectorAll('img').length, 0);
+        assert.equal(summary.querySelector('.artwork-image-button'), null);
+        assert.equal(panel.getAttribute('aria-label'), `${work.titleEn}: reusable image not yet verified`);
+        const source = panel.querySelector('.rights-placeholder-source');
+        assert.equal(source.href, media.imageSourceUrl);
+        assert.equal(source.target, '_blank');
+        assert.equal(source.rel, 'noopener noreferrer');
+        assert.ok(source.textContent.trim(), 'external source link needs an accessible name');
+        checkedViews += 1;
+      }
+    }
+  }
+  assert.equal(checkedViews, 42, '21 unresolved views checked in both modes');
+});
+
+test('Unit 5 rights placeholders preserve public wording and private-missing status', async () => {
+  const html = await loadHtml();
+  const artworks = parseJsonBlock(html, 'artwork-data');
+  const credits = parseJsonBlock(html, 'image-credit-data');
+  const work = artworks.find(({ id }) => id === 'ap153-chavin-huantar');
+  const index = work.images.findIndex(({ mediaStatus }) => mediaStatus === 'rightsRestricted');
+  for (const privateMode of [false, true]) {
+    const harness = createDetailHarness(html, artworks, credits, {}, {}, privateMode);
+    const summary = harness.renderArtworkDetails(work, { works:[work] });
+    summary.querySelector('.image-view-switcher').children[index].click();
+    const panel = summary.querySelector('.rights-placeholder');
+    assert.match(panel.textContent, /Image unavailable in the public version/);
+    assert.match(panel.textContent, /由于作品版权限制，公开版不显示图像。本地私人学习模式可显示完整视图。/);
+    assert.equal(panel.getAttribute('aria-label'), `${work.titleEn}: public image unavailable`);
+    if (privateMode) {
+      assert.equal(panel.querySelector('.private-media-missing').textContent, 'Private image not installed');
+      assert.equal(panel.tabIndex, -1);
+    } else {
+      assert.equal(panel.querySelector('.private-media-missing'), null);
+    }
+  }
+});
+
 test('Unit 5 restricted media keeps its public placeholder and accepts only an ephemeral U5 local view', async () => {
   const html = await loadHtml();
   const artworks = parseJsonBlock(html, 'artwork-data');
@@ -2006,13 +2086,13 @@ test('source worksheet parser rejects rows with missing or extra cells', () => {
   );
 });
 
-test('keeps all 166 loaded works, complete imported ids, and one credit per image', async () => {
+test('keeps all 180 loaded works, complete imported ids, and one credit per image', async () => {
   const html = await loadHtml();
   const artworks = parseJsonBlock(html, 'artwork-data');
   const credits = parseJsonBlock(html, 'image-credit-data');
   const artworkIds = artworks.map(({ id }) => id);
 
-  assert.equal(artworks.length, 166);
+  assert.equal(artworks.length, 180);
   assert.equal(artworks.filter(({ unit }) => unit === 5).length, 14);
   assert.deepEqual(
     artworks.filter(({ unit }) => unit === 5).map(({ apNumber }) => apNumber),
@@ -2033,7 +2113,8 @@ test('keeps all 166 loaded works, complete imported ids, and one credit per imag
       : [credits[artwork.id]];
     assert.equal(creditItems.length, mediaItems.length, `${artwork.id} needs one credit per image`);
     mediaItems.forEach((media, index) => {
-      if (media.mediaStatus === 'rightsRestricted') {
+      if (media.mediaStatus === 'rightsRestricted'
+        || media.mediaStatus === '可复用图片尚未核实 · Reusable image not yet verified') {
         assert.equal(media.imageUrl, null, `${artwork.id} image ${index + 1} must use a public placeholder`);
       } else {
         assert.equal(typeof media.imageUrl, 'string', `${artwork.id} image ${index + 1} needs a URL`);

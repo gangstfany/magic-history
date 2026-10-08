@@ -11111,6 +11111,24 @@
       'Kwakwa̱ka̱ʼwakw ceremonial carving tradition': Object.freeze({ labelEn: 'Kwakwa̱ka̱ʼwakw ceremonial carving tradition', labelZh: '夸夸卡瓦夸仪式雕刻传统' }),
       'Eastern Shoshone narrative painting tradition': Object.freeze({ labelEn: 'Eastern Shoshone narrative painting tradition', labelZh: '东肖肖尼叙事绘画传统' }),
       'Pueblo de San Ildefonso (Tewa) pottery tradition': Object.freeze({ labelEn: 'Pueblo de San Ildefonso (Tewa) pottery tradition', labelZh: '圣伊尔德丰索普韦布洛（特瓦）陶艺传统' }),
+      'African Architecture': Object.freeze({ labelEn: 'African Architecture', labelZh: '非洲建筑' }),
+      'Royal & Court Arts': Object.freeze({ labelEn: 'Royal & Court Arts', labelZh: '王权与宫廷艺术' }),
+      'Performance & Masquerade': Object.freeze({ labelEn: 'Performance & Masquerade', labelZh: '表演与假面传统' }),
+      'Power, Memory & Ancestors': Object.freeze({ labelEn: 'Power, Memory & Ancestors', labelZh: '力量、记忆与祖先' }),
+      'Shona peoples': Object.freeze({ labelEn: 'Shona peoples', labelZh: '绍纳人' }),
+      'Djenné Muslim community and regional earthen-building tradition': Object.freeze({ labelEn: 'Djenné Muslim community and regional earthen-building tradition', labelZh: '杰内穆斯林社群与地区土筑建筑传统' }),
+      'Edo peoples, Kingdom of Benin': Object.freeze({ labelEn: 'Edo peoples, Kingdom of Benin', labelZh: '贝宁王国的埃多人' }),
+      'Asante (Ashanti) peoples': Object.freeze({ labelEn: 'Asante (Ashanti) peoples', labelZh: '阿桑特（阿散蒂）人' }),
+      'Kuba peoples': Object.freeze({ labelEn: 'Kuba peoples', labelZh: '库巴人' }),
+      'Kongo peoples': Object.freeze({ labelEn: 'Kongo peoples', labelZh: '刚果人' }),
+      'Chokwe peoples': Object.freeze({ labelEn: 'Chokwe peoples', labelZh: '乔克韦人' }),
+      'Baule peoples, Gbagba entertainment tradition of Kami': Object.freeze({ labelEn: 'Baule peoples, Gbagba entertainment tradition of Kami', labelZh: '巴乌莱人：卡米的格巴格巴娱乐传统' }),
+      'Sande Society, Mende peoples': Object.freeze({ labelEn: 'Sande Society, Mende peoples', labelZh: '门德人的桑德社团' }),
+      'Igbo peoples': Object.freeze({ labelEn: 'Igbo peoples', labelZh: '伊博人' }),
+      'Mbudye Society, Luba peoples': Object.freeze({ labelEn: 'Mbudye Society, Luba peoples', labelZh: '卢巴人的姆布迪耶社团' }),
+      'Bamileke peoples, Kuosi society': Object.freeze({ labelEn: 'Bamileke peoples, Kuosi society', labelZh: '巴米勒克人的库奥西社团' }),
+      'Fang peoples': Object.freeze({ labelEn: 'Fang peoples', labelZh: '芳人' }),
+      'Yoruba peoples': Object.freeze({ labelEn: 'Yoruba peoples', labelZh: '约鲁巴人' }),
       'New Spanish Baroque portraiture': Object.freeze({ labelEn: 'New Spanish Baroque portraiture', labelZh: '新西班牙巴洛克肖像画' }),
       'British Enlightenment painting': Object.freeze({ labelEn: 'British Enlightenment painting', labelZh: '英国启蒙时期绘画' }),
       'French Rococo': Object.freeze({ labelEn: 'French Rococo', labelZh: '法国洛可可' }),
@@ -11207,6 +11225,15 @@
           'Native North America',
         ]),
       }),
+      6: Object.freeze({
+        showCultureFilters: true,
+        cultureIds: Object.freeze([
+          'African Architecture',
+          'Royal & Court Arts',
+          'Performance & Masquerade',
+          'Power, Memory & Ancestors',
+        ]),
+      }),
     });
     const MAP_REGIONS = Object.freeze({
       africa: Object.freeze({ nameEn: 'Africa', unitIds: Object.freeze([1]) }),
@@ -11237,6 +11264,9 @@
       easternWoodlands: Object.freeze({ nameEn: 'Eastern Woodlands', unitIds: Object.freeze([5]) }),
       northwestCoast: Object.freeze({ nameEn: 'Northwest Coast', unitIds: Object.freeze([5]) }),
       plainsGreatBasin: Object.freeze({ nameEn: 'Plains & Great Basin', unitIds: Object.freeze([5]) }),
+      southernAfrica: Object.freeze({ nameEn: 'Southern Africa', unitIds: Object.freeze([6]) }),
+      westAfrica: Object.freeze({ nameEn: 'West Africa', unitIds: Object.freeze([6]) }),
+      centralAfrica: Object.freeze({ nameEn: 'Central Africa', unitIds: Object.freeze([6]) }),
     });
     const state = {
       unit: 'all',
@@ -11361,7 +11391,21 @@
       'Lenape homelands, northeastern North America': { x: 420, y: 280 },
       "Kwakwaka'wakw territories, British Columbia, Canada": { x: 255, y: 220 },
       'Wind River Reservation, Wyoming, U.S.': { x: 330, y: 285 },
-      'San Ildefonso Pueblo, New Mexico, U.S.': { x: 335, y: 320 }
+      'San Ildefonso Pueblo, New Mexico, U.S.': { x: 335, y: 320 },
+      'Great Zimbabwe, Masvingo Province, Zimbabwe': { x: 938, y: 489 },
+      'Djenné, Mali': { x: 780, y: 338 },
+      'Benin City, Nigeria': { x: 825, y: 372 },
+      'Kumasi, Ghana': { x: 793, y: 370 },
+      'Mushenge, Democratic Republic of the Congo': { x: 895, y: 421 },
+      'Kongo cultural region, Central Africa': { x: 865, y: 424 },
+      'Chokwe cultural region, Angola and Democratic Republic of the Congo': { x: 890, y: 448 },
+      "Baule cultural region, Côte d'Ivoire": { x: 778, y: 369 },
+      'Sierra Leone and Liberia forest region': { x: 752, y: 364 },
+      'Igbo cultural region, southeastern Nigeria': { x: 831, y: 377 },
+      'Luba cultural region, Democratic Republic of the Congo': { x: 916, y: 431 },
+      'Western Grassfields, Cameroon': { x: 847, y: 376 },
+      'Fang cultural region, southern Cameroon': { x: 849, y: 387 },
+      'Ise, Nigeria': { x: 823, y: 366 }
     };
 
     function toWorldCoordinates(workOrGroup) {
@@ -12663,10 +12707,13 @@
     }
 
     function createRightsPlaceholder(work, media, privateMissing = false) {
+      const reuseUnverified = media.mediaStatus === '可复用图片尚未核实 · Reusable image not yet verified';
+      // An unverified reusable view is not evidence of an installed private image.
+      const expectedPrivateMissing = privateMissing && !reuseUnverified;
       const panel = document.createElement('section');
       panel.className = 'rights-placeholder';
-      panel.setAttribute('aria-label', `${work.titleEn}: public image unavailable`);
-      if (privateMissing) panel.tabIndex = -1;
+      panel.setAttribute('aria-label', `${work.titleEn}: ${reuseUnverified ? 'reusable image not yet verified' : 'public image unavailable'}`);
+      if (expectedPrivateMissing) panel.tabIndex = -1;
 
       const icon = document.createElement('span');
       icon.className = 'rights-placeholder-icon';
@@ -12674,13 +12721,17 @@
       icon.textContent = '⌑';
 
       const title = document.createElement('h3');
-      title.textContent = 'Image unavailable in the public version';
+      title.textContent = reuseUnverified
+        ? 'Reusable image not yet verified'
+        : 'Image unavailable in the public version';
 
       const explanation = document.createElement('p');
-      explanation.textContent = '由于作品版权限制，公开版不显示图像。本地私人学习模式可显示完整视图。';
+      explanation.textContent = reuseUnverified
+        ? media.mediaStatus
+        : '由于作品版权限制，公开版不显示图像。本地私人学习模式可显示完整视图。';
 
       panel.append(icon, title, explanation);
-      if (privateMissing) {
+      if (expectedPrivateMissing) {
         const localStatus = document.createElement('p');
         localStatus.className = 'private-media-missing';
         localStatus.textContent = 'Private image not installed';
