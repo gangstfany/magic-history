@@ -1264,6 +1264,12 @@ test('U4 fixture validation freezes all levels and rejects every reviewed mutati
   assert.ok(Object.isFrozen(frozen));
   assert.ok(frozen.every(Object.isFrozen));
   assert.ok(frozen.every((work) => Object.isFrozen(work.images)));
+  const malformedImages = structuredClone(fixture);
+  malformedImages[0].images = {};
+  assert.throws(() => verifier.validateAndFreezeU5Works(malformedImages), /images must be an array/);
+  const unexpectedImageField = structuredClone(fixture);
+  unexpectedImageField[0].images[0].unexpected = true;
+  assert.throws(() => verifier.validateAndFreezeU5Works(unexpectedImageField), /image.*unexpected/);
   assert.ok(frozen.every((work) => work.images.every(Object.isFrozen)));
 
   const wrongTitle = structuredClone(fixture);

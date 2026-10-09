@@ -863,6 +863,11 @@ export function validateAndFreezeU5Works(works) {
       assert.ok(work[key].trim(), `AP ${apNumber} ${key} value`);
     }
     assert.ok(Array.isArray(work.viewIds) && work.viewIds.length > 0, `AP ${apNumber} viewIds`);
+    assert.ok(Array.isArray(work.images), `AP ${apNumber} images must be an array`);
+    work.images.forEach((image, index) => {
+      assertExactKeys(image, ['id', 'imageUrl', 'mediaStatus'],
+        `AP ${apNumber} image ${index}`);
+    });
     workIds.push(work.id);
     for (const viewId of work.viewIds) {
       assert.equal(typeof viewId, 'string', `AP ${apNumber} view id type`);

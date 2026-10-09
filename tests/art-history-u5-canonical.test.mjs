@@ -287,10 +287,11 @@ function assertHttpsUrl(value, identity) {
 }
 
 function markdownLink(value, identity) {
-  const match = value.match(/^\[([^\]]+)\]\((https:\/\/[^\s]+|assets\/art-history\/u5\/[^\s]+)\)$/);
+  const match = value.match(/^\[([^\]]+)\]\((https:\/\/[^\s]+|(?:\.\.\/\.\.\/)?assets\/art-history\/u5\/[^\s]+)\)$/);
   assert.ok(match, `${identity}: malformed HTTPS Markdown link`);
-  if (!match[2].startsWith('assets/')) assertHttpsUrl(match[2], identity);
-  return { label: match[1], url: match[2] };
+  const url = match[2].replace(/^\.\.\/\.\.\//, '');
+  if (!url.startsWith('assets/')) assertHttpsUrl(url, identity);
+  return { label: match[1], url };
 }
 
 function mediaIdentity(workId, viewId) {
@@ -697,6 +698,9 @@ test('U5 ledger parser is bounded and rejects malformed, duplicate, and unreview
   const row = '| 153 | `ap153-chavin-huantar` | plan | [direct image](https://example.com/image.jpg) | [Source](https://example.com/source) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | open | Creator/institution: Example archive; Reviewed: exact plan identity checked |';
   const valid = ['# Ledger', header, LEDGER_DIVIDER, row, '', '| AP # | unrelated |', '| ---: | --- |'].join('\n');
   assert.equal(parseU5Ledger(valid).length, 1, 'parser stops at end of consecutive target table');
+  const linkedLocal = valid.replace('https://example.com/image.jpg',
+    '../../assets/art-history/u5/ap153-plan.webp');
+  assert.equal(parseU5Ledger(linkedLocal)[0].imageUrl, 'assets/art-history/u5/ap153-plan.webp');
   assert.throws(() => parseU5Ledger([header, LEDGER_DIVIDER, row, row].join('\n')),
     /duplicate ledger identity/);
   assert.throws(() => parseU5Ledger([header, LEDGER_DIVIDER, row.replace(' | open |', ' | open | extra |')].join('\n')),
