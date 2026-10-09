@@ -45,6 +45,9 @@ export function assertLocalMediaContract({ manifest, artworks, rights, authority
     const row = rights[key];
     const { view, unit } = live.get(key);
     assert.deepEqual(Object.keys(row), RIGHTS_FIELDS, `${key} rights field order`);
+    for (const field of ['creatorOrInstitution', 'licenseName', 'identityNote', 'derivativeNote']) {
+      assert.ok(typeof row[field] === 'string' && row[field].trim(), `${key} ${field} must be a non-empty string`);
+    }
     assert.match(row.accessedOn, /^\d{4}-\d{2}-\d{2}$/, `${key} ISO access date`);
     const date = new Date(`${row.accessedOn}T00:00:00Z`);
     assert.ok(!Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === row.accessedOn, `${key} valid access date`);

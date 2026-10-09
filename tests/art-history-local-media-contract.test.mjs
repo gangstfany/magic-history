@@ -90,6 +90,18 @@ const mutations = [
   ['missing live view', (d) => { d.artworks[0].images.pop(); }, /view/],
   ['duplicate live work', (d) => { d.artworks.push(structuredClone(d.artworks[0])); }, /view/],
 ];
+
+for (const unit of [5, 6]) for (const index of [0, 1]) {
+  for (const field of ['creatorOrInstitution', 'licenseName', 'identityNote', 'derivativeNote']) {
+    for (const value of ['', '   ', null, 42]) {
+      test(`U${unit} ${index === 0 ? 'open' : 'restricted'} rights reject invalid ${field}: ${JSON.stringify(value)}`, (t) => {
+        const data = fixture(t, unit);
+        Object.values(data.rights)[index][field] = value;
+        assert.throws(() => assertLocalMediaContract(data), new RegExp(`${field}.*non-empty string`));
+      });
+    }
+  }
+}
 for (const path of ['http://example.org/a.jpg', '/tmp/a.jpg', '.private-media/a.jpg', 'file:///tmp/a.jpg']) {
   mutations.push([`unsafe live path ${path}`, (d) => { d.artworks[0].images[0].imageUrl = path; }, /must use a repository-local image path/]);
 }

@@ -184,6 +184,17 @@ test('strict U6 validation accepts local assets and enforces rights, credits, an
   const html = await readFile(HTML_URL, 'utf8');
   const credits = JSON.parse(html.match(/<script id="image-credit-data" type="application\/json">([\s\S]*?)<\/script>/)[1]);
   assert.doesNotThrow(() => validateImageCredits(credits, artworks, rights, authority));
+  for (const releaseClass of ['open', 'restricted']) {
+    const key = Object.keys(rights[6]).find(key => rights[6][key].releaseClass === releaseClass);
+    for (const field of ['identityNote', 'derivativeNote']) {
+      for (const value of ['', '   ']) {
+        const missingEvidence = structuredClone(rights);
+        missingEvidence[6][key][field] = value;
+        assert.throws(() => validateImageCredits(credits, artworks, missingEvidence, authority),
+          new RegExp(`${field}.*non-empty string`));
+      }
+    }
+  }
   const remote = structuredClone(artworks);
   remote.find(work => work.unit === 6).images[0].imageUrl = 'https://example.org/image.jpg';
   assert.throws(() => validateArtworks(remote, manifests, authority), /local/);
