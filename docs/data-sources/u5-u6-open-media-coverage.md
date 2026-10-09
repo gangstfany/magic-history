@@ -2,6 +2,8 @@
 
 Verified against the checked-in ordered rights ledgers and actual public files on 2026-10-09. Dataset and placeholder authority were not changed by this verification.
 
+Final release verification at `aa066a18` passed: 453 Node tests, the strict 180-work validator, private-media leak guard, and the complete rendered browser matrix. The separate real-file verifier also passed all three presentation modes. All accepted media files are Git-tracked. The branch remains local pending preview approval; no push was performed.
+
 | Unit | Required views | Local open images | Rights/identity placeholders | Local bytes |
 | --- | ---: | ---: | ---: | ---: |
 | U5 | 27 | 18 | 9 | 9,839,374 |
