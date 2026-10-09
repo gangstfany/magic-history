@@ -1103,6 +1103,32 @@ test('request windows exclude prior reset traffic while retaining current-work r
   );
 });
 
+test('U5 local request accounting normalizes browser URLs and preserves window and duplicate guards', async () => {
+  const verifier = await import(VERIFIER_URL.href);
+  assert.equal(typeof verifier.recordU5LocalImageRequest, 'function', 'U5 local image observer');
+  const requests = new Map();
+  const baseUrl = 'http://127.0.0.1:4321';
+  const path = 'assets/art-history/u5/ap153-plan.webp';
+  verifier.recordU5LocalImageRequest(requests, baseUrl + '/' + path, baseUrl);
+  const boundary = verifier.snapshotRequestCounts(requests);
+  verifier.recordU5LocalImageRequest(requests, baseUrl + '/' + path, baseUrl);
+  assert.deepEqual(verifier.requestCountsSince(requests, boundary), new Map([[path, 1]]));
+  verifier.recordU5LocalImageRequest(requests, baseUrl + '/' + path + '?reload=1', baseUrl);
+  assert.deepEqual(verifier.requestCountsSince(requests, boundary), new Map([[path, 2]]),
+    'cache-busting reload cannot evade duplicate accounting');
+  for (const url of [
+    'https://external.example/' + path,
+    baseUrl + '/.private-media/u5/ap153-plan.webp',
+    baseUrl + '/assets/art-history/u6/ap167-primary.webp',
+  ]) verifier.recordU5LocalImageRequest(requests, url, baseUrl);
+  assert.deepEqual(requests, new Map([[path, 3]]), 'local observer excludes remote, private and other units');
+  const source = await readFile(VERIFIER_URL, 'utf8');
+  const traversal = source.slice(source.indexOf('async function verifyU5Works'),
+    source.indexOf('async function verifyU5Page'));
+  assert.match(traversal, /mode === 'embedded'[\s\S]*artMapFrame[\s\S]*scrollIntoView[\s\S]*dialogClose/,
+    'embedded modal close aligns the parent iframe before the normal pointer action');
+});
+
 test('U5 private request aggregation excludes comparison races and counts the current work once', async () => {
   const verifier = await import(VERIFIER_URL.href);
   const ap163Path = '.private-media/u5/ap163-bandolier-bag-primary.jpg';

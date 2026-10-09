@@ -1302,6 +1302,16 @@ export function snapshotRequestCounts(requests) {
   return new Map(requests);
 }
 
+// Browser requests are absolute, while canonical U5 media paths are repository-local.
+// Observe real local file traffic without routing or replacing its image bytes.
+export function recordU5LocalImageRequest(requests, requestUrl, baseUrl) {
+  const url = new URL(requestUrl);
+  if (url.origin !== new URL(baseUrl).origin
+    || !/^\/assets\/art-history\/u5\/ap\d{3}-[a-z0-9-]+\.webp$/.test(url.pathname)) return;
+  const path = url.pathname.slice(1);
+  requests.set(path, (requests.get(path) || 0) + 1);
+}
+
 export function requestCountsSince(requests, boundary) {
   assert.ok(requests instanceof Map, 'request accounting source must be a Map');
   assert.ok(boundary instanceof Map, 'request accounting boundary must be a Map');
@@ -3658,6 +3668,13 @@ async function verifyU5Works(
       assert.equal(await dialogImage.getAttribute('src'), expectedImageUrl);
       assert.equal(await dialogImage.getAttribute('alt'), expected.imageAlt);
       assert.equal(await frame.locator('#dialogSource').getAttribute('href'), expected.imageSourceUrl);
+      if (mode === 'embedded') {
+        // The image trigger can scroll the parent page toward the iframe's lower
+        // portion. Real portrait images place the modal close near its top.
+        await page.locator('#artMapFrame').evaluate(element => {
+          element.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'instant' });
+        });
+      }
       await frame.locator('#dialogClose').click();
       await dialog.waitFor({ state: 'hidden' });
       assertDialogFocusRestored(
@@ -3758,7 +3775,12 @@ async function verifyU5Page(browser, baseUrl, viewport, mode, privateMode = fals
     const u4PrivateImageRequests = new Map();
     const allRequests = [];
     const overflowHistory = [];
-    page.on('request', (request) => allRequests.push(request.url()));
+    page.on('request', (request) => {
+      allRequests.push(request.url());
+      if (request.resourceType() === 'image') {
+        recordU5LocalImageRequest(remoteImageRequests, request.url(), baseUrl);
+      }
+    });
     await mockRemoteImages(page, (url) => {
       remoteImageRequests.set(url, (remoteImageRequests.get(url) || 0) + 1);
     });
