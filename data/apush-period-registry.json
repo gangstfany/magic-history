@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "periods": [
+    { "id": "p1", "number": 1, "labelEn": "Period 1", "labelZh": "时期一", "dates": "1491–1607", "startYear": 1491, "endYear": 1607, "dataPath": "data/apush-period-1.json", "manifestPath": "data/apush-period-1-manifest.json" },
+    { "id": "p2", "number": 2, "labelEn": "Period 2", "labelZh": "时期二", "dates": "1607–1754", "startYear": 1607, "endYear": 1754, "dataPath": "data/apush-period-2.json", "manifestPath": "data/apush-period-2-manifest.json" },
+    { "id": "p3", "number": 3, "labelEn": "Period 3", "labelZh": "时期三", "dates": "1754–1800", "startYear": 1754, "endYear": 1800, "dataPath": "data/apush-period-3.json", "manifestPath": "data/apush-period-3-manifest.json" },
+    { "id": "p4", "number": 4, "labelEn": "Period 4", "labelZh": "时期四", "dates": "1800–1848", "startYear": 1800, "endYear": 1848, "dataPath": "data/apush-period-4.json", "manifestPath": "data/apush-period-4-manifest.json" },
+    { "id": "p5", "number": 5, "labelEn": "Period 5", "labelZh": "时期五", "dates": "1844–1877", "startYear": 1844, "endYear": 1877, "dataPath": "data/apush-period-5.json", "manifestPath": "data/apush-period-5-manifest.json" },
+    { "id": "p6", "number": 6, "labelEn": "Period 6", "labelZh": "时期六", "dates": "1865–1898", "startYear": 1865, "endYear": 1898, "dataPath": "data/apush-period-6.json", "manifestPath": "data/apush-period-6-manifest.json" },
+    { "id": "p7", "number": 7, "labelEn": "Period 7", "labelZh": "时期七", "dates": "1890–1945", "startYear": 1890, "endYear": 1945, "dataPath": "data/apush-period-7.json", "manifestPath": "data/apush-period-7-manifest.json" },
+    { "id": "p8", "number": 8, "labelEn": "Period 8", "labelZh": "时期八", "dates": "1945–1980", "startYear": 1945, "endYear": 1980, "dataPath": "data/apush-period-8.json", "manifestPath": "data/apush-period-8-manifest.json" },
+    { "id": "p9", "number": 9, "labelEn": "Period 9", "labelZh": "时期九", "dates": "1980–Present", "startYear": 1980, "endYear": 2026, "dataPath": "data/apush-period-9.json", "manifestPath": "data/apush-period-9-manifest.json" }
+  ]
+}

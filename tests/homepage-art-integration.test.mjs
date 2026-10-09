@@ -80,8 +80,8 @@ test("Today's Pick cannot reappear after switching away from World", async () =>
 test('coming-soon subjects hide stale World event details', async () => {
   const html = await loadHtml();
 
-  assert.match(html, /if \(homeEvents\) \{\s*homeEvents\.innerHTML = HOME_EVENTS_EMPTY;\s*homeEvents\.hidden = true;/);
-  assert.match(html, /if \(key === 'world'\) syncHomeEvents\(\)/);
+  assert.match(html, /if \(homeEvents\) \{\s*resetHomeEvents\(\);\s*homeEvents\.hidden = true;/);
+  assert.match(html, /if \(key === 'world'\) \{[\s\S]*?syncHomeEvents\(\)/);
 });
 
 test('responsive rules preserve useful Art height without collapsing other subject placeholders', async () => {
@@ -150,7 +150,7 @@ test('map caption describes all 180 Units 1-6 works and preserves the World Hist
     html,
     /\? '180 AP works · Units 1-6 · filter, compare and study'/,
   );
-  assert.match(html, /: '5 regions · 233 events · 104 pins · 6 trade routes'/);
+  assert.match(html, /: '5 regions · 234 events · 104 pins · 6 trade routes'/);
   assert.match(html, /homeMapCaption\.hidden = !s\.live/);
 });
 
@@ -244,7 +244,7 @@ test('homepage preserves the World History typography and navigation labels', as
     html,
     /<ul class="navlinks">[\s\S]*?>Home<\/[\s\S]*?>Maps<\/[\s\S]*?>Subjects<\/[\s\S]*?>Teacher&rsquo;s pack<\/[\s\S]*?>About us<\//,
   );
-  assert.match(html, /<div class="map-card-head">History World Map<\/div>/);
+  assert.match(html, /<h2 class="map-card-head"><span id="mapCardTitle">History World Map<\/span>/);
 });
 
 test('homepage preserves the established iframe dimensions for Art and World maps', async () => {
@@ -301,5 +301,11 @@ test('World History retains semantic map controls and homepage switching behavio
   assert.match(worldHtml, /class="zoom-btn zoom-out"/);
   assert.match(worldHtml, /class="zoom-btn reset zoom-reset"/);
   assert.match(html, /world:\s*\{\s*label:\s*'World History',\s*live:\s*true,\s*frame:\s*worldMapFrame/);
-  assert.match(html, /if \(key === 'world'\) syncHomeEvents\(\)/);
+  assert.match(html, /if \(key === 'world'\) \{[\s\S]*?syncHomeEvents\(\)/);
+});
+
+test('Art and World share the widened main-page card', async () => {
+  const html = await loadHtml();
+  assert.match(html, /\.card \{\s*width: 100%; max-width: 1280px;/);
+  assert.match(html, /\.map-card\[data-subject="world"\],\s*\.map-card\[data-subject="art"\] \{ width: calc\(100% - 32px\); max-width: none; \}/);
 });
