@@ -22,6 +22,20 @@ test('real U5 bundle satisfies the local media release contract', () => {
   });
 });
 
+test('real U6 bundle satisfies the local release contract with eight open and fifteen restricted views', () => {
+  const rootDir = fileURLToPath(new URL('../', import.meta.url));
+  const read = (path) => JSON.parse(readFileSync(join(rootDir, path), 'utf8'));
+  const html = readFileSync(join(rootDir, 'art-history-map.html'), 'utf8');
+  const artworks = JSON.parse(html.match(/<script id="artwork-data" type="application\/json">([\s\S]*?)<\/script>/)[1]);
+  const rights = read('data/ap-art-history-unit-6-rights.json');
+  assert.equal(Object.values(rights).filter(({ releaseClass }) => releaseClass === 'open').length, 8);
+  assert.equal(Object.values(rights).filter(({ releaseClass }) => releaseClass === 'restricted').length, 15);
+  assertLocalMediaContract({ rootDir, artworks, rights,
+    manifest: read('data/ap-art-history-unit-6-manifest.json'),
+    authority: read('data/ap-art-history-unit-6-placeholder-authority.json'),
+  });
+});
+
 function fixture(t, unit = 6) {
   const rootDir = mkdtempSync(join(tmpdir(), 'art-history-contract-'));
   t.after(() => rmSync(rootDir, { recursive: true, force: true }));

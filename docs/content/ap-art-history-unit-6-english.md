@@ -36,8 +36,8 @@ AP #168, Great Mosque of Djenné: both monumental African buildings express comm
 
 ### Required Views and Sources
 
-- `conical-tower`: tower inside the Great Enclosure. Public image: https://commons.wikimedia.org/wiki/Special:Redirect/file/Conical_tower_%E2%80%93_Great_Zimbabwe.jpg — Fanny Schertzer, CC BY 3.0; credit and license in ledger.
-- `circular-wall`: the Great Enclosure's curving stone wall. PLACEHOLDER — reusable image not yet verified
+- `conical-tower`: tower inside the Great Enclosure. [Local WebP](../../assets/art-history/u6/ap167-conical-tower.webp) — Fanny Schertzer / Wikimedia Commons; CC BY 3.0. Exact conical tower inside the Great Enclosure at Great Zimbabwe. Commons explicitly offers CC BY 3.0 as a license choice; EXIF instead mentions BY-SA 3.0, so this release relies on the explicit description-page grant. Resized proportionally to maximum edge 2000 pixels where needed; converted JPEG to WebP (1333 × 2000); no crop or content edits. Derivative retains source license. Source: [reviewed page](https://commons.wikimedia.org/wiki/File:Conical_tower_%E2%80%93_Great_Zimbabwe.jpg); accessed 2026-10-09.
+- `circular-wall`: the Great Enclosure's curving stone wall. [Local WebP](../../assets/art-history/u6/ap167-circular-wall.webp) — Jens Klinzing / Wikimedia Commons; CC BY 3.0. Exact curving stone wall of the Great Enclosure at Great Zimbabwe, photographed by Jens Klinzing; not a wall at another Zimbabwe site. Resized proportionally to maximum edge 2000 pixels where needed; converted JPEG to WebP (2000 × 1500); no crop or content edits. Derivative retains source license. Source: [reviewed page](https://commons.wikimedia.org/wiki/File:Wall_of_the_great_enclosure,_Great_Zimbabwe.JPG); accessed 2026-10-09.
 
 Factual sources: [Smarthistory](https://smarthistory.org/great-zimbabwe/), [Metropolitan Museum](https://www.metmuseum.org/essays/great-zimbabwe).
 
@@ -73,8 +73,8 @@ AP #56, Great Mosque of Córdoba: both organize congregational worship around a 
 
 ### Required Views and Sources
 
-- `mosque`: Great Mosque exterior. PLACEHOLDER — reusable image not yet verified
-- `monday-market`: Monday market before the mosque. Public image: https://commons.wikimedia.org/wiki/Special:Redirect/file/Market_in_Djenne.jpg — Emilio Labrador, CC BY 2.0; credit and license in ledger.
+- `mosque`: Great Mosque exterior. [Local WebP](../../assets/art-history/u6/ap168-mosque.webp) — Brittany Danisch / Wikimedia Commons; CC BY 2.0. Exact Great Mosque of Djenné exterior, photographed by Brittany Danisch; Commons carries the Flickr CC BY 2.0 grant. Resized proportionally to maximum edge 2000 pixels where needed; converted JPEG to WebP (2000 × 1500); no crop or content edits. Derivative retains source license. Source: [reviewed page](https://commons.wikimedia.org/wiki/File:Great_Mosque_of_Djenne.jpg); accessed 2026-10-09.
+- `monday-market`: Monday market before the mosque. [Local WebP](../../assets/art-history/u6/ap168-monday-market.webp) — Emilio Labrador / Wikimedia Commons; CC BY 2.0. Exact Djenné market scene in front of the Great Mosque; Emilio Labrador photograph, Commons Flickr CC BY 2.0 grant. Resized proportionally to maximum edge 2000 pixels where needed; converted JPEG to WebP (1588 × 1063); no crop or content edits. Derivative retains source license. Source: [reviewed page](https://commons.wikimedia.org/wiki/File:Market_in_Djenne.jpg); accessed 2026-10-09.
 
 Factual sources: [Smarthistory](https://smarthistory.org/great-mosque-of-djenne/), [South African History Online on the master mason](https://sahistory.org.za/article/grade-7-term-1-kingdom-mali-and-city-timbuktu-14th-century).
 
@@ -110,8 +110,8 @@ AP #180, Olowe's veranda post: both communicate royal power through palace decor
 
 ### Required Views and Sources
 
-- `wall-plaque`: equestrian Oba and attendants in cast brass. PLACEHOLDER — reusable image not yet verified
-- `oba-context`: contextual photograph of the Oba in regalia. PLACEHOLDER — reusable image not yet verified
+- `wall-plaque`: equestrian Oba and attendants in cast brass. [Local WebP](../../assets/art-history/u6/ap169-wall-plaque.webp) — Metropolitan Museum of Art; CC0 1.0. Exact required plaque: Equestrian Oba and Attendants, Met accession 1978.412.309, object 310752 (https://www.metmuseum.org/art/collection/search/310752). Commons records the Met CC0 donation, not a generic Benin plaque. Resized proportionally to maximum edge 2000 pixels where needed; converted JPEG to WebP (1600 × 2000); no crop or content edits. Derivative retains source license. Source: [reviewed page](https://commons.wikimedia.org/wiki/File:Plaque-_Equestrian_Oba_and_Attendants_MET_DT10213.jpg); accessed 2026-10-09.
+- `oba-context`: contextual photograph of the Oba in regalia. PLACEHOLDER — reusable image not yet verified — Werner Forman / Art Resource; Restricted; no portable public image permission verified. Exact 1964 Oba contextual scene, Werner Forman / Art Resource; rights-managed photograph, no portable open grant verified. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=5); accessed 2026-10-09.
 
 Factual sources: [Smarthistory](https://smarthistory.org/benin-plaque-equestrian-oba-and-attendants/), [Metropolitan Museum's exact plaque](https://www.metmuseum.org/art/collection/search/310752).
 
@@ -147,8 +147,8 @@ AP #171, Ndop of King Mishe: both embody authority beyond a ruler's physical pre
 
 ### Required Views and Sources
 
-- `golden-stool`: sacred Golden Stool. PLACEHOLDER — reusable image not yet verified
-- `stool-context`: Golden Stool in ceremonial context. PLACEHOLDER — reusable image not yet verified
+- `golden-stool`: sacred Golden Stool. PLACEHOLDER — reusable image not yet verified — Marc Deville / Gamma-Rapho / Getty Images; Restricted; no portable public image permission verified. Exact Golden Stool photograph credited to Marc Deville / Getty Images; rights-managed, not an open-license image. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=5); accessed 2026-10-09.
+- `stool-context`: Golden Stool in ceremonial context. PLACEHOLDER — reusable image not yet verified — Marc Deville / Gamma-Rapho / Getty Images; Restricted; no portable public image permission verified. Exact Asante Golden Stool contextual scene, Marc Deville / Getty Images; no portable open permission verified. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=5); accessed 2026-10-09.
 
 Factual sources: [Smarthistory](https://smarthistory.org/sika-dwa-kofi-golden-stool/), [British Museum on Asante regalia](https://www.britishmuseum.org/about-us/british-museum-story/contested-objects-collection/asante-gold-regalia).
 
@@ -184,8 +184,8 @@ AP #177, Lukasa: both support political memory. Ndop materializes an individual 
 
 ### Required Views and Sources
 
-- `ndop`: sculpture of King Mishe miShyaang maMbul. PLACEHOLDER — reusable image not yet verified
-- `ruler-context`: Kot a Mbweeky III in state dress with royal drum, Mushenge, photographed by Eliot Elisofon in 1971. PLACEHOLDER — reusable image not yet verified
+- `ndop`: sculpture of King Mishe miShyaang maMbul. [Local WebP](../../assets/art-history/u6/ap171-ndop.webp) — Brooklyn Museum; CC BY 3.0. Exact Ndop portrait of King Mishe miShyaang maMbul, Brooklyn accession 61.33, with identifying drum emblem. Commons CC BY 3.0 permission is confirmed by VRT ticket 2012072310006881. Resized proportionally to maximum edge 2000 pixels where needed; converted JPEG to WebP (1152 × 1536); no crop or content edits. Derivative retains source license. Source: [reviewed page](https://commons.wikimedia.org/wiki/File:Brooklyn_Museum_61.33_Ndop_Portrait_of_King_Mishe_miShyaang_maMbul.jpg); accessed 2026-10-09.
+- `ruler-context`: Kot a Mbweeky III in state dress with royal drum, Mushenge, photographed by Eliot Elisofon in 1971. PLACEHOLDER — reusable image not yet verified — Eliot Elisofon / Smithsonian National Museum of African Art; Restricted; no portable public image permission verified. Exact 1971 Kuba ruler scene is Eliot Elisofon archive EECL2137; permission is required. EECL2170 is a different frame and cannot substitute. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=6); accessed 2026-10-09.
 
 Factual sources: [Metropolitan Museum on Kuba kingship](https://www.metmuseum.org/essays/kingdoms-of-the-savanna-the-kuba-kingdom), supplied Smarthistory volume four, AP 171 chapter (PDF pp. 137–140).
 
@@ -221,7 +221,7 @@ AP #176, Ikenga: both are activated wooden shrine objects. Nkisi nkondi often ad
 
 ### Required Views and Sources
 
-- `primary`: official Kongo power figure, credited to the Detroit Institute of Arts. PLACEHOLDER — reusable image not yet verified
+- `primary`: official Kongo power figure, credited to the Detroit Institute of Arts. PLACEHOLDER — reusable image not yet verified — Detroit Institute of Arts / Bridgeman Art Library; Restricted; no portable public image permission verified. Exact Detroit Institute of Arts Nail Figure, accession 76.79, object 51144 (https://dia.org/collection/nail-figure/51144). A downloadable TIFF and blank copyright field do not constitute an open license. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=6); accessed 2026-10-09.
 
 Factual source: [Smarthistory](https://smarthistory.org/nkisi-nkondi-kongo-people/). Its Met examples explain the tradition; they are not asserted to be the Detroit object.
 
@@ -257,7 +257,7 @@ AP #175, Bundu mask: both express valued womanhood through masquerade. Pwo is da
 
 ### Required Views and Sources
 
-- `primary`: Female (Pwo) mask; no additional performance view is required by this manifest. PLACEHOLDER — reusable image not yet verified
+- `primary`: Female (Pwo) mask; no additional performance view is required by this manifest. PLACEHOLDER — reusable image not yet verified — Franko Khoury / Smithsonian National Museum of African Art; Restricted; no portable public image permission verified. Exact Smithsonian Female (Pwo) mask, accession 85-15-20 (https://www.si.edu/object/nmafa_85-15-20); Usage Conditions Apply, with no portable open image grant verified. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=7); accessed 2026-10-09.
 
 Factual sources: [Smarthistory](https://smarthistory.org/female-pwo-mask/), [Smithsonian face-mask record](https://africa.si.edu/collection/object/nmafa_85-15-20).
 
@@ -293,8 +293,8 @@ AP #171, Ndop: both are idealized representations of identifiable people. Mblo h
 
 ### Required Views and Sources
 
-- `mask`: portrait mask of Moya Yanso. PLACEHOLDER — reusable image not yet verified
-- `performance-context`: Moya Yanso with her stepson and mask, 1971; performance-related context, not active dance. PLACEHOLDER — reusable image not yet verified
+- `mask`: portrait mask of Moya Yanso. PLACEHOLDER — reusable image not yet verified — Jerry L. Thompson; Restricted; no portable public image permission verified. Exact Moya Yanso portrait mask by Owie Kimou, Jerry L. Thompson photograph; no open grant verified for this required object image. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=7); accessed 2026-10-09.
+- `performance-context`: Moya Yanso with her stepson and mask, 1971; performance-related context, not active dance. PLACEHOLDER — reusable image not yet verified — Photographer not named in CED / permission credited by College Board; Restricted; no portable public image permission verified. Exact 1971 scene of Moya Yanso and her stepson holding her portrait mask; no portable open grant verified for this frame. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=7); accessed 2026-10-09.
 
 Factual source: [Smarthistory](https://smarthistory.org/owie-kimou-portrait-mask-mblo-of-moya-yanso-baule-peoples/).
 
@@ -330,8 +330,8 @@ AP #173, Pwo mask: both embody ideals of womanhood, but the Sande performer is f
 
 ### Required Views and Sources
 
-- `mask`: Bundu / sowei helmet mask. PLACEHOLDER — reusable image not yet verified
-- `performance-context`: Sande masquerade with costume. PLACEHOLDER — reusable image not yet verified
+- `mask`: Bundu / sowei helmet mask. PLACEHOLDER — reusable image not yet verified — Schomburg Center, NYPL / Art Resource; Restricted; no portable public image permission verified. Exact CED Bundu mask attributed to NYPL / Schomburg Center / Art Resource remains unresolved at object-image level; no open-license image verified. Other sowei masks are not substitutes. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=8); accessed 2026-10-09.
+- `performance-context`: Sande masquerade with costume. PLACEHOLDER — reusable image not yet verified — William Siegmann Estate / Edward DeCarbo, Executor; Restricted; no portable public image permission verified. Exact Sande masquerade photograph credited to William Siegmann Estate / Edward DeCarbo; copyrighted photograph, no open grant verified. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=8); accessed 2026-10-09.
 
 Factual sources: [Smarthistory](https://smarthistory.org/bundu-sowei-helmet-mask/), [Smithsonian helmet-mask record](https://africa.si.edu/collection/object/nmafa_2012-11-1).
 
@@ -367,7 +367,7 @@ AP #170, Golden Stool: both connect objects with identity and authority. Ikenga 
 
 ### Required Views and Sources
 
-- `primary`: Igbo Ikenga shrine figure. PLACEHOLDER — reusable image not yet verified
+- `primary`: Igbo Ikenga shrine figure. PLACEHOLDER — reusable image not yet verified — Werner Forman / Art Resource; Restricted; no portable public image permission verified. Exact Ikenga shrine figure image credited to Werner Forman / Art Resource; no portable open license verified, other Ikenga figures cannot substitute. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=8); accessed 2026-10-09.
 
 Factual source: [Smarthistory](https://smarthistory.org/ikenga/). Collection examples show the tradition's variety, not interchangeable required-view identities.
 
@@ -403,8 +403,8 @@ AP #171, Ndop: both sustain political memory. Ndop identifies a king through an 
 
 ### Required Views and Sources
 
-- `memory-board`: lukasa's patterned surface. PLACEHOLDER — reusable image not yet verified
-- `contextual`: contextual photograph associated with memory-board use; CED credits Mary Nooter Roberts. PLACEHOLDER — reusable image not yet verified
+- `memory-board`: lukasa's patterned surface. PLACEHOLDER — reusable image not yet verified — Heini Schneebeli / Bridgeman Art Library; Restricted; no portable public image permission verified. Exact lukasa board image credited to Heini Schneebeli / Bridgeman Art Library; no open grant verified for this board and photograph. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=9); accessed 2026-10-09.
+- `contextual`: contextual photograph associated with memory-board use; CED credits Mary Nooter Roberts. PLACEHOLDER — reusable image not yet verified — Mary Nooter Roberts; Restricted; no portable public image permission verified. Exact contextual lukasa memory-practice photograph credited to Mary Nooter Roberts; no portable open permission verified. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=9); accessed 2026-10-09.
 
 Factual source: [Smarthistory](https://smarthistory.org/lukasa-memory-board-luba-peoples/).
 
@@ -440,8 +440,8 @@ AP #175, Bundu mask: both become complete through performance. Aka announces eli
 
 ### Required Views and Sources
 
-- `mask`: Aka elephant mask. PLACEHOLDER — reusable image not yet verified
-- `performance-context`: elephant masquerade with full costume. PLACEHOLDER — reusable image not yet verified
+- `mask`: Aka elephant mask. PLACEHOLDER — reusable image not yet verified — Metropolitan Museum of Art / Art Resource; Restricted; no portable public image permission verified. Exact Met elephant mask, accession 2001.758.1, object 318954 (https://www.metmuseum.org/art/collection/search/318954); image explicitly not downloadable and not marked public domain. Other elephant masks cannot substitute. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=9); accessed 2026-10-09.
+- `performance-context`: elephant masquerade with full costume. PLACEHOLDER — reusable image not yet verified — George Holton / Photo Researchers / Getty Images; Restricted; no portable public image permission verified. Exact Bamileke elephant masquerade scene credited to George Holton / Photo Researchers / Getty Images; commercial rights-managed photograph, no open grant verified. No derivative created because an exact open-license image for this required view was not verified. Source: [reviewed page](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap-art-history-ced-content-area-6-africa.pdf#page=9); accessed 2026-10-09.
 
 Factual source: [Smarthistory](https://smarthistory.org/elephant-mask-kuosi-society-bamileke-peoples-cameroon/). Its Brooklyn example explains performance; the CED's primary image is credited to the Met.
 
@@ -477,7 +477,7 @@ AP #58, Church of Sainte-Foy's reliquary: both connect sculpted human imagery wi
 
 ### Required Views and Sources
 
-- `primary`: Fang reliquary guardian figure. PLACEHOLDER — reusable image not yet verified
+- `primary`: Fang reliquary guardian figure. [Local WebP](../../assets/art-history/u6/ap179-primary.webp) — Brooklyn Museum; CC BY 3.0. Exact Fang reliquary guardian, Brooklyn accession 51.3, object 4755 (https://www.brooklynmuseum.org/objects/4755). Commons CC BY 3.0 permission is confirmed by VRT ticket 2012072310006881. Resized proportionally to maximum edge 2000 pixels where needed; converted JPEG to WebP (1152 × 1536); no crop or content edits. Derivative retains source license. Source: [reviewed page](https://commons.wikimedia.org/wiki/File:Brooklyn_Museum_51.3_Reliquary_Guardian_Figure_Eyema-o-Byeri.jpg); accessed 2026-10-09.
 
 Factual sources: [Brooklyn Museum's revised record](https://opencollection.brooklynmuseum.org/objects/4755), [College Board comparison guidance](https://secure-media.collegeboard.org/digitalServices/pdf/ap/ap16_art_history_q5.pdf).
 
@@ -513,6 +513,6 @@ AP #169, Benin palace plaque: both present court hierarchy. Olowe complicates si
 
 ### Required Views and Sources
 
-- `primary`: enthroned king and senior wife post. PLACEHOLDER — reusable image not yet verified
+- `primary`: enthroned king and senior wife post. [Local WebP](../../assets/art-history/u6/ap180-primary.webp) — Olowe of Ise / Art Institute of Chicago; CC0 1.0. Exact enthroned king and senior wife veranda post by Olowe of Ise, AIC accession 1984.550, object 102611 (https://www.artic.edu/artworks/102611/veranda-post-opo-ogoga). Commons records CC0; this is not an equestrian veranda post. Resized proportionally to maximum edge 2000 pixels where needed; converted JPEG to WebP (1333 × 2000); no crop or content edits. Derivative retains source license. Source: [reviewed page](https://commons.wikimedia.org/wiki/File:Veranda_Post_(%C3%92p%C3%B3_%C3%92g%C3%B2g%C3%A1)_(ARTIC_1984.550).jpg); accessed 2026-10-09.
 
 Factual sources: [Art Institute's collection text](https://artsandculture.google.com/asset/veranda-post-of-enthroned-king-and-senior-wife-opo-ogoga-yoruba-olowe-of-ise-died-1938/HQEDSOdHD7zl_g), [Smarthistory on the exact post](https://smarthistory.org/olowe-ise-veranda-post-king-senior-wife/).

@@ -1,22 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { loadAndValidate, validateArtworks, validateImageCredits } from '../scripts/validate-art-history-data.mjs';
 
 const HTML_URL = new URL('../art-history-map.html', import.meta.url);
 const MANIFEST_URL = new URL('../data/ap-art-history-unit-6-manifest.json', import.meta.url);
 const ENGLISH_URL = new URL('../docs/content/ap-art-history-unit-6-english.md', import.meta.url);
 const LEDGER_URL = new URL('../docs/data-sources/u6-source-ledger.md', import.meta.url);
 
-const PUBLIC_LICENSE_BY_VIEW = Object.freeze({
-  'ap167-great-zimbabwe::conical-tower': Object.freeze({
-    licenseName: 'CC BY 3.0; credit Fanny Schertzer, link license, indicate changes',
-    licenseUrl: 'https://creativecommons.org/licenses/by/3.0/',
-  }),
-  'ap168-great-mosque-djenne::monday-market': Object.freeze({
-    licenseName: 'CC BY 2.0; credit Emilio Labrador, link license, indicate changes',
-    licenseUrl: 'https://creativecommons.org/licenses/by/2.0/',
-  }),
-});
+const OPEN_VIEW_KEYS = ["ap167::conical-tower","ap167::circular-wall","ap168::mosque","ap168::monday-market","ap169::wall-plaque","ap171::ndop","ap179::primary","ap180::primary"];
 
 const REQUIRED_VIEWS = new Map([
   [167, ['conical-tower', 'circular-wall']],
@@ -72,7 +64,7 @@ test('live map imports all 14 bilingual U6 works and 23 ordered manifest views',
         assert.equal(typeof media.mediaStatus, 'string');
         assert.ok(media.mediaStatus.trim());
       } else {
-        assert.match(media.imageUrl, /^https:\/\//);
+        assert.match(media.imageUrl, /^assets\/art-history\/u6\/ap\d{3}-[a-z-]+\.webp$/);
       }
     }
   }
@@ -90,21 +82,20 @@ test('live U6 media and credit metadata match the frozen ledger exactly', async 
   const mediaByKey = new Map(works.flatMap((work) => work.images.map((media, index) => [
     `${work.id}::${media.id}`, { media, credit: Array.isArray(credits[work.id]) ? credits[work.id][index] : credits[work.id] },
   ])));
-  assert.equal(works.flatMap(({ images }) => images).filter(({ imageUrl }) => imageUrl !== null).length, 2);
-  assert.equal(Object.keys(PUBLIC_LICENSE_BY_VIEW).length, 2);
+  assert.equal(works.flatMap(({ images }) => images).filter(({ imageUrl }) => imageUrl !== null).length, 8);
+  assert.equal(OPEN_VIEW_KEYS.length, 8);
   for (const row of rows) {
     const mediaKey = `${row[1]}::${row[2]}`;
     const { media, credit } = mediaByKey.get(mediaKey);
-    assert.equal(media.imageUrl, row[5].startsWith('https://') ? row[5] : null);
-    assert.equal(media.imageSourceUrl, row[6].match(/\((https:\/\/[^)]+)\)/)[1]);
+    const local = row[5].match(/\(\.\.\/\.\.\/(assets\/[^)]+)\)/)?.[1] ?? null;
+    assert.equal(media.imageUrl, local);
+    assert.equal(media.imageSourceUrl, row[6].match(/\((https:\/\/.+)\)$/)[1]);
     assert.equal(credit.creatorOrInstitution, row[7]);
     assert.ok(credit.licenseName.trim());
     assert.match(credit.licenseUrl, /^https:\/\//);
     if (media.imageUrl !== null) {
-      const expectedLicense = PUBLIC_LICENSE_BY_VIEW[mediaKey];
-      assert.ok(expectedLicense, `${mediaKey} public image must have a pinned license`);
-      assert.equal(credit.licenseName, expectedLicense.licenseName, `${mediaKey} licenseName`);
-      assert.equal(credit.licenseUrl, expectedLicense.licenseUrl, `${mediaKey} licenseUrl`);
+      assert.ok(OPEN_VIEW_KEYS.includes(`${mediaKey.slice(0, 5)}::${media.id}`), `${mediaKey} pinned open identity`);
+      assert.match(credit.licenseName, /^(CC BY (2|3)\.0|CC0 1\.0)$/);
     }
   }
 });
@@ -135,7 +126,7 @@ test('Unit 6 ledger has exactly the 23 manifest view identities in order', async
     assert.ok(row.every(Boolean), `Nonempty ledger fields: ${row.slice(0, 3)}`);
     assert.match(row[4], /https:\/\//);
     assert.match(row[6], /https:\/\//);
-    assert.ok(row[5] === 'PLACEHOLDER — reusable image not yet verified' || /^https:\/\//.test(row[5]));
+    assert.ok(row[5] === 'PLACEHOLDER — reusable image not yet verified' || /^\[Local WebP\]\(\.\.\/\.\.\/assets\/art-history\/u6\//.test(row[5]));
   }
 });
 
@@ -178,4 +169,31 @@ test('Unit 6 English edition covers every work once with complete study sections
       assert.ok(body, `AP ${apNumber} ${heading} must have nonempty body content`);
     }
   }
+});
+
+test('strict U6 validation accepts local assets and enforces rights, credits, and authority', async () => {
+  const artworks = await loadAndValidate();
+  const json = async (path) => JSON.parse(await readFile(new URL(`../${path}`, import.meta.url), 'utf8'));
+  const manifests = Object.fromEntries(await Promise.all([1,2,3,4,5,6].map(async unit =>
+    [unit, await json(`data/ap-art-history-unit-${unit}-manifest.json`)])));
+  const rights = Object.fromEntries(await Promise.all([3,4,5,6].map(async unit =>
+    [unit, await json(`data/ap-art-history-unit-${unit}-rights.json`)])));
+  const authority = {4: await json('data/ap-art-history-unit-4-public-placeholders.json'),
+    5: await json('data/ap-art-history-unit-5-placeholder-authority.json'),
+    6: await json('data/ap-art-history-unit-6-placeholder-authority.json')};
+  const html = await readFile(HTML_URL, 'utf8');
+  const credits = JSON.parse(html.match(/<script id="image-credit-data" type="application\/json">([\s\S]*?)<\/script>/)[1]);
+  assert.doesNotThrow(() => validateImageCredits(credits, artworks, rights, authority));
+  const remote = structuredClone(artworks);
+  remote.find(work => work.unit === 6).images[0].imageUrl = 'https://example.org/image.jpg';
+  assert.throws(() => validateArtworks(remote, manifests, authority), /local/);
+  const badRights = structuredClone(rights);
+  Object.values(badRights[6])[0].licenseClass = 'cc-by-nc';
+  assert.throws(() => validateImageCredits(credits, artworks, badRights, authority), /disallowed|license/);
+  const badCredit = structuredClone(credits);
+  badCredit['ap167-great-zimbabwe'][0].creatorOrInstitution = 'Incorrect';
+  assert.throws(() => validateImageCredits(badCredit, artworks, rights, authority), /credit mismatch/);
+  const badAuthority = structuredClone(authority);
+  Object.values(badAuthority[6])[0].imageSourceName = 'Incorrect';
+  assert.throws(() => validateImageCredits(credits, artworks, rights, badAuthority), /authority alignment/);
 });

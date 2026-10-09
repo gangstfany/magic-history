@@ -1513,7 +1513,8 @@ test('all Unit 6 unresolved views show honest reusable-image status in public an
       }
     }
   }
-  assert.equal(checkedViews, 42, '21 unresolved views checked in both modes');
+  const authority = JSON.parse(await readFile(new URL('../data/ap-art-history-unit-6-placeholder-authority.json', import.meta.url), 'utf8'));
+  assert.equal(checkedViews, Object.keys(authority).length * 2, 'every reviewed restricted view checked in both modes');
 });
 
 test('Unit 6 unresolved placeholders use alternate status wording even when privateMissing is true', async () => {

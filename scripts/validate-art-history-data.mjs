@@ -22,10 +22,12 @@ const AUDITED_RIGHTS_URLS = Object.freeze({
   3: new URL('../data/ap-art-history-unit-3-rights.json', import.meta.url),
   4: new URL('../data/ap-art-history-unit-4-rights.json', import.meta.url),
   5: new URL('../data/ap-art-history-unit-5-rights.json', import.meta.url),
+  6: new URL('../data/ap-art-history-unit-6-rights.json', import.meta.url),
 });
 const PLACEHOLDER_AUTHORITY_URLS = Object.freeze({
   4: new URL('../data/ap-art-history-unit-4-public-placeholders.json', import.meta.url),
   5: new URL('../data/ap-art-history-unit-5-placeholder-authority.json', import.meta.url),
+  6: new URL('../data/ap-art-history-unit-6-placeholder-authority.json', import.meta.url),
 });
 const EXPECTED_ARTWORK_COUNT = 180;
 const EXPECTED_LAST_AP_NUMBER = 180;
@@ -592,8 +594,10 @@ function normalizePlaceholderAuthorities(placeholders, activeUnits) {
   }
   validateExactKeys(
     Object.keys(placeholders),
-    ['4', '5'],
-    'public placeholder authorities must contain exactly Units 4 and 5',
+    activeUnits.includes(6) ? ['4', '5', '6'] : ['4', '5'],
+    activeUnits.includes(6)
+      ? 'public placeholder authorities must contain exactly Units 4, 5 and 6'
+      : 'public placeholder authorities must contain exactly Units 4 and 5',
   );
   return placeholders;
 }
@@ -672,7 +676,7 @@ function validateArtworkMedia(
       ? rawMedia?.id ?? expectedManifest?.requiredViewIds?.[index]
       : 'primary';
     const mediaKey = `${artwork.id}::${viewId}`;
-    const restrictedPlaceholder = (artwork.unit === 4 || artwork.unit === 5)
+    const restrictedPlaceholder = (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6)
       && placeholders
       && Object.hasOwn(placeholders, mediaKey);
     const u6Placeholder = artwork.unit === 6 && item.imageUrl === null;
@@ -694,7 +698,7 @@ function validateArtworkMedia(
         fail(`${mediaContext}.${field} must be a non-empty string`);
       }
     }
-    if (restrictedPlaceholder) {
+    if (restrictedPlaceholder && artwork.unit !== 6) {
       if (item.imageUrl !== null || item.mediaStatus !== 'rightsRestricted') {
         fail(`Unit ${artwork.unit} ${mediaKey} restricted media must be a public placeholder`);
       }
@@ -738,11 +742,11 @@ function validateArtworkMedia(
         auditedMediaOwners[field].set(item[field], mediaKey);
       }
     }
-    if (artwork.unit === 5 && item.imageUrl !== null
-      && item.imageUrl !== `assets/art-history/u5/ap${artwork.apNumber}-${viewId}.webp`) {
+    if ((artwork.unit === 5 || artwork.unit === 6) && item.imageUrl !== null
+      && item.imageUrl !== `assets/art-history/u${artwork.unit}/ap${artwork.apNumber}-${viewId}.webp`) {
       fail(`${mediaContext}.imageUrl must be a canonical local path, not a remote HTTPS URL`);
     }
-    if (artwork.unit !== 5 && item.imageUrl !== null && !(manifestMediaUnit ? isHttpsUrl(item.imageUrl) : isHttpUrl(item.imageUrl))) {
+    if (artwork.unit !== 5 && artwork.unit !== 6 && item.imageUrl !== null && !(manifestMediaUnit ? isHttpsUrl(item.imageUrl) : isHttpUrl(item.imageUrl))) {
       fail(`${mediaContext}.imageUrl must be an ${manifestMediaUnit ? 'HTTPS' : 'HTTP(S)'} URL`);
     }
     if (!(manifestMediaUnit ? isHttpsUrl(item.imageSourceUrl) : isHttpUrl(item.imageSourceUrl))) {
@@ -1334,6 +1338,39 @@ function validateUnit5RightsAudit(rightsAudit, artworks, credits, placeholders) 
   }
 }
 
+function validateUnit6RightsAudit(rights, artworks, credits, authority) {
+  if (!rights || !authority) fail('Unit 6 reviewed rights audit and placeholder authority are required');
+  try {
+    assertLocalMediaContract({
+      manifest: JSON.parse(readFileSync(MANIFEST_URLS[6], 'utf8')),
+      artworks, rights, authority,
+      rootDir: fileURLToPath(new URL('../', import.meta.url)),
+    });
+  } catch (error) { fail('Unit 6 rights audit: ' + error.message); }
+  for (const work of artworks.filter(({ unit }) => unit === 6)) {
+    const rows = Array.isArray(credits[work.id]) ? credits[work.id] : [credits[work.id]];
+    work.images.forEach((view, index) => {
+      const key = `${work.id}::${view.id}`, row = rights[key];
+      if (row.sourcePageUrl !== view.imageSourceUrl) fail('Unit 6 rights audit ' + key + ' source mismatch');
+      if (row.releaseClass === 'open') {
+        const policy = new Map([
+          ['CC BY 2.0', ['cc-by', 'https://creativecommons.org/licenses/by/2.0/']],
+          ['CC BY 3.0', ['cc-by', 'https://creativecommons.org/licenses/by/3.0/']],
+          ['CC0 1.0', ['cc0', 'https://creativecommons.org/publicdomain/zero/1.0/']],
+        ]).get(row.licenseName);
+        if (!policy || row.licenseClass !== policy[0] || row.licenseUrl !== policy[1]) {
+          fail('Unit 6 rights audit ' + key + ' disallowed open license policy');
+        }
+      } else if (row.identityNote !== authority[key].rightsNote) {
+        fail('Unit 6 rights audit ' + key + ' restricted evidence mismatch');
+      }
+      for (const field of CREDIT_FIELDS) {
+        if (row[field] !== rows[index][field]) fail('Unit 6 rights audit ' + key + '.' + field + ' credit mismatch');
+      }
+    });
+  }
+}
+
 export function validateImageCredits(credits, artworks, rightsAudit, placeholders) {
   if (!credits || typeof credits !== 'object' || Array.isArray(credits)) {
     fail('image-credit-data must be an object');
@@ -1399,6 +1436,10 @@ export function validateImageCredits(credits, artworks, rightsAudit, placeholder
   const includesUnit3 = artworks.some(({ unit }) => unit === 3);
   const includesUnit4 = artworks.some(({ unit }) => unit === 4);
   const includesUnit5 = artworks.some(({ unit }) => unit === 5);
+  const includesUnit6 = artworks.some(({ unit }) => unit === 6);
+  if (includesUnit6 && rightsAudit === undefined) {
+    fail('Unit 6 reviewed rights audit is required for image credits');
+  }
   if (includesUnit3 && rightsAudit === undefined) {
     fail('Unit 3 reviewed rights audit is required for image credits');
   }
@@ -1409,10 +1450,10 @@ export function validateImageCredits(credits, artworks, rightsAudit, placeholder
     fail('Unit 5 reviewed rights audit is required for image credits');
   }
   if (rightsAudit !== undefined) {
-    const unit3Rights = includesUnit4 || includesUnit5 ? rightsAudit[3] : rightsAudit;
+    const unit3Rights = includesUnit4 || includesUnit5 || includesUnit6 ? rightsAudit[3] : rightsAudit;
     const placeholderAuthorities = normalizePlaceholderAuthorities(
       placeholders,
-      includesUnit5 ? [1, 2, 3, 4, 5] : [1, 2, 3, 4],
+      includesUnit6 ? [1, 2, 3, 4, 5, 6] : includesUnit5 ? [1, 2, 3, 4, 5] : [1, 2, 3, 4],
     );
     if (includesUnit3) validateUnit3RightsAudit(unit3Rights, artworks, credits);
     if (includesUnit4) {
@@ -1420,6 +1461,9 @@ export function validateImageCredits(credits, artworks, rightsAudit, placeholder
     }
     if (includesUnit5) {
       validateUnit5RightsAudit(rightsAudit[5], artworks, credits, placeholderAuthorities[5]);
+    }
+    if (includesUnit6) {
+      validateUnit6RightsAudit(rightsAudit[6], artworks, credits, placeholderAuthorities[6]);
     }
   }
   return credits;
@@ -1587,8 +1631,10 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
     unit3RightsSource,
     unit4RightsSource,
     unit5RightsSource,
+    unit6RightsSource,
     unit4PlaceholdersSource,
     unit5PlaceholdersSource,
+    unit6PlaceholdersSource,
   ] = await Promise.all([
     readFile(htmlPath, 'utf8'),
     readFile(MANIFEST_URLS[1], 'utf8'),
@@ -1600,8 +1646,10 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
     readFile(AUDITED_RIGHTS_URLS[3], 'utf8'),
     readFile(AUDITED_RIGHTS_URLS[4], 'utf8'),
     readFile(AUDITED_RIGHTS_URLS[5], 'utf8'),
+    readFile(AUDITED_RIGHTS_URLS[6], 'utf8'),
     readFile(PLACEHOLDER_AUTHORITY_URLS[4], 'utf8'),
     readFile(PLACEHOLDER_AUTHORITY_URLS[5], 'utf8'),
+    readFile(PLACEHOLDER_AUTHORITY_URLS[6], 'utf8'),
   ]);
   const parseDataScript = (id) => {
     const dataScript = html.match(
@@ -1627,6 +1675,7 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
   const placeholders = {
     4: parseJson(unit4PlaceholdersSource, 'Unit 4 public placeholder authority'),
     5: parseJson(unit5PlaceholdersSource, 'Unit 5 public placeholder authority'),
+    6: parseJson(unit6PlaceholdersSource, 'Unit 6 public placeholder authority'),
   };
   const artworks = validateArtworks(rawArtworks, manifests, placeholders);
   validateImageCredits(
@@ -1636,6 +1685,7 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
       3: parseJson(unit3RightsSource, 'Unit 3 rights audit'),
       4: parseJson(unit4RightsSource, 'Unit 4 rights audit'),
       5: parseJson(unit5RightsSource, 'Unit 5 rights audit'),
+      6: parseJson(unit6RightsSource, 'Unit 6 rights audit'),
     },
     placeholders,
   );
