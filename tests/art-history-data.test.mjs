@@ -17,6 +17,30 @@ import {
 const execFileAsync = promisify(execFile);
 const VALIDATOR_PATH = fileURLToPath(new URL('../scripts/validate-art-history-data.mjs', import.meta.url));
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
+
+test('strict U5 loader accepts local media and rejects remote media and disallowed licenses', async () => {
+  const { artworks, manifests, credits, rights, placeholders } = await loadCompleteUnits12345Fixture();
+  const authority = {
+    4: JSON.parse(await readFile(U4_PLACEHOLDERS_PATH, 'utf8')),
+    5: JSON.parse(await readFile(U5_PLACEHOLDERS_PATH, 'utf8')),
+  };
+  assert.doesNotThrow(() => validateArtworks(artworks, manifests, authority));
+  const remote = structuredClone(artworks);
+  remote.find(work => work.unit === 5).images[0].imageUrl = 'https://example.org/remote.jpg';
+  assert.throws(() => validateArtworks(remote, manifests, authority), /local/);
+  const badRights = structuredClone(rights);
+  Object.values(badRights[5])[0].licenseClass = 'cc-by-nc';
+  assert.throws(() => validateImageCredits(credits, artworks, badRights, placeholders), /disallowed open license/);
+  const inheritedNc = await loadCompleteUnits12345Fixture();
+  const firstKey = Object.keys(inheritedNc.rights[5])[0];
+  mutateUnit5CreditAndRights(inheritedNc, firstKey, {
+    licenseName: 'CC BY-NC-SA 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+  });
+  assert.throws(() => validateImageCredits(
+    inheritedNc.credits, inheritedNc.artworks, inheritedNc.rights, inheritedNc.placeholders,
+  ), /disallowed open license|license class/);
+});
 const U1_CANONICAL_PATH = new URL('./fixtures/u1-canonical.json', import.meta.url);
 const U3_CANONICAL_PATH = new URL('./fixtures/u3-canonical.json', import.meta.url);
 const U4_CANONICAL_PATH = new URL('./fixtures/u4-canonical.json', import.meta.url);
@@ -839,8 +863,11 @@ test('loads exactly AP 1–180 with the canonical Unit 5 projection and preserve
   assertOrderedDeepEqual(liveU5Credits, unit5.credits, '$.liveU5.credits');
   assert.equal(liveU5.length, 14, 'live U5 work count');
   assert.equal(unit5Media.length, 27, 'live U5 view count');
-  assert.equal(unit5Media.filter(({ imageUrl }) => imageUrl !== null).length, 16);
-  assert.equal(unit5Media.filter(({ imageUrl }) => imageUrl === null).length, 11);
+  const auditedRights = JSON.parse(await readFile(U5_RIGHTS_PATH, 'utf8'));
+  assert.equal(unit5Media.filter(({ imageUrl }) => imageUrl !== null).length,
+    Object.values(auditedRights).filter(row => row.releaseClass === 'open').length);
+  assert.equal(unit5Media.filter(({ imageUrl }) => imageUrl === null).length,
+    Object.values(auditedRights).filter(row => row.releaseClass === 'restricted').length);
   assert.deepEqual(
     artworks.filter(({ unit }) => unit === 2).map(({ apNumber }) => apNumber),
     EXPECTED_U2_AP_NUMBERS,
@@ -1841,8 +1868,11 @@ test('validator accepts the complete rights-safe AP 1–166 release without chan
     27,
   );
   const unit5Media = fixture.artworks.filter(({ unit }) => unit === 5).flatMap(({ images }) => images);
-  assert.equal(unit5Media.filter(({ imageUrl }) => imageUrl !== null).length, 16);
-  assert.equal(unit5Media.filter(({ imageUrl }) => imageUrl === null).length, 11);
+  const auditedRights = JSON.parse(await readFile(U5_RIGHTS_PATH, 'utf8'));
+  assert.equal(unit5Media.filter(({ imageUrl }) => imageUrl !== null).length,
+    Object.values(auditedRights).filter(row => row.releaseClass === 'open').length);
+  assert.equal(unit5Media.filter(({ imageUrl }) => imageUrl === null).length,
+    Object.values(auditedRights).filter(row => row.releaseClass === 'restricted').length);
   assert.deepEqual(
     [...new Set(fixture.artworks.filter(({ unit }) => unit === 5).map(({ region }) => region))].sort(),
     ['ancestralPueblo', 'centralAndes', 'easternWoodlands', 'mesoamerica', 'northwestCoast', 'plainsGreatBasin'],

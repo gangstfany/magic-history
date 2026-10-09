@@ -2,11 +2,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import {
   ALLOWED_OPEN_LICENSE_CLASSES, MAX_LOCAL_MEDIA_BYTES,
   assertLocalMediaContract, flattenRequiredViewKeys,
 } from '../scripts/art-history-local-media-contract.mjs';
+
+test('real U5 bundle satisfies the local media release contract', () => {
+  const rootDir = fileURLToPath(new URL('../', import.meta.url));
+  const read = (path) => JSON.parse(readFileSync(join(rootDir, path), 'utf8'));
+  assertLocalMediaContract({
+    rootDir,
+    manifest: read('data/ap-art-history-unit-5-manifest.json'),
+    artworks: read('tests/fixtures/u5-canonical.json').artworks,
+    rights: read('data/ap-art-history-unit-5-rights.json'),
+    authority: read('data/ap-art-history-unit-5-placeholder-authority.json'),
+  });
+});
 
 function fixture(t, unit = 6) {
   const rootDir = mkdtempSync(join(tmpdir(), 'art-history-contract-'));

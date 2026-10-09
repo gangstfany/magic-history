@@ -655,9 +655,7 @@ export const U4_PRIVATE_MEDIA_KEYS = Object.freeze([
 export const U5_PRIVATE_MEDIA_KEYS = Object.freeze([
   'ap153-chavin-huantar::relief-sculpture',
   'ap155-yaxchilan::structure-40',
-  'ap156-great-serpent-mound::earthwork',
   'ap157-templo-mayor::reconstruction',
-  'ap158-ruler-feather-headdress::primary',
   'ap160-maize-cobs::primary',
   'ap163-bandolier-bag::primary',
   'ap164-transformation-mask::closed',
@@ -809,6 +807,7 @@ const U5_BROWSER_WORK_KEYS = Object.freeze([
   'siteName',
   'traditionGroup',
   'viewIds',
+  'images',
 ]);
 export const U5_REGION_LABELS = Object.freeze([
   'Mesoamerica · 3 pieces',
@@ -843,6 +842,9 @@ const U5_EXPECTED_BROWSER = Object.freeze(U5_CANONICAL.artworks.map((work) => Ob
   siteName: work.siteName,
   traditionGroup: work.traditionGroup,
   viewIds: Object.freeze(work.images.map(({ id }) => id)),
+  images: Object.freeze(work.images.map(({ id, imageUrl, mediaStatus }) => Object.freeze({
+    id, imageUrl, mediaStatus: mediaStatus ?? 'local',
+  }))),
 })));
 
 export function validateAndFreezeU5Works(works) {
@@ -874,6 +876,8 @@ export function validateAndFreezeU5Works(works) {
       `U5 canonical projection.AP${apNumber}`,
     );
     Object.freeze(work.viewIds);
+    work.images.forEach(Object.freeze);
+    Object.freeze(work.images);
     Object.freeze(work);
   });
   assert.equal(viewCount, 27, 'U5 browser fixture must contain exactly 27 U5 views');

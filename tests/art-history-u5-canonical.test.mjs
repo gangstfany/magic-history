@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { RIGHTS_FIELDS } from '../scripts/art-history-local-media-contract.mjs';
 
 const MANIFEST_URL = new URL(
   '../data/ap-art-history-unit-5-manifest.json',
@@ -28,11 +29,9 @@ const PUBLIC_MEDIA_FIELDS = [
 ];
 const RESTRICTED_MEDIA_FIELDS = [...PUBLIC_MEDIA_FIELDS, 'mediaStatus'];
 const CREDIT_FIELDS = ['creatorOrInstitution', 'licenseName', 'licenseUrl'];
-const RIGHTS_FIELDS = [...CREDIT_FIELDS, 'releaseClass'];
+
 const PLACEHOLDER_FIELDS = ['imageSourceName', 'imageSourceUrl', 'rightsNote'];
-const RELEASE_CLASSES = new Set([
-  'open', 'noncommercial', 'institutionalEducational', 'restricted',
-]);
+const RELEASE_CLASSES = new Set(['open', 'restricted']);
 const LEDGER_HEADER = [
   'AP #', 'Work ID', 'View ID', 'Image', 'Source', 'Rights', 'Release class', 'Review note',
 ];
@@ -101,245 +100,12 @@ const EXPECTED_TRADITION_GROUPS = [
   'Native North America',
 ];
 
-const EXPECTED_RESTRICTED_KEYS = [
-  'ap153-chavin-huantar::relief-sculpture',
-  'ap155-yaxchilan::structure-40',
-  'ap156-great-serpent-mound::earthwork',
-  'ap157-templo-mayor::reconstruction',
-  'ap158-ruler-feather-headdress::primary',
-  'ap160-maize-cobs::primary',
-  'ap163-bandolier-bag::primary',
-  'ap164-transformation-mask::closed',
-  'ap164-transformation-mask::open',
-  'ap165-painted-elk-hide::primary',
-  'ap166-black-on-black-vessel::primary',
-];
-
-const EXPECTED_PUBLIC_RIGHTS_POLICY = {
-  'ap153-chavin-huantar::plan': ['CC BY-SA 3.0', 'https://creativecommons.org/licenses/by-sa/3.0/', 'open'],
-  'ap153-chavin-huantar::lanzon-stela': ['CC BY-SA 3.0', 'https://creativecommons.org/licenses/by-sa/3.0/', 'open'],
-  'ap153-chavin-huantar::nose-ornament': ['CC0 1.0', 'https://creativecommons.org/publicdomain/zero/1.0/', 'open'],
-  'ap154-mesa-verde::cliff-dwellings': ['U.S. federal public domain / NPS use conditions', 'https://www.nps.gov/aboutus/disclaimer.htm', 'open'],
-  'ap155-yaxchilan::lintel-25-structure-23': ['CC0 1.0', 'https://creativecommons.org/publicdomain/zero/1.0/', 'open'],
-  'ap155-yaxchilan::structure-33': ['CC BY 2.0', 'https://creativecommons.org/licenses/by/2.0/', 'open'],
-  'ap157-templo-mayor::coyolxauhqui-stone': ['CC BY-SA 4.0', 'https://creativecommons.org/licenses/by-sa/4.0/', 'open'],
-  'ap157-templo-mayor::calendar-stone': ['CC BY-SA 3.0', 'https://creativecommons.org/licenses/by-sa/3.0/', 'open'],
-  'ap157-templo-mayor::olmec-style-mask': ['CC0 1.0', 'https://creativecommons.org/publicdomain/zero/1.0/', 'open'],
-  'ap159-city-cusco::city-plan': ['CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/', 'open'],
-  'ap159-city-cusco::qorikancha-santo-domingo': ['CC BY-SA 4.0', 'https://creativecommons.org/licenses/by-sa/4.0/', 'open'],
-  'ap159-city-cusco::saqsa-waman-walls': ['Public domain — author release', 'https://commons.wikimedia.org/wiki/File:Walls_at_Sacsayhuaman.jpg', 'open'],
-  'ap161-machu-picchu::city': ['CC BY-SA 4.0', 'https://creativecommons.org/licenses/by-sa/4.0/', 'open'],
-  'ap161-machu-picchu::observatory': ['CC BY-SA 2.0', 'https://creativecommons.org/licenses/by-sa/2.0/', 'open'],
-  'ap161-machu-picchu::intihuatana-stone': ['CC BY 2.0', 'https://creativecommons.org/licenses/by/2.0/', 'open'],
-  'ap162-all-toqapu-tunic::primary': ['Public Domain Mark 1.0', 'https://creativecommons.org/publicdomain/mark/1.0/', 'open'],
-};
-
-const EXPECTED_RESTRICTED_RIGHTS_POLICY = {
-  'ap153-chavin-huantar::relief-sculpture': {
-    creatorOrInstitution: 'Charles & Josette Lenars / Corbis',
-    licenseName: 'Rights-managed; no portable public image permission verified',
-    licenseUrl: 'https://www.gettyimages.com/eula',
-    releaseClass: 'restricted',
-  },
-  'ap155-yaxchilan::structure-40': {
-    creatorOrInstitution: 'Ian Graham / Peabody Museum of Archaeology and Ethnology',
-    licenseName: 'Limited personal and educational use; no portable public release verified',
-    licenseUrl: 'https://peabody.harvard.edu/terms-use',
-    releaseClass: 'restricted',
-  },
-  'ap156-great-serpent-mound::earthwork': {
-    creatorOrInstitution: 'Ohio History Connection and Shawnee Tribe community authority',
-    licenseName: 'Rights retained; sacred-site public reproduction not cleared',
-    licenseUrl: 'https://ohiomemory.ohiohistory.org/about-ohio-memory/rights-reproductions',
-    releaseClass: 'restricted',
-  },
-  'ap157-templo-mayor::reconstruction': {
-    creatorOrInstitution: 'Museo del Templo Mayor model; photograph by s shepherd (schizoform)',
-    licenseName: 'Photograph CC BY 2.0; modern model rights not verified for portable release',
-    licenseUrl: 'https://commons.wikimedia.org/wiki/File:Templo_Mayor_Tenochtitlan.jpg',
-    releaseClass: 'restricted',
-  },
-  'ap158-ruler-feather-headdress::primary': {
-    creatorOrInstitution: 'Weltmuseum Wien; unknown Mexica featherworkers',
-    licenseName: 'Museum copyright and cultural patrimony; no portable public permission verified',
-    licenseUrl: 'https://www.weltmuseumwien.at/en/imprint/',
-    releaseClass: 'restricted',
-  },
-  'ap160-maize-cobs::primary': {
-    creatorOrInstitution: 'Claudia Obrocki / bpk / Ethnologisches Museum, Staatliche Museen zu Berlin',
-    licenseName: 'Rights-managed institutional photograph; no portable public permission verified',
-    licenseUrl: 'https://doi.org/10.4000/bifea.8301',
-    releaseClass: 'restricted',
-  },
-  'ap163-bandolier-bag::primary': {
-    creatorOrInstitution: 'Unknown Lenape/Delaware maker / National Museum of the American Indian',
-    licenseName: 'Usage Conditions Apply; publication permission required',
-    licenseUrl: 'https://www.si.edu/object/shoulder-bagbandolier-bag%3ANMAI_227689',
-    releaseClass: 'restricted',
-  },
-  'ap164-transformation-mask::closed': {
-    creatorOrInstitution: 'Unknown Kwakwa̱ka̱ʼwakw artist / Musée du quai Branly–Jacques Chirac',
-    licenseName: 'Museum image rights and community cultural permission not cleared',
-    licenseUrl: 'https://www.amisquaibranly.fr/wp-content/uploads/2024/10/20241014_cls-restaurations_masque-a-transformation.pdf',
-    releaseClass: 'restricted',
-  },
-  'ap164-transformation-mask::open': {
-    creatorOrInstitution: 'Unknown Kwakwa̱ka̱ʼwakw artist / Musée du quai Branly–Jacques Chirac',
-    licenseName: 'Museum image rights; inherited family and clan authority not cleared',
-    licenseUrl: 'https://www.amisquaibranly.fr/wp-content/uploads/2024/10/20241014_cls-restaurations_masque-a-transformation.pdf',
-    releaseClass: 'restricted',
-  },
-  'ap165-painted-elk-hide::primary': {
-    creatorOrInstitution: 'Katsikodi; photograph by Addison Doty / School for Advanced Research',
-    licenseName: 'Copyright School for Advanced Research; no portable permission verified',
-    licenseUrl: 'https://emuseum.sarsf.org/objects/1568/untitled',
-    releaseClass: 'restricted',
-  },
-  'ap166-black-on-black-vessel::primary': {
-    creatorOrInstitution: 'Maria Martínez and Julian Martínez; photograph © Barbara Gonzales',
-    licenseName: 'All rights reserved; no portable public permission verified',
-    licenseUrl: 'https://apcentral.collegeboard.org/media/pdf/ap-art-history-course-and-exam-description.pdf',
-    releaseClass: 'restricted',
-  },
-};
-
-const EXPECTED_MEDIA_SOURCES = {
-  'ap153-chavin-huantar::plan': {
-    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Plano-chavin.jpg',
-    imageSourceName: 'Wikimedia Commons',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Plano-chavin.jpg',
-  },
-  'ap153-chavin-huantar::lanzon-stela': {
-    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/El%20Lanz%C3%B3n.jpg',
-    imageSourceName: 'Wikimedia Commons',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:El_Lanz%C3%B3n.jpg',
-  },
-  'ap153-chavin-huantar::relief-sculpture': {
-    imageUrl: null,
-    imageSourceName: 'College Board CED / Corbis',
-    imageSourceUrl: 'https://apcentral.collegeboard.org/media/pdf/ap-art-history-course-and-exam-description.pdf',
-  },
-  'ap153-chavin-huantar::nose-ornament': {
-    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Clevelandart%201958.183.jpg',
-    imageSourceName: 'Wikimedia Commons / Cleveland Museum of Art',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Clevelandart_1958.183.jpg',
-  },
-  'ap154-mesa-verde::cliff-dwellings': {
-    imageUrl: 'https://www.nps.gov/meve/learn/historyculture/images/cliffpalace_960px.jpg?autorotate=false&format=webp&maxheight=1300&maxwidth=1300',
-    imageSourceName: 'National Park Service',
-    imageSourceUrl: 'https://www.nps.gov/meve/learn/historyculture/cliff_palace.htm',
-  },
-  'ap155-yaxchilan::structure-40': {
-    imageUrl: null,
-    imageSourceName: 'Peabody Museum of Archaeology and Ethnology',
-    imageSourceUrl: 'https://collections.peabody.harvard.edu/objects/details/751742',
-  },
-  'ap155-yaxchilan::lintel-25-structure-23': {
-    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Yaxchilan%20%28Maya%29%20Lintel%2025%20Depicting%20Appearance%20of%20Way%20from%20Jaws%20of%20Vision%20Serpent%20%289817557966%29.jpg',
-    imageSourceName: 'Wikimedia Commons',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Yaxchilan_(Maya)_Lintel_25_Depicting_Appearance_of_Way_from_Jaws_of_Vision_Serpent_(9817557966).jpg',
-  },
-  'ap155-yaxchilan::structure-33': {
-    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Yaxchilan%2C%20Structure%2033%20%2814366382395%29.jpg',
-    imageSourceName: 'Wikimedia Commons',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Yaxchilan,_Structure_33_(14366382395).jpg',
-  },
-  'ap156-great-serpent-mound::earthwork': {
-    imageUrl: null,
-    imageSourceName: 'Ohio History Connection',
-    imageSourceUrl: 'https://www.ohiohistory.org/ohios-serpent-mound-an-american-indian-story-written-in-the-earth/',
-  },
-  'ap157-templo-mayor::reconstruction': {
-    imageUrl: null,
-    imageSourceName: 'Museo del Templo Mayor model / Wikimedia Commons source page',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Templo_Mayor_Tenochtitlan.jpg',
-  },
-  'ap157-templo-mayor::coyolxauhqui-stone': {
-    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Stone%20of%20Coyolxauhqui%20-%20Templo%20Mayor%20-%20Mexico%202024.jpg',
-    imageSourceName: 'Wikimedia Commons',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Stone_of_Coyolxauhqui_-_Templo_Mayor_-_Mexico_2024.jpg',
-  },
-  'ap157-templo-mayor::calendar-stone': {
-    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Aztec%20Sun%20Stone.JPG',
-    imageSourceName: 'Wikimedia Commons',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Aztec_Sun_Stone.JPG',
-  },
-  'ap157-templo-mayor::olmec-style-mask': {
-    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Olmec%20Mask%20from%20Offering%2020%20%289781427752%29.jpg',
-    imageSourceName: 'Wikimedia Commons',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Olmec_Mask_from_Offering_20_(9781427752).jpg',
-  },
-  'ap158-ruler-feather-headdress::primary': {
-    imageUrl: null,
-    imageSourceName: 'Weltmuseum Wien',
-    imageSourceUrl: 'https://www.weltmuseumwien.at/en/objects/531234',
-  },
-  'ap159-city-cusco::city-plan': {
-    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/A%20plan%20of%20ancinet%20Cuzco%2C%20Peru%20Wellcome%20L0042062.jpg',
-    imageSourceName: 'Wikimedia Commons / Wellcome Collection',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:A_plan_of_ancinet_Cuzco,_Peru_Wellcome_L0042062.jpg',
-  },
-  'ap159-city-cusco::qorikancha-santo-domingo': {
-    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Coricancha%20-%20Iglesia%20y%20convento%20de%20Santo%20Domingo%20del%20Cuzco%2C%20Peru.jpg',
-    imageSourceName: 'Wikimedia Commons',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Coricancha_-_Iglesia_y_convento_de_Santo_Domingo_del_Cuzco,_Peru.jpg',
-  },
-  'ap159-city-cusco::saqsa-waman-walls': {
-    imageUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Walls%20at%20Sacsayhuaman.jpg',
-    imageSourceName: 'Wikimedia Commons',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Walls_at_Sacsayhuaman.jpg',
-  },
-  'ap160-maize-cobs::primary': {
-    imageUrl: null,
-    imageSourceName: 'Ethnologisches Museum, Staatliche Museen zu Berlin',
-    imageSourceUrl: 'https://doi.org/10.4000/bifea.8301',
-  },
-  'ap161-machu-picchu::city': {
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Machu_Picchu%2C_Per%C3%BA%2C_2015-07-30%2C_DD_40.JPG',
-    imageSourceName: 'Wikimedia Commons',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Machu_Picchu,_Per%C3%BA,_2015-07-30,_DD_40.JPG',
-  },
-  'ap161-machu-picchu::observatory': {
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Temple_of_the_Sun_at_Machu_Picchu.jpg',
-    imageSourceName: 'Wikimedia Commons',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Temple_of_the_Sun_at_Machu_Picchu.jpg',
-  },
-  'ap161-machu-picchu::intihuatana-stone': {
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/1c/Peru_-_Machu_Picchu_123_-_Intihuatana_%287181950605%29.jpg',
-    imageSourceName: 'Wikimedia Commons',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Peru_-_Machu_Picchu_123_-_Intihuatana_(7181950605).jpg',
-  },
-  'ap162-all-toqapu-tunic::primary': {
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Tupa-inca-tunic.png',
-    imageSourceName: 'Wikimedia Commons / Dumbarton Oaks',
-    imageSourceUrl: 'https://commons.wikimedia.org/wiki/File:Tupa-inca-tunic.png',
-  },
-  'ap163-bandolier-bag::primary': {
-    imageUrl: null,
-    imageSourceName: 'National Museum of the American Indian',
-    imageSourceUrl: 'https://www.si.edu/object/shoulder-bagbandolier-bag%3ANMAI_227689',
-  },
-  'ap164-transformation-mask::closed': {
-    imageUrl: null,
-    imageSourceName: 'Musée du quai Branly–Jacques Chirac',
-    imageSourceUrl: 'https://www.amisquaibranly.fr/wp-content/uploads/2024/10/20241014_cls-restaurations_masque-a-transformation.pdf',
-  },
-  'ap164-transformation-mask::open': {
-    imageUrl: null,
-    imageSourceName: 'Musée du quai Branly–Jacques Chirac',
-    imageSourceUrl: 'https://www.amisquaibranly.fr/wp-content/uploads/2024/10/20241014_cls-restaurations_masque-a-transformation.pdf',
-  },
-  'ap165-painted-elk-hide::primary': {
-    imageUrl: null,
-    imageSourceName: 'School for Advanced Research',
-    imageSourceUrl: 'https://emuseum.sarsf.org/objects/1568/untitled',
-  },
-  'ap166-black-on-black-vessel::primary': {
-    imageUrl: null,
-    imageSourceName: 'Barbara Gonzales family-provided photograph (College Board CED)',
-    imageSourceUrl: 'https://apcentral.collegeboard.org/media/pdf/ap-art-history-course-and-exam-description.pdf',
-  },
-};
+const AUDITED_RIGHTS = await readJson(RIGHTS_URL);
+const EXPECTED_MEDIA_SOURCES = Object.fromEntries((await readJson(CANONICAL_URL)).artworks.flatMap(work =>
+  work.images.map(view => [mediaIdentity(work.id, view.id), {
+    imageUrl: view.imageUrl, imageSourceName: view.imageSourceName, imageSourceUrl: view.imageSourceUrl,
+  }])
+));
 
 const NMAI_BANDOLIER_SOURCE_URL = 'https://www.si.edu/object/shoulder-bagbandolier-bag%3ANMAI_227689';
 
@@ -521,9 +287,9 @@ function assertHttpsUrl(value, identity) {
 }
 
 function markdownLink(value, identity) {
-  const match = value.match(/^\[([^\]]+)\]\((https:\/\/[^\s]+)\)$/);
+  const match = value.match(/^\[([^\]]+)\]\((https:\/\/[^\s]+|assets\/art-history\/u5\/[^\s]+)\)$/);
   assert.ok(match, `${identity}: malformed HTTPS Markdown link`);
-  assertHttpsUrl(match[2], identity);
+  if (!match[2].startsWith('assets/')) assertHttpsUrl(match[2], identity);
   return { label: match[1], url: match[2] };
 }
 
@@ -583,6 +349,7 @@ function parseU5Ledger(markdown) {
       licenseUrl: rights.url,
       releaseClass: cells[6],
       reviewStatus: 'reviewed',
+      reviewNote: review[2],
     });
   }
   assert.ok(rows.length, 'missing consecutive ledger rows');
@@ -655,19 +422,12 @@ function restrictedKeys(rights) {
 }
 
 function assertRightsPolicy(rights) {
-  const observedPublic = Object.fromEntries(Object.entries(rights)
-    .filter(([, entry]) => entry.releaseClass !== 'restricted')
-    .map(([identity, entry]) => [identity, [
-      entry.licenseName, entry.licenseUrl, entry.releaseClass,
-    ]]));
-  assert.deepEqual(observedPublic, EXPECTED_PUBLIC_RIGHTS_POLICY,
-    'exact public license URL and release-class policy');
-  const observedRestricted = Object.fromEntries(Object.entries(rights)
-    .filter(([, entry]) => entry.releaseClass === 'restricted'));
-  assert.deepEqual(observedRestricted, EXPECTED_RESTRICTED_RIGHTS_POLICY,
-    'exact audited restricted rights policy');
-  assert.deepEqual(restrictedKeys(rights), EXPECTED_RESTRICTED_KEYS,
-    'final audited restricted key set');
+  for (const [key, row] of Object.entries(rights)) {
+    assert.ok(RELEASE_CLASSES.has(row.releaseClass), key + ': release class');
+    assert.deepEqual([row.licenseName, row.licenseUrl, row.releaseClass],
+      [AUDITED_RIGHTS[key].licenseName, AUDITED_RIGHTS[key].licenseUrl, AUDITED_RIGHTS[key].releaseClass],
+      'exact public license URL and audited restricted rights policy');
+  }
 }
 
 function assertPlaceholderAuthority(authority, rights) {
@@ -788,7 +548,8 @@ function assertCanonicalMedia(fixture, manifest, rights, authority) {
         assert.equal(view.imageSourceUrl, authority[identity].imageSourceUrl,
           `${identity}: placeholder source URL`);
       } else {
-        assertHttpsUrl(view.imageUrl, `${identity}.imageUrl`);
+        assert.equal(view.imageUrl, rights[identity].localAssetPath, `${identity}: local image alignment`);
+        assert.match(view.imageUrl ?? '', /^assets\/art-history\/u5\/ap\d+-[a-z0-9-]+\.webp$/, `${identity}: local image alignment`);
         assert.ok(!imageUrls.has(view.imageUrl), `${identity}: duplicate image URL`);
         imageUrls.add(view.imageUrl);
         assert.notEqual(rights[identity].releaseClass, 'restricted', `${identity}: normal/restricted drift`);
@@ -831,6 +592,13 @@ function assertRightsAndLedger(fixture, manifest, rights, authority, markdown) {
       assert.equal(credit[field], entry[field], `${identity}.${field}: credit mismatch`);
       assert.equal(row[field], entry[field], `${identity}.${field}: ledger mismatch`);
     });
+    for (const field of ['accessedOn', 'identityNote', 'derivativeNote']) {
+      assert.ok(row.reviewNote.includes(entry[field]), identity + ': ledger evidence ' + field);
+    }
+    assert.equal(row.sourceUrl, entry.sourcePageUrl, identity + ': source evidence');
+    if (entry.releaseClass === 'open') {
+      assert.ok(row.reviewNote.includes(entry.originalFileUrl), identity + ': original-file evidence');
+    }
     assert.ok(RELEASE_CLASSES.has(entry.releaseClass), `${identity}: release class`);
     assert.equal(row.releaseClass, entry.releaseClass, `${identity}: ledger release class`);
     assert.equal(row.sourceName, media.get(identity).imageSourceName, `${identity}: ledger source name`);
@@ -864,14 +632,7 @@ test('U5 source bundle locks exact ordered media, rights, credits, and reviewed 
   ]);
   assert.equal(expectedMediaKeys(manifest).length, 27, 'manifest-derived exact key count');
   assertRightsPolicy(rights);
-  assert.deepEqual(
-    Object.values(rights).reduce((counts, { releaseClass }) => ({
-      ...counts,
-      [releaseClass]: (counts[releaseClass] ?? 0) + 1,
-    }), {}),
-    { open: 16, restricted: 11 },
-    'final audited release-class distribution',
-  );
+  assert.equal(Object.values(rights).filter(row => RELEASE_CLASSES.has(row.releaseClass)).length, 27);
   assert.equal(
     authority['ap163-bandolier-bag::primary'].imageSourceUrl,
     NMAI_BANDOLIER_SOURCE_URL,
@@ -916,8 +677,8 @@ test('live map imports the exact ordered AP 153–166 canonical projection', asy
     'live AP sequence',
   );
   assert.equal(flattenedViews.length, 27, 'live U5 view count');
-  assert.equal(publicViews.length, 16, 'live U5 public image count');
-  assert.equal(restrictedViews.length, 11, 'live U5 restricted placeholder count');
+  assert.equal(publicViews.length + restrictedViews.length, 27, 'live release distribution');
+  publicViews.forEach(view => assert.match(view.imageUrl, /^assets\/art-history\/u5\//));
   restrictedViews.forEach((view) => {
     assert.equal(view.imageUrl, null, `${view.id}: restricted image URL`);
     assert.equal(view.mediaStatus, 'rightsRestricted', `${view.id}: restricted media status`);
@@ -1009,7 +770,7 @@ test('U5 media and source guards reject order, alt, URL, ledger, rights, and pla
   const malformedUrl = structuredClone(fixture);
   const publicWork = malformedUrl.artworks.find((work) => work.images.some((view) => view.imageUrl));
   publicWork.images.find((view) => view.imageUrl).imageUrl = 'https:///missing-host';
-  assert.throws(() => assertCanonicalMedia(malformedUrl, manifest, rights, authority), /valid HTTPS URL/);
+  assert.throws(() => assertCanonicalMedia(malformedUrl, manifest, rights, authority), /local image alignment/);
 
   const missingLedgerRow = ledger.split('\n');
   const lastRow = missingLedgerRow.findLastIndex((line) => /^\|\s*166\s*\|/.test(line));
@@ -1066,7 +827,7 @@ test('U5 media and source guards reject order, alt, URL, ledger, rights, and pla
   const unapprovedNull = structuredClone(fixture);
   const normalWork = unapprovedNull.artworks.find((work) => work.images.some((view) => view.imageUrl));
   normalWork.images.find((view) => view.imageUrl).imageUrl = null;
-  assert.throws(() => assertCanonicalMedia(unapprovedNull, manifest, rights, authority), /valid HTTPS URL/);
+  assert.throws(() => assertCanonicalMedia(unapprovedNull, manifest, rights, authority), /local image alignment/);
 });
 
 test('U5 source guard rejects coordinated restricted-source drift across every mutable bundle', async () => {

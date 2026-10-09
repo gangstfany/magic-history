@@ -6,7 +6,34 @@
     "region": "centralAndes",
     "siteName": "Chavín de Huántar, Ancash, Peru",
     "traditionGroup": "Ancient Central Andes",
-    "viewIds": ["plan", "lanzon-stela", "relief-sculpture", "nose-ornament"]
+    "viewIds": [
+      "plan",
+      "lanzon-stela",
+      "relief-sculpture",
+      "nose-ornament"
+    ],
+    "images": [
+      {
+        "id": "plan",
+        "imageUrl": "assets/art-history/u5/ap153-plan.webp",
+        "mediaStatus": "local"
+      },
+      {
+        "id": "lanzon-stela",
+        "imageUrl": "assets/art-history/u5/ap153-lanzon-stela.webp",
+        "mediaStatus": "local"
+      },
+      {
+        "id": "relief-sculpture",
+        "imageUrl": null,
+        "mediaStatus": "rightsRestricted"
+      },
+      {
+        "id": "nose-ornament",
+        "imageUrl": "assets/art-history/u5/ap153-nose-ornament.webp",
+        "mediaStatus": "local"
+      }
+    ]
   },
   {
     "id": "ap154-mesa-verde",
@@ -15,7 +42,16 @@
     "region": "ancestralPueblo",
     "siteName": "Mesa Verde, Colorado, U.S.",
     "traditionGroup": "Ancient North America",
-    "viewIds": ["cliff-dwellings"]
+    "viewIds": [
+      "cliff-dwellings"
+    ],
+    "images": [
+      {
+        "id": "cliff-dwellings",
+        "imageUrl": "assets/art-history/u5/ap154-cliff-dwellings.webp",
+        "mediaStatus": "local"
+      }
+    ]
   },
   {
     "id": "ap155-yaxchilan",
@@ -24,7 +60,28 @@
     "region": "mesoamerica",
     "siteName": "Yaxchilán, Chiapas, Mexico",
     "traditionGroup": "Ancient Mesoamerica",
-    "viewIds": ["structure-40", "lintel-25-structure-23", "structure-33"]
+    "viewIds": [
+      "structure-40",
+      "lintel-25-structure-23",
+      "structure-33"
+    ],
+    "images": [
+      {
+        "id": "structure-40",
+        "imageUrl": null,
+        "mediaStatus": "rightsRestricted"
+      },
+      {
+        "id": "lintel-25-structure-23",
+        "imageUrl": "assets/art-history/u5/ap155-lintel-25-structure-23.webp",
+        "mediaStatus": "local"
+      },
+      {
+        "id": "structure-33",
+        "imageUrl": "assets/art-history/u5/ap155-structure-33.webp",
+        "mediaStatus": "local"
+      }
+    ]
   },
   {
     "id": "ap156-great-serpent-mound",
@@ -33,7 +90,16 @@
     "region": "easternWoodlands",
     "siteName": "Adams County, Ohio, U.S.",
     "traditionGroup": "Ancient North America",
-    "viewIds": ["earthwork"]
+    "viewIds": [
+      "earthwork"
+    ],
+    "images": [
+      {
+        "id": "earthwork",
+        "imageUrl": "assets/art-history/u5/ap156-earthwork.webp",
+        "mediaStatus": "local"
+      }
+    ]
   },
   {
     "id": "ap157-templo-mayor",
@@ -42,7 +108,34 @@
     "region": "mesoamerica",
     "siteName": "Tenochtitlan (Mexico City), Mexico",
     "traditionGroup": "Ancient Mesoamerica",
-    "viewIds": ["reconstruction", "coyolxauhqui-stone", "calendar-stone", "olmec-style-mask"]
+    "viewIds": [
+      "reconstruction",
+      "coyolxauhqui-stone",
+      "calendar-stone",
+      "olmec-style-mask"
+    ],
+    "images": [
+      {
+        "id": "reconstruction",
+        "imageUrl": null,
+        "mediaStatus": "rightsRestricted"
+      },
+      {
+        "id": "coyolxauhqui-stone",
+        "imageUrl": "assets/art-history/u5/ap157-coyolxauhqui-stone.webp",
+        "mediaStatus": "local"
+      },
+      {
+        "id": "calendar-stone",
+        "imageUrl": "assets/art-history/u5/ap157-calendar-stone.webp",
+        "mediaStatus": "local"
+      },
+      {
+        "id": "olmec-style-mask",
+        "imageUrl": "assets/art-history/u5/ap157-olmec-style-mask.webp",
+        "mediaStatus": "local"
+      }
+    ]
   },
   {
     "id": "ap158-ruler-feather-headdress",
@@ -51,7 +144,16 @@
     "region": "mesoamerica",
     "siteName": "Mexica realm, Central Mexico",
     "traditionGroup": "Ancient Mesoamerica",
-    "viewIds": ["primary"]
+    "viewIds": [
+      "primary"
+    ],
+    "images": [
+      {
+        "id": "primary",
+        "imageUrl": "assets/art-history/u5/ap158-primary.webp",
+        "mediaStatus": "local"
+      }
+    ]
   },
   {
     "id": "ap159-city-cusco",
@@ -60,7 +162,28 @@
     "region": "centralAndes",
     "siteName": "Cusco, Peru",
     "traditionGroup": "Ancient Central Andes",
-    "viewIds": ["city-plan", "qorikancha-santo-domingo", "saqsa-waman-walls"]
+    "viewIds": [
+      "city-plan",
+      "qorikancha-santo-domingo",
+      "saqsa-waman-walls"
+    ],
+    "images": [
+      {
+        "id": "city-plan",
+        "imageUrl": "assets/art-history/u5/ap159-city-plan.webp",
+        "mediaStatus": "local"
+      },
+      {
+        "id": "qorikancha-santo-domingo",
+        "imageUrl": "assets/art-history/u5/ap159-qorikancha-santo-domingo.webp",
+        "mediaStatus": "local"
+      },
+      {
+        "id": "saqsa-waman-walls",
+        "imageUrl": "assets/art-history/u5/ap159-saqsa-waman-walls.webp",
+        "mediaStatus": "local"
+      }
+    ]
   },
   {
     "id": "ap160-maize-cobs",
@@ -69,7 +192,16 @@
     "region": "centralAndes",
     "siteName": "Inka realm, Central Andes",
     "traditionGroup": "Ancient Central Andes",
-    "viewIds": ["primary"]
+    "viewIds": [
+      "primary"
+    ],
+    "images": [
+      {
+        "id": "primary",
+        "imageUrl": null,
+        "mediaStatus": "rightsRestricted"
+      }
+    ]
   },
   {
     "id": "ap161-machu-picchu",
@@ -78,7 +210,28 @@
     "region": "centralAndes",
     "siteName": "Machu Picchu, Cusco Region, Peru",
     "traditionGroup": "Ancient Central Andes",
-    "viewIds": ["city", "observatory", "intihuatana-stone"]
+    "viewIds": [
+      "city",
+      "observatory",
+      "intihuatana-stone"
+    ],
+    "images": [
+      {
+        "id": "city",
+        "imageUrl": "assets/art-history/u5/ap161-city.webp",
+        "mediaStatus": "local"
+      },
+      {
+        "id": "observatory",
+        "imageUrl": "assets/art-history/u5/ap161-observatory.webp",
+        "mediaStatus": "local"
+      },
+      {
+        "id": "intihuatana-stone",
+        "imageUrl": "assets/art-history/u5/ap161-intihuatana-stone.webp",
+        "mediaStatus": "local"
+      }
+    ]
   },
   {
     "id": "ap162-all-toqapu-tunic",
@@ -87,7 +240,16 @@
     "region": "centralAndes",
     "siteName": "Inka realm, Central Andes",
     "traditionGroup": "Ancient Central Andes",
-    "viewIds": ["primary"]
+    "viewIds": [
+      "primary"
+    ],
+    "images": [
+      {
+        "id": "primary",
+        "imageUrl": "assets/art-history/u5/ap162-primary.webp",
+        "mediaStatus": "local"
+      }
+    ]
   },
   {
     "id": "ap163-bandolier-bag",
@@ -96,7 +258,16 @@
     "region": "easternWoodlands",
     "siteName": "Lenape homelands, northeastern North America",
     "traditionGroup": "Native North America",
-    "viewIds": ["primary"]
+    "viewIds": [
+      "primary"
+    ],
+    "images": [
+      {
+        "id": "primary",
+        "imageUrl": null,
+        "mediaStatus": "rightsRestricted"
+      }
+    ]
   },
   {
     "id": "ap164-transformation-mask",
@@ -105,7 +276,22 @@
     "region": "northwestCoast",
     "siteName": "Kwakwaka'wakw territories, British Columbia, Canada",
     "traditionGroup": "Native North America",
-    "viewIds": ["closed", "open"]
+    "viewIds": [
+      "closed",
+      "open"
+    ],
+    "images": [
+      {
+        "id": "closed",
+        "imageUrl": null,
+        "mediaStatus": "rightsRestricted"
+      },
+      {
+        "id": "open",
+        "imageUrl": null,
+        "mediaStatus": "rightsRestricted"
+      }
+    ]
   },
   {
     "id": "ap165-painted-elk-hide",
@@ -114,7 +300,16 @@
     "region": "plainsGreatBasin",
     "siteName": "Wind River Reservation, Wyoming, U.S.",
     "traditionGroup": "Native North America",
-    "viewIds": ["primary"]
+    "viewIds": [
+      "primary"
+    ],
+    "images": [
+      {
+        "id": "primary",
+        "imageUrl": null,
+        "mediaStatus": "rightsRestricted"
+      }
+    ]
   },
   {
     "id": "ap166-black-on-black-vessel",
@@ -123,6 +318,15 @@
     "region": "ancestralPueblo",
     "siteName": "San Ildefonso Pueblo, New Mexico, U.S.",
     "traditionGroup": "Native North America",
-    "viewIds": ["primary"]
+    "viewIds": [
+      "primary"
+    ],
+    "images": [
+      {
+        "id": "primary",
+        "imageUrl": null,
+        "mediaStatus": "rightsRestricted"
+      }
+    ]
   }
 ]

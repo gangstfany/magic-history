@@ -208,6 +208,9 @@ function projectU5BrowserFixture(canonical) {
     siteName: work.siteName,
     traditionGroup: work.traditionGroup,
     viewIds: work.images.map(({ id }) => id),
+    images: work.images.map(({ id, imageUrl, mediaStatus }) => ({
+      id, imageUrl, mediaStatus: mediaStatus ?? 'local',
+    })),
   }));
 }
 
@@ -1348,6 +1351,10 @@ test('U5 fixture validation freezes canonical hierarchy and rejects work, view, 
   assert.ok(Object.isFrozen(frozen));
   assert.ok(frozen.every(Object.isFrozen));
   assert.ok(frozen.every((work) => Object.isFrozen(work.viewIds)));
+  assert.ok(frozen.every((work) => Object.isFrozen(work.images)));
+  const remoteImage = structuredClone(fixture);
+  remoteImage[0].images[0].imageUrl = 'https://example.org/remote.jpg';
+  assert.throws(() => verifier.validateAndFreezeU5Works(remoteImage), /canonical projection/);
 
   const missingWork = structuredClone(fixture);
   missingWork.pop();
@@ -1450,7 +1457,7 @@ test('U5 verifier guards region traversal, restricted requests, private bundle i
       comparisonFollowed: true,
       overflowCheckpoints: work.viewIds.length + 8,
     })),
-    restrictedPrivateViews: privateMode ? 11 : 0,
+    restrictedPrivateViews: privateMode ? verifier.U5_PRIVATE_MEDIA_KEYS.length : 0,
     restrictedPublicRequests: 0,
   });
   const matrix = verifier.U5_MATRIX_VIEWPORTS.map((viewport) => ({

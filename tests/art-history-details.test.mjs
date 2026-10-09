@@ -67,9 +67,7 @@ const EXPECTED_U4_PRIVATE_MEDIA_KEYS = [
 const EXPECTED_U5_PRIVATE_MEDIA_KEYS = [
   'ap153-chavin-huantar::relief-sculpture',
   'ap155-yaxchilan::structure-40',
-  'ap156-great-serpent-mound::earthwork',
   'ap157-templo-mayor::reconstruction',
-  'ap158-ruler-feather-headdress::primary',
   'ap160-maize-cobs::primary',
   'ap163-bandolier-bag::primary',
   'ap164-transformation-mask::closed',

@@ -1,5 +1,7 @@
 import { readFile } from 'node:fs/promises';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { assertLocalMediaContract } from './art-history-local-media-contract.mjs';
 
 const DEFAULT_HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const ACTIVE_MANIFESTS = Object.freeze([
@@ -317,6 +319,7 @@ const UNFINISHED_VALUE = /\b(?:tbd|todo|placeholder|n\/a|not available)\b|待补
 const COMPARISON_BASIS = /(?:Compare|对比|比较|形式|功能|材料|语境|权力|仪式|景观|身份|技术)/i;
 const U5_RELEASE_POLICY = new Map([
   ...U3_RELEASE_POLICY,
+  ['CC BY 2.5', ['https://creativecommons.org/licenses/by/2.5/', 'open']],
   ['U.S. federal public domain / NPS use conditions', ['https://www.nps.gov/aboutus/disclaimer.htm', 'open']],
   ['Public domain — author release', ['https://commons.wikimedia.org/wiki/File:Walls_at_Sacsayhuaman.jpg', 'open']],
   ['Rights-managed; no portable public image permission verified', ['https://www.gettyimages.com/eula', 'restricted']],
@@ -735,7 +738,11 @@ function validateArtworkMedia(
         auditedMediaOwners[field].set(item[field], mediaKey);
       }
     }
-    if (item.imageUrl !== null && !(manifestMediaUnit ? isHttpsUrl(item.imageUrl) : isHttpUrl(item.imageUrl))) {
+    if (artwork.unit === 5 && item.imageUrl !== null
+      && item.imageUrl !== `assets/art-history/u5/ap${artwork.apNumber}-${viewId}.webp`) {
+      fail(`${mediaContext}.imageUrl must be a canonical local path, not a remote HTTPS URL`);
+    }
+    if (artwork.unit !== 5 && item.imageUrl !== null && !(manifestMediaUnit ? isHttpsUrl(item.imageUrl) : isHttpUrl(item.imageUrl))) {
       fail(`${mediaContext}.imageUrl must be an ${manifestMediaUnit ? 'HTTPS' : 'HTTP(S)'} URL`);
     }
     if (!(manifestMediaUnit ? isHttpsUrl(item.imageSourceUrl) : isHttpUrl(item.imageSourceUrl))) {
@@ -1272,119 +1279,58 @@ function validateUnit5RightsAudit(rightsAudit, artworks, credits, placeholders) 
   if (!placeholders || typeof placeholders !== 'object' || Array.isArray(placeholders)) {
     fail('Unit 5 public placeholder authority must be an object');
   }
-
-  const expectedEntries = artworks
-    .filter(({ unit }) => unit === 5)
-    .flatMap((artwork) => {
-      const rawCredit = credits[artwork.id];
-      const creditEntries = Array.isArray(rawCredit) ? rawCredit : [rawCredit];
-      return normalizedMediaIds(artwork).map((viewId, index) => [
-        `${artwork.id}::${viewId}`,
-        creditEntries[index],
-        normalizeArtworkMedia(artwork)[index],
-      ]);
+  const unit5 = artworks.filter(({ unit }) => unit === 5);
+  const expectedKeys = unit5.flatMap(work => work.images.map(view => work.id + '::' + view.id));
+  validateExactKeys(Object.keys(rightsAudit), expectedKeys,
+    'Unit 5 rights audit media keys must match all 27 reviewed views exactly');
+  const restrictedKeys = Object.entries(rightsAudit)
+    .filter(([, row]) => row.releaseClass === 'restricted').map(([key]) => key);
+  for (const work of unit5) {
+    const raw = credits[work.id];
+    const creditRows = Array.isArray(raw) ? raw : [raw];
+    work.images.forEach((view, index) => {
+      const key = work.id + '::' + view.id;
+      const row = rightsAudit[key];
+      for (const field of ['creatorOrInstitution', 'licenseName', 'identityNote', 'derivativeNote']) {
+        if (typeof row[field] !== 'string' || !row[field].trim()) {
+          fail('Unit 5 rights audit ' + key + '.' + field + ' must be a non-empty string');
+        }
+      }
+      if (row.sourcePageUrl !== view.imageSourceUrl) {
+        fail('Unit 5 rights audit ' + key + ' sourcePageUrl source mismatch');
+      }
+      const policy = U5_RELEASE_POLICY.get(row.licenseName);
+      if (row.releaseClass === 'open') {
+        const namesByClass = {
+          'public-domain': /^(?:Public Domain Mark 1\.0|Public domain — author release)$/,
+          cc0: /^CC0 1\.0$/,
+          'cc-by': /^CC BY (?:2\.0|2\.5|3\.0|4\.0)$/,
+          'cc-by-sa': /^CC BY-SA (?:2\.0|2\.5|3\.0|4\.0)$/,
+        };
+        if (!namesByClass[row.licenseClass]?.test(row.licenseName)) {
+          fail('Unit 5 rights audit ' + key + ' disallowed open license or license class mismatch');
+        }
+      }
+      if (!policy || row.licenseUrl !== policy[0] || row.releaseClass !== policy[1]) {
+        fail('Unit 5 rights audit ' + key + ' does not match its approved release policy');
+      }
+      for (const field of CREDIT_FIELDS) {
+        if (row[field] !== creditRows[index][field]) {
+          fail('Unit 5 rights audit ' + key + '.' + field + ' credit mismatch');
+        }
+      }
     });
-  if (expectedEntries.length !== 27) {
-    fail(`Unit 5 rights audit requires exactly 27 media keys; received ${expectedEntries.length}`);
   }
-  validateExactKeys(
-    Object.keys(rightsAudit),
-    expectedEntries.map(([mediaKey]) => mediaKey),
-    'Unit 5 rights audit media keys must match all 27 reviewed views exactly',
-  );
-
-  const expectedPlaceholderKeys = expectedEntries
-    .filter(([, , media]) => media.imageUrl === null && media.mediaStatus === 'rightsRestricted')
-    .map(([mediaKey]) => mediaKey);
-  validateExactKeys(
-    Object.keys(placeholders),
-    expectedPlaceholderKeys,
-    'Unit 5 public placeholder keys must match the reviewed restricted media exactly',
-  );
-
-  for (const mediaKey of expectedPlaceholderKeys) {
-    const authority = placeholders[mediaKey];
-    if (!authority || typeof authority !== 'object' || Array.isArray(authority)) {
-      fail(`Unit 5 public placeholder authority ${mediaKey} must be an object`);
-    }
-    validateExactKeys(
-      Object.keys(authority),
-      ['imageSourceName', 'imageSourceUrl', 'rightsNote'],
-      `Unit 5 public placeholder authority ${mediaKey} must use the exact authority schema`,
-    );
-    for (const field of ['imageSourceName', 'imageSourceUrl', 'rightsNote']) {
-      if (typeof authority[field] !== 'string' || authority[field].trim() === '') {
-        fail(`Unit 5 public placeholder authority ${mediaKey}.${field} must be a non-empty string`);
-      }
-    }
-    if (!isHttpsUrl(authority.imageSourceUrl)) {
-      fail(`Unit 5 public placeholder authority ${mediaKey}.imageSourceUrl must be an HTTPS URL`);
-    }
-  }
-
-  const releaseClassCounts = { open: 0, restricted: 0 };
-  for (const [mediaKey, canonicalCredit, media] of expectedEntries) {
-    const entry = rightsAudit[mediaKey];
-    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
-      fail(`Unit 5 rights audit ${mediaKey} must be an object`);
-    }
-    validateExactKeys(
-      Object.keys(entry),
-      RIGHTS_FIELDS,
-      `Unit 5 rights audit ${mediaKey} must use the exact rights schema`,
-    );
-    for (const field of RIGHTS_FIELDS) {
-      if (typeof entry[field] !== 'string' || entry[field].trim() === '') {
-        fail(`Unit 5 rights audit ${mediaKey}.${field} must be a non-empty string`);
-      }
-    }
-    if (!isHttpsUrl(entry.licenseUrl)) {
-      fail(`Unit 5 rights audit ${mediaKey}.licenseUrl must be an HTTPS URL`);
-    }
-    const policy = U5_RELEASE_POLICY.get(entry.licenseName);
-    if (!policy) {
-      fail(`Unit 5 rights audit ${mediaKey}.licenseName is not in the approved release policy`);
-    }
-    const [approvedLicenseUrl, approvedReleaseClass] = policy;
-    if (
-      entry.licenseUrl !== approvedLicenseUrl
-      || entry.releaseClass !== approvedReleaseClass
-    ) {
-      fail(`Unit 5 rights audit ${mediaKey} does not match its approved release policy`);
-    }
-
-    const authority = placeholders[mediaKey];
-    if (entry.releaseClass === 'restricted') {
-      if (
-        !authority
-        || media.imageUrl !== null
-        || media.mediaStatus !== 'rightsRestricted'
-      ) {
-        fail(`Unit 5 ${mediaKey} restricted media must be a public placeholder`);
-      }
-      if (
-        media.imageSourceName !== authority.imageSourceName
-        || media.imageSourceUrl !== authority.imageSourceUrl
-      ) {
-        fail(`Unit 5 ${mediaKey} public placeholder must match its reviewed authority`);
-      }
-    } else if (authority) {
-      fail(`Unit 5 ${mediaKey} placeholder must retain restricted rights status`);
-    }
-
-    for (const field of CREDIT_FIELDS) {
-      if (entry[field] !== canonicalCredit[field]) {
-        fail(`Unit 5 rights audit ${mediaKey}.${field} credit mismatch`);
-      }
-    }
-    if (!Object.hasOwn(releaseClassCounts, entry.releaseClass)) {
-      fail(`Unit 5 rights audit ${mediaKey}.releaseClass must be open or restricted`);
-    }
-    releaseClassCounts[entry.releaseClass] += 1;
-  }
-
-  if (releaseClassCounts.open !== 16 || releaseClassCounts.restricted !== 11) {
-    fail('Unit 5 release class distribution must be exactly 16 open and 11 restricted');
+  validateExactKeys(Object.keys(placeholders), restrictedKeys,
+    'Unit 5 public placeholder keys must match the reviewed restricted media exactly');
+  try {
+    assertLocalMediaContract({
+      manifest: JSON.parse(readFileSync(MANIFEST_URLS[5], 'utf8')),
+      artworks: unit5, rights: rightsAudit, authority: placeholders,
+      rootDir: fileURLToPath(new URL('../', import.meta.url)),
+    });
+  } catch (error) {
+    fail('Unit 5 rights audit: ' + error.message);
   }
 }
 

@@ -25,10 +25,10 @@
       "comparisonNotes": { "ap12-white-temple-ziggurat": "比较两者如何以高台、轴线和受限动线构造仪式权威；查文更强调内部回廊与多感官经验。" },
       "keywords": ["Chavín", "Lanzón", "下沉广场", "朝圣中心"],
       "images": [
-        { "id": "plan", "label": "Site plan", "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Plano-chavin.jpg", "imageAlt": "查文德瓦塔尔平面图：神庙体量、内部回廊与圆形和方形广场的轴线关系", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Plano-chavin.jpg" },
-        { "id": "lanzon-stela", "label": "Lanzón stela", "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/El%20Lanz%C3%B3n.jpg", "imageAlt": "Lanzón石碑：窄长花岗岩神像上可见獠牙、蛇发和上下翻转的轮廓", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:El_Lanz%C3%B3n.jpg" },
+        { "id": "plan", "label": "Site plan", "imageUrl": "assets/art-history/u5/ap153-plan.webp", "imageAlt": "查文德瓦塔尔平面图：神庙体量、内部回廊与圆形和方形广场的轴线关系", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Plano-chavin.jpg" },
+        { "id": "lanzon-stela", "label": "Lanzón stela", "imageUrl": "assets/art-history/u5/ap153-lanzon-stela.webp", "imageAlt": "Lanzón石碑：窄长花岗岩神像上可见獠牙、蛇发和上下翻转的轮廓", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:El_Lanz%C3%B3n.jpg" },
         { "id": "relief-sculpture", "label": "Relief sculpture", "imageUrl": null, "imageAlt": "查文浮雕石板：线刻人兽复合轮廓中可见牙齿、蛇形纹样与层叠对称线条", "imageSourceName": "College Board CED / Corbis", "imageSourceUrl": "https://apcentral.collegeboard.org/media/pdf/ap-art-history-course-and-exam-description.pdf", "mediaStatus": "rightsRestricted" },
-        { "id": "nose-ornament", "label": "Nose ornament", "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Clevelandart%201958.183.jpg", "imageAlt": "查文式黄金鼻饰：薄金片打造的对称猫科脸与外展犬齿", "imageSourceName": "Wikimedia Commons / Cleveland Museum of Art", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Clevelandart_1958.183.jpg" }
+        { "id": "nose-ornament", "label": "Nose ornament", "imageUrl": "assets/art-history/u5/ap153-nose-ornament.webp", "imageAlt": "查文式黄金鼻饰：薄金片打造的对称猫科脸与外展犬齿", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Clevelandart_1958.183.jpg" }
       ]
     },
     {
@@ -56,7 +56,7 @@
       "comparisonNotes": { "ap139-fallingwater": "比较两者的建筑形式如何顺应岩层地形；崖居是持续社群生活系统，落水山庄则是现代私人住宅。" },
       "keywords": ["Ancestral Pueblo", "Mesa Verde", "kiva", "祖先普韦布洛"],
       "images": [
-        { "id": "cliff-dwellings", "label": "Cliff Palace", "imageUrl": "https://www.nps.gov/meve/learn/historyculture/images/cliffpalace_960px.jpg?autorotate=false&format=webp&maxheight=1300&maxwidth=1300", "imageAlt": "梅萨维德崖宫：砂岩墙、方塔和圆形 kiva 密集分布在深色岩棚下", "imageSourceName": "National Park Service", "imageSourceUrl": "https://www.nps.gov/meve/learn/historyculture/cliff_palace.htm" }
+        { "id": "cliff-dwellings", "label": "Cliff Palace", "imageUrl": "assets/art-history/u5/ap154-cliff-dwellings.webp", "imageAlt": "梅萨维德崖宫：砂岩墙、方塔和圆形 kiva 密集分布在深色岩棚下", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Mesa_Verde_National_Park_-_Cliff_Palace.jpg" }
       ]
     },
     {
@@ -85,8 +85,8 @@
       "keywords": ["Yaxchilán", "Lady K’abal Xook", "vision serpent", "玛雅门楣"],
       "images": [
         { "id": "structure-40", "label": "Structure 40", "imageUrl": null, "imageAlt": "雅什奇兰结构 40：清理植被后的阶梯、台基和神庙外墙的档案视图", "imageSourceName": "Peabody Museum of Archaeology and Ethnology", "imageSourceUrl": "https://collections.peabody.harvard.edu/objects/details/751742", "mediaStatus": "rightsRestricted" },
-        { "id": "lintel-25-structure-23", "label": "Lintel 25, Structure 23", "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Yaxchilan%20%28Maya%29%20Lintel%2025%20Depicting%20Appearance%20of%20Way%20from%20Jaws%20of%20Vision%20Serpent%20%289817557966%29.jpg", "imageAlt": "雅什奇兰 25 号门楣：下方跪姿女性与上方幻视蛇口中现身的祖先战士", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Yaxchilan_(Maya)_Lintel_25_Depicting_Appearance_of_Way_from_Jaws_of_Vision_Serpent_(9817557966).jpg" },
-        { "id": "structure-33", "label": "Structure 33", "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Yaxchilan%2C%20Structure%2033%20%2814366382395%29.jpg", "imageAlt": "雅什奇兰结构 33：宽阔中央阶梯上方的神庙墙体与长方形屋顶梳墙", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Yaxchilan,_Structure_33_(14366382395).jpg" }
+        { "id": "lintel-25-structure-23", "label": "Lintel 25, Structure 23", "imageUrl": "assets/art-history/u5/ap155-lintel-25-structure-23.webp", "imageAlt": "雅什奇兰 25 号门楣：下方跪姿女性与上方幻视蛇口中现身的祖先战士", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Yaxchilan_(Maya)_Lintel_25_Depicting_Appearance_of_Way_from_Jaws_of_Vision_Serpent_(9817557966).jpg" },
+        { "id": "structure-33", "label": "Structure 33", "imageUrl": "assets/art-history/u5/ap155-structure-33.webp", "imageAlt": "雅什奇兰结构 33：宽阔中央阶梯上方的神庙墙体与长方形屋顶梳墙", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Yaxchilan,_Structure_33_(14366382395).jpg" }
       ]
     },
     {
@@ -114,7 +114,7 @@
       "comparisonNotes": { "ap151-spiral-jetty": "比较两者如何以大尺度土石改变地景形式；大蛇丘源于持续的原住民神圣地景，《螺旋防波堤》则属二十世纪地景艺术。" },
       "keywords": ["Great Serpent Mound", "Fort Ancient", "effigy mound", "神圣地景"],
       "images": [
-        { "id": "earthwork", "label": "Earthwork", "imageUrl": null, "imageAlt": "大蛇丘：从地景中可读出蜿蜒蛇身、椭圆形头部标记与盘卷尾部", "imageSourceName": "Ohio History Connection", "imageSourceUrl": "https://www.ohiohistory.org/ohios-serpent-mound-an-american-indian-story-written-in-the-earth/", "mediaStatus": "rightsRestricted" }
+        { "id": "earthwork", "label": "Earthwork", "imageUrl": "assets/art-history/u5/ap156-earthwork.webp", "imageAlt": "大蛇丘：从地景中可读出蜿蜒蛇身、椭圆形头部标记与盘卷尾部", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Serpent_Mound_(aerial_view).jpg" }
       ]
     },
     {
@@ -143,9 +143,9 @@
       "keywords": ["Mexica", "Templo Mayor", "Coyolxauhqui", "Piedra del Sol", "大神庙"],
       "images": [
         { "id": "reconstruction", "label": "Reconstruction model", "imageUrl": null, "imageAlt": "特诺奇蒂特兰大神庙复原模型：宽阔双阶梯通往顶部两座并列神庙", "imageSourceName": "Museo del Templo Mayor model / Wikimedia Commons source page", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Templo_Mayor_Tenochtitlan.jpg", "mediaStatus": "rightsRestricted" },
-        { "id": "coyolxauhqui-stone", "label": "Coyolxauhqui Stone", "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Stone%20of%20Coyolxauhqui%20-%20Templo%20Mayor%20-%20Mexico%202024.jpg", "imageAlt": "Coyolxauhqui 石：圆形浮雕中被肢解的女神佩戴精细头饰、耳饰和蛇形束带", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Stone_of_Coyolxauhqui_-_Templo_Mayor_-_Mexico_2024.jpg" },
-        { "id": "calendar-stone", "label": "Stone of the Sun", "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Aztec%20Sun%20Stone.JPG", "imageAlt": "太阳石：中心面孔外围以同心环排列日期符号、光芒与相向蛇身", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Aztec_Sun_Stone.JPG" },
-        { "id": "olmec-style-mask", "label": "Olmec-style mask", "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Olmec%20Mask%20from%20Offering%2020%20%289781427752%29.jpg", "imageAlt": "供奉坑 20 的 Olmec 式面具：打磨绿石上的宽嘴、杏仁形眼与头顶凹缘", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Olmec_Mask_from_Offering_20_(9781427752).jpg" }
+        { "id": "coyolxauhqui-stone", "label": "Coyolxauhqui Stone", "imageUrl": "assets/art-history/u5/ap157-coyolxauhqui-stone.webp", "imageAlt": "Coyolxauhqui 石：圆形浮雕中被肢解的女神佩戴精细头饰、耳饰和蛇形束带", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Stone_of_Coyolxauhqui_-_Templo_Mayor_-_Mexico_2024.jpg" },
+        { "id": "calendar-stone", "label": "Stone of the Sun", "imageUrl": "assets/art-history/u5/ap157-calendar-stone.webp", "imageAlt": "太阳石：中心面孔外围以同心环排列日期符号、光芒与相向蛇身", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Aztec_Sun_Stone.JPG" },
+        { "id": "olmec-style-mask", "label": "Olmec-style mask", "imageUrl": "assets/art-history/u5/ap157-olmec-style-mask.webp", "imageAlt": "供奉坑 20 的 Olmec 式面具：打磨绿石上的宽嘴、杏仁形眼与头顶凹缘", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Olmec_Mask_from_Offering_20_(9781596615).jpg" }
       ]
     },
     {
@@ -173,7 +173,7 @@
       "comparisonNotes": { "ap43-augustus-prima-porta": "比较礼仪服饰与人物形式如何建构统治权力；羽冠以稀有材料和动态尺度显示地位，奥古斯都像则以理想化身体和胸甲叙事塑造皇权。" },
       "keywords": ["Mexica", "amanteca", "quetzal feathers", "羽毛工艺", "归还争议"],
       "images": [
-        { "id": "primary", "label": "Overall", "imageUrl": null, "imageAlt": "墨西卡羽冠：密集翠绿长羽向外展成半圆，根部环绕蓝羽与金片边带", "imageSourceName": "Weltmuseum Wien", "imageSourceUrl": "https://www.weltmuseumwien.at/en/objects/531234", "mediaStatus": "rightsRestricted" }
+        { "id": "primary", "label": "Overall", "imageUrl": "assets/art-history/u5/ap158-primary.webp", "imageAlt": "墨西卡羽冠：密集翠绿长羽向外展成半圆，根部环绕蓝羽与金片边带", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Moctezuma%27s_feather_headdress,_ca._1515,_Mexico;_Weltmuseum,_Vienna_(3).jpg" }
       ],
       "provenanceQualifier": "Traditionally associated with Motecuhzoma II; exact maker and original ownership remain uncertain."
     },
@@ -202,9 +202,9 @@
       "comparisonNotes": { "ap52-hagia-sophia": "比较征服后新政权如何占用并重释既有神圣建筑；库斯科的殖民结构直接叠加在 Inka 石墙上，圣索菲亚则通过功能与陈设变化转换宗教身份。" },
       "keywords": ["Cusco", "Qorikancha", "Saqsaywaman", "Inka masonry", "殖民叠加"],
       "images": [
-        { "id": "city-plan", "label": "Historical city plan", "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/A%20plan%20of%20ancinet%20Cuzco%2C%20Peru%20Wellcome%20L0042062.jpg", "imageAlt": "库斯科历史平面图：红色 Inka 遗构线条与深色殖民和当时街区在山谷中重叠", "imageSourceName": "Wikimedia Commons / Wellcome Collection", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:A_plan_of_ancinet_Cuzco,_Peru_Wellcome_L0042062.jpg" },
-        { "id": "qorikancha-santo-domingo", "label": "Qorikancha and Santo Domingo", "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Coricancha%20-%20Iglesia%20y%20convento%20de%20Santo%20Domingo%20del%20Cuzco%2C%20Peru.jpg", "imageAlt": "科里坎查与圣多明我：精砌深色 Inka 曲墙支撑上方拱廊和钟楼殖民建筑", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Coricancha_-_Iglesia_y_convento_de_Santo_Domingo_del_Cuzco,_Peru.jpg" },
-        { "id": "saqsa-waman-walls", "label": "Saqsaywaman walls", "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Walls%20at%20Sacsayhuaman.jpg", "imageAlt": "萨克萨瓦曼墙体：不规则多边形巨石被精确切削，在折线墙面中无缝咬合", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Walls_at_Sacsayhuaman.jpg" }
+        { "id": "city-plan", "label": "Historical city plan", "imageUrl": "assets/art-history/u5/ap159-city-plan.webp", "imageAlt": "库斯科历史平面图：红色 Inka 遗构线条与深色殖民和当时街区在山谷中重叠", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:A_plan_of_ancinet_Cuzco,_Peru_Wellcome_L0042062.jpg" },
+        { "id": "qorikancha-santo-domingo", "label": "Qorikancha and Santo Domingo", "imageUrl": "assets/art-history/u5/ap159-qorikancha-santo-domingo.webp", "imageAlt": "科里坎查与圣多明我：精砌深色 Inka 曲墙支撑上方拱廊和钟楼殖民建筑", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Coricancha_-_Iglesia_y_convento_de_Santo_Domingo_del_Cuzco,_Peru.jpg" },
+        { "id": "saqsa-waman-walls", "label": "Saqsaywaman walls", "imageUrl": "assets/art-history/u5/ap159-saqsa-waman-walls.webp", "imageAlt": "萨克萨瓦曼墙体：不规则多边形巨石被精确切削，在折线墙面中无缝咬合", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Walls_at_Sacsayhuaman.jpg" }
       ]
     },
     {
@@ -261,9 +261,9 @@
       "comparisonNotes": { "ap139-fallingwater": "比较两者的形式如何与岩石、水和高差整合；马丘比丘是广阔的城市—农业—仪式系统，落水山庄是现代住宅对自然地形的建筑回应。" },
       "keywords": ["Machupicchu", "llaqta", "Intihuatana", "太阳神庙", "活的岩石"],
       "images": [
-        { "id": "city", "label": "City overview", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/08/Machu_Picchu%2C_Per%C3%BA%2C_2015-07-30%2C_DD_40.JPG", "imageAlt": "马丘比丘全景：城区石墙和阶田沿山脊展开，背后耸立瓦纳比丘峰", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Machu_Picchu,_Per%C3%BA,_2015-07-30,_DD_40.JPG" },
-        { "id": "observatory", "label": "Temple of the Sun / Torreón", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3e/Temple_of_the_Sun_at_Machu_Picchu.jpg", "imageAlt": "太阳神庙或塔楼：弯曲精砌石墙带有梯形窗口，墙体环绕底部天然巨石", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Temple_of_the_Sun_at_Machu_Picchu.jpg" },
-        { "id": "intihuatana-stone", "label": "Intihuatana stone", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1c/Peru_-_Machu_Picchu_123_-_Intihuatana_%287181950605%29.jpg", "imageAlt": "Intihuatana 石：多层阶面向上收拢为棱角分明的短立柱，四周环绕山景", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Peru_-_Machu_Picchu_123_-_Intihuatana_(7181950605).jpg" }
+        { "id": "city", "label": "City overview", "imageUrl": "assets/art-history/u5/ap161-city.webp", "imageAlt": "马丘比丘全景：城区石墙和阶田沿山脊展开，背后耸立瓦纳比丘峰", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Machu_Picchu,_Per%C3%BA,_2015-07-30,_DD_40.JPG" },
+        { "id": "observatory", "label": "Temple of the Sun / Torreón", "imageUrl": "assets/art-history/u5/ap161-observatory.webp", "imageAlt": "太阳神庙或塔楼：弯曲精砌石墙带有梯形窗口，墙体环绕底部天然巨石", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Temple_of_the_Sun_at_Machu_Picchu.jpg" },
+        { "id": "intihuatana-stone", "label": "Intihuatana stone", "imageUrl": "assets/art-history/u5/ap161-intihuatana-stone.webp", "imageAlt": "Intihuatana 石：多层阶面向上收拢为棱角分明的短立柱，四周环绕山景", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Peru_-_Machu_Picchu_123_-_Intihuatana_(7181950605).jpg" }
       ]
     },
     {
@@ -291,7 +291,7 @@
       "comparisonNotes": { "ap163-bandolier-bag": "比较两件纤维和珠饰服饰如何以几何表面组织表达身份；Inka 长袍联系帝国精英等级，Lenape 肩带包在持续社群场合中显示文化身份。" },
       "keywords": ["Inka", "t’oqapu", "qompi", "挂毯织造", "精英服饰"],
       "images": [
-        { "id": "primary", "label": "Overall", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Tupa-inca-tunic.png", "imageAlt": "全托卡普长袍：长方形衣身密布彩色几何方格，中心上缘留有直线领口", "imageSourceName": "Wikimedia Commons / Dumbarton Oaks", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Tupa-inca-tunic.png" }
+        { "id": "primary", "label": "Overall", "imageUrl": "assets/art-history/u5/ap162-primary.webp", "imageAlt": "全托卡普长袍：长方形衣身密布彩色几何方格，中心上缘留有直线领口", "imageSourceName": "Wikimedia Commons", "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Tupa-inca-tunic.png" }
       ],
       "provenanceQualifier": "Exact production location is unknown; map placement represents the Inka imperial heartland."
     },
@@ -436,9 +436,9 @@
     }
   ],
   "ap154-mesa-verde": {
-    "creatorOrInstitution": "U.S. National Park Service",
-    "licenseName": "U.S. federal public domain / NPS use conditions",
-    "licenseUrl": "https://www.nps.gov/aboutus/disclaimer.htm"
+    "creatorOrInstitution": "MPSharwood / Wikimedia Commons",
+    "licenseName": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
   },
   "ap155-yaxchilan": [
     {
@@ -458,9 +458,9 @@
     }
   ],
   "ap156-great-serpent-mound": {
-    "creatorOrInstitution": "Ohio History Connection and Shawnee Tribe community authority",
-    "licenseName": "Rights retained; sacred-site public reproduction not cleared",
-    "licenseUrl": "https://ohiomemory.ohiohistory.org/about-ohio-memory/rights-reproductions"
+    "creatorOrInstitution": "Timothy A. Price and Nichole I.; edited by Locutus Borg / Wikimedia Commons",
+    "licenseName": "CC BY 2.5",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.5/"
   },
   "ap157-templo-mayor": [
     {
@@ -474,7 +474,7 @@
       "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
     },
     {
-      "creatorOrInstitution": "Neeta Lind / Wikimedia Commons",
+      "creatorOrInstitution": "NeetaG / Wikimedia Commons",
       "licenseName": "CC BY-SA 3.0",
       "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
     },
@@ -485,13 +485,13 @@
     }
   ],
   "ap158-ruler-feather-headdress": {
-    "creatorOrInstitution": "Weltmuseum Wien; unknown Mexica featherworkers",
-    "licenseName": "Museum copyright and cultural patrimony; no portable public permission verified",
-    "licenseUrl": "https://www.weltmuseumwien.at/en/imprint/"
+    "creatorOrInstitution": "Richard Mortel / Wikimedia Commons; original Mexica headdress, Weltmuseum Wien",
+    "licenseName": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/"
   },
   "ap159-city-cusco": [
     {
-      "creatorOrInstitution": "Wellcome Collection / Clements Markham",
+      "creatorOrInstitution": "Wellcome Library / Clements Robert Markham",
       "licenseName": "CC BY 4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
     },
@@ -513,7 +513,7 @@
   },
   "ap161-machu-picchu": [
     {
-      "creatorOrInstitution": "Diego Delso / Wikimedia Commons",
+      "creatorOrInstitution": "Diego Delso, delso.photo / Wikimedia Commons",
       "licenseName": "CC BY-SA 4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
     },
