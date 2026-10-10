@@ -169,10 +169,12 @@ nav.topnav {
   border: 1px solid var(--line); background: var(--card);
   box-shadow: var(--shadow-md, 0 6px 20px rgba(28,33,40,0.10));
 }
-.map-card[data-subject="world"] { width: calc(100% - 32px); max-width: none; }
+.map-card[data-subject="world"],
+.map-card[data-subject="art"] { width: calc(100% - 32px); max-width: none; }
 .map-card-head { display: flex; align-items: center; gap: 12px; margin: 0; padding: 11px 20px; font-size: 15px; font-weight: 800; color: #8b3a2f; border-bottom: 1px solid var(--line); background: #fffdf8; }
 /* 标题行的常驻入口:三组功能原本只在事件面板空态里露出,学生点开某一站后就再也找不到 */
 .map-card-head .hdr-menu { display: flex; gap: 6px; margin-left: auto; }
+.map-card-head .hdr-menu[hidden] { display: none; }
 .map-card-head .hdr-btn { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .map-card-head .hdr-btn:hover { border-color: var(--ink-soft); }
 .map-card-head .hdr-btn:focus-visible { outline: 2px solid #28708a; outline-offset: 2px; }
@@ -900,6 +902,16 @@ nav.topnav {
   const todayPick = document.getElementById('todayPick');
   const worldMapFrame = document.getElementById('worldMapFrame');
   const artMapFrame = document.getElementById('artMapFrame');
+  function buildArtHistoryUrl(search) {
+    const hostParams = new URLSearchParams(search);
+    const artUrl = new URL('art-history-map.html?embed=1', window.location.href);
+    if (hostParams.get('privateMedia') === '1') {
+      artUrl.searchParams.set('privateMedia', '1');
+    }
+    return `${artUrl.pathname.split('/').pop()}?${artUrl.searchParams}`;
+  }
+  const artHistoryUrl = buildArtHistoryUrl(window.location.search);
+  if (artHistoryUrl !== artMapFrame.getAttribute('src')) artMapFrame.src = artHistoryUrl;
   const mapCard = document.querySelector('.map-card');
   const mapCardTitle = document.getElementById('mapCardTitle');   // 只改标题文字;整块 textContent= 会把常驻入口一起冲掉
   const mapHdrMenu = document.getElementById('mapHdrMenu');
@@ -1284,7 +1296,6 @@ nav.topnav {
       if (card) { e.preventDefault(); openHitFromHome(card); }
     });
   }
-
   if (worldMapFrame) {
     worldMapFrame.addEventListener('load', () => {
       styleEmbeddedMap();
@@ -1549,7 +1560,7 @@ nav.topnav {
     if (mapHdrMenu) mapHdrMenu.hidden = key !== 'world';   // 这三个入口驱动的是世界史地图
     if (homeMapCaption) {
       homeMapCaption.textContent = key === 'art'
-        ? '36 AP works · Ancient Mediterranean · filter, compare and study'
+        ? '180 AP works · Units 1-6 · filter, compare and study'
         : '5 regions · 234 events · 104 pins · 6 trade routes';
       homeMapCaption.hidden = !s.live;
     }
