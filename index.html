@@ -187,6 +187,29 @@ nav.topnav {
   align-items: end; gap: 12px 16px;
 }
 .map-toolbar-host[hidden] { display: none; }
+.study-directory { grid-column:1/-1; min-width:0; border-top:1px solid var(--line); padding-top:10px; }
+.study-directory summary { display:flex; align-items:center; gap:9px; min-height:44px; width:fit-content; padding:0 14px; border:1px solid var(--line); border-radius:999px; font-size:12.5px; font-weight:700; background:var(--card); cursor:pointer; list-style:none; }
+.study-directory summary::-webkit-details-marker { display:none; }
+.study-directory summary::after { content:'⌄'; margin-left:7px; }
+.study-directory[open] summary::after { content:'⌃'; }
+.study-directory summary:focus-visible, .study-place:focus-visible { outline:2px solid #28708a; outline-offset:3px; }
+.study-directory-count { border-radius:999px; background:#f2e9d8; padding:3px 8px; font-size:11px; color:var(--ink-soft); }
+.study-directory-heading { display:flex; flex-wrap:wrap; justify-content:space-between; gap:5px 12px; margin:13px 0 9px; font-size:12px; color:var(--ink-soft); font-weight:600; }
+.study-directory-content { max-height:260px; overflow-y:auto; padding:3px; }
+.study-directory-unit + .study-directory-unit { margin-top:16px; }
+.study-directory-unit h3 { margin:0 0 9px; font-size:12px; font-weight:700; color:var(--ink-soft); }
+.study-place-list { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.study-place { display:flex; align-items:center; gap:10px; text-align:left; width:100%; min-height:60px; padding:10px 12px; border:1px solid var(--line); border-radius:11px; color:var(--ink); background:var(--card); font:inherit; cursor:pointer; }
+.study-place:hover { border-color:var(--ink-soft); background:#faf5ea; }
+.study-place[aria-pressed="true"] { border-color:#597f8b; background:#edf4f4; }
+.study-pin-number { display:grid; place-items:center; flex:0 0 27px; height:27px; border-radius:50%; background:#6f9bc7; color:white; font-size:11px; font-weight:700; }
+.study-place-copy { min-width:0; display:grid; gap:4px; }
+.study-place-name { font-size:13px; font-weight:700; line-height:1.35; overflow-wrap:anywhere; }
+.study-place-meta { font-size:11.5px; font-weight:500; color:var(--ink-soft); }
+.study-directory-status { margin:9px 0 0; font-size:12px; color:#8b3a2f; }
+.study-directory-status:empty { display:none; }
+@media (max-width:900px) { .study-place-list { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:450px) { .study-place-list { grid-template-columns:1fr; } }
 .mth-field { display: grid; gap: 5px; color: var(--ink-soft); font-size: 12px; font-weight: 600; }
 .mth-field-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 /* 时期/搜索是定宽控件;主题吃掉整行剩余空间,药丸在自己这一格里换行 */
@@ -745,6 +768,12 @@ nav.topnav {
           <div class="mth-theme-panel" id="hostThemePanel" hidden>
             <div class="mth-cats" id="hostCats" role="group" aria-label="按主题筛选(可多选)"></div>
           </div>
+          <details class="study-directory" id="hostStudyDirectory">
+            <summary>Study points <span class="study-directory-count" id="hostStudyCount">Loading…</span></summary>
+            <div class="study-directory-heading"><span id="hostStudyLabel"></span><span>选择地点，直接打开学习内容</span></div>
+            <div class="study-directory-content" id="hostStudyLocations"></div>
+            <p class="study-directory-status" id="hostStudyStatus" role="status"></p>
+          </details>
         </div>
         <div class="map-events-split">
           <div class="home-map-wrap" id="home-map-embed">
@@ -1086,6 +1115,7 @@ nav.topnav {
     const api = worldMapFrame.contentWindow.__mapFilter;
     const state = api?.getLearningState?.();
     const studyState = api?.getLocationStudyUiState?.();
+    renderHostStudyDirectory();
     const pendingRestore = studyState?.pendingRestore;
     const studyRestore = pendingRestore
       && Number.isSafeInteger(pendingRestore.restoreToken) && pendingRestore.restoreToken > 0
@@ -1349,6 +1379,7 @@ nav.topnav {
     clearTimeout(hostSearchTimer);
     hostSearchTimer = null;
     hostApi = api;
+    hostStudyRenderKey = null;
 
     const searchInput = document.getElementById('hostSearch');
     const clearBtn = document.getElementById('hostClear');
@@ -1431,9 +1462,86 @@ nav.topnav {
       catsBox.querySelectorAll('.mth-cat').forEach(b =>
         b.setAttribute('aria-pressed', st.cats.has(b.dataset.cat) ? 'true' : 'false'));
       updateHostThemeCount();
+      renderHostStudyDirectory();
       syncHomeEvents();
     });
+    renderHostStudyDirectory();
     updateHostToolbarVisibility();
+  }
+
+  // Directory data stays in the existing iframe study APIs, not a duplicate manifest.
+  let hostStudyRenderKey = null;
+  function renderHostStudyDirectory() {
+    const content = document.getElementById('hostStudyLocations');
+    if (!hostApi || !content) return;
+    const period = hostApi.getState().period;
+    const win = worldMapFrame.contentWindow;
+    const units = Object.entries(HOME_STUDY_GLOBAL_BY_UNIT)
+      .filter(([unit]) => !period || unit === period)
+      .map(([unit, global]) => ({ unit, data:win[global] }))
+      .filter(({ data }) => data?.locationNumbers && data.getByLocation);
+    if (hostStudyRenderKey !== period) {
+      hostStudyRenderKey = period;
+      content.replaceChildren();
+      let places = 0, points = 0;
+      for (const { unit, data } of units) {
+        const entries = data.locationNumbers.map(number => ({ number:String(number), records:data.getByLocation(number) }))
+          .filter(({ records }) => records.length);
+        if (!entries.length) continue;
+        const group = document.createElement('section');
+        group.className = 'study-directory-unit'; group.dataset.studyUnit = unit;
+        if (!period) {
+          const heading = document.createElement('h3');
+          heading.textContent = `Unit ${unit.slice(1)} · ${entries.length} places`;
+          group.append(heading);
+        }
+        const list = document.createElement('div'); list.className = 'study-place-list';
+        for (const { number, records } of entries) {
+          places++; points += records.length;
+          const button = document.createElement('button');
+          button.type = 'button'; button.className = 'study-place';
+          button.dataset.studyUnitId = unit; button.dataset.studyLocation = number;
+          button.setAttribute('aria-pressed', 'false');
+          const name = data.locationName(number) || number;
+          button.setAttribute('aria-label', `${name}, Unit ${unit.slice(1)}, ${records.length} study points`);
+          const badge = document.createElement('span'); badge.className = 'study-pin-number'; badge.textContent = number;
+          const copy = document.createElement('span'); copy.className = 'study-place-copy';
+          const title = document.createElement('span'); title.className = 'study-place-name'; title.textContent = name;
+          const count = document.createElement('span'); count.className = 'study-place-meta'; count.textContent = `${records.length} study points →`;
+          copy.append(title, count); button.append(badge, copy);
+          button.addEventListener('click', () => openHostStudyLocation(unit, number));
+          list.append(button);
+        }
+        group.append(list); content.append(group);
+      }
+      document.getElementById('hostStudyCount').textContent = `${places} places`;
+      document.getElementById('hostStudyLabel').textContent = `${period ? 'Unit ' + period.slice(1) : 'All Units'} · ${places} places · ${points} study points`;
+      document.getElementById('hostStudyStatus').textContent = places ? '' : '当前 Unit 暂无 study points。';
+    }
+    const state = hostApi.getLocationStudyUiState?.();
+    const activeData = state?.unitId && win[HOME_STUDY_GLOBAL_BY_UNIT[state.unitId]];
+    const activeRecord = activeData?.getById(state.studyId);
+    content.querySelectorAll('.study-place').forEach(button => button.setAttribute('aria-pressed',
+      String(button.dataset.studyUnitId === state?.unitId && button.dataset.studyLocation === activeRecord?.locationNumber)));
+  }
+
+  function openHostStudyLocation(unit, number) {
+    const status = document.getElementById('hostStudyStatus');
+    if (!hostApi) { status.textContent = '地图尚未加载，请稍后重试。'; return; }
+    clearTimeout(hostSearchTimer); hostSearchTimer = null;
+    const win = worldMapFrame.contentWindow;
+    const data = win[HOME_STUDY_GLOBAL_BY_UNIT[unit]];
+    const records = data?.getByLocation(number) || [];
+    const pin = [...win.document.querySelectorAll('.pin-group')]
+      .find(element => element.querySelector('text')?.textContent.trim() === number);
+    if (!records.length || !pin) { status.textContent = '这个地点的学习内容暂时无法打开。'; return; }
+    // Explicit directory navigation leaves chain/practice/routes for map events.
+    hostApi.setLearningView('map');
+    hostApi.setPeriod(unit);
+    hostApi.openEventInMap(number, pin.dataset.region, records[0].mainEventKey);
+    const opened = hostApi.openLocationStudy(number);
+    syncHomeEvents(); renderHostStudyDirectory(); styleEmbeddedMap();
+    status.textContent = opened ? '' : '学习入口暂时无法打开，请重试。';
   }
 
   // 这条满宽工具栏驱动的是 world-map 里的 __mapFilter,只对世界史地图有意义;
