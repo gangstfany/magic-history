@@ -2240,8 +2240,8 @@ async function verifyEmbedded(browser, baseUrl, viewport, full) {
       };
     });
     assert.ok(host.horizontalOverflow <= 1);
-    const shortStacked = viewport.width <= 666 && viewport.height <= 520;
-    const shortTwoColumn = viewport.width >= 667
+    const shortStacked = metrics.stacked && viewport.height <= 520;
+    const shortTwoColumn = !metrics.stacked
       && viewport.width <= 900
       && viewport.height <= 520;
     if (shortStacked) {

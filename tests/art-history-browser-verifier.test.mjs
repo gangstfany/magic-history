@@ -2293,7 +2293,7 @@ test('copy integration preserves World History text and iframe dimensions', asyn
   const homepage = await readFile(HOMEPAGE_URL, 'utf8');
 
   assert.match(homepage, /History World Map/);
-  assert.match(homepage, /5 regions · 233 events · 104 pins · 6 trade routes/);
+  assert.match(homepage, /5 regions · 234 events · 104 pins · 6 trade routes/);
   const worldFrame = elementAttributes(homepage, 'iframe', 'worldMapFrame');
   const artFrame = elementAttributes(homepage, 'iframe', 'artMapFrame');
   assert.equal(worldFrame.src, 'world-map.html');

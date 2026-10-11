@@ -58,7 +58,8 @@ const U5_CANONICAL_PATH = new URL(
   import.meta.url,
 );
 
-const WORLD_MAP_SHA256 = '3ba8c8e3d18daa756b3ed8d9cddc1f7583fe9e74bb42a582feb65c5ed121d949';
+// Approved main synchronization: 13f4d27. Art History must not alter this map.
+const WORLD_MAP_SHA256 = 'adbcec8c0b41a1f216dec9d154b73467244eb68d037d3c203f9f7d9341fef931';
 
 const U2_MISSING_SITE_QUALIFIER_IDS = new Set([
   'ap17-great-pyramids-giza',
@@ -729,7 +730,7 @@ test('live U1–U4 stay frozen while U5 exactly matches its canonical fixture', 
   );
 });
 
-test('world-map.html remains byte-for-byte at the pre-U5 baseline', async () => {
+test('world-map.html remains byte-for-byte at the approved main synchronization baseline', async () => {
   const worldMap = await readFile(WORLD_MAP_PATH);
   assert.equal(createHash('sha256').update(worldMap).digest('hex'), WORLD_MAP_SHA256);
 });

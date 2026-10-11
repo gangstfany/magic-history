@@ -104,10 +104,10 @@ test('responsive rules preserve useful Art height without collapsing other subje
 test('Art-only host sizing gives stacked and two-column short maps separate heights', async () => {
   const html = await loadHtml();
   const stackedShortRule = html.match(
-    /@media \(max-width: 666px\) and \(max-height: 520px\)\s*\{([\s\S]*?)\n\}/,
+    /@media \(max-width: 698px\) and \(max-height: 520px\)\s*\{([\s\S]*?)\n\}/,
   )?.[1] || '';
   const twoColumnShortRule = html.match(
-    /@media \(min-width: 667px\) and \(max-width: 900px\) and \(max-height: 520px\)\s*\{([\s\S]*?)\n\}/,
+    /@media \(min-width: 699px\) and \(max-width: 900px\) and \(max-height: 520px\)\s*\{([\s\S]*?)\n\}/,
   )?.[1] || '';
 
   assert.match(

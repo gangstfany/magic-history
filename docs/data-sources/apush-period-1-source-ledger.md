@@ -2,7 +2,7 @@
 
 This ledger documents the evidence used for the Period 1 (1491–1607) study-data release. The College Board CED is the identity authority; AMSCO is the primary narrative cross-check; the review notes are enrichment only. Local note labels such as `1.1` are not presented as official College Board topic IDs.
 
-Source root: `/Users/rachel/Documents/AP美国史资料`
+Source root: the locally maintained `AP美国史资料` folder (absolute machine path omitted from the public ledger).
 
 | Source ID | Source | Local file path (relative to source root) | Verified local range | Role in this release |
 | --- | --- | --- | --- | --- |
