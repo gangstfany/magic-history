@@ -585,7 +585,8 @@ test('runtime sources expose title, kind, and locator strings without the legacy
 
 test('the source ledger records reproducible relative paths and a precise CED range', async () => {
   const { data, ledger } = await loadFixtures();
-  assert.match(ledger, /Source root: `\/Users\/rachel\/Documents\/AP美国史资料`/);
+  assert.match(ledger, /Source root:.*`AP美国史资料`/);
+  assert.doesNotMatch(ledger, /\/Users\//);
   assert.match(ledger, /Local file path \(relative to source root\)/);
   assert.match(ledger, /教材\/AP美国历史 【考纲】2025\/2023 AP® U\.S\. History\.pdf/);
   assert.match(ledger, /PDF pp\. 42–67 \(Course Framework pp\. 35–60; Unit 1 Topics 1\.1–1\.7\)/);
