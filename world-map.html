@@ -530,12 +530,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 .tip-trig .hl { background: rgba(255,224,102,0.9); color:#1a1a1a; padding:0 2px; border-radius:2px; }
 .entry.match { outline: 2px solid #ffb300; outline-offset: -1px; background: #fff8e1 !important; }
 .entry.match-active { outline: 3px solid #d9a441; outline-offset: -1px; background: #fdecea !important; box-shadow: 0 3px 10px rgba(192,57,43,0.25); scroll-margin: 40px; }
-.mapstage { touch-action: none; }
+.mapstage { touch-action: pan-y; }
 .map-inner { cursor: grab; width: 100%; height: 100%; }
 .mapstage.grabbing .map-inner { cursor: grabbing; }
 .worldmap text { pointer-events: none; }
 .zoom-controls { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; z-index: 50; }
 .zoom-btn {
+  padding:0; font-family:inherit;
   width: 30px; height: 30px; border-radius: 6px;
   background: #fff; border: 1.5px solid #ccc; color: #333;
   font-size: 15pt; font-weight: 700; line-height: 1;
@@ -543,6 +544,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   box-shadow: 0 2px 6px rgba(0,0,0,0.15); user-select: none;
 }
 .zoom-btn:hover { background: #f2f2f2; border-color: #999; }
+.zoom-btn:focus-visible { outline:3px solid #426b93; outline-offset:3px; }
 .zoom-btn.reset { font-size: 8.5pt; font-weight: 700; }
 
 /* 第一次进来提示地图是可以点的:延迟出现的小气泡,轻轻上下弹,点过一次地块就永久消失 */
@@ -575,6 +577,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 .route-vehicle { opacity: 0; transition: opacity .3s ease; pointer-events: none; image-rendering: pixelated; image-rendering: crisp-edges; }
 .route-vehicle.on { opacity: 1; }
 </style>
+<link rel="stylesheet" href="assets/map-ui.css">
 </head>
 <body>
 <div class="app-shell">
@@ -602,9 +605,9 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
 <div class="map-study-view" id="mapStudyView" hidden>
 <div class="map-zone">
 <div class="mapstage"><div class="zoom-controls">
-  <div class="zoom-btn zoom-in" title="放大">+</div>
-  <div class="zoom-btn zoom-out" title="缩小">&minus;</div>
-  <div class="zoom-btn reset zoom-reset" title="还原">1:1</div>
+  <button type="button" class="zoom-btn zoom-in" title="放大" aria-label="放大地图">+</button>
+  <button type="button" class="zoom-btn zoom-out" title="缩小" aria-label="缩小地图">&minus;</button>
+  <button type="button" class="zoom-btn reset zoom-reset" title="还原" aria-label="还原地图比例">1:1</button>
 </div>
 <div class="first-click-hint" id="firstClickHint">点一下试试,比如亚洲那一块</div>
 <div class="map-inner"><svg viewBox="0 0 1600 800" xmlns="http://www.w3.org/2000/svg" class="worldmap"><g id="zoom-layer">
@@ -2311,7 +2314,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const VB_W = 1600, VB_H = 800; // 与 <svg viewBox> 一致
   const MIN_ZOOM = 1, MAX_ZOOM = 8;
   let zoom = 1, panX = 0, panY = 0;
-  let dragging = false, dragMoved = false, lastSvgX = 0, lastSvgY = 0;
+  let dragMoved = false;
+  const pointers = new Map();
+  let pinchDistance = 0;
+  let suppressClickUntil = 0;
+  inner.style.touchAction = 'pan-y';
 
   function screenToSvg(clientX, clientY) {
     const pt = svg.createSVGPoint();
@@ -2320,6 +2327,8 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   }
 
   function applyTransform() {
+    inner.style.touchAction = zoom > 1 ? 'none' : 'pan-y';
+    stage.style.touchAction = inner.style.touchAction;
     zoomLayer.setAttribute('transform', `translate(${panX},${panY}) scale(${zoom})`);
     // 标点跟着放大倍数的平方根增长(比地图本身慢很多):既让放大后更好点,
     // 又因为标点间的地理间距是按 zoom 线性拉开的、远快于 sqrt(zoom) 的增速,
@@ -2404,40 +2413,68 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
   const zoomOutBtn = stage.querySelector('.zoom-out');
   const zoomResetBtn = stage.querySelector('.zoom-reset');
   zoomInBtn.addEventListener('click', () => {
+    stopFitAnimation();
     const r = stage.getBoundingClientRect();
     zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1.35);
   });
   zoomOutBtn.addEventListener('click', () => {
+    stopFitAnimation();
     const r = stage.getBoundingClientRect();
     zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1 / 1.35);
   });
   zoomResetBtn.addEventListener('click', () => {
+    stopFitAnimation();
     zoom = 1; panX = 0; panY = 0;
     applyTransform();
   });
 
-  inner.addEventListener('mousedown', (e) => {
-    if (e.target.tagName.toLowerCase() === 'circle') return;
-    if (zoom <= 1) return;
-    dragging = true; dragMoved = false;
-    const p = screenToSvg(e.clientX, e.clientY);
-    lastSvgX = p.x; lastSvgY = p.y;
+  function pointerDistance() {
+    const [a,b] = [...pointers.values()];
+    return b ? Math.hypot(b.x-a.x,b.y-a.y) : 0;
+  }
+  inner.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (!pointers.size) { dragMoved=false; suppressClickUntil=0; }
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY});
+    pinchDistance=pointerDistance();
+    if (zoom > 1 || pointers.size > 1) stopFitAnimation();
+  });
+  window.addEventListener('pointermove', e => {
+    const previous=pointers.get(e.pointerId);
+    if (!previous) return;
+    const next={...previous,x:e.clientX,y:e.clientY};
+    pointers.set(e.pointerId,next);
+    if (pointers.size > 1) {
+      const distance=pointerDistance();
+      const [a,b]=[...pointers.values()];
+      if (pinchDistance > 0 && distance > 0) zoomAt((a.x+b.x)/2,(a.y+b.y)/2,distance/pinchDistance);
+      pinchDistance=distance; dragMoved=true;
+    } else if (zoom > 1) {
+      if (!dragMoved && Math.hypot(next.x-next.startX,next.y-next.startY) < 5) return;
+      dragMoved=true;
+      const from=screenToSvg(previous.x,previous.y), to=screenToSvg(next.x,next.y);
+      panX+=to.x-from.x; panY+=to.y-from.y;
+      clampPan(); applyTransform();
+    } else return;
+    if (!inner.hasPointerCapture(e.pointerId)) inner.setPointerCapture(e.pointerId);
     stage.classList.add('grabbing');
-  });
-  window.addEventListener('mousemove', (e) => {
-    if (!dragging) return;
-    const p = screenToSvg(e.clientX, e.clientY);
-    const dx = p.x - lastSvgX, dy = p.y - lastSvgY;
-    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) dragMoved = true;
-    panX += dx; panY += dy;
-    lastSvgX = p.x; lastSvgY = p.y;
-    clampPan();
-    applyTransform();
-  });
-  window.addEventListener('mouseup', () => {
-    dragging = false;
-    stage.classList.remove('grabbing');
-  });
+    if (e.cancelable) e.preventDefault();
+  },{passive:false});
+  function finishPointer(e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.delete(e.pointerId);
+    if (inner.hasPointerCapture(e.pointerId)) inner.releasePointerCapture(e.pointerId);
+    if (dragMoved) suppressClickUntil=performance.now()+500;
+    pinchDistance=pointerDistance();
+    if (!pointers.size) stage.classList.remove('grabbing');
+  }
+  window.addEventListener('pointerup',finishPointer);
+  window.addEventListener('pointercancel',finishPointer);
+  inner.addEventListener('lostpointercapture',finishPointer);
+  // Capture-phase suppression covers both pin targets and region paths after gestures.
+  inner.addEventListener('click',e=>{
+    if (e.detail && performance.now() < suppressClickUntil) { e.preventDefault(); e.stopImmediatePropagation(); }
+  },true);
 
   svg.querySelectorAll('circle').forEach(c => {
     c.addEventListener('dblclick', (e) => {
@@ -4307,11 +4344,19 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         if (!cityLeaksInTrigger(it) && pinRegion(num)) region.push({ type: 'region', num, it, answer: pinRegion(num) });
         if (it.catAbbr) theme.push({ type: 'theme', num, it, answer: it.catAbbr });
         const tp = termParts(it);
-        if (tp) term.push({ type: 'term', num, it, answer: tp.desc, term: tp.term });
+        if (tp && new Set(termDistractors.map(x => x.answer)).size >= 4) {
+          term.push({ type: 'term', num, it, answer: tp.desc, term: tp.term });
+        }
       });
     });
     return { period, region, theme, term };
   }
+
+  // Questions remain filtered; plausible distractors come from all validated source terms.
+  const termDistractors = Object.values(index).flat().map(it => {
+    const parts = termParts(it);
+    return parts && { answer:parts.desc, catAbbr:it.catAbbr };
+  }).filter(Boolean);
 
   function startQuiz(mode) {
     clearLocationStudyState();
@@ -4364,11 +4409,18 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     const q = Object.assign({}, quizMode.queue[quizMode.i]);
     // 术语题的三个干扰项在出题时定好,免得重绘时换来换去。优先同主题,读起来才像样。
     if (q.type === 'term') {
-      const others = quizMode.pools.term.filter(x => x.answer !== q.answer);
-      const near = others.filter(x => x.it.catAbbr === q.it.catAbbr);
-      const bag = (near.length >= 3 ? near : others).slice();
+      const others = termDistractors.filter(x => x.answer !== q.answer);
+      const near = others.filter(x => x.catAbbr === q.it.catAbbr);
+      const far = others.filter(x => x.catAbbr !== q.it.catAbbr);
+      const shuffle = items => items.map(item => ({ item, order:Math.random() }))
+        .sort((a,b) => a.order-b.order).map(x => x.item);
+      const unique = new Set();
       const picks = [];
-      while (picks.length < 3 && bag.length) picks.push(bag.splice(Math.floor(Math.random() * bag.length), 1)[0].answer);
+      for (const candidate of [...shuffle(near), ...shuffle(far)]) {
+        if (unique.has(candidate.answer)) continue;
+        unique.add(candidate.answer); picks.push(candidate.answer);
+        if (picks.length === 3) break;
+      }
       q.options = picks.concat([q.answer]).sort(() => Math.random() - 0.5);
     }
     quizMode.q = q;
@@ -4482,7 +4534,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
         + `<span class="rc-count">${r.stops.length} 站</span></button>`).join('') + `</div>`;
     } else {
       const st = quizStats();
-      body = `<div class="route-picker">`
+      body = `<p class="qz-stem">练习遵循 Unit、搜索和主题筛选；不按当前展开的地图地区缩小题库。</p><div class="route-picker">`
         + `<button type="button" class="route-chip quiz-chip" data-quiz-start="all">`
         + `<span class="rc-dot" style="background:#8b1a1a"></span>随堂练习<span class="rc-count">一组 10 题</span></button>`
         + (st.review ? `<button type="button" class="route-chip quiz-chip" data-quiz-start="review">`
@@ -5950,7 +6002,6 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     });
     p.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (dragMoved) { dragMoved = false; return; }
       if (quizMode) { answerRegion(region); return; }   // 同上
       if (routeMode) return;
       dismissFirstClickHint(true);
@@ -6214,6 +6265,7 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       spotlightPin(num);
     }
     function openEventInMap(num, region, eventKey, { selectEventUnit = false } = {}) {
+      eventKey = timelineKeyBySourceId.get(String(eventKey)) || eventKey;
       showLearningView('map');
       const exactEvent = eventKey && timelineEventByKey.get(String(eventKey));
       if (selectEventUnit && exactEvent && exactEvent.unit !== activePeriod) setPeriod(exactEvent.unit);
@@ -6254,10 +6306,11 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
     onRegionChange = () => apply();
     filterIsActive = () => filterActive();
 
-    function reset() {
+    function reset({ includeRegion = false } = {}) {
       takeQuery(''); if (searchInput) searchInput.value = '';
       activeCats = new Set(allCats); activePeriod = 'u1';
       syncPills(); if (periodSel) periodSel.value = 'u1';
+      if (includeRegion) deactivateRegion();
       apply();
       if (activeLearningView === 'chain') showCurrentUnitChain();
     }
@@ -6351,6 +6404,13 @@ header.topbar { display: flex; align-items: center; gap: 12px; }
       getCats: () => cats.map(c => ({ abbr: c.abbr, full: c.full, color: c.color, count: catCount(c.abbr) })),
       getActiveCats: () => new Set(activeCats),
       getState: () => ({ query, cats: new Set(activeCats), period: activePeriod, region: activeRegion }),
+      getEventKeyBySourceId: sourceId => timelineKeyBySourceId.get(String(sourceId)) || null,
+      getMapCounts: () => Object.freeze({
+        events:Object.values(index).reduce((count, records) => count + records.length, 0),
+        pins:pinGroups().length,
+        regions:new Set(pinGroups().map(pin => pin.dataset.region).filter(Boolean)).size,
+        routes:ROUTES.length,
+      }),
       setQuery, toggleCat, setPeriod, reset, openHit, getTimelineState,
       openEventInMap: (num, region, eventKey) => openEventInMap(
         num, region, eventKey, { selectEventUnit: true }),

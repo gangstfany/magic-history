@@ -202,7 +202,7 @@ nav.topnav {
 .study-place { display:flex; align-items:center; gap:10px; text-align:left; width:100%; min-height:60px; padding:10px 12px; border:1px solid var(--line); border-radius:11px; color:var(--ink); background:var(--card); font:inherit; cursor:pointer; }
 .study-place:hover { border-color:var(--ink-soft); background:#faf5ea; }
 .study-place[aria-pressed="true"] { border-color:#597f8b; background:#edf4f4; }
-.study-pin-number { display:grid; place-items:center; flex:0 0 27px; height:27px; border-radius:50%; background:#6f9bc7; color:white; font-size:11px; font-weight:700; }
+.study-pin-number { display:grid; place-items:center; flex:0 0 27px; height:27px; border-radius:50%; background:#426b93; color:white; font-size:11px; font-weight:700; }
 .study-place-copy { min-width:0; display:grid; gap:4px; }
 .study-place-name { font-size:13px; font-weight:700; line-height:1.35; overflow-wrap:anywhere; }
 .study-place-meta { font-size:11.5px; font-weight:500; color:var(--ink-soft); }
@@ -288,6 +288,7 @@ nav.topnav {
   width: 100%; max-width: 1000px; margin: 22px auto 0; padding: 0 clamp(20px, 4vw, 52px);
 }
 .subj-pill {
+  scroll-margin-top:8px;
   display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700;
   color: var(--ink-soft); background: var(--card); border: 1px solid var(--line);
   border-radius: 999px; padding: 7px 15px; cursor: pointer;
@@ -698,6 +699,7 @@ nav.topnav {
   .back-link { left: 12px; }
 }
 </style>
+<link rel="stylesheet" href="assets/map-ui.css">
 </head>
 <body>
 <div class="frame">
@@ -717,7 +719,7 @@ nav.topnav {
         <div class="lang-switch">
           <button type="button" class="lang active" data-lang="zh" aria-current="true">中文</button>
           <span class="lang-sep" aria-hidden="true">/</span>
-          <button type="button" class="lang" data-lang="en">EN</button>
+          <button type="button" class="lang" data-lang="en" aria-label="EN — English version coming soon" title="English version coming soon">EN · Soon</button>
           <div class="lang-hint" id="langHint" role="status">English version coming soon</div>
         </div>
       </div>
@@ -770,7 +772,7 @@ nav.topnav {
           </div>
           <details class="study-directory" id="hostStudyDirectory">
             <summary>Study points <span class="study-directory-count" id="hostStudyCount">Loading…</span></summary>
-            <div class="study-directory-heading"><span id="hostStudyLabel"></span><span>选择地点，直接打开学习内容</span></div>
+            <div class="study-directory-heading"><span id="hostStudyLabel"></span><span>选择地点，直接打开学习内容 · 仅随 Unit 筛选，不随搜索或主题改变</span></div>
             <div class="study-directory-content" id="hostStudyLocations"></div>
             <p class="study-directory-status" id="hostStudyStatus" role="status"></p>
           </details>
@@ -788,7 +790,7 @@ nav.topnav {
             <div class="map-overlay map-coming-soon" id="mapComingSoon">
               <div class="cs-badge">✦</div>
               <h3 id="csTitle">Coming soon</h3>
-              <p>这一科的互动地图正在制作中,很快就来。World History 已经可以直接用。</p>
+              <p>这一科的互动地图正在制作中,很快就来。World History 和 Art History 已经可以直接用。</p>
             </div>
           </div>
           <!-- 右侧事件面板:点左边地图的数字标点,该站事件在这里完整显示 -->
@@ -797,7 +799,7 @@ nav.topnav {
           </div>
         </div>
       </div>
-      <div class="home-map-caption" id="homeMapCaption">5 regions · 234 events · 104 pins · 6 trade routes</div>
+      <div class="home-map-caption" id="homeMapCaption"></div>
 
       <div class="features">
         <div class="feature">
@@ -895,10 +897,15 @@ nav.topnav {
   const card = document.querySelector('.card');
 
   function showView(name) {
+    const focusedView = document.activeElement.closest('.view');
     views.forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
     navItems.forEach(li => li.classList.toggle('active', li.dataset.view === name));
     // Home 内容多,让卡片按内容自然撑高走整页滚动;其余轻量占位页维持封顶高度的悬浮卡片观感
     card.classList.toggle('boxed', name !== 'home');
+    if (focusedView && !focusedView.classList.contains('active')) {
+      const heading = document.querySelector(`#view-${name} h1, #view-${name} h2`);
+      if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll:true }); }
+    }
   }
 
   function goToHomeMap() {
@@ -924,6 +931,11 @@ nav.topnav {
     item.addEventListener('click', () => {
       goToHomeMap();
       selectSubject(item.dataset.subject);
+      const pill = document.querySelector(`.subj-pill[data-subj="${item.dataset.subject}"]`);
+      pill?.focus({ preventScroll:true });
+      if (pill) requestAnimationFrame(() => pill.scrollIntoView({
+        behavior:prefersReducedMotion() ? 'auto' : 'smooth', block:'nearest'
+      }));
     });
   });
 
@@ -955,6 +967,7 @@ nav.topnav {
 
   function collectEntries(doc) {
     const all = [];
+    const ordinals = new Map();
     doc.querySelectorAll('.panel').forEach(panel => {
       const head = panel.querySelector('.panel-head');
       if (!head) return;
@@ -970,7 +983,12 @@ nav.topnav {
         const cityEl = entry.querySelector('.city2');
         const trigEl = entry.querySelector('.trig');
         if (!numEl || !yrEl || !cityEl) return;
+        const num = numEl.textContent.trim();
+        const sourceId = `${num}:${ordinals.get(num) || 0}`;
+        ordinals.set(num, (ordinals.get(num) || 0) + 1);
+        if (!worldMapFrame.contentWindow.__mapFilter?.getEventKeyBySourceId(sourceId)) return;
         all.push({
+          sourceId,
           num: numEl.textContent.trim(), yr: yrEl.textContent.trim(), city: cityEl.textContent.trim(),
           catAbbr, catFull, catColor, trigHTML: trigEl ? trigEl.innerHTML : '',
         });
@@ -993,8 +1011,9 @@ nav.topnav {
       + `<div class="tp-top"><span class="tp-yr">${pick.yr}</span><span class="tp-city">${pick.city}</span>`
       + `<span class="tp-cat">${CAT_ICON[pick.catAbbr] || ''} ${pick.catFull}</span></div>`
       + `<div class="tp-trig">${pick.trigHTML}</div>`
-      + `<div class="tp-cta">在地图上查看这一站 →</div>`;
+      + `<div class="tp-cta">在地图上查看这一事件（重置筛选） →</div>`;
     todayPick.dataset.pinNum = pick.num;
+    todayPick.dataset.sourceId = pick.sourceId;
     todayPick.style.display = selectedSubject === 'world' ? 'block' : 'none';
   }
 
@@ -1080,6 +1099,31 @@ nav.topnav {
     if (homeEvents) homeEvents.style.height = '';
   }
 
+  let artLayoutObserver = null;
+  let observedArtDocument = null;
+  function styleEmbeddedArt() {
+    if (selectedSubject !== 'art') return;
+    let doc;
+    try { doc = artMapFrame.contentDocument; } catch { return; }
+    const toolbar = doc?.querySelector('.filter-toolbar');
+    const workspace = doc?.querySelector('.art-workspace');
+    if (!toolbar || !workspace) return;
+    doc.documentElement.style.setProperty('--art-map-height', window.innerWidth > 900 ? '500px' : '300px');
+    if (observedArtDocument !== doc) {
+      artLayoutObserver?.disconnect();
+      observedArtDocument = doc;
+      artLayoutObserver = new ResizeObserver(styleEmbeddedArt);
+      artLayoutObserver.observe(toolbar); artLayoutObserver.observe(workspace);
+    }
+    const height = Math.ceil(toolbar.getBoundingClientRect().height + workspace.getBoundingClientRect().height);
+    if (!height) return;
+    const wrap = artMapFrame.closest('.home-map-wrap');
+    const split = artMapFrame.closest('.map-events-split');
+    if (wrap) wrap.style.height = height + 'px';
+    if (split) split.style.height = height + 'px';
+  }
+  window.addEventListener('resize', styleEmbeddedArt);
+
   // 把内嵌地图收拾成"只剩地图、填满整格":隐藏 world-map 自带的表头和事件区,让地图区撑满 iframe
   function styleEmbeddedMap() {
     if (!worldMapFrame) return;
@@ -1142,7 +1186,12 @@ nav.topnav {
     const panelHTML = panel?.classList.contains('show') && panel.innerHTML.trim() ? panel.innerHTML : '';
     const emptyHTML = !panelHTML && empty && getComputedStyle(empty).display !== 'none'
       ? `<div class="he-empty">${empty.innerHTML}</div>` : '';
+    const focusedStudyTitle = document.activeElement?.matches('#home-events .location-study-title');
     homeEvents.innerHTML = tabsHTML + panelHTML + emptyHTML;
+    if (focusedStudyTitle) {
+      const title = homeEvents.querySelector('.location-study-title');
+      if (title) { title.tabIndex=-1; title.focus({ preventScroll:true }); }
+    }
     renderHomeStudyBookends();
     if (homeEvents.innerHTML.trim()) {
       homeEvents.scrollTop = studyRestore ? studyRestore.scrollTop : 0;
@@ -1168,6 +1217,7 @@ nav.topnav {
     b.addEventListener('click', () => {
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
       if (win && win.__mapFilter && win.__mapFilter.setLearningView) {
+        commitHostSearch();
         win.__mapFilter.setLearningView(b.dataset.learningView);
         syncHomeEvents();
       }
@@ -1177,6 +1227,7 @@ nav.topnav {
     const openHitFromHome = card => {
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
       if (!win || !win.__mapFilter) return;
+      commitHostSearch();
       const open = win.__mapFilter.openEventInMap || win.__mapFilter.openHit;
       open(card.dataset.pin, card.dataset.region, card.dataset.eventKey);
       syncHomeEvents();
@@ -1187,6 +1238,7 @@ nav.topnav {
       // 商路:入口 chip / 站点 / 上一站下一站播放退出 —— 面板是拷过来的,监听不会跟过来,这边代理
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
       if (!win || !win.__mapFilter) return;
+      commitHostSearch();
       const studyConnection = e.target.closest('[data-study-connection]');
       if (studyConnection && win.__mapFilter.openLocationStudyConnection) {
         const disclosure = studyConnection.closest('details[data-study-id][data-study-disclosure]');
@@ -1318,6 +1370,7 @@ nav.topnav {
       if (!pick || !pick.value) return;
       let win; try { win = worldMapFrame.contentWindow; } catch (err) { return; }
       if (!win || !win.__mapFilter) return;
+      commitHostSearch();
       win.__mapFilter.enterRoute(pick.value);
       setTimeout(syncHomeEvents, 120);
     });
@@ -1334,7 +1387,10 @@ nav.topnav {
       try {
         const doc = worldMapFrame.contentDocument;
         // 点地块/点标点后,等 iframe 内渲染完,再同步到右侧事件面板
-        if (doc) doc.addEventListener('click', () => setTimeout(syncHomeEvents, 80), true);
+        if (doc) doc.addEventListener('click', () => {
+          commitHostSearch();
+          setTimeout(syncHomeEvents, 80);
+        }, true);
       } catch (err) {}
       buildHostToolbar();
     });
@@ -1349,6 +1405,20 @@ nav.topnav {
   let hostApi = null;             // 当前这一份地图 API,重载后会被换掉
   let hostStaticBound = false;    // 静态元素的监听是否已绑
   let hostSearchTimer = null;
+  function commitHostSearch() {
+    // A suspended practice/route query can intentionally differ from the visible
+    // field. Only fresh, debounced typing is a query awaiting commitment.
+    if (hostSearchTimer === null) return;
+    const query = document.getElementById('hostSearch').value.trim();
+    clearTimeout(hostSearchTimer);
+    hostSearchTimer = null;
+    if (hostApi && hostApi.getState().query !== query) hostApi.setQuery(query);
+  }
+  function updateWorldCaption() {
+    const counts = hostApi?.getMapCounts?.();
+    if (counts && selectedSubject === 'world') homeMapCaption.textContent =
+      `${counts.regions} regions · ${counts.events} source events · ${counts.pins} pins · ${counts.routes} trade routes`;
+  }
   const hostThemeToggle = document.getElementById('hostThemeToggle');
   const hostThemePanel = document.getElementById('hostThemePanel');
   const hostThemeActive = document.getElementById('hostThemeActive');
@@ -1379,6 +1449,7 @@ nav.topnav {
     clearTimeout(hostSearchTimer);
     hostSearchTimer = null;
     hostApi = api;
+    updateWorldCaption();
     hostStudyRenderKey = null;
 
     const searchInput = document.getElementById('hostSearch');
@@ -1406,6 +1477,7 @@ nav.topnav {
       btn.innerHTML = `<span class="dot" style="background:${c.color}"></span>${c.full}`;
       btn.addEventListener('click', () => {
         if (!hostApi) return;
+        commitHostSearch();
         const active = hostApi.toggleCat(c.abbr);
         catsBox.querySelectorAll('.mth-cat').forEach(b =>
           b.setAttribute('aria-pressed', active.has(b.dataset.cat) ? 'true' : 'false'));
@@ -1426,7 +1498,10 @@ nav.topnav {
           if (hostApi) hostApi.setQuery('');
           return;
         }
-        hostSearchTimer = setTimeout(() => hostApi && hostApi.setQuery(query), 120);
+        hostSearchTimer = setTimeout(() => {
+          hostSearchTimer = null;
+          if (hostApi) hostApi.setQuery(query);
+        }, 120);
       });
       clearBtn.addEventListener('click', () => {
         clearTimeout(hostSearchTimer);
@@ -1484,6 +1559,7 @@ nav.topnav {
       hostStudyRenderKey = period;
       content.replaceChildren();
       let places = 0, points = 0;
+      const uniquePlaces = new Set();
       for (const { unit, data } of units) {
         const entries = data.locationNumbers.map(number => ({ number:String(number), records:data.getByLocation(number) }))
           .filter(({ records }) => records.length);
@@ -1497,7 +1573,7 @@ nav.topnav {
         }
         const list = document.createElement('div'); list.className = 'study-place-list';
         for (const { number, records } of entries) {
-          places++; points += records.length;
+          places++; points += records.length; uniquePlaces.add(number);
           const button = document.createElement('button');
           button.type = 'button'; button.className = 'study-place';
           button.dataset.studyUnitId = unit; button.dataset.studyLocation = number;
@@ -1514,8 +1590,10 @@ nav.topnav {
         }
         group.append(list); content.append(group);
       }
-      document.getElementById('hostStudyCount').textContent = `${places} places`;
-      document.getElementById('hostStudyLabel').textContent = `${period ? 'Unit ' + period.slice(1) : 'All Units'} · ${places} places · ${points} study points`;
+      document.getElementById('hostStudyCount').textContent = period ? `${places} places` : `${places} unit/location entries`;
+      document.getElementById('hostStudyLabel').textContent = period
+        ? `Unit ${period.slice(1)} · ${places} places · ${points} study points`
+        : `All Units · ${places} unit/location entries · ${uniquePlaces.size} unique places · ${points} study points`;
       document.getElementById('hostStudyStatus').textContent = places ? '' : '当前 Unit 暂无 study points。';
     }
     const state = hostApi.getLocationStudyUiState?.();
@@ -1528,7 +1606,6 @@ nav.topnav {
   function openHostStudyLocation(unit, number) {
     const status = document.getElementById('hostStudyStatus');
     if (!hostApi) { status.textContent = '地图尚未加载，请稍后重试。'; return; }
-    clearTimeout(hostSearchTimer); hostSearchTimer = null;
     const win = worldMapFrame.contentWindow;
     const data = win[HOME_STUDY_GLOBAL_BY_UNIT[unit]];
     const records = data?.getByLocation(number) || [];
@@ -1536,11 +1613,22 @@ nav.topnav {
       .find(element => element.querySelector('text')?.textContent.trim() === number);
     if (!records.length || !pin) { status.textContent = '这个地点的学习内容暂时无法打开。'; return; }
     // Explicit directory navigation leaves chain/practice/routes for map events.
+    commitHostSearch();
     hostApi.setLearningView('map');
     hostApi.setPeriod(unit);
     hostApi.openEventInMap(number, pin.dataset.region, records[0].mainEventKey);
     const opened = hostApi.openLocationStudy(number);
     syncHomeEvents(); renderHostStudyDirectory(); styleEmbeddedMap();
+    if (opened) {
+      const heading = homeEvents.querySelector('.location-study-title');
+      if (heading) {
+        heading.tabIndex = -1;
+        heading.focus({ preventScroll:true });
+        if (window.matchMedia('(max-width: 720px)').matches) heading.scrollIntoView({
+          behavior:prefersReducedMotion() ? 'auto' : 'smooth', block:'center'
+        });
+      }
+    }
     status.textContent = opened ? '' : '学习入口暂时无法打开，请重试。';
   }
 
@@ -1564,12 +1652,10 @@ nav.topnav {
     });
     if (!pinGroup) return;
     const region = pinGroup.dataset.region;
-    const regionPath = doc.querySelector(`.region-path[data-region="${region}"]`);
-    if (regionPath) regionPath.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
-    setTimeout(() => {
-      const circle = pinGroup.querySelector('circle');
-      if (circle) circle.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
-    }, 450);
+    commitHostSearch();
+    win.__mapFilter.reset({ includeRegion:true });
+    win.__mapFilter.openEventInMap(num, region, todayPick.dataset.sourceId);
+    syncHomeEvents();
   });
 
   // ---- 科目切换器:World 用真地图,其余科目在地图区显示"即将上线"占位;切换先过一下加载骨架屏 ----
@@ -1596,6 +1682,7 @@ nav.topnav {
     clearTimeout(loadTimer);
     mapSkeleton.classList.remove('show');
     mapRetry.classList.remove('show');
+    if (frame === artMapFrame) styleEmbeddedArt();
   }
 
   function isExpectedFrameReady(frame) {
@@ -1657,7 +1744,13 @@ nav.topnav {
   function selectSubject(key) {
     const s = SUBJECTS[key];
     if (!s) return;
+    if (selectedSubject === 'world' && hostApi) commitHostSearch();
     selectedSubject = key;
+    // Art's measured toolbar + canvas must not leak into World/placeholder sizing.
+    if (key !== 'art' && artMapFrame) {
+      artMapFrame.closest('.home-map-wrap').style.height = '';
+      artMapFrame.closest('.map-events-split').style.height = '';
+    }
     if (key !== 'world') clearEmbeddedWorldSizing();
     clearTimeout(loadTimer);
     mapRetry.classList.remove('show');
@@ -1670,7 +1763,8 @@ nav.topnav {
     if (homeMapCaption) {
       homeMapCaption.textContent = key === 'art'
         ? '180 AP works · Units 1-6 · filter, compare and study'
-        : '5 regions · 234 events · 104 pins · 6 trade routes';
+        : '';
+      if (key === 'world') updateWorldCaption();
       homeMapCaption.hidden = !s.live;
     }
     skLabel.textContent = '正在加载 ' + s.label + ' 地图…';
@@ -1678,6 +1772,7 @@ nav.topnav {
       mapComingSoon.classList.remove('show');
       showLiveFrame(s);
       if (homeEvents) homeEvents.hidden = key !== 'world';
+      if (key === 'art') styleEmbeddedArt();
       if (key === 'world') {
         styleEmbeddedMap();
         // 切走再切回来时,面板里往往还是离开前那一站的事件卡,而工具栏上的筛选还在 ——

@@ -58,8 +58,23 @@ const U5_CANONICAL_PATH = new URL(
   import.meta.url,
 );
 
-// Approved main synchronization: 13f4d27. Art History must not alter this map.
-const WORLD_MAP_SHA256 = 'adbcec8c0b41a1f216dec9d154b73467244eb68d037d3c203f9f7d9341fef931';
+// Approved main synchronization: 13f4d27. Approved World behavior refinements may
+// change controls and JS, but historical source records and SVG geometry stay frozen.
+// These scoped hashes were extracted from HEAD before the behavior refinements.
+const WORLD_MAP_SVG_SHA256 = 'f6c89e39984e398fc596a2d50dba18c5ecf70ac536d8da72a390342c28314e5d';
+const WORLD_MAP_SOURCE_SHA256 = 'f745740e402ebec83bd975b1a9ceeb70debe2cfe97b666edbdc0e8f59c436b35';
+
+function assertWorldImmutableScopes(html) {
+  const svg = html.match(/<svg\b[^>]*class="worldmap"[\s\S]*?<\/svg>/)?.[0];
+  assert.ok(svg, 'World map SVG geometry boundary remains present');
+  const start = html.indexOf('<div class="data-source">');
+  const end = html.indexOf('<script src="data/apwh-u1-location-study.js"', start);
+  assert.ok(start >= 0 && end > start, 'World historical source data boundaries remain present');
+  assert.equal(createHash('sha256').update(svg).digest('hex'), WORLD_MAP_SVG_SHA256,
+    'World SVG geometry, routes and pin positions remain byte-for-byte unchanged');
+  assert.equal(createHash('sha256').update(html.slice(start, end)).digest('hex'), WORLD_MAP_SOURCE_SHA256,
+    'World historical entries, ordering and category markup remain byte-for-byte unchanged');
+}
 
 const U2_MISSING_SITE_QUALIFIER_IDS = new Set([
   'ap17-great-pyramids-giza',
@@ -730,9 +745,20 @@ test('live U1–U4 stay frozen while U5 exactly matches its canonical fixture', 
   );
 });
 
-test('world-map.html remains byte-for-byte at the approved main synchronization baseline', async () => {
-  const worldMap = await readFile(WORLD_MAP_PATH);
-  assert.equal(createHash('sha256').update(worldMap).digest('hex'), WORLD_MAP_SHA256);
+test('world-map.html preserves approved historical source data and SVG geometry', async () => {
+  assertWorldImmutableScopes(await readFile(WORLD_MAP_PATH, 'utf8'));
+});
+
+test('World preservation rejects historical source edits', async () => {
+  const html = await readFile(WORLD_MAP_PATH, 'utf8');
+  assert.throws(() => assertWorldImmutableScopes(html.replace('Delhi Sultanate', 'Altered Sultanate')),
+    /historical entries/);
+});
+
+test('World preservation rejects SVG geometry edits', async () => {
+  const html = await readFile(WORLD_MAP_PATH, 'utf8');
+  assert.throws(() => assertWorldImmutableScopes(html.replace('viewBox="0 0 1600 800"', 'viewBox="0 0 1601 800"')),
+    /SVG geometry/);
 });
 
 test('raw preservation rejects an explicit null added to AP17 siteQualifier', async () => {

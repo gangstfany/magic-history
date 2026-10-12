@@ -1555,6 +1555,7 @@ test('selecting Unit 5 resets incompatible filters, regenerates options, and fit
   const calls = [];
   const selectUnit = Function(
     'state',
+    'cancelFilteredFocus',
     'syncFilterControls',
     'getWorksForUnit',
     'fitMapToWorks',
@@ -1563,6 +1564,7 @@ test('selecting Unit 5 resets incompatible filters, regenerates options, and fit
     `"use strict"; ${getFunctionSource(html, 'selectUnit')}; return selectUnit;`,
   )(
     state,
+    () => {},
     () => calls.push('sync'),
     (unit) => {
       assert.equal(unit, '5');

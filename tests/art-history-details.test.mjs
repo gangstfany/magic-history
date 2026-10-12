@@ -625,6 +625,11 @@ function createDetailHarness(
       let imageDialogTrigger = null;
       let artworkMediaRenderGeneration = 0;
       let syncedControls = null;
+      // This harness isolates detail DOM. Camera geometry is covered by the
+      // real-browser production map verifier; preserve the new camera seam here.
+      const cameraCalls = [];
+      const focusSelectedWork = () => cameraCalls.push('focus');
+      const applyTransform = () => cameraCalls.push('apply');
       const formatArtworkMeta = () => 'meta';
       const createStudyBlock = (title, ...paragraphs) => {
         const block = document.createElement('section');
@@ -668,6 +673,7 @@ function createDetailHarness(
         getState: () => state,
         getSyncedControls: () => syncedControls,
         getScrollCalls: () => scrollCalls,
+        getCameraCalls: () => cameraCalls,
       };`,
   )(
     document,
@@ -885,6 +891,8 @@ test('comparison navigation clears conflicting filters when crossing Units 1 and
   const selectComparison = Function(
     'ARTWORKS',
     'state',
+    'focusSelectedWork',
+    'applyTransform',
     'syncFilterControls',
     'render',
     'focusSelectedArtworkHeading',
@@ -895,6 +903,8 @@ test('comparison navigation clears conflicting filters when crossing Units 1 and
   )(
     artworks,
     state,
+    () => {},
+    () => {},
     () => { calls.push('sync'); },
     () => {
       renderedSelectedId = state.selectedId;

@@ -173,6 +173,7 @@
     }
     @media (prefers-reduced-motion:reduce) { *, *::before, *::after { scroll-behavior:auto!important; transition-duration:.01ms!important; animation-duration:.01ms!important; animation-iteration-count:1!important; } }
   </style>
+<link rel="stylesheet" href="assets/map-ui.css">
 </head>
 <body>
   <script>
@@ -12712,7 +12713,7 @@
           clearHierarchyBranch();
           state.culture = cultureId;
           updateCultureFilterSelection(container, state.culture);
-          render();
+          fitCurrentWorks();
         });
         container.append(button);
       });
@@ -12738,7 +12739,11 @@
       const right = Math.max(...points.map((point) => point.x));
       const top = Math.min(...points.map((point) => point.y));
       const bottom = Math.max(...points.map((point) => point.y));
-      const padding = 160;
+      // Geometry tests and non-DOM consumers keep the original 160-unit margin.
+      const bounds = typeof document !== 'undefined'
+        ? document.querySelector('.map-svg')?.getBoundingClientRect() : null;
+      const screenScale = bounds ? Math.min(bounds.width / 1600, bounds.height / 800) : 0;
+      const padding = screenScale > 0 ? Math.min(80, bounds.width * .16) / screenScale : 160;
       const scale = Math.min(3, Math.max(1, Math.min(
         1600 / Math.max(1, right - left + padding * 2),
         800 / Math.max(1, bottom - top + padding * 2)
@@ -12752,6 +12757,26 @@
         .every(Number.isFinite)
         ? nextTransform
         : { x:0, y:0, scale:1 };
+    }
+
+    let filteredFocusTimer = null;
+    function cancelFilteredFocus() {
+      clearTimeout(filteredFocusTimer);
+      filteredFocusTimer = null;
+    }
+    function fitCurrentWorks() {
+      cancelFilteredFocus();
+      fitMapToWorks(filterWorks(ARTWORKS, state));
+      render(); applyTransform();
+    }
+    function focusSelectedWork() {
+      cancelFilteredFocus();
+      const work = ARTWORKS.find(work => work.id === state.selectedId);
+      if (!work) return;
+      fitMapToWorks([work]);
+      state.activeUnit = work.unit;
+      state.activeRegion = groupByConfiguredRegion(filterWorks(ARTWORKS, state), work.unit)
+        .find(group => group.works.some(item => item.id === work.id))?.key || null;
     }
 
     const markerLayer = document.getElementById('markerLayer');
@@ -12806,11 +12831,14 @@
       state.selectedSiteIndex = 0;
       state.expandedSiteToken = siteToken;
       state.activeDetailTab = 'quick';
+      focusSelectedWork();
       render();
+      applyTransform();
       if (restoreFocus) focusExpandedWorkPin(workId);
     }
 
     function expandSiteGroup(group, restoreFocus = false) {
+      cancelFilteredFocus();
       if (group.kind === 'unit') {
         state.activeUnit = group.apUnits[0];
         state.unit = String(state.activeUnit);
@@ -12823,6 +12851,7 @@
           Math.max(1.5, state.transform.scale),
           { x:group.displayX, y:group.displayY }
         );
+        fitMapToWorks(group.works);
         syncFilterControls();
         render();
         applyTransform();
@@ -12838,6 +12867,7 @@
           Math.max(2.5, state.transform.scale),
           { x:group.displayX, y:group.displayY }
         );
+        fitMapToWorks(group.works);
         render();
         applyTransform();
         return;
@@ -12856,7 +12886,9 @@
       state.selectedSiteIndex = cycleIndex(state.selectedSiteIndex, group.works.length, direction);
       state.selectedId = group.works[state.selectedSiteIndex].id;
       state.activeDetailTab = 'quick';
+      focusSelectedWork();
       render();
+      applyTransform();
       const label = direction < 0 ? '上一件同地点作品' : '下一件同地点作品';
       detailPanel.querySelector(`[aria-label="${label}"]`)?.focus();
     }
@@ -13047,7 +13079,9 @@
         activeDetailTab:'quick'
       });
       syncFilterControls();
+      focusSelectedWork();
       render();
+      applyTransform();
       focusSelectedArtworkHeading();
       detailPanel.scrollTo({ top:0, behavior:'smooth' });
     }
@@ -13648,6 +13682,7 @@
     }
 
     function clearFilters() {
+      cancelFilteredFocus();
       Object.assign(state, {
         unit:'all',
         culture:'all',
@@ -13685,6 +13720,7 @@
     }
 
     function selectUnit(unit) {
+      cancelFilteredFocus();
       Object.assign(state, {
         unit,
         culture:'all',
@@ -13714,30 +13750,35 @@
     document.getElementById('periodFilter').addEventListener('change', (event) => {
       clearHierarchyBranch();
       state.period = event.target.value;
-      render();
+      fitCurrentWorks();
     });
     document.getElementById('typeFilter').addEventListener('change', (event) => {
       clearHierarchyBranch();
       state.workType = event.target.value;
-      render();
+      fitCurrentWorks();
     });
     document.getElementById('searchInput').addEventListener('input', (event) => {
       clearHierarchyBranch();
       state.search = event.target.value;
       render();
+      cancelFilteredFocus();
+      filteredFocusTimer = setTimeout(fitCurrentWorks, 180);
     });
     document.getElementById('zoomIn').addEventListener('click', () => {
+      cancelFilteredFocus();
       state.transform = zoomAroundPoint(state.transform, state.transform.scale + .5);
       render();
       applyTransform();
     });
     document.getElementById('zoomOut').addEventListener('click', () => {
+      cancelFilteredFocus();
       state.transform = zoomAroundPoint(state.transform, state.transform.scale - .5);
       syncHierarchyBranchForZoom();
       render();
       applyTransform();
     });
     document.getElementById('resetView').addEventListener('click', () => {
+      cancelFilteredFocus();
       clearHierarchyBranch();
       state.transform = { x:0, y:0, scale:1 };
       render();
@@ -13750,6 +13791,7 @@
     const panSurface = document.getElementById('panSurface');
     let panStart = null;
     panSurface.addEventListener('pointerdown', (event) => {
+      cancelFilteredFocus();
       if (event.button !== 0) return;
       if (event.cancelable) event.preventDefault();
       panSurface.setPointerCapture(event.pointerId);
@@ -13835,6 +13877,7 @@
       selectComparison,
       focusSelectedArtworkHeading,
       applyTransform,
+      fitCurrentWorks,
       render,
       clearFilters,
       state,
