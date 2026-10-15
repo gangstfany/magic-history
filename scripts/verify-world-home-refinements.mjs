@@ -250,5 +250,34 @@ try {
       assert.equal(await page.evaluate(()=>window.__mapFilter.getState().region),null);
     } finally { await page.close(); }
   });
+  for (const width of [1440,390]) {
+    await check(`${width} late World load preserves active Art host sizing`, async () => {
+      const page = await home(width);
+      try {
+        await page.locator('[data-subj="art"]').click();
+        await page.frameLocator('#artMapFrame').locator('.site-marker').first().waitFor();
+        await page.waitForFunction(() => {
+          const frame = document.querySelector('#artMapFrame');
+          return frame.closest('.home-map-wrap').style.height !== '';
+        });
+        await page.evaluate(() => document.querySelector('#worldMapFrame').dispatchEvent(new Event('load')));
+        const metrics = await page.evaluate(() => {
+          const frame = document.querySelector('#artMapFrame'), doc = frame.contentDocument;
+          const wrap = frame.closest('.home-map-wrap');
+          return {
+            inline: wrap.style.height,
+            actual: wrap.getBoundingClientRect().height,
+            expected: Math.ceil(doc.querySelector('.filter-toolbar').getBoundingClientRect().height
+              + doc.querySelector('.art-workspace').getBoundingClientRect().height),
+          };
+        });
+        assert.notEqual(metrics.inline, '', 'late World callback cannot clear Art sizing');
+        assert.ok(Math.abs(metrics.actual - metrics.expected) <= 1, JSON.stringify(metrics));
+        await page.locator('[data-subj="world"]').click();
+        await page.waitForFunction(() => document.querySelector('.map-card').dataset.subject === 'world');
+        assert.equal(await page.locator('#artMapFrame').getAttribute('aria-hidden'), 'true');
+      } finally { await page.close(); }
+    });
+  }
 } finally { await browser.close(); await server.close(); }
 assert.deepEqual(failures,[],`Regression failures: ${failures.join(', ')}`);

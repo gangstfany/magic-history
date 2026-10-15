@@ -38,7 +38,7 @@ test('live map imports all 14 bilingual U6 works and 23 ordered manifest views',
   const [allWorks, manifest] = await Promise.all([
     loadLiveWorks(), readFile(MANIFEST_URL, 'utf8').then(JSON.parse),
   ]);
-  assert.equal(allWorks.length, 180);
+  assert.equal(allWorks.length, 250);
   const works = allWorks.filter(({ unit }) => unit === 6);
   assert.equal(works.length, 14);
   assert.deepEqual(works.map(({ apNumber }) => apNumber), [...REQUIRED_VIEWS.keys()]);
@@ -174,13 +174,17 @@ test('Unit 6 English edition covers every work once with complete study sections
 test('strict U6 validation accepts local assets and enforces rights, credits, and authority', async () => {
   const artworks = await loadAndValidate();
   const json = async (path) => JSON.parse(await readFile(new URL(`../${path}`, import.meta.url), 'utf8'));
-  const manifests = Object.fromEntries(await Promise.all([1,2,3,4,5,6].map(async unit =>
+  const manifests = Object.fromEntries(await Promise.all([1,2,3,4,5,6,7,8,9,10].map(async unit =>
     [unit, await json(`data/ap-art-history-unit-${unit}-manifest.json`)])));
-  const rights = Object.fromEntries(await Promise.all([3,4,5,6].map(async unit =>
+  const rights = Object.fromEntries(await Promise.all([3,4,5,6,7,8,9,10].map(async unit =>
     [unit, await json(`data/ap-art-history-unit-${unit}-rights.json`)])));
   const authority = {4: await json('data/ap-art-history-unit-4-public-placeholders.json'),
     5: await json('data/ap-art-history-unit-5-placeholder-authority.json'),
-    6: await json('data/ap-art-history-unit-6-placeholder-authority.json')};
+    6: await json('data/ap-art-history-unit-6-placeholder-authority.json'),
+    7: await json('data/ap-art-history-unit-7-placeholder-authority.json'),
+    8: await json('data/ap-art-history-unit-8-placeholder-authority.json'),
+    9: await json('data/ap-art-history-unit-9-placeholder-authority.json'),
+    10: await json('data/ap-art-history-unit-10-placeholder-authority.json')};
   const html = await readFile(HTML_URL, 'utf8');
   const credits = JSON.parse(html.match(/<script id="image-credit-data" type="application\/json">([\s\S]*?)<\/script>/)[1]);
   assert.doesNotThrow(() => validateImageCredits(credits, artworks, rights, authority));

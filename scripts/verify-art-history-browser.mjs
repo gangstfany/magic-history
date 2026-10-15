@@ -451,13 +451,14 @@ const U3_CANONICAL = parseVerifierJson(
 const U3_EXPECTED_WORKS = projectAndFreezeU3Canonical(U3_CANONICAL);
 const U3_EXPECTED_BROWSER = projectU3CanonicalBrowser(U3_EXPECTED_WORKS);
 
-export function calculateExpectedU3FitTransform(points) {
+export function calculateExpectedU3FitTransform(points, bounds = null) {
   assert.ok(points.length > 0, 'U3 expected fit requires canonical points');
   const left = Math.min(...points.map(({ x }) => x));
   const right = Math.max(...points.map(({ x }) => x));
   const top = Math.min(...points.map(({ y }) => y));
   const bottom = Math.max(...points.map(({ y }) => y));
-  const padding = 160;
+  const screenScale = bounds ? Math.min(bounds.width / 1600, bounds.height / 800) : 0;
+  const padding = screenScale > 0 ? Math.min(80, bounds.width * .16) / screenScale : 160;
   const scale = Math.min(3, Math.max(1, Math.min(
     1600 / Math.max(1, right - left + padding * 2),
     800 / Math.max(1, bottom - top + padding * 2),
@@ -488,10 +489,6 @@ export function calculateExpectedU3ZoomTransform(transform, nextScale, point) {
     scale,
   });
 }
-
-const U3_EXPECTED_UNIT_TRANSFORM = calculateExpectedU3FitTransform(
-  U3_CANONICAL.artworks.map(({ coordinates }) => coordinates),
-);
 
 function compactCanonicalApNumbers(apNumbers) {
   const ranges = [];
@@ -1690,8 +1687,12 @@ async function assertInitialHierarchy(frame) {
     'U4 · Later Europe and Americas · 54 pieces',
     'U5 · Indigenous Americas · 14 pieces',
     'U6 · Africa · 14 pieces',
+    'U7 · West and Central Asia · 11 pieces',
+    'U8 · South, East, and Southeast Asia · 21 pieces',
+    'U9 · The Pacific · 11 pieces',
+    'U10 · Global Contemporary · 27 pieces',
   ]);
-  assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 180 件作品');
+  assert.equal((await frame.locator('.result-count').textContent()).trim(), '当前显示 250 件作品');
 }
 
 async function assertHierarchyAndDialog(page, frame) {
@@ -1907,6 +1908,12 @@ async function resetToU3Regions(frame) {
 
 async function verifyU3ResponsiveRegionBranches(page, frame, issues, mode, viewport) {
   const visited = [];
+  const bounds = await frame.locator('.map-svg').evaluate(element => {
+    const box = element.getBoundingClientRect(); return { width: box.width, height: box.height };
+  });
+  const expectedUnitFit = calculateExpectedU3FitTransform(
+    U3_CANONICAL.artworks.map(({ coordinates }) => coordinates), bounds,
+  );
   for (const region of U3_REGION_BRANCHES) {
     const regionMarker = frame.getByRole('button', { name: region.label, exact: true });
     assert.equal(
@@ -1923,13 +1930,11 @@ async function verifyU3ResponsiveRegionBranches(page, frame, issues, mode, viewp
     });
     assertU3TransformMatches(
       activation.transform,
-      U3_EXPECTED_UNIT_TRANSFORM,
+      expectedUnitFit,
       `${mode} ${viewport.width} ${region.label} canonical Unit fit`,
     );
-    const expectedActivatedTransform = calculateExpectedU3ZoomTransform(
-      activation.transform,
-      Math.max(2.5, activation.transform.scale),
-      activation.point,
+    const expectedActivatedTransform = calculateExpectedU3FitTransform(
+      U3_CANONICAL.artworks.filter(work => work.region === region.id).map(work => work.coordinates), bounds,
     );
     await regionMarker.focus();
     assert.equal(
@@ -1965,7 +1970,7 @@ async function verifyU3ResponsiveRegionBranches(page, frame, issues, mode, viewp
     assertU3TransformMatches(
       geometry.stateTransform,
       expectedActivatedTransform,
-      `${mode} ${viewport.width} ${region.label} canonical marker-point zoom`,
+      `${mode} ${viewport.width} ${region.label} canonical region fit`,
     );
     assert.equal(
       geometry.mapViewportTransform,
@@ -2132,7 +2137,7 @@ async function verifyStandalone(
     await waitForArt(page);
     assert.equal(
       (await page.locator('.page-header h1').textContent()).trim(),
-      'AP 艺术史互动地图 · Units 1-6',
+      'AP 艺术史互动地图 · Units 1-10',
     );
     await assertInitialHierarchy(page);
     let metrics = await assertCommonLayout(page, 'standalone', viewport);
@@ -2197,7 +2202,7 @@ async function selectArtAndFrame(page, useKeyboard = false) {
   await caption.waitFor({ state: 'visible' });
   assert.equal(
     (await caption.textContent()).trim(),
-    '180 AP works · Units 1-6 · filter, compare and study',
+    '250 AP works · Units 1-10 · filter, compare and study',
   );
   const iframe = page.locator('#artMapFrame');
   await iframe.waitFor({ state: 'visible' });
@@ -2230,6 +2235,19 @@ async function verifyEmbedded(browser, baseUrl, viewport, full) {
     const { frame, iframe } = await selectArtAndFrame(page, full);
     await assertInitialHierarchy(frame);
     let metrics = await assertCommonLayout(frame, 'embedded', viewport);
+    // content-fitted host ResizeObserver settlement: compare the same live
+    // geometry that the existing host observer uses before taking snapshots.
+    await page.waitForFunction(() => {
+      const iframe = document.querySelector('#artMapFrame');
+      const child = iframe?.contentDocument;
+      const toolbar = child?.querySelector('.filter-toolbar');
+      const workspace = child?.querySelector('.art-workspace');
+      const wrap = iframe?.closest('.home-map-wrap');
+      return wrap && toolbar && workspace && Math.abs(
+        wrap.getBoundingClientRect().height
+          - Math.ceil(toolbar.getBoundingClientRect().height + workspace.getBoundingClientRect().height)
+      ) <= 1;
+    });
     const host = await page.evaluate(() => {
       const wrap = document.querySelector('.map-card[data-subject="art"] .home-map-wrap');
       const rect = wrap.getBoundingClientRect();
@@ -2240,28 +2258,25 @@ async function verifyEmbedded(browser, baseUrl, viewport, full) {
       };
     });
     assert.ok(host.horizontalOverflow <= 1);
-    const shortStacked = metrics.stacked && viewport.height <= 520;
-    const shortTwoColumn = !metrics.stacked
-      && viewport.width <= 900
-      && viewport.height <= 520;
-    if (shortStacked) {
-      assert.ok(Math.abs(host.wrapHeight - 960) <= 1, `stacked short host height ${host.wrapHeight}`);
-      assert.ok(host.pageScroll > 0, 'homepage should own stacked short scrolling');
-      assert.ok(metrics.pageScroll <= 1, 'stacked short child should not page-scroll');
-      assert.equal(metrics.bodyOverflowY, 'hidden');
-    } else if (shortTwoColumn) {
-      assert.ok(Math.abs(host.wrapHeight - 520) <= 1, `two-column short host height ${host.wrapHeight}`);
-      assert.ok(host.pageScroll > 0, 'homepage should own two-column short scrolling');
-      assert.ok(metrics.pageScroll <= 1, 'two-column short child should not page-scroll');
-      assert.equal(metrics.bodyOverflowY, 'hidden');
-    } else if (viewport.width <= 900) {
-      const approved = Math.min(720, viewport.height * 0.78);
-      assert.ok(Math.abs(host.wrapHeight - approved) <= 1, `approved host height ${host.wrapHeight}`);
-      if (metrics.stacked) {
-        assert.ok(metrics.pageScroll > 0, 'stacked portrait content should remain reachable by child scroll');
-        assert.equal(metrics.bodyOverflowY, 'auto');
-      }
-    }
+    // The approved shared-height UI fits the host to toolbar + workspace,
+    // rather than the superseded viewport-height cap / fixed mobile host.
+    const approved = await frame.locator('body').evaluate(() => {
+      const toolbar = document.querySelector('.filter-toolbar').getBoundingClientRect();
+      const workspace = document.querySelector('.art-workspace').getBoundingClientRect();
+      const map = document.querySelector('.map-svg').getBoundingClientRect();
+      return { hostHeight: Math.ceil(toolbar.height + workspace.height), mapHeight: map.height };
+    });
+    assert.ok(Math.abs(host.wrapHeight - approved.hostHeight) <= 1, `content-fitted host height ${host.wrapHeight}`);
+    assert.ok(Math.abs(approved.mapHeight - (viewport.width > 900 ? 500 : 300)) <= 1,
+      `shared World/Art map height ${approved.mapHeight}`);
+    // ResizeObserver/postMessage can settle the iframe after the first metrics
+    // snapshot. Verify the settled child, not a stale pre-resize measurement.
+    await frame.waitForFunction(() => (
+      document.documentElement.scrollHeight <= document.documentElement.clientHeight + 1
+    ));
+    metrics = await assertCommonLayout(frame, 'embedded', viewport);
+    assert.ok(metrics.pageScroll <= 1, 'content-fitted embedded child must not be clipped or page-scroll');
+    if (host.wrapHeight > viewport.height) assert.ok(host.pageScroll > 0, 'homepage owns tall embedded scrolling');
     assert.equal(await iframe.getAttribute('aria-hidden'), 'false');
     let u3RegionBranches = null;
     if (full) {
@@ -2313,13 +2328,13 @@ async function resetAndActivateWork(
   assert.equal(await searchInput.inputValue(), '', `AP ${work.apNumber} Unit reset retains search`);
   assert.equal(
     (await resultCount.textContent()).trim(),
-    '当前显示 180 件作品',
+    '当前显示 250 件作品',
     `AP ${work.apNumber} search reset result`,
   );
   await frame.locator('#resetView').click();
   assert.equal(
     (await resultCount.textContent()).trim(),
-    '当前显示 180 件作品',
+    '当前显示 250 件作品',
     `AP ${work.apNumber} hierarchy reset result`,
   );
 
@@ -2537,6 +2552,7 @@ async function verifyU4Works(
       assert.equal(await dialogImage.getAttribute('alt'), expected.imageAlt);
       assert.equal(await frame.locator('#dialogSource').getAttribute('href'), expected.imageSourceUrl);
       await frame.locator('#dialogClose').click();
+      await waitForPostTransformRender(frame);
       await dialog.waitFor({ state: 'hidden' });
       assertDialogFocusRestored(
         await frame.evaluate(() => document.activeElement?.classList.contains('artwork-image-button')),
@@ -2806,6 +2822,7 @@ async function verifyU1Works(page, frame, imageRequests, mode) {
       assert.equal((await dialogSource.textContent()).trim(), expected.imageSourceName);
 
       await frame.locator('#dialogClose').click();
+      await waitForPostTransformRender(frame);
       await dialog.waitFor({ state: 'hidden' });
       assert.equal(
         await frame.evaluate(() => (
@@ -3137,6 +3154,7 @@ async function verifyU3Works(
       }, expectedCanonicalView.credit, `${mode} AP ${work.apNumber} ${expected.id} modal credit`);
 
       await frame.locator('#dialogClose').click();
+      await waitForPostTransformRender(frame);
       await dialog.waitFor({ state: 'hidden' });
       if (injectFault && faultMode === 'broken-focus-restoration') {
         await frame.locator('#unitFilter').focus();
@@ -3676,6 +3694,7 @@ async function verifyU5Works(
         });
       }
       await frame.locator('#dialogClose').click();
+      await waitForPostTransformRender(frame);
       await dialog.waitFor({ state: 'hidden' });
       assertDialogFocusRestored(
         await frame.evaluate(() => document.activeElement?.classList.contains('artwork-image-button')),
@@ -3977,7 +3996,7 @@ async function verifyImportedWorksStandalone(browser, baseUrl) {
     await waitForArt(page);
     assert.equal(
       (await page.locator('.page-header h1').textContent()).trim(),
-      'AP 艺术史互动地图 · Units 1-6',
+      'AP 艺术史互动地图 · Units 1-10',
     );
     const works = await verifyNineImportedWorks(page, page, imageRequests, 'standalone');
     assert.deepEqual(issues, []);
@@ -4143,6 +4162,7 @@ async function verifyU6SmokeCase(browser, baseUrl, viewport, works) {
             assert.equal(await frame.locator('#dialogSource').getAttribute('href'), expected.imageSourceUrl);
             await recordOverflow('public image dialog open');
             await frame.locator('#dialogClose').click();
+            await waitForPostTransformRender(frame);
             await frame.locator('#imageDialog').waitFor({ state: 'hidden' });
             const focusRestored = await trigger.evaluate((element) => document.activeElement === element);
             assertDialogFocusRestored(focusRestored, `${label} ${identity}`);

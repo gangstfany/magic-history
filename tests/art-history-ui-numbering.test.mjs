@@ -5,22 +5,22 @@ import { readFile } from 'node:fs/promises';
 const HTML_PATH = new URL('../art-history-map.html', import.meta.url);
 const loadHtml = () => readFile(HTML_PATH, 'utf8');
 
-test('standalone document copy introduces the complete 180-work Units 1-6 map', async () => {
+test('standalone document copy introduces the complete 250-work Units 1-10 map', async () => {
   const html = await loadHtml();
 
-  assert.match(html, /<title>AP 艺术史互动地图 · Units 1-6<\/title>/);
-  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-6<\/h1>/);
+  assert.match(html, /<title>AP 艺术史互动地图 · Units 1-10<\/title>/);
+  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-10<\/h1>/);
 
   assert.doesNotMatch(html, /Units 1-2/);
   assert.doesNotMatch(html, /AP 艺术史 · Unit 2 古代地中海/);
 });
 
-test('Chinese subtitle connects all 180 works across Units 1-6 including U6 Africa', async () => {
+test('Chinese subtitle connects all 250 works across Units 1-10 including U6 Africa', async () => {
   const html = await loadHtml();
 
   assert.match(
     html,
-    /<p class="subtitle">Units 1-6：从全球史前艺术、古代地中海到 U5 Indigenous Americas 与 U6 Africa（非洲），以地点连接全部 180 件作品、传统与历史语境。<\/p>/,
+    /<p class="subtitle">Units 1-10：从全球史前艺术、古代地中海到 U5 Indigenous Americas 、U6 Africa（非洲）、U7 West and Central Asia（西亚与中亚）与 U8 South, East, and Southeast Asia（南亚、东亚与东南亚），以地点连接全部 250 件作品、传统与历史语境。<\/p>/,
   );
 });
 
@@ -73,6 +73,7 @@ function getObjectDeclarationSource(html, declaration) {
 }
 
 function loadPureFunctions(html, functionNames, declarations = []) {
+  functionNames = [...new Set(['isUnmappedWork', ...functionNames])];
   const sources = [
     ...declarations.map((declaration) => getObjectDeclarationSource(html, declaration)),
     ...functionNames.map((name) => getFunctionSource(html, name)),
@@ -83,6 +84,7 @@ function loadPureFunctions(html, functionNames, declarations = []) {
 
 function loadMapFitFunctions(html) {
   const sources = [
+    getFunctionSource(html, 'isUnmappedWork'),
     getObjectDeclarationSource(html, 'const SITE_WORLD_COORDINATES ='),
     getObjectDeclarationSource(html, 'const state ='),
     getFunctionSource(html, 'toWorldCoordinates'),
@@ -140,6 +142,8 @@ function loadStartupAssertions(html) {
     'cycleIndex',
     'zoomAroundPoint',
     'clientDeltaToViewBox',
+    'getDensePackingBounds',
+    'isUnmappedWork',
     'runDevelopmentAssertions',
   ];
   const sources = [
@@ -522,7 +526,17 @@ test('official AP unit helpers use every published unit boundary', async () => {
   assert.equal(getUnitById('2'), null);
 });
 
-test('Unit filter configuration, tradition labels, and map regions cover Units 1 through 6', async () => {
+test('Unit 8 registers five English traditions and six creation-context regions',async()=>{
+ const html=await loadHtml();
+ const source=[getObjectDeclarationSource(html,'const UNIT_FILTER_CONFIG ='),getObjectDeclarationSource(html,'const MAP_REGIONS =')].join('\n');
+ const {UNIT_FILTER_CONFIG,MAP_REGIONS}=Function(`${source};return{UNIT_FILTER_CONFIG,MAP_REGIONS}`)();
+ assert.deepEqual(UNIT_FILTER_CONFIG[8],{showCultureFilters:true,cultureIds:['Buddhist Sacred Sites','Hindu Sacred Art','Court & Imperial Power','Landscape & Nature','Ceramics & Exchange']});
+ for(const [id,name]of Object.entries({india:'India',china:'China',korea:'Korea',japan:'Japan',indonesia:'Indonesia',cambodia:'Cambodia'})){
+  assert.equal(MAP_REGIONS[id]?.nameEn,name);assert.ok(MAP_REGIONS[id]?.unitIds.includes(8));
+ }
+});
+
+test('Unit filter configuration, tradition labels, and map regions cover Units 1 through 8', async () => {
   const html = await loadHtml();
   const configSource = [
     getObjectDeclarationSource(html, 'const TRADITION_LABELS ='),
@@ -577,6 +591,22 @@ test('Unit filter configuration, tradition labels, and map regions cover Units 1
           'Power, Memory & Ancestors',
         ],
       },
+      7: {
+        showCultureFilters: true,
+        cultureIds: ['Architecture & Sacred Sites', 'Buddhist Devotion', 'Manuscripts & Calligraphy', 'Metalwork & Textiles'],
+      },
+      8: {
+        showCultureFilters: true,
+        cultureIds: ['Buddhist Sacred Sites', 'Hindu Sacred Art', 'Court & Imperial Power', 'Landscape & Nature', 'Ceramics & Exchange'],
+      },
+      9: {
+        showCultureFilters: true,
+        cultureIds: ['Monuments & Ancestors','Rank & Sacred Regalia','Ritual & Performance','Cloth & Exchange','Navigation & Knowledge'],
+      },
+      10: {
+        showCultureFilters: true,
+        cultureIds: ['Public Space & Memory','Identity & Representation','Abstraction & Landscape','Body & Spirituality','Language & Media','Materials & Global Exchange'],
+      },
     },
   );
   assert.deepEqual(TRADITION_LABELS.prehistoricNamibia, {
@@ -596,7 +626,7 @@ test('Unit filter configuration, tradition labels, and map regions cover Units 1
     labelZh: '罗马',
   });
   assert.deepEqual(MAP_REGIONS.africa, { nameEn: 'Africa', unitIds: [1] });
-  assert.deepEqual(MAP_REGIONS.europe, { nameEn: 'Europe', unitIds: [1] });
+  assert.deepEqual(MAP_REGIONS.europe, { nameEn: 'Europe', unitIds: [1, 10] });
   assert.deepEqual(MAP_REGIONS.americas, { nameEn: 'Americas', unitIds: [1] });
   assert.deepEqual(MAP_REGIONS.middleEast, { nameEn: 'Middle East', unitIds: [1, 2] });
   assert.deepEqual(MAP_REGIONS.eastAsia, { nameEn: 'East Asia', unitIds: [1] });
@@ -1949,6 +1979,10 @@ test('configured Unit 2 hierarchy follows real region and site metadata', async 
       { key: 'unit-4', kind: 'unit', count: 54 },
       { key: 'unit-5', kind: 'unit', count: 14 },
       { key: 'unit-6', kind: 'unit', count: 14 },
+      { key: 'unit-7', kind: 'unit', count: 11 },
+      { key: 'unit-8', kind: 'unit', count: 21 },
+      { key: 'unit-9', kind: 'unit', count: 11 },
+      { key: 'unit-10', kind: 'unit', count: 27 },
     ],
   );
 
@@ -2356,6 +2390,64 @@ test('marker metrics stay readable and touchable on a 390px viewport', async () 
   assert.ok(metrics.hitHeight * renderedScale >= 44);
   assert.ok(metrics.hitWidth * renderedScale >= 44);
   assert.ok(metrics.visualWidth < metrics.hitWidth);
+});
+
+test('all ten U9 regions fit the actual mobile canvas without overlaps or zoom-control obstruction',async()=>{
+ const html=await loadHtml(),works=parseArtworkData(html).filter(w=>w.unit===9);
+ const h=loadPureFunctions(html,[
+  'compactApNumbers','formatApGroupLabel','formatPieceCount','createSiteToken','getUnitById','getMapGroupText','getApUnitNumber','toWorldCoordinates',
+  'groupBySite','groupByConfiguredRegion','getMapHierarchyLevel','groupByRegionGrid','buildMapGroups','buildMapGroupCandidates',
+  'getMarkerMetrics','getMarkerBounds','markerBoundsOverlap','expandMarkerBounds','createSpatialHash','findNearestAvailableMarkerSlot',
+  'layoutSiteMarkers','layoutMapGroups','getDensePackingBounds',
+ ],['const AP_UNITS =','const MAP_REGIONS =','const SITE_WORLD_COORDINATES =']);
+ const transform={scale:1,x:0,y:0},canvas={width:362,height:300},base=362/1600;
+ const bounds=h.getDensePackingBounds(transform,canvas);
+ const groups=h.layoutMapGroups(works,1,base,{selectedUnit:'9',activeUnit:9,activeRegion:null},{left:0,right:1600,top:0,bottom:800},bounds);
+ assert.equal(groups.length,10);
+ for(const [i,g]of groups.entries()){
+  assert.equal(g.kind,'region');assert.ok(g.markerMetrics.hitHeight*base>=44);
+  const b=g.bounds,offsetY=(300-800*base)/2;
+  assert.ok(b.left*base>=8-0.01&&b.right*base<=362-48+0.01);
+  assert.ok(b.top*base+offsetY>=8-0.01&&b.bottom*base+offsetY<=292+0.01);
+  for(const other of groups.slice(i+1))assert.equal(h.markerBoundsOverlap(b,other.bounds),false);
+ }
+});
+
+test('unconfigured candidate fallback never resurrects U10 neutral coordinates as geographic pins',async()=>{
+ const html=await loadHtml(),works=parseArtworkData(html).filter(w=>w.unit===10);
+ const h=loadPureFunctions(html,[
+  'compactApNumbers','formatApGroupLabel','createSiteToken','getApUnitNumber','toWorldCoordinates',
+  'groupBySite','getMapHierarchyLevel','groupByRegionGrid','buildMapGroups','buildMapGroupCandidates'
+ ],['const AP_UNITS =','const SITE_WORLD_COORDINATES =']);
+ for(const candidate of h.buildMapGroupCandidates(works,3,{selectedUnit:'all'})){
+  assert.equal(candidate.flatMap(g=>g.works).some(w=>[230,241].includes(w.apNumber)),false);
+ }
+});
+
+test('ten-unit overview uses actual mobile canvas bounds while counting all 27 U10 study works',async()=>{
+ const html=await loadHtml(),works=parseArtworkData(html),h=loadUnit6MapHelpers(html);
+ const {getDensePackingBounds}=loadPureFunctions(html,['getDensePackingBounds']);
+ for(const canvas of [{width:356,height:300},{width:362,height:330},{width:390,height:300}]){
+  const base=Math.min(canvas.width/1600,canvas.height/800),transform={scale:1,x:0,y:0};
+  const bounds=getDensePackingBounds(transform,canvas);
+  const groups=h.layoutMapGroups(works,1,base,{selectedUnit:'all',activeUnit:null,activeRegion:null},{left:0,right:1600,top:0,bottom:800},bounds);
+  assert.equal(groups.length,10);
+  assert.equal(groups.find(g=>g.apUnits[0]===10).works.length,27);
+  for(const [i,g]of groups.entries())for(const other of groups.slice(i+1))assert.equal(h.markerBoundsOverlap(g.bounds,other.bounds),false);
+  const dense=h.buildMapGroupCandidates(works,1,{selectedUnit:'all',activeUnit:null,activeRegion:null}).at(-1);
+  assert.ok(dense.every(g=>g.isDenseFallback===true));
+  const fallback=h.layoutSiteMarkers(dense,base,h.toWorldCoordinates,bounds);
+  for(const [i,g]of fallback.entries()){
+   for(const other of fallback.slice(i+1))assert.equal(h.markerBoundsOverlap(g.bounds,other.bounds),false);
+   const offsetY=(canvas.height-800*base)/2;
+   assert.ok(g.bounds.left*base>=8-0.01&&g.bounds.right*base<=canvas.width-48+0.01);
+   assert.ok(g.bounds.top*base+offsetY>=8-0.01&&g.bounds.bottom*base+offsetY<=canvas.height-8+0.01);
+  }
+ }
+ const regions=h.buildMapGroups(works.filter(w=>w.unit===10),1,{selectedUnit:'10',activeUnit:10});
+ assert.equal(regions.length,10);
+ assert.equal(regions.flatMap(g=>g.works).length,25);
+ assert.equal(regions.flatMap(g=>g.works).some(w=>[230,241].includes(w.apNumber)),false);
 });
 
 test('Unit 2 region hierarchy remains collision-safe in a 667x375 embedded landscape map', async () => {
@@ -3441,10 +3533,10 @@ test('artwork images and modal preserve labels, complete-image space, fallback, 
   assert.match(html, /<dialog id="imageDialog" aria-labelledby="dialogTitle">/);
   assert.match(openDialogSource, /imageDialogTrigger = trigger/);
   assert.match(openDialogSource, /imageDialog\.showModal\(\)/);
-  assert.match(openDialogSource, /getElementById\('dialogClose'\)\.focus\(\)/);
+  assert.match(openDialogSource, /getElementById\('dialogClose'\)\.focus\(\{\s*preventScroll:\s*true\s*\}\)/);
   assert.match(
     html,
-    /imageDialog\.addEventListener\('close', \(\) => \{\s*const focusTarget = imageDialogTrigger\?\.isConnected/,
+    /imageDialog\.addEventListener\('close', \(\) => \{\s*clearImageDialogViewport\?\.\(\);\s*clearImageDialogViewport = null;[\s\S]*?const focusTarget = imageDialogTrigger\?\.isConnected/,
   );
   assert.match(html, /detailPanel\.querySelector\('\.artwork-image-button'\)/);
   assert.match(html, /focusTarget\?\.focus\(\)/);

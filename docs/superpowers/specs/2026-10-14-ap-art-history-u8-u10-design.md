@@ -2,7 +2,7 @@
 
 Date: 2026-10-14
 
-Status: Sequential delivery approach approved; written specification awaiting user review.
+Status: Sequential delivery approach and written specification approved by the user; U8–U10 content and native integration completed with independent specification/quality approvals and final verification on 2026-10-14. Public-image coverage is separately qualified in each release ledger. Local branch retained; no push, merge or Desktop synchronization.
 
 Workspace: reuse the existing linked worktree. Keep branch `feature/ap-art-history-u6` unless the user requests a different name. Preserve the uncommitted U7 implementation; do not reset or overwrite it.
 

@@ -11,6 +11,10 @@ const ACTIVE_MANIFESTS = Object.freeze([
   ['U4', 'data/ap-art-history-unit-4-manifest.json'],
   ['U5', 'data/ap-art-history-unit-5-manifest.json'],
   ['U6', 'data/ap-art-history-unit-6-manifest.json'],
+  ['U7', 'data/ap-art-history-unit-7-manifest.json'],
+  ['U8', 'data/ap-art-history-unit-8-manifest.json'],
+  ['U9', 'data/ap-art-history-unit-9-manifest.json'],
+  ['U10', 'data/ap-art-history-unit-10-manifest.json'],
 ]);
 const MANIFEST_URLS = Object.freeze(Object.fromEntries(
   ACTIVE_MANIFESTS.map(([unitLabel, relativePath]) => [
@@ -23,14 +27,22 @@ const AUDITED_RIGHTS_URLS = Object.freeze({
   4: new URL('../data/ap-art-history-unit-4-rights.json', import.meta.url),
   5: new URL('../data/ap-art-history-unit-5-rights.json', import.meta.url),
   6: new URL('../data/ap-art-history-unit-6-rights.json', import.meta.url),
+  7: new URL('../data/ap-art-history-unit-7-rights.json', import.meta.url),
+  8: new URL('../data/ap-art-history-unit-8-rights.json', import.meta.url),
+  9: new URL('../data/ap-art-history-unit-9-rights.json', import.meta.url),
+  10: new URL('../data/ap-art-history-unit-10-rights.json', import.meta.url),
 });
 const PLACEHOLDER_AUTHORITY_URLS = Object.freeze({
   4: new URL('../data/ap-art-history-unit-4-public-placeholders.json', import.meta.url),
   5: new URL('../data/ap-art-history-unit-5-placeholder-authority.json', import.meta.url),
   6: new URL('../data/ap-art-history-unit-6-placeholder-authority.json', import.meta.url),
+  7: new URL('../data/ap-art-history-unit-7-placeholder-authority.json', import.meta.url),
+  8: new URL('../data/ap-art-history-unit-8-placeholder-authority.json', import.meta.url),
+  9: new URL('../data/ap-art-history-unit-9-placeholder-authority.json', import.meta.url),
+  10: new URL('../data/ap-art-history-unit-10-placeholder-authority.json', import.meta.url),
 });
-const EXPECTED_ARTWORK_COUNT = 180;
-const EXPECTED_LAST_AP_NUMBER = 180;
+const EXPECTED_ARTWORK_COUNT = 250;
+const EXPECTED_LAST_AP_NUMBER = 250;
 const U3_REGION_COUNTS = Object.freeze({
   italyVatican: 18,
   france: 5,
@@ -95,6 +107,22 @@ const UNIT_RULES = Object.freeze({
     end: 180,
     count: 14,
     regions: new Set(['southernAfrica', 'westAfrica', 'centralAfrica']),
+  }),
+  7: Object.freeze({
+    start: 181, end: 191, count: 11,
+    regions: new Set(['levant', 'arabianPeninsula', 'iran', 'afghanCentralAsia', 'tibetanHimalaya', 'northAfricaNearEast']),
+  }),
+  8: Object.freeze({
+    start: 192, end: 212, count: 21,
+    regions: new Set(['india', 'china', 'korea', 'japan', 'indonesia', 'cambodia']),
+  }),
+  9: Object.freeze({
+    start: 213, end: 223, count: 11,
+    regions: new Set(['micronesia','rapa-nui','hawaii','cook-islands','torres-strait','niue','new-zealand','marshall-islands','papua-new-guinea','fiji']),
+  }),
+  10: Object.freeze({
+    start:224, end:250, count:27,
+    regions:new Set(['united-states','korea','poland','china','europe','australia','new-zealand','spain','transnational','united-kingdom','nigeria','italy']),
   }),
 });
 const REQUIRED_FIELDS = [
@@ -502,12 +530,12 @@ function validateManifests(manifests) {
 
   const unitKeys = Object.keys(manifests);
   const activeUnits = unitKeys.length >= 2
-    && unitKeys.length <= 6
+    && unitKeys.length <= 10
     && unitKeys.every((key, index) => key === String(index + 1))
     ? unitKeys.map(Number)
     : null;
   if (!activeUnits) {
-    fail('official manifests must contain exactly sequential Units 1-2, Units 1-3, Units 1-4, Units 1-5, or Units 1-6');
+    fail('official manifests must contain exactly sequential Units 1-2, Units 1-3, Units 1-4, Units 1-5, Units 1-6, Units 1-7, Units 1-8, Units 1-9, or Units 1-10');
   }
 
   for (const unit of activeUnits) {
@@ -527,7 +555,7 @@ function validateManifests(manifests) {
       { orderSensitive: false },
     );
 
-    const entryFields = unit === 4 || unit === 5 || unit === 6
+    const entryFields = unit === 4 || unit === 5 || unit === 6 || unit === 7 || unit === 8 || unit === 9 || unit === 10
       ? [
         'id',
         'titleEn',
@@ -550,7 +578,7 @@ function validateManifests(manifests) {
         Object.keys(entry),
         entryFields,
         `${context} entry must use the exact manifest schema`,
-        { orderSensitive: unit === 5 || unit === 6 },
+        { orderSensitive: unit === 5 || unit === 6 || unit === 7 || unit === 8 || unit === 9 || unit === 10 },
       );
       for (const field of entryFields.filter(
         (field) => field !== 'requiredViewIds' && field !== 'provenanceQualifier',
@@ -560,13 +588,13 @@ function validateManifests(manifests) {
         }
       }
       if (
-        (unit === 4 || unit === 5 || unit === 6)
+        (unit === 4 || unit === 5 || unit === 6 || unit === 7 || unit === 8 || unit === 9 || unit === 10)
         && entry.provenanceQualifier !== null
         && (typeof entry.provenanceQualifier !== 'string' || entry.provenanceQualifier.trim() === '')
       ) {
         fail(`${context}.provenanceQualifier must be null or a non-empty string`);
       }
-      if (unit === 3 || unit === 4 || unit === 5 || unit === 6) {
+      if (unit === 3 || unit === 4 || unit === 5 || unit === 6 || unit === 7 || unit === 8 || unit === 9 || unit === 10) {
         if (
           !Array.isArray(entry.requiredViewIds)
           || entry.requiredViewIds.length === 0
@@ -594,10 +622,18 @@ function normalizePlaceholderAuthorities(placeholders, activeUnits) {
   }
   validateExactKeys(
     Object.keys(placeholders),
-    activeUnits.includes(6) ? ['4', '5', '6'] : ['4', '5'],
-    activeUnits.includes(6)
-      ? 'public placeholder authorities must contain exactly Units 4, 5 and 6'
-      : 'public placeholder authorities must contain exactly Units 4 and 5',
+    activeUnits.filter(unit => unit >= 4).map(String),
+    activeUnits.includes(10)
+      ? 'public placeholder authorities must contain exactly Units 4, 5, 6, 7, 8, 9 and 10'
+      : activeUnits.includes(9)
+      ? 'public placeholder authorities must contain exactly Units 4, 5, 6, 7, 8 and 9'
+      : activeUnits.includes(8)
+      ? 'public placeholder authorities must contain exactly Units 4, 5, 6, 7 and 8'
+      : activeUnits.includes(7)
+      ? 'public placeholder authorities must contain exactly Units 4, 5, 6 and 7'
+      : activeUnits.includes(6)
+        ? 'public placeholder authorities must contain exactly Units 4, 5 and 6'
+        : 'public placeholder authorities must contain exactly Units 4 and 5',
   );
   return placeholders;
 }
@@ -640,7 +676,7 @@ function validateArtworkMedia(
     if (artwork.images.length === 0) {
       fail(`${label}.images must not be empty`);
     }
-  } else if (artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) {
+  } else if (artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10) {
     fail(`${label}.images must be a non-empty array for Unit ${artwork.unit}`);
   } else {
     for (const field of LEGACY_MEDIA_FIELDS) {
@@ -651,7 +687,7 @@ function validateArtworkMedia(
   }
 
   const media = normalizeArtworkMedia(artwork);
-  const expectedMediaCount = artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6
+  const expectedMediaCount = artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10
     ? expectedManifest.requiredViewIds.length
     : artwork.unit === 1 && artwork.apNumber === 8
       ? 2
@@ -671,19 +707,19 @@ function validateArtworkMedia(
     }
     const auditedUnit = artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5;
     const rawMedia = Array.isArray(artwork.images) ? artwork.images[index] : null;
-    const manifestMediaUnit = auditedUnit || artwork.unit === 6;
+    const manifestMediaUnit = auditedUnit || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10;
     const viewId = manifestMediaUnit
       ? rawMedia?.id ?? expectedManifest?.requiredViewIds?.[index]
       : 'primary';
     const mediaKey = `${artwork.id}::${viewId}`;
-    const restrictedPlaceholder = (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6)
+    const restrictedPlaceholder = (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10)
       && placeholders
       && Object.hasOwn(placeholders, mediaKey);
-    const u6Placeholder = artwork.unit === 6 && item.imageUrl === null;
-    const mediaContext = artwork.unit === 5 || artwork.unit === 6
+    const u6Placeholder = [6, 7, 8, 9, 10].includes(artwork.unit) && item.imageUrl === null;
+    const mediaContext = artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10
       ? `Unit ${artwork.unit} ${mediaKey}`
       : `${label}.media[${index}]`;
-    if (artwork.unit === 5 || artwork.unit === 6) {
+    if (artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10) {
       if (!rawMedia || typeof rawMedia !== 'object' || Array.isArray(rawMedia)) {
         fail(`${mediaContext} raw media must be an object`);
       }
@@ -698,7 +734,7 @@ function validateArtworkMedia(
         fail(`${mediaContext}.${field} must be a non-empty string`);
       }
     }
-    if (restrictedPlaceholder && artwork.unit !== 6) {
+    if (restrictedPlaceholder && ![6, 7, 8, 9, 10].includes(artwork.unit)) {
       if (item.imageUrl !== null || item.mediaStatus !== 'rightsRestricted') {
         fail(`Unit ${artwork.unit} ${mediaKey} restricted media must be a public placeholder`);
       }
@@ -742,11 +778,11 @@ function validateArtworkMedia(
         auditedMediaOwners[field].set(item[field], mediaKey);
       }
     }
-    if ((artwork.unit === 5 || artwork.unit === 6) && item.imageUrl !== null
+    if ((artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10) && item.imageUrl !== null
       && item.imageUrl !== `assets/art-history/u${artwork.unit}/ap${artwork.apNumber}-${viewId}.webp`) {
       fail(`${mediaContext}.imageUrl must be a canonical local path, not a remote HTTPS URL`);
     }
-    if (artwork.unit !== 5 && artwork.unit !== 6 && item.imageUrl !== null && !(manifestMediaUnit ? isHttpsUrl(item.imageUrl) : isHttpUrl(item.imageUrl))) {
+    if (artwork.unit !== 5 && artwork.unit !== 6 && artwork.unit !== 7 && artwork.unit !== 8 && artwork.unit !== 9 && artwork.unit !== 10 && item.imageUrl !== null && !(manifestMediaUnit ? isHttpsUrl(item.imageUrl) : isHttpUrl(item.imageUrl))) {
       fail(`${mediaContext}.imageUrl must be an ${manifestMediaUnit ? 'HTTPS' : 'HTTP(S)'} URL`);
     }
     if (!(manifestMediaUnit ? isHttpsUrl(item.imageSourceUrl) : isHttpUrl(item.imageSourceUrl))) {
@@ -768,7 +804,7 @@ function validateArtworkMedia(
     }
   }
 
-  if (artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) {
+  if (artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10) {
     validateExactKeys(
       normalizedMediaIds(artwork),
       expectedManifest.requiredViewIds,
@@ -786,10 +822,10 @@ export function validateArtworks(artworks, manifests, placeholders) {
     const rule = UNIT_RULES[unit];
     return Array.from({ length: rule.count }, (_, index) => rule.start + index);
   });
-  const expectedArtworkCount = activeUnits.includes(6)
+  const expectedArtworkCount = activeUnits.includes(10)
     ? EXPECTED_ARTWORK_COUNT
     : expectedApNumbers.length;
-  const expectedLastApNumber = activeUnits.includes(6)
+  const expectedLastApNumber = activeUnits.includes(10)
     ? EXPECTED_LAST_AP_NUMBER
     : expectedApNumbers.at(-1);
   const unitLabel = `1-${activeUnits.length}`;
@@ -897,7 +933,7 @@ export function validateArtworks(artworks, manifests, placeholders) {
         fail(`${label}.provenanceQualifier is only allowed for the six reviewed broad-provenance Unit 3 works`);
       }
     }
-    if (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) {
+    if (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10) {
       if (typeof artwork.traditionGroup !== 'string' || artwork.traditionGroup.trim() === '') {
         fail(`${label}.traditionGroup must be a non-empty Unit ${artwork.unit} tradition group`);
       }
@@ -935,17 +971,17 @@ export function validateArtworks(artworks, manifests, placeholders) {
         `AP ${artwork.apNumber} manifest title must be "${expected.titleEn}"; received "${artwork.titleEn}"`,
       );
     }
-    if ((artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) && artwork.region !== expected.region) {
+    if ((artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10) && artwork.region !== expected.region) {
       fail(
         `AP ${artwork.apNumber} manifest region must be ${expected.region}; received ${artwork.region}`,
       );
     }
-    if ((artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) && artwork.siteName !== expected.siteName) {
+    if ((artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10) && artwork.siteName !== expected.siteName) {
       fail(
         `AP ${artwork.apNumber} manifest siteName must be "${expected.siteName}"; received "${artwork.siteName}"`,
       );
     }
-    if (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) {
+    if (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10) {
       if (artwork.traditionGroup !== expected.traditionGroup) {
         fail(`AP ${artwork.apNumber} manifest traditionGroup must be ${expected.traditionGroup}; received ${artwork.traditionGroup}`);
       }
@@ -980,7 +1016,7 @@ export function validateArtworks(artworks, manifests, placeholders) {
       artwork.recognitionAnchors,
       'recognitionAnchors',
       label,
-      { minimum: artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 ? 2 : 1 },
+      { minimum: artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10 ? 2 : 1 },
     );
     validateStringArray(
       artwork.comparisonIds,
@@ -992,7 +1028,7 @@ export function validateArtworks(artworks, manifests, placeholders) {
       artwork.keywords,
       'keywords',
       label,
-      { minimum: artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 ? 3 : 1 },
+      { minimum: artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10 ? 3 : 1 },
     );
     if (artwork.unit === 5) {
       validateUnit5StudyContract(artwork);
@@ -1045,7 +1081,7 @@ export function validateArtworks(artworks, manifests, placeholders) {
       if (!ids.has(comparisonId)) {
         fail(`${artwork.id}.comparisonIds references unknown id ${comparisonId}`);
       }
-      if (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) {
+      if (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10) {
         const note = artwork.comparisonNotes[comparisonId];
         if (typeof note !== 'string' || note.trim() === '') {
           fail(`${artwork.id}.comparisonNotes must define ${comparisonId}`);
@@ -1053,7 +1089,7 @@ export function validateArtworks(artworks, manifests, placeholders) {
       }
     }
     if (
-      (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6)
+      (artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10)
       && Object.keys(artwork.comparisonNotes).some(
         (comparisonId) => !artwork.comparisonIds.includes(comparisonId),
       )
@@ -1371,6 +1407,44 @@ function validateUnit6RightsAudit(rights, artworks, credits, authority) {
   }
 }
 
+function validateModernLocalRightsAudit(unitNumber, rights, artworks, credits, authority) {
+  if (!rights || !authority) fail(`Unit ${unitNumber} reviewed rights audit and placeholder authority are required`);
+  try {
+    assertLocalMediaContract({
+      manifest: JSON.parse(readFileSync(MANIFEST_URLS[unitNumber], 'utf8')),
+      artworks, rights, authority,
+      rootDir: fileURLToPath(new URL('../', import.meta.url)),
+    });
+  } catch (error) { fail(`Unit ${unitNumber} rights audit: ${error.message}`); }
+  const policies = new Map([
+    ['Public Domain', ['public-domain', 'https://creativecommons.org/publicdomain/mark/1.0/']],
+    ['Public Domain Mark 1.0', ['public-domain', 'https://creativecommons.org/publicdomain/mark/1.0/']],
+    ['CC0 1.0', ['cc0', 'https://creativecommons.org/publicdomain/zero/1.0/']],
+    ...['2.0', '2.5', '3.0', '4.0'].flatMap(version => [
+      [`CC BY ${version}`, ['cc-by', `https://creativecommons.org/licenses/by/${version}/`]],
+      [`CC BY-SA ${version}`, ['cc-by-sa', `https://creativecommons.org/licenses/by-sa/${version}/`]],
+    ]),
+  ]);
+  for (const work of artworks.filter(({ unit }) => unit === unitNumber)) {
+    const rows = Array.isArray(credits[work.id]) ? credits[work.id] : [credits[work.id]];
+    work.images.forEach((view, index) => {
+      const key = `${work.id}::${view.id}`, row = rights[key];
+      if (row.sourcePageUrl !== view.imageSourceUrl) fail(`Unit ${unitNumber} rights audit ${key} source mismatch`);
+      if (row.releaseClass === 'open') {
+        const policy = policies.get(row.licenseName);
+        if (!policy || row.licenseClass !== policy[0] || row.licenseUrl !== policy[1]) {
+          fail(`Unit ${unitNumber} rights audit ${key} disallowed open license policy`);
+        }
+      } else if (row.identityNote !== authority[key].rightsNote) {
+        fail(`Unit ${unitNumber} rights audit ${key} restricted evidence mismatch`);
+      }
+      for (const field of CREDIT_FIELDS) {
+        if (row[field] !== rows[index][field]) fail(`Unit ${unitNumber} rights audit ${key}.${field} credit mismatch`);
+      }
+    });
+  }
+}
+
 export function validateImageCredits(credits, artworks, rightsAudit, placeholders) {
   if (!credits || typeof credits !== 'object' || Array.isArray(credits)) {
     fail('image-credit-data must be an object');
@@ -1399,16 +1473,16 @@ export function validateImageCredits(credits, artworks, rightsAudit, placeholder
     }
     const creditSignatures = new Set();
     for (const [index, credit] of creditEntries.entries()) {
-      const creditContext = artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6
+      const creditContext = artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10
         ? `${artwork.id}::${normalizedMediaIds(artwork)[index]}`
         : `${artwork.id} image credit ${index + 1}`;
       if (!credit || typeof credit !== 'object' || Array.isArray(credit)) {
         fail(`${creditContext} image credit must be an object`);
       }
-      if (artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6) {
+      if (artwork.unit === 3 || artwork.unit === 4 || artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10) {
         validateExactKeys(
-          artwork.unit === 5 || artwork.unit === 6 ? Object.keys(credit) : Object.keys(credit).sort(),
-          artwork.unit === 5 || artwork.unit === 6 ? CREDIT_FIELDS : CREDIT_FIELDS.toSorted(),
+          artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10 ? Object.keys(credit) : Object.keys(credit).sort(),
+          artwork.unit === 5 || artwork.unit === 6 || artwork.unit === 7 || artwork.unit === 8 || artwork.unit === 9 || artwork.unit === 10 ? CREDIT_FIELDS : CREDIT_FIELDS.toSorted(),
           `${creditContext} image credit must use the exact credit schema`,
         );
       }
@@ -1437,6 +1511,16 @@ export function validateImageCredits(credits, artworks, rightsAudit, placeholder
   const includesUnit4 = artworks.some(({ unit }) => unit === 4);
   const includesUnit5 = artworks.some(({ unit }) => unit === 5);
   const includesUnit6 = artworks.some(({ unit }) => unit === 6);
+  const includesUnit7 = artworks.some(({ unit }) => unit === 7);
+  const includesUnit8 = artworks.some(({ unit }) => unit === 8);
+  const includesUnit9 = artworks.some(({ unit }) => unit === 9);
+  const includesUnit10 = artworks.some(({ unit }) => unit === 10);
+  if (includesUnit10 && rightsAudit === undefined) fail('Unit 10 reviewed rights audit is required for image credits');
+  if (includesUnit8 && rightsAudit === undefined) fail('Unit 8 reviewed rights audit is required for image credits');
+  if (includesUnit9 && rightsAudit === undefined) fail('Unit 9 reviewed rights audit is required for image credits');
+  if (includesUnit7 && rightsAudit === undefined) {
+    fail('Unit 7 reviewed rights audit is required for image credits');
+  }
   if (includesUnit6 && rightsAudit === undefined) {
     fail('Unit 6 reviewed rights audit is required for image credits');
   }
@@ -1450,10 +1534,10 @@ export function validateImageCredits(credits, artworks, rightsAudit, placeholder
     fail('Unit 5 reviewed rights audit is required for image credits');
   }
   if (rightsAudit !== undefined) {
-    const unit3Rights = includesUnit4 || includesUnit5 || includesUnit6 ? rightsAudit[3] : rightsAudit;
+    const unit3Rights = includesUnit4 || includesUnit5 || includesUnit6 || includesUnit7 || includesUnit8 || includesUnit9 || includesUnit10 ? rightsAudit[3] : rightsAudit;
     const placeholderAuthorities = normalizePlaceholderAuthorities(
       placeholders,
-      includesUnit6 ? [1, 2, 3, 4, 5, 6] : includesUnit5 ? [1, 2, 3, 4, 5] : [1, 2, 3, 4],
+      includesUnit10 ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] : includesUnit9 ? [1, 2, 3, 4, 5, 6, 7, 8, 9] : includesUnit8 ? [1, 2, 3, 4, 5, 6, 7, 8] : includesUnit7 ? [1, 2, 3, 4, 5, 6, 7] : includesUnit6 ? [1, 2, 3, 4, 5, 6] : includesUnit5 ? [1, 2, 3, 4, 5] : [1, 2, 3, 4],
     );
     if (includesUnit3) validateUnit3RightsAudit(unit3Rights, artworks, credits);
     if (includesUnit4) {
@@ -1464,6 +1548,12 @@ export function validateImageCredits(credits, artworks, rightsAudit, placeholder
     }
     if (includesUnit6) {
       validateUnit6RightsAudit(rightsAudit[6], artworks, credits, placeholderAuthorities[6]);
+    }
+    if (includesUnit8) validateModernLocalRightsAudit(8, rightsAudit[8], artworks, credits, placeholderAuthorities[8]);
+    if (includesUnit9) validateModernLocalRightsAudit(9, rightsAudit[9], artworks, credits, placeholderAuthorities[9]);
+    if (includesUnit10) validateModernLocalRightsAudit(10, rightsAudit[10], artworks, credits, placeholderAuthorities[10]);
+    if (includesUnit7) {
+      validateModernLocalRightsAudit(7, rightsAudit[7], artworks, credits, placeholderAuthorities[7]);
     }
   }
   return credits;
@@ -1628,13 +1718,25 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
     unit4ManifestSource,
     unit5ManifestSource,
     unit6ManifestSource,
+    unit7ManifestSource,
+    unit8ManifestSource,
+    unit9ManifestSource,
+    unit10ManifestSource,
     unit3RightsSource,
     unit4RightsSource,
     unit5RightsSource,
     unit6RightsSource,
+    unit7RightsSource,
+    unit8RightsSource,
+    unit9RightsSource,
+    unit10RightsSource,
     unit4PlaceholdersSource,
     unit5PlaceholdersSource,
     unit6PlaceholdersSource,
+    unit7PlaceholdersSource,
+    unit8PlaceholdersSource,
+    unit9PlaceholdersSource,
+    unit10PlaceholdersSource,
   ] = await Promise.all([
     readFile(htmlPath, 'utf8'),
     readFile(MANIFEST_URLS[1], 'utf8'),
@@ -1643,13 +1745,25 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
     readFile(MANIFEST_URLS[4], 'utf8'),
     readFile(MANIFEST_URLS[5], 'utf8'),
     readFile(MANIFEST_URLS[6], 'utf8'),
+    readFile(MANIFEST_URLS[7], 'utf8'),
+    readFile(MANIFEST_URLS[8], 'utf8'),
+    readFile(MANIFEST_URLS[9], 'utf8'),
+    readFile(MANIFEST_URLS[10], 'utf8'),
     readFile(AUDITED_RIGHTS_URLS[3], 'utf8'),
     readFile(AUDITED_RIGHTS_URLS[4], 'utf8'),
     readFile(AUDITED_RIGHTS_URLS[5], 'utf8'),
     readFile(AUDITED_RIGHTS_URLS[6], 'utf8'),
+    readFile(AUDITED_RIGHTS_URLS[7], 'utf8'),
+    readFile(AUDITED_RIGHTS_URLS[8], 'utf8'),
+    readFile(AUDITED_RIGHTS_URLS[9], 'utf8'),
+    readFile(AUDITED_RIGHTS_URLS[10], 'utf8'),
     readFile(PLACEHOLDER_AUTHORITY_URLS[4], 'utf8'),
     readFile(PLACEHOLDER_AUTHORITY_URLS[5], 'utf8'),
     readFile(PLACEHOLDER_AUTHORITY_URLS[6], 'utf8'),
+    readFile(PLACEHOLDER_AUTHORITY_URLS[7], 'utf8'),
+    readFile(PLACEHOLDER_AUTHORITY_URLS[8], 'utf8'),
+    readFile(PLACEHOLDER_AUTHORITY_URLS[9], 'utf8'),
+    readFile(PLACEHOLDER_AUTHORITY_URLS[10], 'utf8'),
   ]);
   const parseDataScript = (id) => {
     const dataScript = html.match(
@@ -1671,11 +1785,19 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
     4: parseJson(unit4ManifestSource, 'official Unit 4 manifest'),
     5: parseJson(unit5ManifestSource, 'official Unit 5 manifest'),
     6: parseJson(unit6ManifestSource, 'official Unit 6 manifest'),
+    7: parseJson(unit7ManifestSource, 'official Unit 7 manifest'),
+    8: parseJson(unit8ManifestSource, 'official Unit 8 manifest'),
+    9: parseJson(unit9ManifestSource, 'official Unit 9 manifest'),
+    10: parseJson(unit10ManifestSource, 'official Unit 10 manifest'),
   };
   const placeholders = {
     4: parseJson(unit4PlaceholdersSource, 'Unit 4 public placeholder authority'),
     5: parseJson(unit5PlaceholdersSource, 'Unit 5 public placeholder authority'),
     6: parseJson(unit6PlaceholdersSource, 'Unit 6 public placeholder authority'),
+    7: parseJson(unit7PlaceholdersSource, 'Unit 7 public placeholder authority'),
+    8: parseJson(unit8PlaceholdersSource, 'Unit 8 public placeholder authority'),
+    9: parseJson(unit9PlaceholdersSource, 'Unit 9 public placeholder authority'),
+    10: parseJson(unit10PlaceholdersSource, 'Unit 10 public placeholder authority'),
   };
   const artworks = validateArtworks(rawArtworks, manifests, placeholders);
   validateImageCredits(
@@ -1686,6 +1808,10 @@ export async function loadAndValidate(htmlPath = DEFAULT_HTML_PATH) {
       4: parseJson(unit4RightsSource, 'Unit 4 rights audit'),
       5: parseJson(unit5RightsSource, 'Unit 5 rights audit'),
       6: parseJson(unit6RightsSource, 'Unit 6 rights audit'),
+      7: parseJson(unit7RightsSource, 'Unit 7 rights audit'),
+      8: parseJson(unit8RightsSource, 'Unit 8 rights audit'),
+      9: parseJson(unit9RightsSource, 'Unit 9 rights audit'),
+      10: parseJson(unit10RightsSource, 'Unit 10 rights audit'),
     },
     placeholders,
   );

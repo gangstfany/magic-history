@@ -897,11 +897,11 @@ test('U5 restricted authority matches runtime and verifier allowlists and requir
   });
 });
 
-test('release verifier keeps exact immutable Units 1-6 stage descriptors', async () => {
+test('release verifier keeps exact immutable Units 1-10 stage descriptors', async () => {
   const verifier = await import(RELEASE_VERIFIER_URL.href);
   const expectedStages = [
     'Node test suite',
-    'strict 180-work Units 1-6 validator',
+    'strict 250-work Units 1-10 validator',
     'private-media leak guard',
     'rendered browser matrix',
   ];
@@ -1895,7 +1895,21 @@ test('browser verifier locks the four-Unit hierarchy and exact U1/U3 region cont
   assert.match(source, /Colonial Americas · 5 pieces/);
 });
 
-test('initial hierarchy asserts the exact ordered six markers and 180-work result count', async () => {
+test('browser fit oracle accounts for the approved responsive screen margin', async()=>{
+ const verifier=await import(VERIFIER_URL.href);
+ const fit=verifier.calculateExpectedU3FitTransform([{x:1000,y:300},{x:1200,y:400}],{width:1000,height:500});
+ assert.ok(Math.abs(fit.scale-800/356)<1e-10);
+});
+
+test('embedded geometry waits for the existing host ResizeObserver before exact height assertions',async()=>{
+ const source=await readFile(VERIFIER_URL,'utf8');
+ const start=source.indexOf('async function verifyEmbedded(');
+ const embedded=source.slice(start,source.indexOf('async function ',start+1));
+ assert.match(embedded,/content-fitted host ResizeObserver settlement/);
+ assert.match(embedded,/Math\.abs\(host\.wrapHeight - approved\.hostHeight\) <= 1/);
+});
+
+test('initial hierarchy asserts the exact ordered seven markers and 250-work result count', async () => {
   const source = await readFile(VERIFIER_URL, 'utf8');
   const hierarchy = source.slice(
     source.indexOf('async function assertInitialHierarchy'),
@@ -1908,7 +1922,7 @@ test('initial hierarchy asserts the exact ordered six markers and 180-work resul
     /'U1 · Global Prehistory · 11 pieces',[\s\S]*'U2 · Ancient Mediterranean · 36 pieces',[\s\S]*'U3 · Early Europe and Colonial Americas · 51 pieces',[\s\S]*'U4 · Later Europe and Americas · 54 pieces',[\s\S]*'U5 · Indigenous Americas · 14 pieces'/,
   );
   assert.match(hierarchy, /'U5 · Indigenous Americas · 14 pieces',[\s\S]*'U6 · Africa · 14 pieces'/);
-  assert.match(hierarchy, /当前显示 180 件作品/);
+  assert.match(hierarchy, /当前显示 250 件作品/);
 });
 
 test('U3 responsive traversal rejects an omitted region branch and loops all eight branches', async () => {
@@ -2257,26 +2271,26 @@ test('U1 standalone and embedded traversals exercise all study tabs and cross-Un
   );
 });
 
-test('integration copy targets the complete 180-work Units 1-6 map', async () => {
+test('integration copy targets the complete 250-work Units 1-10 map', async () => {
   const [homepage, artMap] = await Promise.all([
     readFile(HOMEPAGE_URL, 'utf8'),
     readFile(ART_MAP_URL, 'utf8'),
   ]);
 
-  assert.match(homepage, /180 AP works · Units 1-6 · filter, compare and study/);
-  assert.match(artMap, /AP 艺术史互动地图 · Units 1-6/);
+  assert.match(homepage, /250 AP works · Units 1-10 · filter, compare and study/);
+  assert.match(artMap, /AP 艺术史互动地图 · Units 1-10/);
   assert.match(
     artMap,
-    /aria-label="完整世界地图；展示 AP 艺术史 Units 1-6 全部 180 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布，包含 U6 Africa（非洲）"/,
+    /aria-label="完整世界地图；展示 AP 艺术史 Units 1-10 全部 250 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布，包含 U6 Africa（非洲）、U7 West and Central Asia（西亚与中亚）与 U8 South, East, and Southeast Asia（南亚、东亚与东南亚）"/,
   );
   assert.match(
     artMap,
-    /aria-label="AP 艺术史 Units 1-6 完整世界地图，标记全部 180 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布，包含 U6 Africa（非洲）"/,
+    /aria-label="AP 艺术史 Units 1-10 完整世界地图，标记全部 250 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布，包含 U6 Africa（非洲）、U7 West and Central Asia（西亚与中亚）与 U8 South, East, and Southeast Asia（南亚、东亚与东南亚）"/,
   );
   assert.match(artMap, /count\.textContent = `当前显示 \$\{visibleWorks\.length\} 件作品`/);
 });
 
-test('full and focused legacy browser paths all use the 180-work Units 1-6 release copy', async () => {
+test('full and focused legacy browser paths all use the 250-work Units 1-10 release copy', async () => {
   const source = await readFile(VERIFIER_URL, 'utf8');
   assert.equal(source.includes('Units 1-5'), false, 'no stale title/caption assertions in legacy paths');
   assert.equal(source.includes('当前显示 166 件作品'), false, 'no stale reset counts in legacy paths');
@@ -2285,7 +2299,7 @@ test('full and focused legacy browser paths all use the 180-work Units 1-6 relea
     ['async function verifyImportedWorksStandalone(', 'async function verifyImportedWorksEmbedded('],
   ]) {
     assert.ok(source.slice(source.indexOf(start), source.indexOf(end))
-      .includes('AP 艺术史互动地图 · Units 1-6'), `${start} updated title assertion`);
+      .includes('AP 艺术史互动地图 · Units 1-10'), `${start} updated title assertion`);
   }
 });
 

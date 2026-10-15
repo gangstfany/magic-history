@@ -1094,8 +1094,11 @@ nav.topnav {
     worldMapFrame.style.height = '';
     const wrap = worldMapFrame.closest('.home-map-wrap');
     const split = worldMapFrame.closest('.map-events-split');
-    if (wrap) wrap.style.height = '';
-    if (split) split.style.height = '';
+    // A queued World resize/load callback must not erase active Art sizing.
+    if (selectedSubject !== 'art') {
+      if (wrap) wrap.style.height = '';
+      if (split) split.style.height = '';
+    }
     if (homeEvents) homeEvents.style.height = '';
   }
 
@@ -1762,7 +1765,7 @@ nav.topnav {
     if (mapHdrMenu) mapHdrMenu.hidden = key !== 'world';   // 这三个入口驱动的是世界史地图
     if (homeMapCaption) {
       homeMapCaption.textContent = key === 'art'
-        ? '180 AP works · Units 1-6 · filter, compare and study'
+        ? '250 AP works · Units 1-10 · filter, compare and study'
         : '';
       if (key === 'world') updateWorldCaption();
       homeMapCaption.hidden = !s.live;
