@@ -16331,6 +16331,89 @@
       indonesia: Object.freeze({ nameEn: 'Indonesia', unitIds: Object.freeze([8]) }),
       cambodia: Object.freeze({ nameEn: 'Cambodia', unitIds: Object.freeze([8]) }),
     });
+    // BEGIN REGION COLOR SCOPE
+    // Fixed World map hues; colors aid navigation, not historical boundaries.
+    const REGION_COLOR_PALETTE = Object.freeze({
+      asia:'#d9a441', europe:'#6f9bc7', africa:'#c9714f',
+      americas:'#e0949a', mideast:'#8fa878', oceania:'#a597bd'
+    });
+    const REGION_COLOR_OPACITY = Object.freeze({ active:'0.55', muted:'0.22' });
+    const REGION_COLOR_GROUPS = Object.create(null);
+    for (const [keys, groups] of [
+      ['europe southernEurope italyVatican france britishIsles iberianPeninsula centralEurope lowCountries centralNorthernEurope poland spain united-kingdom italy', ['europe']],
+      ['africa northAfrica southernAfrica westAfrica centralAfrica nigeria', ['africa']],
+      ['americas colonialAmericas mexicoCaribbean unitedStates centralAndes ancestralPueblo mesoamerica easternWoodlands northwestCoast plainsGreatBasin united-states', ['americas']],
+      ['middleEast levant afghanCentralAsia arabianPeninsula iran', ['mideast']],
+      ['eastAsia tibetanHimalaya india china korea japan indonesia cambodia', ['asia']],
+      ['oceania pacific micronesia rapa-nui hawaii cook-islands torres-strait niue new-zealand marshall-islands papua-new-guinea fiji australia', ['oceania']],
+      ['easternMediterranean', ['europe', 'mideast']],
+      ['northAfricaNearEast', ['africa', 'mideast']],
+      ['transatlantic', ['europe', 'americas']],
+      ['russiaSoviet', ['europe', 'asia']],
+      ['transnational', []]
+    ]) {
+      const frozenGroups = Object.freeze(groups);
+      for (const key of keys.split(' ')) REGION_COLOR_GROUPS[key] = frozenGroups;
+    }
+    Object.freeze(REGION_COLOR_GROUPS);
+
+    function getRegionColorScope(works, filters = {}) {
+      const unit = filters.activeUnit || filters.unit;
+      const active = new Set(), unknown = new Set();
+      for (const work of works) {
+        if (unit && unit !== 'all' && work.unit !== Number(unit)) continue;
+        if (work.unit === 10 && [230, 241].includes(work.apNumber)) continue;
+        const groups = REGION_COLOR_GROUPS[work.region];
+        if (!groups) { unknown.add(work.region); continue; }
+        for (const group of groups) active.add(group);
+      }
+      return { active:[...active].sort(), unknown:[...unknown].sort() };
+    }
+    // END REGION COLOR SCOPE
+
+    // Reviewed shapes in the frozen base map. Prefix guards prevent silently
+    // coloring a different country if the SVG paths are ever reordered.
+    const OCEANIA_COLOR_PATHS = Object.freeze([
+      [8, 'M 1446.2,581.3'], // Australia
+      [53, 'M 1592.8,477.1'], // Fiji (includes the antimeridian parts)
+      [113, 'M 1536.8,493.7'], // New Caledonia
+      [120, 'M 1569.0,581.9'], // New Zealand
+      [126, 'M 1492.8,430.3'], // Papua New Guinea
+      [141, 'M 1520.5,446.6'], // Solomon Islands
+      [171, 'M 1546.0,473.2'] // Vanuatu
+    ]);
+    let regionColorPaths = null, regionColorSignature = '';
+    function renderRegionColors(visibleWorks, filters) {
+      if (!regionColorPaths) {
+        const paths = [...document.querySelectorAll('.world-geography path')];
+        for (const [index, prefix] of OCEANIA_COLOR_PATHS) {
+          if (paths[index]?.getAttribute('d')?.startsWith(prefix)) {
+            paths[index].dataset.colorRegion = 'oceania';
+          } else {
+            console.warn('Art map Pacific geometry changed; review path', index);
+          }
+        }
+        for (const path of paths) {
+          if (Object.hasOwn(REGION_COLOR_PALETTE, path.dataset.region)) {
+            path.dataset.colorRegion = path.dataset.region;
+          }
+        }
+        regionColorPaths = paths.filter(path => path.dataset.colorRegion);
+      }
+      const signature = JSON.stringify([filters.activeUnit || filters.unit, visibleWorks.map(work => work.id)]);
+      if (signature === regionColorSignature) return;
+      regionColorSignature = signature;
+      const { active, unknown } = getRegionColorScope(visibleWorks, filters);
+      const activeRegions = new Set(active);
+      if (unknown.length) console.warn('Unmapped Art region color labels:', unknown);
+      for (const path of regionColorPaths) {
+        const region = path.dataset.colorRegion;
+        path.setAttribute('fill', REGION_COLOR_PALETTE[region]);
+        path.setAttribute('fill-opacity', activeRegions.has(region)
+          ? REGION_COLOR_OPACITY.active : REGION_COLOR_OPACITY.muted);
+      }
+    }
+
     const state = {
       unit: 'all',
       culture: 'all',
@@ -18436,6 +18519,7 @@
       const focusedWorkId = document.activeElement?.dataset?.workId || null;
       const focusedDetailImageButton = document.activeElement?.classList?.contains('artwork-image-button');
       const visibleWorks = filterWorks(ARTWORKS, state);
+      renderRegionColors(visibleWorks, state);
       const mappableWorks = visibleWorks.filter((work) => !isUnmappedWork(work));
       const mappedUnits = new Set(mappableWorks.map((work) => work.unit));
       if (state.selectedId && !visibleWorks.some((work) => work.id === state.selectedId)) {
@@ -18855,6 +18939,7 @@
     window.ArtHistoryMap = {
       normalize,
       filterWorks,
+      getRegionColorScope,
       compactApNumbers,
       formatApGroupLabel,
       formatPieceCount,
