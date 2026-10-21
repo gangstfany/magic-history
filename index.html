@@ -265,6 +265,7 @@ nav.topnav {
   width: 100%; max-width: 1000px; margin: 22px auto 0; padding: 0 clamp(20px, 4vw, 52px);
 }
 .subj-pill {
+  scroll-margin-top:8px;
   display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700;
   color: var(--ink-soft); background: var(--card); border: 1px solid var(--line);
   border-radius: 999px; padding: 7px 15px; cursor: pointer;
@@ -675,6 +676,9 @@ nav.topnav {
   .back-link { left: 12px; }
 }
 </style>
+<link rel="stylesheet" href="assets/map-ui.css">
+<link rel="stylesheet" href="assets/auth/account.css">
+<script type="module" src="assets/auth/account-bootstrap.mjs"></script>
 </head>
 <body>
 <div class="frame">
@@ -683,6 +687,7 @@ nav.topnav {
     <nav class="topnav">
       <div class="wordmark">MAGIC<span class="light">HISTORY</span></div>
       <div class="nav-right">
+        <button type="button" class="account-trigger" data-account-trigger aria-haspopup="dialog">登录 / 注册</button>
         <ul class="navlinks">
           <li data-view="home" class="active">Home</li>
           <li data-nav-scroll="home-map-embed">Maps</li>
@@ -694,7 +699,7 @@ nav.topnav {
         <div class="lang-switch">
           <button type="button" class="lang active" data-lang="zh" aria-current="true">中文</button>
           <span class="lang-sep" aria-hidden="true">/</span>
-          <button type="button" class="lang" data-lang="en">EN</button>
+          <button type="button" class="lang" data-lang="en" aria-label="EN — English version coming soon" title="English version coming soon">EN · Soon</button>
           <div class="lang-hint" id="langHint" role="status">English version coming soon</div>
         </div>
       </div>
@@ -759,7 +764,7 @@ nav.topnav {
             <div class="map-overlay map-coming-soon" id="mapComingSoon">
               <div class="cs-badge">✦</div>
               <h3 id="csTitle">Coming soon</h3>
-              <p>这一科的互动地图正在制作中,很快就来。World History 已经可以直接用。</p>
+              <p>这一科的互动地图正在制作中,很快就来。World History 和 Art History 已经可以直接用。</p>
             </div>
           </div>
           <!-- 右侧事件面板:点左边地图的数字标点,该站事件在这里完整显示 -->
@@ -866,10 +871,15 @@ nav.topnav {
   const card = document.querySelector('.card');
 
   function showView(name) {
+    const focusedView = document.activeElement.closest('.view');
     views.forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
     navItems.forEach(li => li.classList.toggle('active', li.dataset.view === name));
     // Home 内容多,让卡片按内容自然撑高走整页滚动;其余轻量占位页维持封顶高度的悬浮卡片观感
     card.classList.toggle('boxed', name !== 'home');
+    if (focusedView && !focusedView.classList.contains('active')) {
+      const heading = document.querySelector(`#view-${name} h1, #view-${name} h2`);
+      if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll:true }); }
+    }
   }
 
   function goToHomeMap() {
@@ -895,6 +905,11 @@ nav.topnav {
     item.addEventListener('click', () => {
       goToHomeMap();
       selectSubject(item.dataset.subject);
+      const pill = document.querySelector(`.subj-pill[data-subj="${item.dataset.subject}"]`);
+      pill?.focus({ preventScroll:true });
+      if (pill) requestAnimationFrame(() => pill.scrollIntoView({
+        behavior:prefersReducedMotion() ? 'auto' : 'smooth', block:'nearest'
+      }));
     });
   });
 
@@ -1046,10 +1061,38 @@ nav.topnav {
     worldMapFrame.style.height = '';
     const wrap = worldMapFrame.closest('.home-map-wrap');
     const split = worldMapFrame.closest('.map-events-split');
-    if (wrap) wrap.style.height = '';
-    if (split) split.style.height = '';
+    // A queued World resize/load callback must not erase active Art sizing.
+    if (selectedSubject !== 'art') {
+      if (wrap) wrap.style.height = '';
+      if (split) split.style.height = '';
+    }
     if (homeEvents) homeEvents.style.height = '';
   }
+
+  let artLayoutObserver = null;
+  let observedArtDocument = null;
+  function styleEmbeddedArt() {
+    if (selectedSubject !== 'art') return;
+    let doc;
+    try { doc = artMapFrame.contentDocument; } catch { return; }
+    const toolbar = doc?.querySelector('.filter-toolbar');
+    const workspace = doc?.querySelector('.art-workspace');
+    if (!toolbar || !workspace) return;
+    doc.documentElement.style.setProperty('--art-map-height', window.innerWidth > 900 ? '500px' : '300px');
+    if (observedArtDocument !== doc) {
+      artLayoutObserver?.disconnect();
+      observedArtDocument = doc;
+      artLayoutObserver = new ResizeObserver(styleEmbeddedArt);
+      artLayoutObserver.observe(toolbar); artLayoutObserver.observe(workspace);
+    }
+    const height = Math.ceil(toolbar.getBoundingClientRect().height + workspace.getBoundingClientRect().height);
+    if (!height) return;
+    const wrap = artMapFrame.closest('.home-map-wrap');
+    const split = artMapFrame.closest('.map-events-split');
+    if (wrap) wrap.style.height = height + 'px';
+    if (split) split.style.height = height + 'px';
+  }
+  window.addEventListener('resize', styleEmbeddedArt);
 
   // 把内嵌地图收拾成"只剩地图、填满整格":隐藏 world-map 自带的表头和事件区,让地图区撑满 iframe
   function styleEmbeddedMap() {
@@ -1488,6 +1531,7 @@ nav.topnav {
     clearTimeout(loadTimer);
     mapSkeleton.classList.remove('show');
     mapRetry.classList.remove('show');
+    if (frame === artMapFrame) styleEmbeddedArt();
   }
 
   function isExpectedFrameReady(frame) {
@@ -1550,6 +1594,11 @@ nav.topnav {
     const s = SUBJECTS[key];
     if (!s) return;
     selectedSubject = key;
+    // Art's measured toolbar + canvas must not leak into World/placeholder sizing.
+    if (key !== 'art' && artMapFrame) {
+      artMapFrame.closest('.home-map-wrap').style.height = '';
+      artMapFrame.closest('.map-events-split').style.height = '';
+    }
     if (key !== 'world') clearEmbeddedWorldSizing();
     clearTimeout(loadTimer);
     mapRetry.classList.remove('show');
@@ -1570,6 +1619,7 @@ nav.topnav {
       mapComingSoon.classList.remove('show');
       showLiveFrame(s);
       if (homeEvents) homeEvents.hidden = key !== 'world';
+      if (key === 'art') styleEmbeddedArt();
       if (key === 'world') {
         styleEmbeddedMap();
         // 切走再切回来时,面板里往往还是离开前那一站的事件卡,而工具栏上的筛选还在 ——

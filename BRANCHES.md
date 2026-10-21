@@ -1,34 +1,19 @@
-# Course Branch Guide
+# Canonical branches and ownership
 
-This repository uses short-lived subject development branches and one integrated production branch.
+`main` is protected integration / release history. Do not automatically merge this reorganization into main.
 
-| Course / purpose | Canonical branch | Current role |
-| --- | --- | --- |
-| Production website | `main` | Integrated, deployable site; update through reviewed pull requests |
-| AP United States History | `feature/apush-all-periods-timeline-dock` | APUSH map, Units/Periods 1–9, and APUSH Timeline Dock development |
-| AP World History: Modern | `feature/apwh-all-units-card-timeline-dock` | APWH map, explicit Units 1–9 mapping, and card Timeline development |
-| AP Art History | `feature/ap-art-history-map` | AP Art History map and unit development |
+| Branch | Responsibility |
+| --- | --- |
+| `shared/site` | Shared site shell, account UI/service, callback, vendor SDK, `assets/map-ui.css`, global navigation and iframe sizing coordination |
+| `course/world-history` | `world-map.html`, World study directory / host behavior, `data/apwh-u1-location-study.js` through U9, World tests and verification |
+| `course/art-history` | `art-history-map.html`, Art assets/data/content/source ledgers, Art tests and verification |
 
-## Historical and prototype branches
+Both course branches start at the same shared/site commit; they are siblings, not ancestors of each other. Open the shared PR first. After it is reviewed and integrated, open independent course PRs against the appropriate updated main. Resolve shared changes once, and coordinate the course-specific `index.html` hunks (World host behavior versus Art 250-work caption). Preserve both assertion sets in any integrated tests; do not skip tests to resolve conflicts.
 
-- `feature/ap-art-history-u1` has already been merged into `feature/ap-art-history-map`. Do not merge it separately into `main`.
-- `feature/history-timeline-module-prototype` is an optional standalone learning-module prototype. It is not a production subject branch.
-- `temporary-apush-period1-c-preview` is a historical preview/integration branch. New APUSH work belongs on the canonical APUSH branch above.
+`index.html` is a shared host: coordinate edits across courses instead of copying the whole file. `assets/map-ui.css` is shared; a course needing a changed selector must review its impact on the other embedded and standalone pages. Do not merge whole course branches into each other merely to obtain a shared fix. Prefer a reviewed shared change and propagate it deliberately.
 
-## Collaboration rules
+Key Terms is not a separate page: its renderer is `studyDetailHTML` in `world-map.html`, and its content is in the APWH U1–U9 location-study data. The UI handoff document records a historical `4756151` extraction; course features described there do not all ship on shared/site by itself.
 
-1. Work on the branch for the course being changed.
-2. Do not use subject branches as permanent production branches; `main` is the integrated website.
-3. Open one pull request per subject so reviewers can see which course changed.
-4. Start future feature branches from the latest integrated `main` unless the work explicitly depends on an unfinished subject branch.
-5. Do not merge the same historical branch twice under different names.
+All old local and remote refs remain retained as historical references, not canonical collaboration targets. In particular `feature/ap-art-history-u6` retains its dirty working tree and pending/private images; those uncommitted files and `.private-media` are not published by this extraction. No source working tree or real index is staged or reset.
 
-## Recommended integration order
-
-AP Art History and APUSH can be reviewed in either order because they are independent. APUSH must be merged before APWH because the APWH branch contains the APUSH foundation in its history.
-
-1. `feature/ap-art-history-map` → `main` (may also be step 2)
-2. `feature/apush-all-periods-timeline-dock` → `main`
-3. `feature/apwh-all-units-card-timeline-dock` → `main`
-
-Run each subject's validation and browser checks in its own pull request before merging.
+APUSH's existing `feature/apush-all-periods-timeline-dock` remains unchanged. Do not overwrite or cross-merge its implementation as part of this work. APUSH may reference shared UI patterns through a separately reviewed adaptation.

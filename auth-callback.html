@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>账号验证 · Magic History</title>
+<script>
+  window.__accountCallback = { search: location.search, hash: location.hash };
+  history.replaceState(null, '', location.pathname);
+</script>
+<link rel="stylesheet" href="assets/map-ui.css">
+<link rel="stylesheet" href="assets/auth/account.css">
+<script type="module" src="assets/auth/account-bootstrap.mjs"></script>
+</head>
+<body data-account-callback>
+<main class="account-callback-shell"><h1>Magic History · 账号验证</h1><p>请在账号窗口中查看验证结果。</p><button type="button" class="account-trigger" data-account-trigger aria-haspopup="dialog">查看账号</button><a class="account-return" href="index.html">返回地图首页</a></main>
+</body>
+</html>
