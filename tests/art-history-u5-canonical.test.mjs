@@ -668,13 +668,13 @@ test('live map imports the exact ordered AP 153–166 canonical projection', asy
   const publicViews = flattenedViews.filter(({ imageUrl }) => imageUrl !== null);
 
   assertOrderedDeepEqual(liveU5, fixture.artworks, '$.liveU5.artworks');
-  assert.equal(liveCreditIds.length, 180, 'live credit total');
+  assert.equal(liveCreditIds.length, 250, 'live credit total');
   assert.deepEqual(liveU5CreditIds, expectedIds, 'live U5 credit key order');
   assertOrderedDeepEqual(liveU5Credits, fixture.credits, '$.liveU5.credits');
-  assert.equal(artworks.length, 180, 'live artwork total');
+  assert.equal(artworks.length, 250, 'live artwork total');
   assert.deepEqual(
     artworks.map(({ apNumber }) => apNumber),
-    Array.from({ length: 180 }, (_, index) => index + 1),
+    Array.from({ length: 250 }, (_, index) => index + 1),
     'live AP sequence',
   );
   assert.equal(flattenedViews.length, 27, 'live U5 view count');

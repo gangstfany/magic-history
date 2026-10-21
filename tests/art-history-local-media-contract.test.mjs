@@ -39,7 +39,7 @@ test('real U6 bundle satisfies the local release contract with eight open and fi
 function fixture(t, unit = 6) {
   const rootDir = mkdtempSync(join(tmpdir(), 'art-history-contract-'));
   t.after(() => rmSync(rootDir, { recursive: true, force: true }));
-  const id = unit === 5 ? 'ap153-example' : 'ap167-example';
+  const id = `ap${({5:153,6:167,7:181,8:192,9:213,10:224})[unit]}-example`;
   const ap = id.slice(0, 5);
   const localAssetPath = `assets/art-history/u${unit}/${ap}-primary.webp`;
   mkdirSync(join(rootDir, `assets/art-history/u${unit}`), { recursive: true });
@@ -65,7 +65,7 @@ test('exports the uniform limits and flattens manifest view order', (t) => {
   assert.equal(MAX_LOCAL_MEDIA_BYTES, 1_572_864);
   assert.deepEqual(flattenRequiredViewKeys(data.manifest), Object.keys(data.rights));
 });
-for (const unit of [5, 6]) test(`accepts local open and unresolved U${unit} views`, (t) => {
+for (const unit of [5, 6, 7, 8, 9, 10]) test(`accepts local open and unresolved U${unit} views`, (t) => {
   assert.doesNotThrow(() => assertLocalMediaContract(fixture(t, unit)));
 });
 

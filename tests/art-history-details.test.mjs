@@ -608,6 +608,7 @@ function createDetailHarness(
     getFunctionSource(html, 'createComparisonAngle'),
     getFunctionSource(html, 'openImageDialog'),
     getFunctionSource(html, 'focusSelectedArtworkHeading'),
+    getFunctionSource(html, 'isUnmappedWork'),
     getFunctionSource(html, 'selectComparison'),
     getFunctionSource(html, 'renderArtworkDetails'),
   ].join('\n');
@@ -625,6 +626,11 @@ function createDetailHarness(
       let imageDialogTrigger = null;
       let artworkMediaRenderGeneration = 0;
       let syncedControls = null;
+      // This harness isolates detail DOM. Camera geometry is covered by the
+      // real-browser production map verifier; preserve the new camera seam here.
+      const cameraCalls = [];
+      const focusSelectedWork = () => cameraCalls.push('focus');
+      const applyTransform = () => cameraCalls.push('apply');
       const formatArtworkMeta = () => 'meta';
       const createStudyBlock = (title, ...paragraphs) => {
         const block = document.createElement('section');
@@ -668,6 +674,7 @@ function createDetailHarness(
         getState: () => state,
         getSyncedControls: () => syncedControls,
         getScrollCalls: () => scrollCalls,
+        getCameraCalls: () => cameraCalls,
       };`,
   )(
     document,
@@ -724,22 +731,22 @@ test('detail view exposes four accessible study tabs', async () => {
   }
 });
 
-test('standalone map copy and accessible map labels cover all 180 Units 1-6 works worldwide', async () => {
+test('standalone map copy and accessible map labels cover all 250 Units 1-10 works worldwide', async () => {
   const html = await loadHtml();
 
-  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-6<\/h1>/);
+  assert.match(html, /<h1>AP 艺术史互动地图 · Units 1-10<\/h1>/);
   assert.doesNotMatch(html, /<h1>[^<]*Unit 2 古代地中海[^<]*<\/h1>/);
   assert.match(
     html,
-    /<p class="subtitle">Units 1-6：从全球史前艺术、古代地中海到 U5 Indigenous Americas 与 U6 Africa（非洲），以地点连接全部 180 件作品、传统与历史语境。<\/p>/,
+    /<p class="subtitle">Units 1-10：从全球史前艺术、古代地中海到 U5 Indigenous Americas 、U6 Africa（非洲）、U7 West and Central Asia（西亚与中亚）与 U8 South, East, and Southeast Asia（南亚、东亚与东南亚），以地点连接全部 250 件作品、传统与历史语境。<\/p>/,
   );
   assert.match(
     html,
-    /<section id="mapPanel" class="map-panel" aria-label="完整世界地图；展示 AP 艺术史 Units 1-6 全部 180 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布，包含 U6 Africa（非洲）">/,
+    /<section id="mapPanel" class="map-panel" aria-label="完整世界地图；展示 AP 艺术史 Units 1-10 全部 250 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布，包含 U6 Africa（非洲）、U7 West and Central Asia（西亚与中亚）与 U8 South, East, and Southeast Asia（南亚、东亚与东南亚）">/,
   );
   assert.match(
     html,
-    /<svg class="map-svg"[^>]+aria-label="AP 艺术史 Units 1-6 完整世界地图，标记全部 180 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布，包含 U6 Africa（非洲）">/,
+    /<svg class="map-svg"[^>]+aria-label="AP 艺术史 Units 1-10 完整世界地图，标记全部 250 件作品在非洲、欧洲、亚洲、大洋洲与美洲的全球分布，包含 U6 Africa（非洲）、U7 West and Central Asia（西亚与中亚）与 U8 South, East, and Southeast Asia（南亚、东亚与东南亚）">/,
   );
   assert.doesNotMatch(html, /Units 1-2/);
   assert.doesNotMatch(html, /当前作品地点集中在古代地中海/);
@@ -885,16 +892,21 @@ test('comparison navigation clears conflicting filters when crossing Units 1 and
   const selectComparison = Function(
     'ARTWORKS',
     'state',
+    'focusSelectedWork',
+    'applyTransform',
     'syncFilterControls',
     'render',
     'focusSelectedArtworkHeading',
     'detailPanel',
     `"use strict";
+      ${getFunctionSource(html, 'isUnmappedWork')}
       ${source}
       return selectComparison;`,
   )(
     artworks,
     state,
+    () => {},
+    () => {},
     () => { calls.push('sync'); },
     () => {
       renderedSelectedId = state.selectedId;
@@ -1479,6 +1491,27 @@ test('private mode without an installed override retains the placeholder with a 
 
   assert.match(summary.querySelector('.rights-placeholder').textContent, /Private image not installed/);
   assert.equal(summary.querySelectorAll('img').length, 0);
+});
+
+test('Unit 7 and Unit 8 unresolved views avoid false copyright and private-bundle claims', async()=>{
+ const html=await loadHtml(),artworks=parseJsonBlock(html,'artwork-data'),credits=parseJsonBlock(html,'image-credit-data');
+ let checkedViews=0;
+ for(const privateMode of [false,true]){
+  const harness=createDetailHarness(html,artworks,credits,{}, {},privateMode);
+  for(const unit of [7,8]) for(const work of artworks.filter(w=>w.unit===unit)){
+   const summary=harness.renderArtworkDetails(work,{works:[work]});
+   for(const [index,view]of work.images.entries()){
+    if(view.imageUrl)continue;
+    checkedViews++;
+    summary.querySelector('.image-view-switcher')?.children[index].click();
+    const text=summary.querySelector('.rights-placeholder').textContent;
+    assert.match(text,/Reusable image not yet verified/);
+    assert.ok(text.includes(view.mediaStatus));
+    assert.doesNotMatch(text,/由于作品版权限制|私人学习模式可显示|Private image not installed/);
+   }
+  }
+ }
+ assert.equal(checkedViews,30,'actual U7/U8 unresolved views checked in both public and private modes');
 });
 
 test('all Unit 6 unresolved views show honest reusable-image status in public and private modes', async () => {
@@ -2107,13 +2140,13 @@ test('source worksheet parser rejects rows with missing or extra cells', () => {
   );
 });
 
-test('keeps all 180 loaded works, complete imported ids, and one credit per image', async () => {
+test('keeps all 250 loaded works, complete imported ids, and one credit per image', async () => {
   const html = await loadHtml();
   const artworks = parseJsonBlock(html, 'artwork-data');
   const credits = parseJsonBlock(html, 'image-credit-data');
   const artworkIds = artworks.map(({ id }) => id);
 
-  assert.equal(artworks.length, 180);
+  assert.equal(artworks.length, 250);
   assert.equal(artworks.filter(({ unit }) => unit === 5).length, 14);
   assert.deepEqual(
     artworks.filter(({ unit }) => unit === 5).map(({ apNumber }) => apNumber),
@@ -2135,8 +2168,10 @@ test('keeps all 180 loaded works, complete imported ids, and one credit per imag
     assert.equal(creditItems.length, mediaItems.length, `${artwork.id} needs one credit per image`);
     mediaItems.forEach((media, index) => {
       if (media.mediaStatus === 'rightsRestricted'
-        || media.mediaStatus === '可复用图片尚未核实 · Reusable image not yet verified') {
+        || media.mediaStatus === '可复用图片尚未核实 · Reusable image not yet verified'
+        || ([7, 8, 9, 10].includes(artwork.unit) && media.imageUrl === null)) {
         assert.equal(media.imageUrl, null, `${artwork.id} image ${index + 1} must use a public placeholder`);
+        assert.ok(typeof media.mediaStatus === 'string' && media.mediaStatus.trim());
       } else {
         assert.equal(typeof media.imageUrl, 'string', `${artwork.id} image ${index + 1} needs a URL`);
         assert.ok(media.imageUrl.trim(), `${artwork.id} image ${index + 1} needs a non-empty URL`);

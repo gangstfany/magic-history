@@ -54,7 +54,7 @@ export function assertLocalMediaContract({ manifest, artworks, rights, authority
     https(row.sourcePageUrl, `${key} sourcePageUrl`);
     for (const field of ['originalFileUrl', 'licenseUrl']) if (row[field] !== null) https(row[field], `${key} ${field}`);
     if (view.imageUrl !== null) {
-      assert.ok(typeof view.imageUrl === 'string' && /^assets\/art-history\/u[56]\//.test(view.imageUrl)
+      assert.ok(typeof view.imageUrl === 'string' && /^assets\/art-history\/u(?:[56789]|10)\//.test(view.imageUrl)
         && !view.imageUrl.includes('.private-media/') && !view.imageUrl.includes('..'),
       `${key} must use a repository-local image path`);
     }
@@ -65,7 +65,7 @@ export function assertLocalMediaContract({ manifest, artworks, rights, authority
       assert.ok(!Object.hasOwn(authority, key), `${key} open view must have no authority`);
       const [workId, viewId] = key.split('::');
       const ap = workId.match(/^ap\d{3}(?=-)/)?.[0];
-      assert.ok([5, 6].includes(unit) && ap && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(viewId)
+      assert.ok([5, 6, 7, 8, 9, 10].includes(unit) && ap && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(viewId)
         && ['webp', 'jpg', 'jpeg', 'png'].some((ext) => row.localAssetPath === `assets/art-history/u${unit}/${ap}-${viewId}.${ext}`),
       `${key} canonical local asset path required`);
       assert.equal(view.imageUrl, row.localAssetPath, `${key} open media-path alignment`);

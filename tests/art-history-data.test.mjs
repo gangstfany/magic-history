@@ -77,7 +77,7 @@ const MANIFEST_PATHS = {
   5: new URL('../data/ap-art-history-unit-5-manifest.json', import.meta.url),
 };
 const EXPECTED_COMPLETE_AP_NUMBERS = Array.from({ length: 98 }, (_, index) => index + 1);
-const EXPECTED_LIVE_AP_NUMBERS = Array.from({ length: 180 }, (_, index) => index + 1);
+const EXPECTED_LIVE_AP_NUMBERS = Array.from({ length: 250 }, (_, index) => index + 1);
 const EXPECTED_RELEASE_AP_NUMBERS = Array.from({ length: 166 }, (_, index) => index + 1);
 const EXPECTED_U2_AP_NUMBERS = Array.from({ length: 36 }, (_, index) => index + 12);
 const EXPECTED_U1_MANIFEST = [
@@ -717,7 +717,7 @@ async function loadCompleteUnits12345Fixture() {
   let artworks;
   let credits;
   if (liveU5.length) {
-    assert.equal(live.artworks.length, 180, 'live release requires exactly AP 1–180');
+    assert.equal(live.artworks.length, 250, 'live release requires exactly AP 1–180');
     assert.deepEqual(live.artworks.slice(0, 166).map(({ apNumber }) => apNumber), EXPECTED_RELEASE_AP_NUMBERS);
     assertOrderedDeepEqual(liveU5, unit5.artworks, '$.fixtureHelper.liveU5.artworks');
     const liveU5CreditIds = Object.keys(live.credits).slice(152, 166);
@@ -848,7 +848,7 @@ test('loads exactly AP 1–180 with the canonical Unit 5 projection and preserve
   const liveU5Credits = Object.fromEntries(unit5Ids.map((id) => [id, credits[id]]));
   const unit5Media = liveU5.flatMap(({ images }) => images);
 
-  assert.equal(artworks.length, 180);
+  assert.equal(artworks.length, 250);
   assert.deepEqual(
     artworks.map(({ apNumber }) => apNumber),
     EXPECTED_LIVE_AP_NUMBERS,
@@ -2645,7 +2645,7 @@ test('assigns exactly 11, 36, 51, 54, 14, and 14 works to Units 1 through 6', as
   assert.equal(artworks.filter(({ unit }) => unit === 5).length, 14);
   assert.equal(artworks.filter(({ unit }) => unit === 6).length, 14);
   for (const artwork of artworks) {
-    assert.ok([1, 2, 3, 4, 5, 6].includes(artwork.unit), `${artwork.id} must be in Unit 1, 2, 3, 4, 5, or 6`);
+    assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(artwork.unit), `${artwork.id} must be in Units 1–10`);
     assert.equal(typeof artwork.culture, 'string', `${artwork.id} must have a culture`);
     assert.ok(artwork.culture.trim(), `${artwork.id} must have a non-empty culture`);
     assert.equal(typeof artwork.region, 'string', `${artwork.id} must have a region`);
