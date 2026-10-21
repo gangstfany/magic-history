@@ -141,7 +141,7 @@ test('homepage subject pills expose keyboard button semantics', async () => {
   );
 });
 
-test('map caption describes all 180 Units 1-6 works and preserves the World History caption', async () => {
+test('map caption describes all 180 Units 1-6 works and uses source-backed World History counts', async () => {
   const html = await loadHtml();
 
   assert.match(html, /id="homeMapCaption"/);
@@ -150,7 +150,9 @@ test('map caption describes all 180 Units 1-6 works and preserves the World Hist
     html,
     /\? '180 AP works · Units 1-6 · filter, compare and study'/,
   );
-  assert.match(html, /: '5 regions · 234 events · 104 pins · 6 trade routes'/);
+  assert.match(html, /hostApi\?\.getMapCounts\?\.\(\)/);
+  assert.match(html, /\$\{counts\.events\} source events/);
+  assert.doesNotMatch(html, /234 events · 104 pins/);
   assert.match(html, /homeMapCaption\.hidden = !s\.live/);
 });
 

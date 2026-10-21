@@ -2289,11 +2289,13 @@ test('full and focused legacy browser paths all use the 180-work Units 1-6 relea
   }
 });
 
-test('copy integration preserves World History text and iframe dimensions', async () => {
+test('copy integration preserves World History identity, source-backed caption and iframe dimensions', async () => {
   const homepage = await readFile(HOMEPAGE_URL, 'utf8');
 
   assert.match(homepage, /History World Map/);
-  assert.match(homepage, /5 regions · 234 events · 104 pins · 6 trade routes/);
+  assert.match(homepage, /hostApi\?\.getMapCounts\?\.\(\)/);
+  assert.match(homepage, /\$\{counts\.regions\} regions · \$\{counts\.events\} source events · \$\{counts\.pins\} pins · \$\{counts\.routes\} trade routes/);
+  assert.doesNotMatch(homepage, /234 events · 104 pins/);
   const worldFrame = elementAttributes(homepage, 'iframe', 'worldMapFrame');
   const artFrame = elementAttributes(homepage, 'iframe', 'artMapFrame');
   assert.equal(worldFrame.src, 'world-map.html');
