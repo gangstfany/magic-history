@@ -1,0 +1,196 @@
+{
+  "date": "2026-10-25",
+  "additions": [
+    {
+      "id": "apwh-u1-hangzhou-confucian-bureaucracy-culture",
+      "found": 1,
+      "body": 1,
+      "authorship": 1
+    },
+    {
+      "id": "apwh-u2-kilwa-crop-diffusion-environments",
+      "found": 1,
+      "body": 1,
+      "authorship": 1
+    },
+    {
+      "id": "apwh-u3-wittenberg-protestant-reformation",
+      "found": 1,
+      "body": 1,
+      "authorship": 1
+    },
+    {
+      "id": "apwh-u3-trent-catholic-reform-trent",
+      "found": 1,
+      "body": 1,
+      "authorship": 1
+    },
+    {
+      "id": "apwh-u3-punjab-nanak-sikh-community",
+      "found": 1,
+      "body": 1,
+      "authorship": 1
+    },
+    {
+      "id": "apwh-u5-glasgow-smith-market-capitalism",
+      "found": 1,
+      "body": 1,
+      "authorship": 1
+    },
+    {
+      "id": "apwh-u5-london-companies-finance-global-enterprise",
+      "found": 1,
+      "body": 1,
+      "authorship": 1
+    },
+    {
+      "id": "apwh-u5-london-socialism-marx-labor-responses",
+      "found": 1,
+      "body": 1,
+      "authorship": 1
+    },
+    {
+      "id": "apwh-u6-london-imperial-ideologies-missions",
+      "found": 1,
+      "body": 1,
+      "authorship": 1
+    }
+  ],
+  "returns": [
+    {
+      "id": "apwh-u1-hangzhou-confucian-bureaucracy-culture",
+      "hasBack": 1,
+      "restored": 1
+    },
+    {
+      "id": "apwh-u2-kilwa-crop-diffusion-environments",
+      "hasBack": 1,
+      "restored": 1
+    },
+    {
+      "id": "apwh-u3-wittenberg-protestant-reformation",
+      "hasBack": 1,
+      "restored": 1
+    },
+    {
+      "id": "apwh-u3-trent-catholic-reform-trent",
+      "hasBack": 1,
+      "restored": 1
+    },
+    {
+      "id": "apwh-u3-punjab-nanak-sikh-community",
+      "hasBack": 1,
+      "restored": 1
+    },
+    {
+      "id": "apwh-u5-glasgow-smith-market-capitalism",
+      "hasBack": 1,
+      "restored": 1
+    },
+    {
+      "id": "apwh-u5-london-companies-finance-global-enterprise",
+      "hasBack": 1,
+      "restored": 1
+    },
+    {
+      "id": "apwh-u5-london-socialism-marx-labor-responses",
+      "hasBack": 1,
+      "restored": 1
+    },
+    {
+      "id": "apwh-u6-london-imperial-ideologies-missions",
+      "hasBack": 1,
+      "restored": 1
+    }
+  ],
+  "mobile": [
+    {
+      "unit": 1,
+      "sections": 8,
+      "unitCards": 2,
+      "pageWidth": 319,
+      "panelContent": 317,
+      "panelWidth": 317,
+      "viewport": 319
+    },
+    {
+      "unit": 2,
+      "sections": 8,
+      "unitCards": 2,
+      "pageWidth": 319,
+      "panelContent": 317,
+      "panelWidth": 317,
+      "viewport": 319
+    },
+    {
+      "unit": 3,
+      "sections": 8,
+      "unitCards": 2,
+      "pageWidth": 319,
+      "panelContent": 317,
+      "panelWidth": 317,
+      "viewport": 319
+    },
+    {
+      "unit": 4,
+      "sections": 8,
+      "unitCards": 2,
+      "pageWidth": 319,
+      "panelContent": 317,
+      "panelWidth": 317,
+      "viewport": 319
+    },
+    {
+      "unit": 5,
+      "sections": 8,
+      "unitCards": 2,
+      "pageWidth": 319,
+      "panelContent": 317,
+      "panelWidth": 317,
+      "viewport": 319
+    },
+    {
+      "unit": 6,
+      "sections": 8,
+      "unitCards": 2,
+      "pageWidth": 319,
+      "panelContent": 317,
+      "panelWidth": 317,
+      "viewport": 319
+    },
+    {
+      "unit": 7,
+      "sections": 8,
+      "unitCards": 2,
+      "pageWidth": 319,
+      "panelContent": 317,
+      "panelWidth": 317,
+      "viewport": 319
+    },
+    {
+      "unit": 8,
+      "sections": 8,
+      "unitCards": 2,
+      "pageWidth": 319,
+      "panelContent": 317,
+      "panelWidth": 317,
+      "viewport": 319
+    },
+    {
+      "unit": 9,
+      "sections": 8,
+      "unitCards": 2,
+      "pageWidth": 319,
+      "panelContent": 317,
+      "panelWidth": 317,
+      "viewport": 319
+    }
+  ],
+  "errors": [
+    {
+      "level": "error",
+      "message": "Uncaught TypeError: Failed to execute 'observe' on 'MutationObserver': parameter 1 is not of type 'Node'.",
+      "timestamp": "2026-10-25T07:25:12.881Z"
+    }
+  ]
+}
