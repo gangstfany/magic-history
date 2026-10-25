@@ -1,0 +1,16 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const read=name=>fs.readFileSync(`${__dirname}/${name}`,'utf8');
+function fn(source,name){const start=source.indexOf(`function ${name}(`);assert.ok(start>=0,name);const end=source.indexOf('\n  function ',start+10);return source.slice(start,end<0?undefined:end).trim();}
+function restoreHarness(step,flush=true){
+  const frames=[],camera=[],route={id:'u2_main',kind:'chain',stops:[1,2,3]},bookmark={chainId:'u2_main',step,unit:'u2',camera:{zoom:2,panX:34,panY:56},overview:true,scrollTop:317,pageScrollTop:510};
+  const ctx={window:{frameElement:null,scrollTo(p){this.scrollY=p.top;}},bookmark,route,frames,camera,chainRouteContext:bookmark,causalMapRestore:null,causalScrollRestore:null,causalSelectionRevision:0,causalOverview:false,routeMode:null,activeLearningView:'chain',causalWorkspacePanel:'routes',eventZone:{scrollTop:0,setAttribute(){}},requestAnimationFrame:f=>frames.push(f),stopAutoPlay(){},queueMapAnnotations(){},applyCausalCamera:c=>camera.push(c),focusCausalPlace:()=>camera.push('refocused'),syncLearningTabs(){},syncMapModeTabs(){},exitRouteMode(){},routeStepCb:null};
+  vm.createContext(ctx);vm.runInContext(fn(read('causal-map.js'),'selectCausalMapStep')+'\n'+fn(read('causal-workspace.js'),'returnToCausal')+`\nfunction goToStop(i){routeMode={route,i};eventZone.scrollTop=40;selectCausalMapStep(route,i);}function enterRouteMode(){chainRouteContext=null;goToStop(0);}function setPeriodFilter(){enterRouteMode();}returnToCausal();`,ctx);
+  if(flush)while(frames.length)frames.shift()();return ctx;
+}
+test('returning to the first step restores overview and camera despite queued initial renders',()=>{const c=restoreHarness(0);assert.equal(c.causalOverview,true);assert.deepEqual(c.camera,[c.bookmark.camera]);});
+test('standalone page restores reading position after step rendering',()=>{const c=restoreHarness(2);assert.equal(c.eventZone.scrollTop,c.bookmark.scrollTop);});
+test('standalone switch-route action opens the nested library',()=>{const page=read('world-map.html');const start=page.indexOf("eventPanel.addEventListener('click', e => {\n    if (handleCausalWorkspaceClick");const end=page.indexOf("eventPanel.addEventListener('change'",start);const block=page.slice(start,end);const branch=block.match(/else if \(a === 'exit'\) \{([\s\S]*?)\n    \}/);assert.ok(branch);let result='';const c={isTradeWorkspace:()=>true,activeLearningView:'chain',activeMapMode:'events',routeMode:{route:{kind:'route'}},returnToRoutePicker:()=>result='library',exitRouteMode:()=>result='cleared'};vm.runInNewContext(branch[1],c);assert.equal(result,'library');});
+
+test('standalone page restores document reading position after layout',()=>{const c=restoreHarness(2);assert.equal(c.window.scrollY,c.bookmark.pageScrollTop);});
+
+test('new navigation cancels a pending camera restore permanently',()=>{const c=restoreHarness(2,false);vm.runInContext('goToStop(1)',c);while(c.frames.length)c.frames.shift()();vm.runInContext('goToStop(2)',c);while(c.frames.length)c.frames.shift()();assert.equal(c.causalOverview,false);assert.equal(c.camera.at(-1),'refocused');});

@@ -1,0 +1,226 @@
+[
+  {
+    "chainId": "u1_main",
+    "step": 6,
+    "routeId": "silk_road",
+    "kind": "相关网络",
+    "reason": "查看东亚、中亚与西亚的代表性节点，理解区域需求怎样接入更远的市场。"
+  },
+  {
+    "chainId": "u1_main",
+    "step": 6,
+    "routeId": "indian_ocean",
+    "kind": "相关网络",
+    "reason": "对照港口与转口联系，查看区域交换怎样接入海上网络。"
+  },
+  {
+    "chainId": "u1_main",
+    "step": 6,
+    "routeId": "mansa_musa_hajj",
+    "kind": "文化联系例证",
+    "reason": "用马里与伊斯兰世界的联系作补充例证；朝觐保留自己的宗教性质。"
+  },
+  {
+    "chainId": "u2_main",
+    "step": 0,
+    "routeId": "silk_road",
+    "kind": "机制例证",
+    "reason": "在代表性节点中查看运输、政治保护与跨区域传播的联系。"
+  },
+  {
+    "chainId": "u2_main",
+    "step": 1,
+    "routeId": "silk_road",
+    "kind": "机制例证",
+    "reason": "在代表性节点中查看运输、政治保护与跨区域传播的联系。"
+  },
+  {
+    "chainId": "u2_main",
+    "step": 5,
+    "routeId": "silk_road",
+    "kind": "机制例证",
+    "reason": "在代表性节点中查看运输、政治保护与跨区域传播的联系。"
+  },
+  {
+    "chainId": "u2_main",
+    "step": 0,
+    "routeId": "indian_ocean",
+    "kind": "机制例证",
+    "reason": "查看季风航行、港口停留和市场联系怎样支持海上交换。"
+  },
+  {
+    "chainId": "u2_main",
+    "step": 2,
+    "routeId": "indian_ocean",
+    "kind": "机制例证",
+    "reason": "沿广州、马六甲、卡利卡特与基尔瓦，查看海运怎样连接不同地区的商品与生产分工。"
+  },
+  {
+    "chainId": "u2_main",
+    "step": 3,
+    "routeId": "indian_ocean",
+    "kind": "机制例证",
+    "reason": "查看季风航行、港口停留和市场联系怎样支持海上交换。"
+  },
+  {
+    "chainId": "u2_main",
+    "step": 4,
+    "routeId": "indian_ocean",
+    "kind": "机制例证",
+    "reason": "查看季风航行、港口停留和市场联系怎样支持海上交换。"
+  },
+  {
+    "chainId": "u2_main",
+    "step": 6,
+    "routeId": "indian_ocean",
+    "kind": "机制例证",
+    "reason": "查看季风航行、港口停留和市场联系怎样支持海上交换。"
+  },
+  {
+    "chainId": "u2_sub_plague",
+    "step": 0,
+    "routeId": "silk_road",
+    "kind": "传播背景",
+    "reason": "同一套交通与接触网络也可能传播病原；路线不是精确的疫情传播轨迹。"
+  },
+  {
+    "chainId": "u2_sub_plague",
+    "step": 1,
+    "routeId": "silk_road",
+    "kind": "传播背景",
+    "reason": "同一套交通与接触网络也可能传播病原；路线不是精确的疫情传播轨迹。"
+  },
+  {
+    "chainId": "u2_sub_credit",
+    "step": 0,
+    "routeId": "silk_road",
+    "kind": "交易背景",
+    "reason": "对照远程交易的地理跨度，理解结算与契约为什么重要。"
+  },
+  {
+    "chainId": "u2_sub_credit",
+    "step": 2,
+    "routeId": "silk_road",
+    "kind": "交易背景",
+    "reason": "对照远程交易的地理跨度，理解结算与契约为什么重要。"
+  },
+  {
+    "chainId": "u2_sub_diaspora",
+    "step": 0,
+    "routeId": "indian_ocean",
+    "kind": "交流背景",
+    "reason": "港口停留与商人社区为文化接触提供具体场景。"
+  },
+  {
+    "chainId": "u2_sub_diaspora",
+    "step": 1,
+    "routeId": "indian_ocean",
+    "kind": "交流背景",
+    "reason": "港口停留与商人社区为文化接触提供具体场景。"
+  },
+  {
+    "chainId": "u2_sub_environment",
+    "step": 0,
+    "routeId": "indian_ocean",
+    "kind": "交流背景",
+    "reason": "查看海上联系的区域范围；原有环节说明提供作物与劳动的具体证据。"
+  },
+  {
+    "chainId": "u2_sub_environment",
+    "step": 2,
+    "routeId": "indian_ocean",
+    "kind": "交流背景",
+    "reason": "查看海上联系的区域范围；原有环节说明提供作物与劳动的具体证据。"
+  },
+  {
+    "chainId": "u2_sub_environment",
+    "step": 3,
+    "routeId": "indian_ocean",
+    "kind": "交流背景",
+    "reason": "查看海上联系的区域范围；原有环节说明提供作物与劳动的具体证据。"
+  },
+  {
+    "chainId": "u4_main",
+    "step": 1,
+    "routeId": "indian_ocean",
+    "kind": "前后对照",
+    "reason": "先认识既有印度洋港口网络，再理解欧洲武装贸易进入这一网络；图中时期不等于殖民扩张全过程。"
+  },
+  {
+    "chainId": "u4_main",
+    "step": 2,
+    "routeId": "columbian_exchange",
+    "kind": "跨洋接触背景",
+    "reason": "把跨洋接触与疾病、人口及环境变化放回具体地理场景。"
+  },
+  {
+    "chainId": "u4_main",
+    "step": 3,
+    "routeId": "atlantic_triangle",
+    "kind": "机制例证",
+    "reason": "在欧洲、西非与加勒比之间查看种植园需求、强迫迁移和收益的连接。"
+  },
+  {
+    "chainId": "u4_main",
+    "step": 4,
+    "routeId": "atlantic_triangle",
+    "kind": "机制例证",
+    "reason": "在欧洲、西非与加勒比之间查看种植园需求、强迫迁移和收益的连接。"
+  },
+  {
+    "chainId": "u4_main",
+    "step": 5,
+    "routeId": "atlantic_triangle",
+    "kind": "机制例证",
+    "reason": "在欧洲、西非与加勒比之间查看种植园需求、强迫迁移和收益的连接。"
+  },
+  {
+    "chainId": "u4_main",
+    "step": 7,
+    "routeId": "atlantic_triangle",
+    "kind": "殖民经济背景",
+    "reason": "结合跨大西洋贸易与强迫迁移理解殖民社会的不平等；这张网络图不表示血统分类决定劳动岗位，也不能单独解释革命。"
+  },
+  {
+    "chainId": "u4_main",
+    "step": 6,
+    "routeId": "galleon",
+    "kind": "流动路径",
+    "reason": "查看美洲白银经马尼拉接入亚洲市场的地理联系。"
+  },
+  {
+    "chainId": "u4_sub_silver",
+    "step": 0,
+    "routeId": "galleon",
+    "kind": "流动路径",
+    "reason": "将白银的生产与需求接到跨太平洋联系中；港口图不替代矿山证据。"
+  },
+  {
+    "chainId": "u4_sub_silver",
+    "step": 1,
+    "routeId": "galleon",
+    "kind": "流动路径",
+    "reason": "将白银的生产与需求接到跨太平洋联系中；港口图不替代矿山证据。"
+  },
+  {
+    "chainId": "u4_sub_africa",
+    "step": 0,
+    "routeId": "atlantic_triangle",
+    "kind": "相关网络",
+    "reason": "查看跨大西洋网络，结合本环证据理解非洲社会受到的影响。"
+  },
+  {
+    "chainId": "u4_sub_africa",
+    "step": 1,
+    "routeId": "atlantic_triangle",
+    "kind": "相关网络",
+    "reason": "查看跨大西洋网络，结合本环证据理解非洲社会受到的影响。"
+  },
+  {
+    "chainId": "u4_sub_africa",
+    "step": 2,
+    "routeId": "atlantic_triangle",
+    "kind": "相关网络",
+    "reason": "查看跨大西洋网络，结合本环证据理解非洲社会受到的影响。"
+  }
+]

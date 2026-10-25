@@ -1,0 +1,142 @@
+{
+  "date": "2026-10-25",
+  "initialProfiles": [
+    {
+      "id": "silk_road",
+      "nodes": 4,
+      "popup": "1 · Beijing · 北京",
+      "geometry": {
+        "controls": 0,
+        "country": 0,
+        "markers": 0,
+        "rail": false
+      }
+    },
+    {
+      "id": "indian_ocean",
+      "nodes": 4,
+      "popup": "1 · Guangzhou · 广州",
+      "geometry": {
+        "controls": 0,
+        "country": 0,
+        "markers": 0,
+        "rail": false
+      }
+    },
+    {
+      "id": "galleon",
+      "nodes": 3,
+      "popup": "1 · Acapulco · 阿卡普尔科",
+      "geometry": {
+        "controls": 0,
+        "country": 0,
+        "markers": 0,
+        "rail": false
+      }
+    },
+    {
+      "id": "atlantic_triangle",
+      "nodes": 4,
+      "popup": "1 · Liverpool · 利物浦",
+      "geometry": {
+        "controls": 0,
+        "country": 0,
+        "markers": 0,
+        "rail": false
+      }
+    },
+    {
+      "id": "columbian_exchange",
+      "nodes": 2,
+      "popup": "1 · Seville · 塞维利亚",
+      "geometry": {
+        "controls": 0,
+        "country": 0,
+        "markers": 0,
+        "rail": false
+      }
+    },
+    {
+      "id": "mansa_musa_hajj",
+      "nodes": 3,
+      "popup": "1 · Mali / Timbuktu · 马里区域",
+      "geometry": {
+        "controls": 0,
+        "country": 0,
+        "markers": 0,
+        "rail": false
+      }
+    }
+  ],
+  "finalRouteAvoidance": [
+    {
+      "id": "silk_road",
+      "geometry": {
+        "lineHits": 0,
+        "rail": false
+      }
+    },
+    {
+      "id": "indian_ocean",
+      "geometry": {
+        "lineHits": 0,
+        "rail": false
+      }
+    },
+    {
+      "id": "galleon",
+      "geometry": {
+        "lineHits": 0,
+        "rail": false
+      }
+    },
+    {
+      "id": "atlantic_triangle",
+      "geometry": {
+        "lineHits": 0,
+        "rail": false
+      }
+    },
+    {
+      "id": "columbian_exchange",
+      "geometry": {
+        "lineHits": 0,
+        "rail": false
+      }
+    },
+    {
+      "id": "mansa_musa_hajj",
+      "geometry": {
+        "lineHits": 0,
+        "rail": false
+      }
+    }
+  ],
+  "finalCalicutLayout": {
+    "controls": 0,
+    "country": 0,
+    "markers": 0,
+    "rail": false
+  },
+  "mobile": {
+    "width": 319,
+    "overflow": false,
+    "notesUseRail": true
+  },
+  "playback": {
+    "pauseKeepsPosition": true,
+    "resumeToMalacca": true,
+    "autoArrivesCairo": true
+  },
+  "modeCleanup": {
+    "causalPreserved": true,
+    "noTradeIconInQuiz": true,
+    "noPreAnswerNote": true
+  },
+  "tests": {
+    "node": 17,
+    "python": 7,
+    "renderedCards": 240,
+    "unitCards": 18
+  }
+}

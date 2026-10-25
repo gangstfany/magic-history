@@ -1,0 +1,122 @@
+{
+  "date": "2026-10-25",
+  "units": [
+    {
+      "unit": 1,
+      "title": "1 · Angkor",
+      "rail": false,
+      "nodes": 1,
+      "geometry": {
+        "controlsCollisions": 0,
+        "countryCollisions": 0,
+        "placement": "map"
+      }
+    },
+    {
+      "unit": 2,
+      "title": "1 · Timbuktu",
+      "rail": false,
+      "nodes": 1,
+      "geometry": {
+        "controlsCollisions": 0,
+        "countryCollisions": 0,
+        "placement": "map"
+      }
+    },
+    {
+      "unit": 3,
+      "title": "1 · Isfahan",
+      "rail": false,
+      "nodes": 1,
+      "geometry": {
+        "controlsCollisions": 0,
+        "countryCollisions": 0,
+        "placement": "map"
+      }
+    },
+    {
+      "unit": 4,
+      "title": "1 · Lisbon",
+      "rail": false,
+      "nodes": 1,
+      "geometry": {
+        "controlsCollisions": 0,
+        "countryCollisions": 0,
+        "placement": "map"
+      }
+    },
+    {
+      "unit": 5,
+      "title": "1 · London",
+      "rail": false,
+      "nodes": 1,
+      "geometry": {
+        "controlsCollisions": 0,
+        "countryCollisions": 0,
+        "placement": "map"
+      }
+    },
+    {
+      "unit": 6,
+      "title": "1 · Lagos",
+      "rail": false,
+      "nodes": 1,
+      "geometry": {
+        "controlsCollisions": 0,
+        "countryCollisions": 0,
+        "placement": "map"
+      }
+    },
+    {
+      "unit": 7,
+      "title": "1 · Mukden / Shenyang",
+      "rail": false,
+      "nodes": 1,
+      "geometry": {
+        "controlsCollisions": 0,
+        "countryCollisions": 0,
+        "placement": "map"
+      }
+    },
+    {
+      "unit": 8,
+      "title": "1 · Berlin",
+      "rail": false,
+      "nodes": 1,
+      "geometry": {
+        "controlsCollisions": 0,
+        "countryCollisions": 0,
+        "placement": "map"
+      }
+    },
+    {
+      "unit": 9,
+      "title": "1 · Amritsar/Punjab",
+      "rail": false,
+      "nodes": 1,
+      "geometry": {
+        "controlsCollisions": 0,
+        "countryCollisions": 0,
+        "placement": "map"
+      }
+    }
+  ],
+  "verified": {
+    "movesFrom1To2": true,
+    "popupAfterArrivalOnly": true,
+    "pauseKeepsExactPosition": true,
+    "resumeCompletesTrip": true,
+    "autoStopsAt3And4": true,
+    "cancelOnUnitSwitch": true,
+    "clearOnPractice": true,
+    "overviewAndFocus": true,
+    "mobile319NoOverflow": true,
+    "mobileUsesRail": true
+  },
+  "automated": {
+    "nodeTests": 12,
+    "pythonTests": 7,
+    "renderedCards": 240,
+    "unitCards": 18
+  }
+}

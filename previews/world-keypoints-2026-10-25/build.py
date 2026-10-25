@@ -68,9 +68,14 @@ world = world[:back_start] + back_fn + world[back_end:]
 world = replace_once(world, '+ connectionBack\n      + `<button', '+ `<button type="button" class="rt-btn ghost location-study-back" data-preview-directory>← 返回学习卡目录</button>`\n      + connectionBack\n      + `<button')
 css = (HERE / 'cards.css').read_text()
 world = world.replace('</head>', '<style>' + css + '\n.split {grid-template-columns:minmax(0,1fr)!important;gap:0!important;} .map-study-view {width:100%;border:0;border-radius:0;}\n</style></head>', 1)
+from enhance_maps import enhance_maps
+world = enhance_maps(world)
+panel_css = (HERE / 'trade-panels.css').read_text()
+shared_panel_style = '<style id="world-panel-styles">' + panel_css + '</style>'
+world = replace_once(world, '</head>', shared_panel_style + '</head>')
 (HERE / 'world-map.html').write_text(world)
 result = source[:match.start(2)] + html.escape(world, quote=True) + source[match.end(2):]
-result = result.replace('</head>', '<style>' + css + '</style></head>', 1)
+result = result.replace('</head>', '<style>' + css + '</style>' + shared_panel_style + '</head>', 1)
 result = result.replace('Magic History · 世界史原版地图与卡片离线预览 · U1–U9 · 可直接切换单元、选择地点、展开卡片 · 内容快照 2026-10-21', '本地整改预览 · 世界史精选复习卡 · 240 个知识点（保留原231张，新增9张）· 非完整考纲的替代品 · 2026-10-25 · 未发布')
 result = result.replace('Magic History · 原版地图与 Keypoint 卡片 · 离线版', '世界史 Keypoints · 美国史框架预览')
 old = '''if (win.__mapFilter.toggleLocationStudy(studyId)) {
@@ -84,6 +89,13 @@ new = '''const savedScroll = homeEvents.scrollTop;
           homeEvents.querySelector(`[data-study-event="${CSS.escape(studyId)}"]`)?.focus({preventScroll:true});
         }'''
 result = replace_once(result, old, new)
+result = replace_once(result, "    if (study && wrap && split) {", """    if (study && styleEmbeddedMap.observedStudy !== study) {
+      styleEmbeddedMap.observer?.disconnect();
+      styleEmbeddedMap.observedStudy = study;
+      styleEmbeddedMap.observer = new ResizeObserver(styleEmbeddedMap);
+      styleEmbeddedMap.observer.observe(study);
+    }
+    if (study && wrap && split) {""")
 result = result.replace("directory.open=true;", "directory.open=false;")
 result = result.replace('</body>', '''<script>
 document.getElementById('home-events').addEventListener('click', event => {
@@ -94,5 +106,7 @@ document.getElementById('home-events').addEventListener('click', event => {
   directory.scrollIntoView({block:'nearest', behavior:'auto'});
 });
 </script></body>''')
+from integrate_causal_workspace import integrate_causal_host
+result = integrate_causal_host(result)
 (HERE / 'index.html').write_text(result)
 print(f'Built {HERE / "index.html"} ({len(result.encode()):,} bytes)')

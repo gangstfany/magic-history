@@ -8,6 +8,21 @@ def world(text):
     return html.unescape(re.search(r'id="worldMapFrame"[^>]*srcdoc="([^"]*)"', text).group(1))
 
 class PreviewTests(unittest.TestCase):
+    def test_trade_panel_styles_are_shared_with_the_host(self):
+        document = (HERE / 'index.html').read_text()
+        host_head = document.split('</head>', 1)[0]
+        map_head = world(document).split('</head>', 1)[0]
+        selector = r'<style id="world-panel-styles">([\s\S]*?)</style>'
+        host_css = re.search(selector, host_head)
+        map_css = re.search(selector, map_head)
+        self.assertIsNotNone(host_css, 'Mirrored trade content must receive its styles in the host head')
+        self.assertIsNotNone(map_css)
+        self.assertEqual(host_css[1], map_css[1])
+        for name in ['.world-trade-picker', '.world-trade-pick', '.world-trade-kind', '.world-trade-current']:
+            self.assertIn(name, host_css[1])
+        self.assertRegex(host_css[1], r'\.world-trade-picker\s*\{[^}]*display:\s*grid')
+        self.assertRegex(host_css[1], r'\.world-trade-pick\s*\{[^}]*text-align:\s*left')
+
     def test_nine_revised_units_keep_every_original_id(self):
         before = world(SOURCE.read_text())
         after = world((HERE / 'index.html').read_text())

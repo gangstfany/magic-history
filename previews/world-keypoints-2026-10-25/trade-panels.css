@@ -1,0 +1,57 @@
+/* Shared by the embedded event panel and the mirrored host panel. */
+.world-trade-picker {display:grid;gap:10px;margin:14px 0;min-width:0;}
+.world-trade-pick {appearance:none;-webkit-appearance:none;box-sizing:border-box;display:grid;gap:4px;width:100%;min-width:0;max-width:100%;min-height:100px;margin:0;padding:13px 15px;text-align:left;cursor:pointer;border:1px solid var(--line,#ded8c8);border-radius:12px;background:#fffdf8;color:var(--ink,#302a24);font-family:inherit;font-size:13px;font-weight:400;line-height:1.55;box-shadow:0 1px 2px #211f1c06;overflow-wrap:anywhere;transition:border-color .15s,background-color .15s;}
+.world-trade-pick:hover {border-color:#b7aa91;background:#f8f3e8;}
+.world-trade-pick:focus-visible {outline:2px solid var(--terracotta,#c9714f);outline-offset:2px;}
+.world-trade-pick strong {display:block;margin:1px 0;font-size:15px;font-weight:650;line-height:1.5;}
+.world-trade-pick span {display:block;}
+.world-trade-english {font-size:12px;color:var(--ink-soft,#6b6456);font-weight:400;}
+.world-trade-kind {display:block;color:var(--ink-soft,#766b59);font-family:inherit;font-size:11px;font-weight:500;line-height:1.55;letter-spacing:0;}
+.world-trade-count {font-size:11px;color:var(--ink-soft,#766b59);margin-top:3px;}
+.world-trade-intro {font-family:inherit;font-size:13px;font-weight:400;line-height:1.8;color:var(--ink-soft,#6b6456);margin:12px 0;}
+.world-trade-footnote {font-family:inherit;font-size:11px;font-weight:400;line-height:1.75;color:var(--ink-soft,#807865);margin:14px 0;}
+.world-trade-panel {font-family:inherit;font-size:13px;color:var(--ink,#302a24);}
+.world-trade-panel h2 {margin:5px 0 8px;font-size:18px;font-weight:650;line-height:1.5;}
+.world-trade-panel .rt-progress {font-size:12px;font-weight:500;line-height:1.65;}
+.world-trade-switch {margin-top:12px;}
+.world-trade-switch summary,.world-trade-sources summary {cursor:pointer;color:var(--ink-soft,#6b6456);font-family:inherit;font-size:12px;font-weight:500;line-height:1.65;}
+.world-trade-switch .world-trade-picker {padding-block:8px;}
+.world-trade-stops {display:flex;flex-wrap:wrap;gap:7px;margin:18px 0;}
+.world-trade-stops .rt-stop {margin:0;min-height:40px;gap:8px;font-family:inherit;font-size:12px;font-weight:500;line-height:1.55;}
+.world-trade-current {background:#f6f1e5;border:1px solid var(--line,#dfdcc9);border-radius:12px;padding:15px;}
+.world-trade-current h3 {font-size:16px;font-weight:650;line-height:1.5;margin:5px 0 8px;color:var(--ink,#302a24);}
+.world-trade-current p {font-family:inherit;font-size:13px;font-weight:400;line-height:1.8;margin:9px 0;}
+.world-trade-current b {font-weight:600;}
+.world-trade-sources {margin:15px 0;}
+.world-trade-sources a {display:block;color:var(--terracotta,#a2593a);font-size:12px;line-height:1.6;padding:5px 0;}
+@media(max-width:600px){.world-trade-pick {padding:12px 14px;}.world-trade-panel h2 {font-size:17px;}}
+/* The causal module contains both reasoning steps and their geographical examples. */
+.causal-workspace-tabs {display:flex;gap:5px;padding:4px;border:1px solid var(--line,#ded8c8);background:#f4f0e5;border-radius:11px;margin:0 0 13px;}
+.causal-workspace-tabs button {appearance:none;flex:1;min-width:0;min-height:38px;padding:8px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink-soft,#6b6456);font-family:inherit;font-size:13px;font-weight:600;line-height:1.5;cursor:pointer;}
+.causal-workspace-tabs button[aria-pressed="true"] {background:var(--ink,#302a24);color:#fffdf8;}
+.causal-workspace-tabs button:focus-visible,.causal-related-routes button:focus-visible,.causal-return-link:focus-visible {outline:2px solid var(--terracotta,#c9714f);outline-offset:2px;}
+.causal-click-hint {font-size:12px;line-height:1.7;color:var(--ink-soft,#6b6456);margin:12px 0;}
+.causal-static-panel .rt-name {font-size:17px;line-height:1.5;}
+.causal-static-panel .rt-stops-chain {gap:8px;}
+.causal-static-panel .rt-stops-chain .rt-stop {width:100%;min-height:48px;text-align:left;gap:10px;line-height:1.6;}
+.causal-static-panel .rt-sub {display:block;font-size:11px;font-weight:400;line-height:1.5;}
+.causal-related-routes {margin:0 0 14px;padding:10px 12px;background:#f0f2e8;border:1px solid #d9dfcd;border-radius:10px;}
+.causal-related-label {font-size:11px;font-weight:600;line-height:1.6;color:#6f785c;margin-bottom:6px;}
+.causal-related-routes button {appearance:none;display:grid;width:100%;gap:2px;text-align:left;border:1px solid #d4dbc9;border-radius:8px;background:#fffdf8;padding:9px 11px;margin-top:6px;font-family:inherit;cursor:pointer;}
+.causal-related-routes button span {color:#7c7766;font-size:10px;font-weight:400;}
+.causal-related-routes button strong {color:#365b58;font-size:12px;font-weight:600;line-height:1.6;}
+.causal-popup-routes {margin-top:12px;padding-top:10px;border-top:1px solid #ded8c8;}
+.causal-popup-routes button {appearance:none;display:block;width:100%;min-height:38px;text-align:left;margin:5px 0;padding:7px 10px;border:1px solid #ccd7c4;border-radius:7px;background:#f0f4ea;color:#365b58;font-family:inherit;font-size:12px;font-weight:600;line-height:1.5;cursor:pointer;}
+.causal-trade-context {margin:8px 0 14px;padding:10px 12px;border-left:3px solid var(--terracotta,#c9714f);background:#f6f1e5;border-radius:0 8px 8px 0;}
+.causal-trade-context span {display:block;font-size:11px;color:var(--ink-soft,#6b6456);line-height:1.6;}
+.causal-trade-context strong {display:block;font-size:13px;line-height:1.6;font-weight:600;margin:3px 0;}
+.causal-trade-context button,.causal-return-link {appearance:none;display:block;border:0;padding:6px 0;background:transparent;color:var(--terracotta,#a2593a);font-family:inherit;font-size:12px;font-weight:600;line-height:1.6;cursor:pointer;}
+.causal-chain-background {margin:18px 0 12px;color:var(--ink-soft,#6b6456);font-size:12px;line-height:1.8;}
+.causal-chain-background summary {cursor:pointer;font-weight:600;}
+.home-events .map-panel-tabs,#mapPanelTabs {display:none!important;}
+.causal-static-panel .rt-top,.world-trade-panel .rt-top {position:static!important;}
+.causal-static-panel>.causal-workspace-tabs,.world-trade-panel>.causal-workspace-tabs {position:sticky;top:0;z-index:8;}
+.world-trade-panel>.causal-trade-context {position:sticky;top:55px;z-index:7;}
+.world-causal-active .region-path {transition:none!important;}
+.causal-related-routes small {display:block;color:var(--ink-soft,#6b6456);font-size:11px;font-weight:400;line-height:1.65;margin-top:3px;}
+.causal-trade-context p {font-size:11px;font-weight:400;line-height:1.65;color:var(--ink-soft,#6b6456);margin:4px 0;}

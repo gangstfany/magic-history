@@ -1,0 +1,103 @@
+{
+  "date": "2026-10-25",
+  "targetBranch": "course/apwh",
+  "remoteBranches": [
+    {
+      "branch": "agent/apwh-integration",
+      "sha": "41719240810c7983e99a6cfc601141274367693f",
+      "archiveTag": "archive/apwh/2026-10-25/agent/apwh-integration"
+    },
+    {
+      "branch": "course/world-history",
+      "sha": "8937bd8d15cb63d705f94e03b3c2ab1d9c8dbcb9",
+      "archiveTag": "archive/apwh/2026-10-25/course/world-history"
+    },
+    {
+      "branch": "feature/apwh-all-units-card-timeline-dock",
+      "sha": "9790bb27d90cb3d7c96cac2932f97b601ef7f621",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-all-units-card-timeline-dock"
+    },
+    {
+      "branch": "feature/apwh-exit-quiz-filter-restore",
+      "sha": "61bcf28d7182acfd7b06928048b091f8caa44e9f",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-exit-quiz-filter-restore"
+    },
+    {
+      "branch": "feature/apwh-u1-amsco-causal-chains",
+      "sha": "c3dd015de6fc1b767ef1117ee0dcd9744029dea0",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-u1-amsco-causal-chains"
+    },
+    {
+      "branch": "feature/apwh-u1-timeline-anchors",
+      "sha": "06bf2105fc91479e3a1a12001a1bfa22fc580e89",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-u1-timeline-anchors"
+    },
+    {
+      "branch": "feature/apwh-u2-amsco-chains",
+      "sha": "8aeb45cc47e1282e6c52d3f179dbc07652c4ebbc",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-u2-amsco-chains"
+    },
+    {
+      "branch": "feature/apwh-u3-amsco-chains",
+      "sha": "1a8c8082c360dc8953839d75d50a58f95bb42a32",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-u3-amsco-chains"
+    },
+    {
+      "branch": "feature/apwh-u4-amsco-chains",
+      "sha": "af555cab1c816ee292eb8c48ebaf7966fac2569e",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-u4-amsco-chains"
+    },
+    {
+      "branch": "feature/apwh-u5-amsco-chains",
+      "sha": "17da10d7c9d4794331760bcfb7c7413fa45dfcf7",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-u5-amsco-chains"
+    },
+    {
+      "branch": "feature/apwh-u6-amsco-chains",
+      "sha": "9ab01f1b7ddac3d72d353fcead542a7f23aab2e1",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-u6-amsco-chains"
+    },
+    {
+      "branch": "feature/apwh-u7-amsco-chains",
+      "sha": "aeff8cf731fb7767d40932c21c5af72b731800f6",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-u7-amsco-chains"
+    },
+    {
+      "branch": "feature/apwh-u8-amsco-chains",
+      "sha": "9cce3ac7136b21a08dccce543fcebb9c0473732f",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-u8-amsco-chains"
+    },
+    {
+      "branch": "feature/apwh-u9-amsco-chains",
+      "sha": "cab0b7974771cb90eb5ecf4f116e888d283f1fe1",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-u9-amsco-chains"
+    }
+  ],
+  "localHistoricalBranches": [
+    {
+      "branch": "feature/apwh-u1-study-sync-fixes",
+      "sha": "12f9db0ccd8e68ac1196cdfbb45befac0e7c7d8d",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-u1-study-sync-fixes"
+    },
+    {
+      "branch": "feature/apwh-u4-location-study",
+      "sha": "58e99c46011e2107c10eace93d1bda53e5ecde47",
+      "archiveTag": "archive/apwh/2026-10-25/feature/apwh-u4-location-study"
+    },
+    {
+      "branch": "feature/embedded-timeline-dock",
+      "sha": "b5e4f101834eb2881f328f9a89f36322867e6ba2",
+      "archiveTag": "archive/apwh/2026-10-25/feature/embedded-timeline-dock"
+    },
+    {
+      "branch": "codex/world-keypoints-content-corrections",
+      "sha": "b760a11ea8ec647aab82cb2f21a717aa8bca73e5",
+      "archiveTag": "archive/apwh/2026-10-25/codex/world-keypoints-content-corrections"
+    }
+  ],
+  "superseded": {
+    "u1": "All six U1 chains and grouping/layout are present; differing evidence uses updated English place/region labels.",
+    "u3": "1a8c808 and c5c113b have identical stable patch id 6189889d59bdb7989ecddb4efa0d4963429ef400."
+  },
+  "excludedPrototype": "feature/history-timeline-module-prototype is an APUSH Period 1 prototype and stays separate."
+}

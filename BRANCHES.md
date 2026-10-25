@@ -1,11 +1,13 @@
 # Canonical branches and ownership
 
+As of 2026-10-25, `course/apwh` consolidates the World History branches. The current reviewed World History entry is `previews/world-keypoints-2026-10-25/index.html` (with a self-contained build). See `docs/apwh-branch-consolidation-2026-10-25.md` for ancestry, archives and recovery.
+
 `main` is protected integration / release history. Do not automatically merge this reorganization into main.
 
 | Branch | Responsibility |
 | --- | --- |
 | `shared/site` | Shared site shell, account UI/service, callback, vendor SDK, `assets/map-ui.css`, global navigation and iframe sizing coordination |
-| `course/world-history` | `world-map.html`, World study directory / host behavior, `data/apwh-u1-location-study.js` through U9, World tests and verification |
+| `course/apwh` | `world-map.html`, World study directory / host behavior, `data/apwh-u1-location-study.js` through U9, World tests and verification |
 | `course/art-history` | `art-history-map.html`, Art assets/data/content/source ledgers, Art tests and verification |
 
 Both course branches start at the same shared/site commit; they are siblings, not ancestors of each other. Open the shared PR first. After it is reviewed and integrated, open independent course PRs against the appropriate updated main. Resolve shared changes once, and coordinate the course-specific `index.html` hunks (World host behavior versus Art 250-work caption). Preserve both assertion sets in any integrated tests; do not skip tests to resolve conflicts.

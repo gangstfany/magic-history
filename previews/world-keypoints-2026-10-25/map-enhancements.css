@@ -1,0 +1,44 @@
+.world-route-overlay,.world-practice-notes {position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:12;}
+.world-route-overlay[hidden] {display:none;}
+.world-causal-link {fill:none;stroke:#496f72;stroke-width:2;stroke-dasharray:5 5;opacity:.8;}
+.world-geography-tether {stroke:#637b77;stroke-width:1;stroke-dasharray:2 4;opacity:.65;pointer-events:none;}
+.world-causal-node {pointer-events:auto;cursor:pointer;outline:none;}
+.world-node-ring {fill:rgba(255,253,247,.7);stroke:transparent;stroke-width:2;}
+.world-node-face {fill:#fffcf4;stroke:#6b8786;stroke-width:1.5;}
+.world-causal-node text {fill:#335f62;font:700 14px system-ui,sans-serif;pointer-events:none;}
+.world-causal-node.is-current .world-node-ring,.world-causal-node:focus-visible .world-node-ring {stroke:#a44d35;stroke-width:3;fill:#f8e6c5;}
+.world-causal-node.is-current .world-node-face {fill:#315f62;stroke:#315f62;}
+.world-causal-node.is-current text {fill:white;}
+.world-route-caption {fill:#315f62;paint-order:stroke;stroke:#f2e9d8;stroke-width:5px;font:600 11px system-ui,sans-serif;}
+.focused-causal .pin-group {visibility:hidden!important;opacity:0!important;pointer-events:none!important;}
+.focused-practice .pin-group {pointer-events:none!important;}
+.world-map-note {box-sizing:border-box;position:absolute;width:238px;max-width:calc(100% - 24px);padding:12px 14px;border:1px solid #c8c4ac;border-radius:12px;background:#fffdf5;box-shadow:0 3px 12px #344e4720;color:#344e47;font:12px/1.6 system-ui,sans-serif;overflow-wrap:anywhere;}
+.world-map-note strong {display:block;font-size:13px;line-height:1.4;}
+.world-map-note small {display:block;color:#7b7869;font-size:10px;margin-top:4px;}
+.world-map-note p {margin:7px 0 0;}
+.world-map-note-rail {box-sizing:border-box;background:#f5f1e7;border-top:1px solid #d8d4bf;padding:12px 16px;}
+.world-map-note-rail[hidden] {display:none;}
+.world-map-note-rail .world-map-note {position:static;width:100%;max-width:none;box-shadow:none;background:#fffdf5;}
+.world-note-rail-label {font:600 10px system-ui,sans-serif;letter-spacing:.08em;color:#7b7869;margin:0 0 7px;}
+
+.world-practice-active .world-timeline-dock,.world-causal-active .world-timeline-dock {display:none!important;}
+.world-practice-active .region-label,.world-causal-active .region-label {display:none!important;}
+.world-causal-hud {position:absolute;top:10px;left:12px;z-index:24;display:flex;align-items:center;gap:12px;max-width:calc(100% - 78px);padding:6px 8px 6px 11px;background:#fffdf3eb;border:1px solid #d8d4bf;border-radius:10px;color:#315f62;font:600 11px/1.4 system-ui,sans-serif;}
+.world-causal-hud[hidden] {display:none;}
+.world-causal-hud button {font:inherit;color:#735f47;border:0;border-left:1px solid #d8d4bf;background:transparent;padding:5px 2px 5px 9px;cursor:pointer;white-space:nowrap;min-height:30px;}
+.world-causal-popup {width:302px;padding:13px 16px;overflow-y:auto;pointer-events:auto;overscroll-behavior:contain;}
+.world-causal-popup strong {color:#a45b37;font-size:11px;letter-spacing:.03em;}
+.world-causal-popup h3 {font-size:15px;line-height:1.5;margin:5px 0 9px;color:#315f62;}
+.world-causal-popup p {font-size:12px;line-height:1.75;}
+.world-causal-popup p b {color:#315f62;}
+.world-causal-popup summary {font-size:11px;color:#81684c;cursor:pointer;margin-top:10px;}
+.world-causal-continue {display:block;margin-top:12px;padding:9px 13px;border-radius:8px;border:0;background:#315f62;color:#fff;font:600 12px system-ui,sans-serif;cursor:pointer;}
+.world-map-note-rail .world-causal-popup {max-height:none!important;height:auto!important;}
+
+.world-causal-hud {gap:6px;flex-wrap:wrap;}
+.world-causal-hud span {min-width:0;}
+.world-trade-active .world-timeline-dock,.world-trade-active .region-label {display:none!important;}
+.focused-trade .pin-group,.focused-trade .route-line,.focused-trade .route-vehicle {visibility:hidden!important;opacity:0!important;pointer-events:none!important;}
+.world-trade-path {fill:none;stroke-width:2;stroke-dasharray:7 5;opacity:.55;pointer-events:none;}
+.world-trade-path.is-active {stroke-width:4;stroke-dasharray:none;opacity:1;}
+.world-trade-popup {width:264px;pointer-events:auto;}

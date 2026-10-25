@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-25",
+  "chains": [
+    {
+      "unit": 1,
+      "nodes": 8,
+      "title": "Unit 1 主干链 · 余粮如何一路变成跨区域交换的前提"
+    },
+    {
+      "unit": 2,
+      "nodes": 8,
+      "title": "一趟买卖怎么从算不过账变成算得过账"
+    },
+    {
+      "unit": 3,
+      "nodes": 8,
+      "title": "广土怎么被造出来，又怎么把自己绑死"
+    },
+    {
+      "unit": 4,
+      "nodes": 8,
+      "title": "海上那块空白被填满之后"
+    },
+    {
+      "unit": 5,
+      "nodes": 8,
+      "title": "同意变成唯一的合法性之后"
+    },
+    {
+      "unit": 6,
+      "nodes": 8,
+      "title": "Unit 6 主干链 · 要按节奏到货的东西，最后要按谁的规矩生产"
+    },
+    {
+      "unit": 7,
+      "nodes": 8,
+      "title": "安全一旦放在国境之外，谁先动员谁定规模"
+    },
+    {
+      "unit": 8,
+      "nodes": 8,
+      "title": "直接开火的代价一旦无法计算，胜负就改在第三方的国土上分"
+    },
+    {
+      "unit": 9,
+      "nodes": 8,
+      "title": "距离的成本一降，剩下唯一稀缺的东西就是规则"
+    }
+  ],
+  "desktopPractice": [
+    {
+      "case": "desktop practice",
+      "collisions": 0,
+      "controlsOverlap": false,
+      "note": {
+        "bottom": 396.78125,
+        "height": 128.78125,
+        "left": 270,
+        "right": 508,
+        "top": 268,
+        "width": 238,
+        "x": 270,
+        "y": 268
+      },
+      "pins": 1
+    }
+  ],
+  "mobile": {
+    "widths": [
+      319,
+      390
+    ],
+    "horizontalOverflow": false,
+    "calloutsUseRail": true
+  },
+  "typesChecked": [
+    "region",
+    "period",
+    "theme",
+    "term"
+  ],
+  "clearsOnNext": true,
+  "cameraStableOnStep": true,
+  "noEagle": true
+}

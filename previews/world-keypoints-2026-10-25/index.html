@@ -839,6 +839,63 @@ html, body, button, input, select {
  :is(.home-events, .event-panel) .preview-section p {padding:10px;}
  :is(.home-events, .event-panel) .location-study-unit-title {font-size:14px;}
 }
+</style><style id="world-panel-styles">/* Shared by the embedded event panel and the mirrored host panel. */
+.world-trade-picker {display:grid;gap:10px;margin:14px 0;min-width:0;}
+.world-trade-pick {appearance:none;-webkit-appearance:none;box-sizing:border-box;display:grid;gap:4px;width:100%;min-width:0;max-width:100%;min-height:100px;margin:0;padding:13px 15px;text-align:left;cursor:pointer;border:1px solid var(--line,#ded8c8);border-radius:12px;background:#fffdf8;color:var(--ink,#302a24);font-family:inherit;font-size:13px;font-weight:400;line-height:1.55;box-shadow:0 1px 2px #211f1c06;overflow-wrap:anywhere;transition:border-color .15s,background-color .15s;}
+.world-trade-pick:hover {border-color:#b7aa91;background:#f8f3e8;}
+.world-trade-pick:focus-visible {outline:2px solid var(--terracotta,#c9714f);outline-offset:2px;}
+.world-trade-pick strong {display:block;margin:1px 0;font-size:15px;font-weight:650;line-height:1.5;}
+.world-trade-pick span {display:block;}
+.world-trade-english {font-size:12px;color:var(--ink-soft,#6b6456);font-weight:400;}
+.world-trade-kind {display:block;color:var(--ink-soft,#766b59);font-family:inherit;font-size:11px;font-weight:500;line-height:1.55;letter-spacing:0;}
+.world-trade-count {font-size:11px;color:var(--ink-soft,#766b59);margin-top:3px;}
+.world-trade-intro {font-family:inherit;font-size:13px;font-weight:400;line-height:1.8;color:var(--ink-soft,#6b6456);margin:12px 0;}
+.world-trade-footnote {font-family:inherit;font-size:11px;font-weight:400;line-height:1.75;color:var(--ink-soft,#807865);margin:14px 0;}
+.world-trade-panel {font-family:inherit;font-size:13px;color:var(--ink,#302a24);}
+.world-trade-panel h2 {margin:5px 0 8px;font-size:18px;font-weight:650;line-height:1.5;}
+.world-trade-panel .rt-progress {font-size:12px;font-weight:500;line-height:1.65;}
+.world-trade-switch {margin-top:12px;}
+.world-trade-switch summary,.world-trade-sources summary {cursor:pointer;color:var(--ink-soft,#6b6456);font-family:inherit;font-size:12px;font-weight:500;line-height:1.65;}
+.world-trade-switch .world-trade-picker {padding-block:8px;}
+.world-trade-stops {display:flex;flex-wrap:wrap;gap:7px;margin:18px 0;}
+.world-trade-stops .rt-stop {margin:0;min-height:40px;gap:8px;font-family:inherit;font-size:12px;font-weight:500;line-height:1.55;}
+.world-trade-current {background:#f6f1e5;border:1px solid var(--line,#dfdcc9);border-radius:12px;padding:15px;}
+.world-trade-current h3 {font-size:16px;font-weight:650;line-height:1.5;margin:5px 0 8px;color:var(--ink,#302a24);}
+.world-trade-current p {font-family:inherit;font-size:13px;font-weight:400;line-height:1.8;margin:9px 0;}
+.world-trade-current b {font-weight:600;}
+.world-trade-sources {margin:15px 0;}
+.world-trade-sources a {display:block;color:var(--terracotta,#a2593a);font-size:12px;line-height:1.6;padding:5px 0;}
+@media(max-width:600px){.world-trade-pick {padding:12px 14px;}.world-trade-panel h2 {font-size:17px;}}
+/* The causal module contains both reasoning steps and their geographical examples. */
+.causal-workspace-tabs {display:flex;gap:5px;padding:4px;border:1px solid var(--line,#ded8c8);background:#f4f0e5;border-radius:11px;margin:0 0 13px;}
+.causal-workspace-tabs button {appearance:none;flex:1;min-width:0;min-height:38px;padding:8px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink-soft,#6b6456);font-family:inherit;font-size:13px;font-weight:600;line-height:1.5;cursor:pointer;}
+.causal-workspace-tabs button[aria-pressed="true"] {background:var(--ink,#302a24);color:#fffdf8;}
+.causal-workspace-tabs button:focus-visible,.causal-related-routes button:focus-visible,.causal-return-link:focus-visible {outline:2px solid var(--terracotta,#c9714f);outline-offset:2px;}
+.causal-click-hint {font-size:12px;line-height:1.7;color:var(--ink-soft,#6b6456);margin:12px 0;}
+.causal-static-panel .rt-name {font-size:17px;line-height:1.5;}
+.causal-static-panel .rt-stops-chain {gap:8px;}
+.causal-static-panel .rt-stops-chain .rt-stop {width:100%;min-height:48px;text-align:left;gap:10px;line-height:1.6;}
+.causal-static-panel .rt-sub {display:block;font-size:11px;font-weight:400;line-height:1.5;}
+.causal-related-routes {margin:0 0 14px;padding:10px 12px;background:#f0f2e8;border:1px solid #d9dfcd;border-radius:10px;}
+.causal-related-label {font-size:11px;font-weight:600;line-height:1.6;color:#6f785c;margin-bottom:6px;}
+.causal-related-routes button {appearance:none;display:grid;width:100%;gap:2px;text-align:left;border:1px solid #d4dbc9;border-radius:8px;background:#fffdf8;padding:9px 11px;margin-top:6px;font-family:inherit;cursor:pointer;}
+.causal-related-routes button span {color:#7c7766;font-size:10px;font-weight:400;}
+.causal-related-routes button strong {color:#365b58;font-size:12px;font-weight:600;line-height:1.6;}
+.causal-popup-routes {margin-top:12px;padding-top:10px;border-top:1px solid #ded8c8;}
+.causal-popup-routes button {appearance:none;display:block;width:100%;min-height:38px;text-align:left;margin:5px 0;padding:7px 10px;border:1px solid #ccd7c4;border-radius:7px;background:#f0f4ea;color:#365b58;font-family:inherit;font-size:12px;font-weight:600;line-height:1.5;cursor:pointer;}
+.causal-trade-context {margin:8px 0 14px;padding:10px 12px;border-left:3px solid var(--terracotta,#c9714f);background:#f6f1e5;border-radius:0 8px 8px 0;}
+.causal-trade-context span {display:block;font-size:11px;color:var(--ink-soft,#6b6456);line-height:1.6;}
+.causal-trade-context strong {display:block;font-size:13px;line-height:1.6;font-weight:600;margin:3px 0;}
+.causal-trade-context button,.causal-return-link {appearance:none;display:block;border:0;padding:6px 0;background:transparent;color:var(--terracotta,#a2593a);font-family:inherit;font-size:12px;font-weight:600;line-height:1.6;cursor:pointer;}
+.causal-chain-background {margin:18px 0 12px;color:var(--ink-soft,#6b6456);font-size:12px;line-height:1.8;}
+.causal-chain-background summary {cursor:pointer;font-weight:600;}
+.home-events .map-panel-tabs,#mapPanelTabs {display:none!important;}
+.causal-static-panel .rt-top,.world-trade-panel .rt-top {position:static!important;}
+.causal-static-panel>.causal-workspace-tabs,.world-trade-panel>.causal-workspace-tabs {position:sticky;top:0;z-index:8;}
+.world-trade-panel>.causal-trade-context {position:sticky;top:55px;z-index:7;}
+.world-causal-active .region-path {transition:none!important;}
+.causal-related-routes small {display:block;color:var(--ink-soft,#6b6456);font-size:11px;font-weight:400;line-height:1.65;margin-top:3px;}
+.causal-trade-context p {font-size:11px;font-weight:400;line-height:1.65;color:var(--ink-soft,#6b6456);margin:4px 0;}
 </style></head>
 <body><div class="offline-note">本地整改预览 · 世界史精选复习卡 · 240 个知识点（保留原231张，新增9张）· 非完整考纲的替代品 · 2026-10-25 · 未发布</div>
 <div class="frame">
@@ -1592,6 +1649,109 @@ html, body, button, input, select {
 }
 
 .split {grid-template-columns:minmax(0,1fr)!important;gap:0!important;} .map-study-view {width:100%;border:0;border-radius:0;}
+&lt;/style&gt;&lt;style&gt;
+.world-route-overlay,.world-practice-notes {position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:12;}
+.world-route-overlay[hidden] {display:none;}
+.world-causal-link {fill:none;stroke:#496f72;stroke-width:2;stroke-dasharray:5 5;opacity:.8;}
+.world-geography-tether {stroke:#637b77;stroke-width:1;stroke-dasharray:2 4;opacity:.65;pointer-events:none;}
+.world-causal-node {pointer-events:auto;cursor:pointer;outline:none;}
+.world-node-ring {fill:rgba(255,253,247,.7);stroke:transparent;stroke-width:2;}
+.world-node-face {fill:#fffcf4;stroke:#6b8786;stroke-width:1.5;}
+.world-causal-node text {fill:#335f62;font:700 14px system-ui,sans-serif;pointer-events:none;}
+.world-causal-node.is-current .world-node-ring,.world-causal-node:focus-visible .world-node-ring {stroke:#a44d35;stroke-width:3;fill:#f8e6c5;}
+.world-causal-node.is-current .world-node-face {fill:#315f62;stroke:#315f62;}
+.world-causal-node.is-current text {fill:white;}
+.world-route-caption {fill:#315f62;paint-order:stroke;stroke:#f2e9d8;stroke-width:5px;font:600 11px system-ui,sans-serif;}
+.focused-causal .pin-group {visibility:hidden!important;opacity:0!important;pointer-events:none!important;}
+.focused-practice .pin-group {pointer-events:none!important;}
+.world-map-note {box-sizing:border-box;position:absolute;width:238px;max-width:calc(100% - 24px);padding:12px 14px;border:1px solid #c8c4ac;border-radius:12px;background:#fffdf5;box-shadow:0 3px 12px #344e4720;color:#344e47;font:12px/1.6 system-ui,sans-serif;overflow-wrap:anywhere;}
+.world-map-note strong {display:block;font-size:13px;line-height:1.4;}
+.world-map-note small {display:block;color:#7b7869;font-size:10px;margin-top:4px;}
+.world-map-note p {margin:7px 0 0;}
+.world-map-note-rail {box-sizing:border-box;background:#f5f1e7;border-top:1px solid #d8d4bf;padding:12px 16px;}
+.world-map-note-rail[hidden] {display:none;}
+.world-map-note-rail .world-map-note {position:static;width:100%;max-width:none;box-shadow:none;background:#fffdf5;}
+.world-note-rail-label {font:600 10px system-ui,sans-serif;letter-spacing:.08em;color:#7b7869;margin:0 0 7px;}
+
+.world-practice-active .world-timeline-dock,.world-causal-active .world-timeline-dock {display:none!important;}
+.world-practice-active .region-label,.world-causal-active .region-label {display:none!important;}
+.world-causal-hud {position:absolute;top:10px;left:12px;z-index:24;display:flex;align-items:center;gap:12px;max-width:calc(100% - 78px);padding:6px 8px 6px 11px;background:#fffdf3eb;border:1px solid #d8d4bf;border-radius:10px;color:#315f62;font:600 11px/1.4 system-ui,sans-serif;}
+.world-causal-hud[hidden] {display:none;}
+.world-causal-hud button {font:inherit;color:#735f47;border:0;border-left:1px solid #d8d4bf;background:transparent;padding:5px 2px 5px 9px;cursor:pointer;white-space:nowrap;min-height:30px;}
+.world-causal-popup {width:302px;padding:13px 16px;overflow-y:auto;pointer-events:auto;overscroll-behavior:contain;}
+.world-causal-popup strong {color:#a45b37;font-size:11px;letter-spacing:.03em;}
+.world-causal-popup h3 {font-size:15px;line-height:1.5;margin:5px 0 9px;color:#315f62;}
+.world-causal-popup p {font-size:12px;line-height:1.75;}
+.world-causal-popup p b {color:#315f62;}
+.world-causal-popup summary {font-size:11px;color:#81684c;cursor:pointer;margin-top:10px;}
+.world-causal-continue {display:block;margin-top:12px;padding:9px 13px;border-radius:8px;border:0;background:#315f62;color:#fff;font:600 12px system-ui,sans-serif;cursor:pointer;}
+.world-map-note-rail .world-causal-popup {max-height:none!important;height:auto!important;}
+
+.world-causal-hud {gap:6px;flex-wrap:wrap;}
+.world-causal-hud span {min-width:0;}
+.world-trade-active .world-timeline-dock,.world-trade-active .region-label {display:none!important;}
+.focused-trade .pin-group,.focused-trade .route-line,.focused-trade .route-vehicle {visibility:hidden!important;opacity:0!important;pointer-events:none!important;}
+.world-trade-path {fill:none;stroke-width:2;stroke-dasharray:7 5;opacity:.55;pointer-events:none;}
+.world-trade-path.is-active {stroke-width:4;stroke-dasharray:none;opacity:1;}
+.world-trade-popup {width:264px;pointer-events:auto;}
+
+&lt;/style&gt;&lt;style id=&quot;world-panel-styles&quot;&gt;/* Shared by the embedded event panel and the mirrored host panel. */
+.world-trade-picker {display:grid;gap:10px;margin:14px 0;min-width:0;}
+.world-trade-pick {appearance:none;-webkit-appearance:none;box-sizing:border-box;display:grid;gap:4px;width:100%;min-width:0;max-width:100%;min-height:100px;margin:0;padding:13px 15px;text-align:left;cursor:pointer;border:1px solid var(--line,#ded8c8);border-radius:12px;background:#fffdf8;color:var(--ink,#302a24);font-family:inherit;font-size:13px;font-weight:400;line-height:1.55;box-shadow:0 1px 2px #211f1c06;overflow-wrap:anywhere;transition:border-color .15s,background-color .15s;}
+.world-trade-pick:hover {border-color:#b7aa91;background:#f8f3e8;}
+.world-trade-pick:focus-visible {outline:2px solid var(--terracotta,#c9714f);outline-offset:2px;}
+.world-trade-pick strong {display:block;margin:1px 0;font-size:15px;font-weight:650;line-height:1.5;}
+.world-trade-pick span {display:block;}
+.world-trade-english {font-size:12px;color:var(--ink-soft,#6b6456);font-weight:400;}
+.world-trade-kind {display:block;color:var(--ink-soft,#766b59);font-family:inherit;font-size:11px;font-weight:500;line-height:1.55;letter-spacing:0;}
+.world-trade-count {font-size:11px;color:var(--ink-soft,#766b59);margin-top:3px;}
+.world-trade-intro {font-family:inherit;font-size:13px;font-weight:400;line-height:1.8;color:var(--ink-soft,#6b6456);margin:12px 0;}
+.world-trade-footnote {font-family:inherit;font-size:11px;font-weight:400;line-height:1.75;color:var(--ink-soft,#807865);margin:14px 0;}
+.world-trade-panel {font-family:inherit;font-size:13px;color:var(--ink,#302a24);}
+.world-trade-panel h2 {margin:5px 0 8px;font-size:18px;font-weight:650;line-height:1.5;}
+.world-trade-panel .rt-progress {font-size:12px;font-weight:500;line-height:1.65;}
+.world-trade-switch {margin-top:12px;}
+.world-trade-switch summary,.world-trade-sources summary {cursor:pointer;color:var(--ink-soft,#6b6456);font-family:inherit;font-size:12px;font-weight:500;line-height:1.65;}
+.world-trade-switch .world-trade-picker {padding-block:8px;}
+.world-trade-stops {display:flex;flex-wrap:wrap;gap:7px;margin:18px 0;}
+.world-trade-stops .rt-stop {margin:0;min-height:40px;gap:8px;font-family:inherit;font-size:12px;font-weight:500;line-height:1.55;}
+.world-trade-current {background:#f6f1e5;border:1px solid var(--line,#dfdcc9);border-radius:12px;padding:15px;}
+.world-trade-current h3 {font-size:16px;font-weight:650;line-height:1.5;margin:5px 0 8px;color:var(--ink,#302a24);}
+.world-trade-current p {font-family:inherit;font-size:13px;font-weight:400;line-height:1.8;margin:9px 0;}
+.world-trade-current b {font-weight:600;}
+.world-trade-sources {margin:15px 0;}
+.world-trade-sources a {display:block;color:var(--terracotta,#a2593a);font-size:12px;line-height:1.6;padding:5px 0;}
+@media(max-width:600px){.world-trade-pick {padding:12px 14px;}.world-trade-panel h2 {font-size:17px;}}
+/* The causal module contains both reasoning steps and their geographical examples. */
+.causal-workspace-tabs {display:flex;gap:5px;padding:4px;border:1px solid var(--line,#ded8c8);background:#f4f0e5;border-radius:11px;margin:0 0 13px;}
+.causal-workspace-tabs button {appearance:none;flex:1;min-width:0;min-height:38px;padding:8px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink-soft,#6b6456);font-family:inherit;font-size:13px;font-weight:600;line-height:1.5;cursor:pointer;}
+.causal-workspace-tabs button[aria-pressed=&quot;true&quot;] {background:var(--ink,#302a24);color:#fffdf8;}
+.causal-workspace-tabs button:focus-visible,.causal-related-routes button:focus-visible,.causal-return-link:focus-visible {outline:2px solid var(--terracotta,#c9714f);outline-offset:2px;}
+.causal-click-hint {font-size:12px;line-height:1.7;color:var(--ink-soft,#6b6456);margin:12px 0;}
+.causal-static-panel .rt-name {font-size:17px;line-height:1.5;}
+.causal-static-panel .rt-stops-chain {gap:8px;}
+.causal-static-panel .rt-stops-chain .rt-stop {width:100%;min-height:48px;text-align:left;gap:10px;line-height:1.6;}
+.causal-static-panel .rt-sub {display:block;font-size:11px;font-weight:400;line-height:1.5;}
+.causal-related-routes {margin:0 0 14px;padding:10px 12px;background:#f0f2e8;border:1px solid #d9dfcd;border-radius:10px;}
+.causal-related-label {font-size:11px;font-weight:600;line-height:1.6;color:#6f785c;margin-bottom:6px;}
+.causal-related-routes button {appearance:none;display:grid;width:100%;gap:2px;text-align:left;border:1px solid #d4dbc9;border-radius:8px;background:#fffdf8;padding:9px 11px;margin-top:6px;font-family:inherit;cursor:pointer;}
+.causal-related-routes button span {color:#7c7766;font-size:10px;font-weight:400;}
+.causal-related-routes button strong {color:#365b58;font-size:12px;font-weight:600;line-height:1.6;}
+.causal-popup-routes {margin-top:12px;padding-top:10px;border-top:1px solid #ded8c8;}
+.causal-popup-routes button {appearance:none;display:block;width:100%;min-height:38px;text-align:left;margin:5px 0;padding:7px 10px;border:1px solid #ccd7c4;border-radius:7px;background:#f0f4ea;color:#365b58;font-family:inherit;font-size:12px;font-weight:600;line-height:1.5;cursor:pointer;}
+.causal-trade-context {margin:8px 0 14px;padding:10px 12px;border-left:3px solid var(--terracotta,#c9714f);background:#f6f1e5;border-radius:0 8px 8px 0;}
+.causal-trade-context span {display:block;font-size:11px;color:var(--ink-soft,#6b6456);line-height:1.6;}
+.causal-trade-context strong {display:block;font-size:13px;line-height:1.6;font-weight:600;margin:3px 0;}
+.causal-trade-context button,.causal-return-link {appearance:none;display:block;border:0;padding:6px 0;background:transparent;color:var(--terracotta,#a2593a);font-family:inherit;font-size:12px;font-weight:600;line-height:1.6;cursor:pointer;}
+.causal-chain-background {margin:18px 0 12px;color:var(--ink-soft,#6b6456);font-size:12px;line-height:1.8;}
+.causal-chain-background summary {cursor:pointer;font-weight:600;}
+.home-events .map-panel-tabs,#mapPanelTabs {display:none!important;}
+.causal-static-panel .rt-top,.world-trade-panel .rt-top {position:static!important;}
+.causal-static-panel&gt;.causal-workspace-tabs,.world-trade-panel&gt;.causal-workspace-tabs {position:sticky;top:0;z-index:8;}
+.world-trade-panel&gt;.causal-trade-context {position:sticky;top:55px;z-index:7;}
+.world-causal-active .region-path {transition:none!important;}
+.causal-related-routes small {display:block;color:var(--ink-soft,#6b6456);font-size:11px;font-weight:400;line-height:1.65;margin-top:3px;}
+.causal-trade-context p {font-size:11px;font-weight:400;line-height:1.65;color:var(--ink-soft,#6b6456);margin:4px 0;}
 &lt;/style&gt;&lt;/head&gt;
 &lt;body&gt;
 &lt;div class=&quot;app-shell&quot;&gt;
@@ -3881,6 +4041,7 @@ html, body, button, input, select {
   }
 
   function applyTransform() {
+    window.dispatchEvent(new Event(&quot;world-map-transform&quot;));
     inner.style.touchAction = zoom &gt; 1 ? &#x27;none&#x27; : &#x27;pan-y&#x27;;
     stage.style.touchAction = inner.style.touchAction;
     zoomLayer.setAttribute(&#x27;transform&#x27;, `translate(${panX},${panY}) scale(${zoom})`);
@@ -3978,6 +4139,8 @@ html, body, button, input, select {
   });
   zoomResetBtn.addEventListener(&#x27;click&#x27;, () =&gt; {
     stopFitAnimation();
+    if (routeMode?.route.kind === &quot;chain&quot;) { setCausalOverview(true); return; }
+    if (routeMode &amp;&amp; routeMode.route.kind !== &quot;chain&quot;) { setTradeView(true); return; }
     zoom = 1; panX = 0; panY = 0;
     applyTransform();
   });
@@ -4307,6 +4470,10 @@ html, body, button, input, select {
       label: &#x27;Mansa Musa 朝觐路线 · Hajj to Mecca(Timbuktu → Cairo)&#x27; },
   ];
 
+  const CAUSAL_TRADE_LINKS = [{&quot;chainId&quot;:&quot;u1_main&quot;,&quot;step&quot;:6,&quot;routeId&quot;:&quot;silk_road&quot;,&quot;kind&quot;:&quot;相关网络&quot;,&quot;reason&quot;:&quot;查看东亚、中亚与西亚的代表性节点，理解区域需求怎样接入更远的市场。&quot;},{&quot;chainId&quot;:&quot;u1_main&quot;,&quot;step&quot;:6,&quot;routeId&quot;:&quot;indian_ocean&quot;,&quot;kind&quot;:&quot;相关网络&quot;,&quot;reason&quot;:&quot;对照港口与转口联系，查看区域交换怎样接入海上网络。&quot;},{&quot;chainId&quot;:&quot;u1_main&quot;,&quot;step&quot;:6,&quot;routeId&quot;:&quot;mansa_musa_hajj&quot;,&quot;kind&quot;:&quot;文化联系例证&quot;,&quot;reason&quot;:&quot;用马里与伊斯兰世界的联系作补充例证；朝觐保留自己的宗教性质。&quot;},{&quot;chainId&quot;:&quot;u2_main&quot;,&quot;step&quot;:0,&quot;routeId&quot;:&quot;silk_road&quot;,&quot;kind&quot;:&quot;机制例证&quot;,&quot;reason&quot;:&quot;在代表性节点中查看运输、政治保护与跨区域传播的联系。&quot;},{&quot;chainId&quot;:&quot;u2_main&quot;,&quot;step&quot;:1,&quot;routeId&quot;:&quot;silk_road&quot;,&quot;kind&quot;:&quot;机制例证&quot;,&quot;reason&quot;:&quot;在代表性节点中查看运输、政治保护与跨区域传播的联系。&quot;},{&quot;chainId&quot;:&quot;u2_main&quot;,&quot;step&quot;:5,&quot;routeId&quot;:&quot;silk_road&quot;,&quot;kind&quot;:&quot;机制例证&quot;,&quot;reason&quot;:&quot;在代表性节点中查看运输、政治保护与跨区域传播的联系。&quot;},{&quot;chainId&quot;:&quot;u2_main&quot;,&quot;step&quot;:0,&quot;routeId&quot;:&quot;indian_ocean&quot;,&quot;kind&quot;:&quot;机制例证&quot;,&quot;reason&quot;:&quot;查看季风航行、港口停留和市场联系怎样支持海上交换。&quot;},{&quot;chainId&quot;:&quot;u2_main&quot;,&quot;step&quot;:2,&quot;routeId&quot;:&quot;indian_ocean&quot;,&quot;kind&quot;:&quot;机制例证&quot;,&quot;reason&quot;:&quot;沿广州、马六甲、卡利卡特与基尔瓦，查看海运怎样连接不同地区的商品与生产分工。&quot;},{&quot;chainId&quot;:&quot;u2_main&quot;,&quot;step&quot;:3,&quot;routeId&quot;:&quot;indian_ocean&quot;,&quot;kind&quot;:&quot;机制例证&quot;,&quot;reason&quot;:&quot;查看季风航行、港口停留和市场联系怎样支持海上交换。&quot;},{&quot;chainId&quot;:&quot;u2_main&quot;,&quot;step&quot;:4,&quot;routeId&quot;:&quot;indian_ocean&quot;,&quot;kind&quot;:&quot;机制例证&quot;,&quot;reason&quot;:&quot;查看季风航行、港口停留和市场联系怎样支持海上交换。&quot;},{&quot;chainId&quot;:&quot;u2_main&quot;,&quot;step&quot;:6,&quot;routeId&quot;:&quot;indian_ocean&quot;,&quot;kind&quot;:&quot;机制例证&quot;,&quot;reason&quot;:&quot;查看季风航行、港口停留和市场联系怎样支持海上交换。&quot;},{&quot;chainId&quot;:&quot;u2_sub_plague&quot;,&quot;step&quot;:0,&quot;routeId&quot;:&quot;silk_road&quot;,&quot;kind&quot;:&quot;传播背景&quot;,&quot;reason&quot;:&quot;同一套交通与接触网络也可能传播病原；路线不是精确的疫情传播轨迹。&quot;},{&quot;chainId&quot;:&quot;u2_sub_plague&quot;,&quot;step&quot;:1,&quot;routeId&quot;:&quot;silk_road&quot;,&quot;kind&quot;:&quot;传播背景&quot;,&quot;reason&quot;:&quot;同一套交通与接触网络也可能传播病原；路线不是精确的疫情传播轨迹。&quot;},{&quot;chainId&quot;:&quot;u2_sub_credit&quot;,&quot;step&quot;:0,&quot;routeId&quot;:&quot;silk_road&quot;,&quot;kind&quot;:&quot;交易背景&quot;,&quot;reason&quot;:&quot;对照远程交易的地理跨度，理解结算与契约为什么重要。&quot;},{&quot;chainId&quot;:&quot;u2_sub_credit&quot;,&quot;step&quot;:2,&quot;routeId&quot;:&quot;silk_road&quot;,&quot;kind&quot;:&quot;交易背景&quot;,&quot;reason&quot;:&quot;对照远程交易的地理跨度，理解结算与契约为什么重要。&quot;},{&quot;chainId&quot;:&quot;u2_sub_diaspora&quot;,&quot;step&quot;:0,&quot;routeId&quot;:&quot;indian_ocean&quot;,&quot;kind&quot;:&quot;交流背景&quot;,&quot;reason&quot;:&quot;港口停留与商人社区为文化接触提供具体场景。&quot;},{&quot;chainId&quot;:&quot;u2_sub_diaspora&quot;,&quot;step&quot;:1,&quot;routeId&quot;:&quot;indian_ocean&quot;,&quot;kind&quot;:&quot;交流背景&quot;,&quot;reason&quot;:&quot;港口停留与商人社区为文化接触提供具体场景。&quot;},{&quot;chainId&quot;:&quot;u2_sub_environment&quot;,&quot;step&quot;:0,&quot;routeId&quot;:&quot;indian_ocean&quot;,&quot;kind&quot;:&quot;交流背景&quot;,&quot;reason&quot;:&quot;查看海上联系的区域范围；原有环节说明提供作物与劳动的具体证据。&quot;},{&quot;chainId&quot;:&quot;u2_sub_environment&quot;,&quot;step&quot;:2,&quot;routeId&quot;:&quot;indian_ocean&quot;,&quot;kind&quot;:&quot;交流背景&quot;,&quot;reason&quot;:&quot;查看海上联系的区域范围；原有环节说明提供作物与劳动的具体证据。&quot;},{&quot;chainId&quot;:&quot;u2_sub_environment&quot;,&quot;step&quot;:3,&quot;routeId&quot;:&quot;indian_ocean&quot;,&quot;kind&quot;:&quot;交流背景&quot;,&quot;reason&quot;:&quot;查看海上联系的区域范围；原有环节说明提供作物与劳动的具体证据。&quot;},{&quot;chainId&quot;:&quot;u4_main&quot;,&quot;step&quot;:1,&quot;routeId&quot;:&quot;indian_ocean&quot;,&quot;kind&quot;:&quot;前后对照&quot;,&quot;reason&quot;:&quot;先认识既有印度洋港口网络，再理解欧洲武装贸易进入这一网络；图中时期不等于殖民扩张全过程。&quot;},{&quot;chainId&quot;:&quot;u4_main&quot;,&quot;step&quot;:2,&quot;routeId&quot;:&quot;columbian_exchange&quot;,&quot;kind&quot;:&quot;跨洋接触背景&quot;,&quot;reason&quot;:&quot;把跨洋接触与疾病、人口及环境变化放回具体地理场景。&quot;},{&quot;chainId&quot;:&quot;u4_main&quot;,&quot;step&quot;:3,&quot;routeId&quot;:&quot;atlantic_triangle&quot;,&quot;kind&quot;:&quot;机制例证&quot;,&quot;reason&quot;:&quot;在欧洲、西非与加勒比之间查看种植园需求、强迫迁移和收益的连接。&quot;},{&quot;chainId&quot;:&quot;u4_main&quot;,&quot;step&quot;:4,&quot;routeId&quot;:&quot;atlantic_triangle&quot;,&quot;kind&quot;:&quot;机制例证&quot;,&quot;reason&quot;:&quot;在欧洲、西非与加勒比之间查看种植园需求、强迫迁移和收益的连接。&quot;},{&quot;chainId&quot;:&quot;u4_main&quot;,&quot;step&quot;:5,&quot;routeId&quot;:&quot;atlantic_triangle&quot;,&quot;kind&quot;:&quot;机制例证&quot;,&quot;reason&quot;:&quot;在欧洲、西非与加勒比之间查看种植园需求、强迫迁移和收益的连接。&quot;},{&quot;chainId&quot;:&quot;u4_main&quot;,&quot;step&quot;:7,&quot;routeId&quot;:&quot;atlantic_triangle&quot;,&quot;kind&quot;:&quot;殖民经济背景&quot;,&quot;reason&quot;:&quot;结合跨大西洋贸易与强迫迁移理解殖民社会的不平等；这张网络图不表示血统分类决定劳动岗位，也不能单独解释革命。&quot;},{&quot;chainId&quot;:&quot;u4_main&quot;,&quot;step&quot;:6,&quot;routeId&quot;:&quot;galleon&quot;,&quot;kind&quot;:&quot;流动路径&quot;,&quot;reason&quot;:&quot;查看美洲白银经马尼拉接入亚洲市场的地理联系。&quot;},{&quot;chainId&quot;:&quot;u4_sub_silver&quot;,&quot;step&quot;:0,&quot;routeId&quot;:&quot;galleon&quot;,&quot;kind&quot;:&quot;流动路径&quot;,&quot;reason&quot;:&quot;将白银的生产与需求接到跨太平洋联系中；港口图不替代矿山证据。&quot;},{&quot;chainId&quot;:&quot;u4_sub_silver&quot;,&quot;step&quot;:1,&quot;routeId&quot;:&quot;galleon&quot;,&quot;kind&quot;:&quot;流动路径&quot;,&quot;reason&quot;:&quot;将白银的生产与需求接到跨太平洋联系中；港口图不替代矿山证据。&quot;},{&quot;chainId&quot;:&quot;u4_sub_africa&quot;,&quot;step&quot;:0,&quot;routeId&quot;:&quot;atlantic_triangle&quot;,&quot;kind&quot;:&quot;相关网络&quot;,&quot;reason&quot;:&quot;查看跨大西洋网络，结合本环证据理解非洲社会受到的影响。&quot;},{&quot;chainId&quot;:&quot;u4_sub_africa&quot;,&quot;step&quot;:1,&quot;routeId&quot;:&quot;atlantic_triangle&quot;,&quot;kind&quot;:&quot;相关网络&quot;,&quot;reason&quot;:&quot;查看跨大西洋网络，结合本环证据理解非洲社会受到的影响。&quot;},{&quot;chainId&quot;:&quot;u4_sub_africa&quot;,&quot;step&quot;:2,&quot;routeId&quot;:&quot;atlantic_triangle&quot;,&quot;kind&quot;:&quot;相关网络&quot;,&quot;reason&quot;:&quot;查看跨大西洋网络，结合本环证据理解非洲社会受到的影响。&quot;}];
+  const TRADE_PROFILES = [{&quot;id&quot;:&quot;silk_road&quot;,&quot;name&quot;:&quot;丝绸之路 · Silk Roads&quot;,&quot;category&quot;:&quot;陆路贸易&quot;,&quot;period&quot;:&quot;c. 1200–1450&quot;,&quot;icon&quot;:&quot;camel&quot;,&quot;color&quot;:&quot;#64806a&quot;,&quot;summary&quot;:&quot;以东亚、蒙古高原、中亚和西亚的代表性节点理解陆路网络：商人分段接力，运输成本与政治环境共同影响交流。&quot;,&quot;exam&quot;:&quot;用一个节点说明：政治保护如何降低交易风险，又为什么不能把整个时期写成持续和平。&quot;,&quot;sites&quot;:[{&quot;pin&quot;:5,&quot;label&quot;:&quot;Beijing · 北京&quot;,&quot;lon&quot;:116.4,&quot;lat&quot;:39.9,&quot;region&quot;:&quot;asia&quot;,&quot;role&quot;:&quot;东亚市场与政治中心&quot;,&quot;flow&quot;:&quot;丝绸、瓷器等高价值商品&quot;,&quot;impact&quot;:&quot;城市需求与生产连接跨区域市场。&quot;},{&quot;pin&quot;:8,&quot;label&quot;:&quot;Karakorum · 哈拉和林&quot;,&quot;lon&quot;:102.8,&quot;lat&quot;:47.2,&quot;region&quot;:&quot;asia&quot;,&quot;role&quot;:&quot;蒙古帝国的政治节点&quot;,&quot;flow&quot;:&quot;商人、使节与知识&quot;,&quot;impact&quot;:&quot;蒙古统治在部分时期加强跨区域交通保护。&quot;},{&quot;pin&quot;:9,&quot;label&quot;:&quot;Samarkand · 撒马尔罕&quot;,&quot;lon&quot;:66.96,&quot;lat&quot;:39.65,&quot;region&quot;:&quot;mideast&quot;,&quot;role&quot;:&quot;中亚商路交汇城市&quot;,&quot;flow&quot;:&quot;货物、工艺与宗教观念&quot;,&quot;impact&quot;:&quot;接力交易与城市网络支持跨文化互动。&quot;},{&quot;pin&quot;:3,&quot;label&quot;:&quot;Baghdad · 巴格达&quot;,&quot;lon&quot;:44.37,&quot;lat&quot;:33.32,&quot;region&quot;:&quot;mideast&quot;,&quot;role&quot;:&quot;西亚商品与知识交流中心&quot;,&quot;flow&quot;:&quot;商品、技术与学术知识&quot;,&quot;impact&quot;:&quot;城市是连接区域市场的节点，战争也会破坏网络。&quot;}],&quot;legs&quot;:[{&quot;flow&quot;:&quot;东亚商品与旅人向内亚流动&quot;,&quot;mechanism&quot;:&quot;高价值、低体积商品较能承担陆路运输成本。&quot;,&quot;via&quot;:[]},{&quot;flow&quot;:&quot;内亚与中亚之间的接力交易&quot;,&quot;mechanism&quot;:&quot;政治保护、驿站和商旅设施降低部分交易风险。&quot;,&quot;via&quot;:[]},{&quot;flow&quot;:&quot;中亚与西亚市场相连&quot;,&quot;mechanism&quot;:&quot;交流依赖多个城市与中间商，不是单一商队的直达路线。&quot;,&quot;via&quot;:[]}],&quot;sources&quot;:[&quot;https://www.unesco.org/en/silk-roads/about-silk-roads?hub=196704&quot;,&quot;https://en.unesco.org/silkroad/knowledge-bank/mongols-and-their-state-twelfth-thirteenth-century&quot;],&quot;bidirectional&quot;:true,&quot;schematic&quot;:true,&quot;note&quot;:&quot;代表性节点与交流方向示意；不是固定航线，也不表示所有旅人都走完全程。 底图边界用于现代地理定位，不表示当时的政治疆域。&quot;},{&quot;id&quot;:&quot;indian_ocean&quot;,&quot;name&quot;:&quot;印度洋贸易 · Indian Ocean&quot;,&quot;category&quot;:&quot;海上贸易&quot;,&quot;period&quot;:&quot;c. 1200–1450&quot;,&quot;icon&quot;:&quot;ship&quot;,&quot;color&quot;:&quot;#237e79&quot;,&quot;summary&quot;:&quot;用广州、马六甲、卡利卡特和基尔瓦展示海上网络。季风、港口与商人社区共同组织交换；德里属于内陆市场，不作为海港。&quot;,&quot;exam&quot;:&quot;比较印度洋与丝绸之路：运输条件怎样影响货物、商人停留和跨文化互动？&quot;,&quot;sites&quot;:[{&quot;pin&quot;:15,&quot;label&quot;:&quot;Guangzhou · 广州&quot;,&quot;lon&quot;:113.26,&quot;lat&quot;:23.13,&quot;region&quot;:&quot;asia&quot;,&quot;role&quot;:&quot;中国南部海港&quot;,&quot;flow&quot;:&quot;瓷器、丝织品与海外商品&quot;,&quot;impact&quot;:&quot;海港连接中国生产与海上市场。&quot;},{&quot;pin&quot;:2,&quot;label&quot;:&quot;Malacca · 马六甲&quot;,&quot;lon&quot;:102.25,&quot;lat&quot;:2.19,&quot;region&quot;:&quot;asia&quot;,&quot;role&quot;:&quot;连接印度洋与南海的海峡港口&quot;,&quot;flow&quot;:&quot;转口商品、商人与宗教观念&quot;,&quot;impact&quot;:&quot;海峡位置支持港口集散与文化接触。&quot;},{&quot;pin&quot;:6,&quot;label&quot;:&quot;Calicut · 卡利卡特&quot;,&quot;lon&quot;:75.78,&quot;lat&quot;:11.26,&quot;region&quot;:&quot;asia&quot;,&quot;role&quot;:&quot;印度西南部的海上贸易港口&quot;,&quot;flow&quot;:&quot;香料、纺织品与转口商品&quot;,&quot;impact&quot;:&quot;季风航行使港口成为商人交换和停留的场所。&quot;},{&quot;pin&quot;:85,&quot;label&quot;:&quot;Kilwa · 基尔瓦&quot;,&quot;lon&quot;:39.52,&quot;lat&quot;:-8.96,&quot;region&quot;:&quot;africa&quot;,&quot;role&quot;:&quot;东非斯瓦希里海岸的贸易城市&quot;,&quot;flow&quot;:&quot;黄金等非洲商品与亚洲输入品&quot;,&quot;impact&quot;:&quot;远程贸易支持东非沿海城市与跨文化联系。&quot;}],&quot;legs&quot;:[{&quot;flow&quot;:&quot;中国南部 ↔ 东南亚转口港&quot;,&quot;mechanism&quot;:&quot;沿南海进入马六甲海峡；线条仅表达大致海上联系。&quot;,&quot;via&quot;:[[114,15],[108,6]]},{&quot;flow&quot;:&quot;东南亚 ↔ 印度西南海岸&quot;,&quot;mechanism&quot;:&quot;航行利用季风，但不是全年单向不变的风；这里只画一种教学顺序。&quot;,&quot;via&quot;:[[100,2],[94,5],[82,3],[76,5]]},{&quot;flow&quot;:&quot;印度西岸 ↔ 东非港口&quot;,&quot;mechanism&quot;:&quot;不同港口和商人分段连接海域，不代表一条固定的直达班船。&quot;,&quot;via&quot;:[[65,5],[52,-1],[43,-6]]}],&quot;sources&quot;:[&quot;https://whc.unesco.org/en/list/144&quot;,&quot;https://sejarah-nusantara.anri.go.id/hartakarun/category/14/&quot;,&quot;https://fr.unesco.org/silkroad/sites/default/files/knowledge-bank-article/trade_contacts_with_the_indonesian_archipelago.pdf&quot;],&quot;bidirectional&quot;:true,&quot;schematic&quot;:true,&quot;note&quot;:&quot;代表性节点与交流方向示意；不是固定航线，也不表示所有旅人都走完全程。 底图边界用于现代地理定位，不表示当时的政治疆域。&quot;},{&quot;id&quot;:&quot;galleon&quot;,&quot;name&quot;:&quot;白银与大帆船贸易 · Silver &amp; Galleons&quot;,&quot;category&quot;:&quot;跨洋贸易&quot;,&quot;period&quot;:&quot;1565–1815&quot;,&quot;icon&quot;:&quot;ship&quot;,&quot;color&quot;:&quot;#ae7930&quot;,&quot;summary&quot;:&quot;补上美洲—马尼拉—中国一端：美洲白银向亚洲流动，亚洲商品向美洲流动。太平洋跨越地图两侧接续，不穿过欧洲。&quot;,&quot;exam&quot;:&quot;解释中国的白银需求怎样与美洲开采、马尼拉转口和跨太平洋贸易相连。&quot;,&quot;sites&quot;:[{&quot;pin&quot;:49,&quot;label&quot;:&quot;Acapulco · 阿卡普尔科&quot;,&quot;lon&quot;:-99.9,&quot;lat&quot;:16.86,&quot;region&quot;:&quot;americas&quot;,&quot;role&quot;:&quot;新西班牙的太平洋港口&quot;,&quot;flow&quot;:&quot;白银向西，亚洲商品向东&quot;,&quot;impact&quot;:&quot;大帆船贸易把美洲与亚洲市场连接起来。&quot;},{&quot;pin&quot;:12,&quot;label&quot;:&quot;Manila · 马尼拉&quot;,&quot;lon&quot;:120.98,&quot;lat&quot;:14.6,&quot;region&quot;:&quot;asia&quot;,&quot;role&quot;:&quot;跨太平洋贸易与亚洲商人的转口点&quot;,&quot;flow&quot;:&quot;美洲白银与亚洲商品交换&quot;,&quot;impact&quot;:&quot;港口把不同贸易网络接在一起。&quot;},{&quot;pin&quot;:15,&quot;label&quot;:&quot;Guangzhou · 广州&quot;,&quot;lon&quot;:113.26,&quot;lat&quot;:23.13,&quot;region&quot;:&quot;asia&quot;,&quot;role&quot;:&quot;代表中国南部市场的区域锚点&quot;,&quot;flow&quot;:&quot;白银流入，丝织品与瓷器等流出&quot;,&quot;impact&quot;:&quot;中国市场需求影响跨区域白银流向；中国与马尼拉的联系不只经广州。&quot;}],&quot;legs&quot;:[{&quot;flow&quot;:&quot;白银：美洲 → 马尼拉；亚洲商品反向流动&quot;,&quot;mechanism&quot;:&quot;大帆船横渡太平洋。图的左右边缘相接，航向箭头仅示意。&quot;,&quot;via&quot;:[[-120,15],[-150,14],[170,14],[145,15]]},{&quot;flow&quot;:&quot;白银：马尼拉 → 中国；中国商品反向流动&quot;,&quot;mechanism&quot;:&quot;中国商人参与马尼拉贸易；广州是区域锚点，不表示全部贸易都经同一港口。&quot;,&quot;via&quot;:[[118,18],[115,21]]}],&quot;sources&quot;:[&quot;https://blogs.loc.gov/international-collections/2021/10/negotiating-empire-part-i-from-magellan-to-the-founding-of-manila-16th-18th-centuries/&quot;,&quot;https://www.metmuseum.org/ja/essays/the-manila-galleon-trade-1565-1815&quot;],&quot;bidirectional&quot;:true,&quot;schematic&quot;:true,&quot;note&quot;:&quot;代表性节点与交流方向示意；不是固定航线，也不表示所有旅人都走完全程。 底图边界用于现代地理定位，不表示当时的政治疆域。&quot;},{&quot;id&quot;:&quot;atlantic_triangle&quot;,&quot;name&quot;:&quot;大西洋贸易与奴隶制 · Atlantic Network&quot;,&quot;category&quot;:&quot;贸易与强迫迁移&quot;,&quot;period&quot;:&quot;c. 1500–1800s&quot;,&quot;icon&quot;:&quot;ship&quot;,&quot;color&quot;:&quot;#845744&quot;,&quot;summary&quot;:&quot;用欧洲、西非和加勒比海代表跨大西洋网络。三角形是教学概括，不表示每艘船都完成三段；被奴役者遭受的是强迫迁移。&quot;,&quot;exam&quot;:&quot;把商品交换、暴力、种植园劳动和欧洲港口收益连起来解释，避免将被奴役者仅写成普通货物。&quot;,&quot;sites&quot;:[{&quot;pin&quot;:39,&quot;label&quot;:&quot;Liverpool · 利物浦&quot;,&quot;lon&quot;:-2.98,&quot;lat&quot;:53.41,&quot;region&quot;:&quot;europe&quot;,&quot;role&quot;:&quot;欧洲港口与商业资本&quot;,&quot;flow&quot;:&quot;制成品、船运与信贷&quot;,&quot;impact&quot;:&quot;欧洲商人与港口从奴隶贸易及种植园产品中获利。&quot;},{&quot;pin&quot;:87,&quot;label&quot;:&quot;Elmina · 埃尔米纳&quot;,&quot;lon&quot;:-1.35,&quot;lat&quot;:5.08,&quot;region&quot;:&quot;africa&quot;,&quot;role&quot;:&quot;西非沿海贸易据点之一&quot;,&quot;flow&quot;:&quot;制成品交换与被俘者的买卖&quot;,&quot;impact&quot;:&quot;当地权力、欧洲商人与暴力共同卷入奴隶贸易。&quot;},{&quot;pin&quot;:59,&quot;label&quot;:&quot;Bridgetown · 布里奇敦&quot;,&quot;lon&quot;:-59.61,&quot;lat&quot;:13.1,&quot;region&quot;:&quot;americas&quot;,&quot;role&quot;:&quot;加勒比海种植园与出口港&quot;,&quot;flow&quot;:&quot;被奴役的非洲人遭强迫迁移&quot;,&quot;impact&quot;:&quot;种植园生产依赖剥削与强制劳动。&quot;},{&quot;pin&quot;:39,&quot;label&quot;:&quot;Liverpool · 利物浦&quot;,&quot;lon&quot;:-2.98,&quot;lat&quot;:53.41,&quot;region&quot;:&quot;europe&quot;,&quot;role&quot;:&quot;欧洲消费与加工市场&quot;,&quot;flow&quot;:&quot;糖、烟草等种植园产品&quot;,&quot;impact&quot;:&quot;出口收益、加工和金融把网络再次接回欧洲。&quot;}],&quot;legs&quot;:[{&quot;flow&quot;:&quot;欧洲 → 西非：制成品&quot;,&quot;mechanism&quot;:&quot;贸易与殖民权力、金融和沿海据点相互关联。&quot;,&quot;via&quot;:[[-15,48],[-22,20],[-10,6]]},{&quot;flow&quot;:&quot;西非 → 美洲：中央航路上的强迫迁移&quot;,&quot;mechanism&quot;:&quot;强调暴力、死亡与被奴役者的经历，不能把这一段等同于普通商品运输。&quot;,&quot;via&quot;:[[-25,7],[-45,11]]},{&quot;flow&quot;:&quot;美洲 → 欧洲：种植园产品&quot;,&quot;mechanism&quot;:&quot;三角图概括多个相互连接的航运网络，不是一艘船必走的固定环线。&quot;,&quot;via&quot;:[[-45,30],[-28,45],[-10,50]]}],&quot;sources&quot;:[&quot;https://www.nationalarchives.gov.uk/explore-the-collection/explore-by-time-period/georgians/transatlantic-slave-trade/&quot;,&quot;https://openstax.org/books/world-history-volume-2/pages/5-4-the-atlantic-slave-trade&quot;],&quot;bidirectional&quot;:false,&quot;schematic&quot;:true,&quot;note&quot;:&quot;代表性节点与交流方向示意；不是固定航线，也不表示所有旅人都走完全程。 底图边界用于现代地理定位，不表示当时的政治疆域。&quot;},{&quot;id&quot;:&quot;columbian_exchange&quot;,&quot;name&quot;:&quot;哥伦布大交换 · Columbian Exchange&quot;,&quot;category&quot;:&quot;生物与人口交流&quot;,&quot;period&quot;:&quot;1492年以后&quot;,&quot;icon&quot;:&quot;ship&quot;,&quot;color&quot;:&quot;#a86674&quot;,&quot;summary&quot;:&quot;以塞维利亚与伊斯帕尼奥拉岛代表跨大西洋接触。交换覆盖多条路线与更广地区，包括作物、动物、疾病与人口流动。&quot;,&quot;exam&quot;:&quot;解释同一跨洋联系为什么带来不同地区的人口、环境与社会后果，避免把复杂变化归于单一因素。&quot;,&quot;sites&quot;:[{&quot;pin&quot;:45,&quot;label&quot;:&quot;Seville · 塞维利亚&quot;,&quot;lon&quot;:-5.99,&quot;lat&quot;:37.39,&quot;region&quot;:&quot;europe&quot;,&quot;role&quot;:&quot;旧大陆一侧的代表性港口&quot;,&quot;flow&quot;:&quot;牲畜、部分作物、病原等向美洲传播&quot;,&quot;impact&quot;:&quot;不同生物与人类群体进入新的生态与社会环境。&quot;},{&quot;pin&quot;:68,&quot;label&quot;:&quot;Santo Domingo · 圣多明各&quot;,&quot;lon&quot;:-69.93,&quot;lat&quot;:18.49,&quot;region&quot;:&quot;americas&quot;,&quot;role&quot;:&quot;加勒比接触区的代表性地点&quot;,&quot;flow&quot;:&quot;美洲作物向旧大陆传播&quot;,&quot;impact&quot;:&quot;疾病、征服、强制劳动和殖民统治共同改变原住民社会。&quot;}],&quot;legs&quot;:[{&quot;flow&quot;:&quot;双向生物交流；疾病与人口变化高度不对称&quot;,&quot;mechanism&quot;:&quot;不是一条单独商路，也不是一次航行；本图仅表示接触区与交流方向。&quot;,&quot;via&quot;:[[-18,27],[-40,18],[-60,18]]}],&quot;sources&quot;:[&quot;https://pubs.aeaweb.org/doi/10.1257/jep.24.2.163&quot;],&quot;bidirectional&quot;:true,&quot;schematic&quot;:true,&quot;note&quot;:&quot;代表性节点与交流方向示意；不是固定航线，也不表示所有旅人都走完全程。 底图边界用于现代地理定位，不表示当时的政治疆域。&quot;},{&quot;id&quot;:&quot;mansa_musa_hajj&quot;,&quot;name&quot;:&quot;曼萨·穆萨朝觐 · Mansa Musa’s Hajj&quot;,&quot;category&quot;:&quot;朝觐&quot;,&quot;period&quot;:&quot;1324–1325&quot;,&quot;icon&quot;:&quot;camel&quot;,&quot;color&quot;:&quot;#ad842d&quot;,&quot;summary&quot;:&quot;从马里区域经开罗到麦加，展示宗教朝觐与跨区域联系。廷巴克图只是马里区域锚点，不据此断定准确出发城市。&quot;,&quot;exam&quot;:&quot;说明朝觐如何显示统治者的财富与宗教身份，并加强马里与更广泛伊斯兰世界的联系。&quot;,&quot;sites&quot;:[{&quot;pin&quot;:73,&quot;label&quot;:&quot;Mali / Timbuktu · 马里区域&quot;,&quot;lon&quot;:-3.0,&quot;lat&quot;:16.77,&quot;region&quot;:&quot;africa&quot;,&quot;role&quot;:&quot;区域锚点，非已考证的出发城市&quot;,&quot;flow&quot;:&quot;统治者、随行人员与黄金&quot;,&quot;impact&quot;:&quot;财富和宗教身份连接西非与伊斯兰世界。&quot;},{&quot;pin&quot;:84,&quot;label&quot;:&quot;Cairo · 开罗&quot;,&quot;lon&quot;:31.24,&quot;lat&quot;:30.04,&quot;region&quot;:&quot;africa&quot;,&quot;role&quot;:&quot;朝觐途中重要停留地&quot;,&quot;flow&quot;:&quot;消费、赠礼与政治接触&quot;,&quot;impact&quot;:&quot;关于穆萨在开罗活动的记载扩大了马里的声誉。&quot;},{&quot;pin&quot;:22,&quot;label&quot;:&quot;Mecca · 麦加&quot;,&quot;lon&quot;:39.83,&quot;lat&quot;:21.42,&quot;region&quot;:&quot;mideast&quot;,&quot;role&quot;:&quot;朝觐目的地&quot;,&quot;flow&quot;:&quot;宗教仪式与跨地区交往&quot;,&quot;impact&quot;:&quot;麦加而非开罗是这次朝觐的宗教终点。&quot;}],&quot;legs&quot;:[{&quot;flow&quot;:&quot;马里区域 → 开罗：跨撒哈拉旅程&quot;,&quot;mechanism&quot;:&quot;地理连接为示意，不能据此推定商队走过的每一座城市。&quot;,&quot;via&quot;:[[10,22],[20,28]]},{&quot;flow&quot;:&quot;开罗 → 麦加：继续前往圣地&quot;,&quot;mechanism&quot;:&quot;这是一条朝觐联系，不把沿线赠礼等同于常规商业贸易。&quot;,&quot;via&quot;:[[33,28],[35,25]]}],&quot;sources&quot;:[&quot;https://www.cambridge.org/core/journals/history-in-africa/article/abs/echos-darabie-le-pelerinage-a-la-mecque-de-mansa-musa-72472513241325-dapres-des-nouvelles-sources/6621DFBE19EDD839E80372C81529CF4A&quot;,&quot;https://www.metmuseum.org/fr/perspectives/visualizing-a-sahelian-past&quot;],&quot;bidirectional&quot;:false,&quot;schematic&quot;:true,&quot;note&quot;:&quot;代表性节点与交流方向示意；不是固定航线，也不表示所有旅人都走完全程。 底图边界用于现代地理定位，不表示当时的政治疆域。&quot;}];
+  ROUTES.forEach(route =&gt; { const p=TRADE_PROFILES.find(p=&gt;p.id===route.id); Object.assign(route,{name:p.name,path:p.sites.map(s=&gt;s.label).join(&quot; → &quot;),blurb:p.summary,exam:p.exam,stops:p.sites.map(s=&gt;s.pin)}); });
+
   // ============ 因果链 ============
   // 链条骨架、每一环的名称和&quot;箭头机制&quot;都出自你的讲义(因果链/Unit23_跨单元因果链_讲义脚本.docx、
   // 因果链/Unit45_主干因果链_大航海到工业革命.docx),
@@ -4469,13 +4636,13 @@ html, body, button, input, select {
 
     { id: &#x27;u3_main&#x27;, kind: &#x27;chain&#x27;, units: [&#x27;u3&#x27;], tier: &#x27;main&#x27;, chip: &#x27;Land-Based Empires&#x27;,
       entryUnit: &#x27;u3&#x27;, from: &#x27;u2_main&#x27;,
-      to: { unit: &#x27;u4&#x27;, chain: &#x27;u4_main&#x27;, summary: &#x27;陆基帝国把全部力气押在同一件事上——把连片的土地变成年年可征的岁入，于是它们的军队、官僚与合法性全都朝内、朝陆地生长，海面对它们只是边界不是收入；Safavid 没有海军，Mughal 只有一支很小的，Ming 与 Qing 把欧洲人限在 Guangzhou 一港。海上因此留出一块没人要的空白，只能由收入本来就依赖海路的一方去填，Unit 4 的主战场也就随之移到大洋与大西洋体系。&#x27; },
+      to: { unit: &#x27;u4&#x27;, chain: &#x27;u4_main&#x27;, summary: &#x27;Unit 3 展示陆基帝国如何组织领土、军队与财政，但“陆基”不等于退出海洋：奥斯曼也发展强大海军，各国的陆海战略随条件与时期而异。Unit 4 转向欧洲跨洋扩张，以及它们怎样进入既有印度洋网络、连接美洲与其他地区。海上竞争与陆上建国相互交织，并非前者替代后者的统一过程。&#x27; },
       name: &#x27;广土怎么被造出来，又怎么把自己绑死&#x27;,
-      blurb: &#x27;Unit 3 常被读成「五个帝国各介绍一遍」，但五个帝国是在同一道题上被反复考的：火器让征服的速度远远快过治理的速度，于是每一个帝国都在同一段时间里被迫补同一批工具——领薪官僚、被驯化的军事贵族、用石头和经文铸出来的合法性。这些工具让帝国立住了，也把它绑死了：合法性一旦挂在宗教上，统治者就退不出宗教争端；收入一旦挂在土地和陆路上，它就没有理由去看海。要回答的问题是：为什么这些帝国在 1450 年后同时成型，又在 1750 年前后同时把主动权让给了海上。&#x27;,
-      exam: &#x27;Unit 3 Review 里 LEQ 2（changes in government 如何造成权力集中）与 LEQ 3/4（南亚与西南亚、俄国与中国的陆基帝国是否以相似方式发展）共用的骨架，也是 Topic 3.4 essential question 的标准答法。2027 起 DBQ 文件跨 1450–2001，Unit 3 常落在 contextualization 与第一段，取第一环与末环两句即可。最常见失分写法：「The Ottomans used gunpowder, and then they conquered Constantinople, and then they built a bureaucracy, and then they declined.」四个 and then 只排了顺序；改成「Because cannon reduced a siege from a season of starvation to a matter of days, conquest outran administration — which is why every one of these empires had to invent a salaried officialdom after, not before, it had already swallowed a multiethnic territory.」判断标准与 U1、U2 相同：把 which/because 换成 then 后句子还成立，这句就没解释任何东西。&#x27;,
+      blurb: &#x27;本单元比较陆基帝国怎样运用火器、官僚、地方精英和宗教来扩张与治理，并考察军费、税收和内部冲突带来的压力。各国采用的办法与结果并不一致；奥斯曼等帝国同时拥有重要海上力量。比较时要说明某项制度在什么条件下发挥作用，避免把所有帝国写成同步兴起、同步衰落的一条线。&#x27;,
+      exam: &#x27;教师整理的比较与因果练习：选择两个帝国，分别说明火器、财政、官僚或合法性如何影响统治，再用具体差异限制结论。区分时间先后与因果关系，也避免“每个帝国都如此”的概括。陆基与海上力量可同时存在，衰落与扩张需标明地区和时期。&#x27;,
       stops: [19, 18, 6, 14, 13, 26, 5, 23],
       stopEvents: [&#x27;&#x27;, &#x27;&#x27;, &#x27;&#x27;, &#x27;14:2&#x27;, &#x27;&#x27;, &#x27;&#x27;, &#x27;&#x27;, &#x27;&#x27;],
-      labels: [&#x27;火器与空位一起到手&#x27;, &#x27;版图跑在治理前面&#x27;, &#x27;占领军换成领薪的人&#x27;, &#x27;刀先被收进宫里&#x27;, &#x27;合法性被盖成石头与经文&#x27;, &#x27;同一套合法性劈出争端&#x27;, &#x27;收入仍压在地里&#x27;, &#x27;陆上的赢家输给海上&#x27;],
+      labels: [&#x27;火器与空位一起到手&#x27;, &#x27;版图跑在治理前面&#x27;, &#x27;占领军换成领薪的人&#x27;, &#x27;刀先被收进宫里&#x27;, &#x27;合法性被盖成石头与经文&#x27;, &#x27;同一套合法性劈出争端&#x27;, &#x27;收入仍压在地里&#x27;, &#x27;陆海竞争出现不同轨迹&#x27;],
       evidence: [
         &#x27;AMSCO 给 Gunpowder Empires 的定义：位于西南亚、Central Asia 与南亚、靠 firearms 征服并控制领土的大型多族群国家，除俄国外含 Ottoman、Safavid、Mughal 三个伊斯兰强势的帝国 · 三家统治者的共同点被并列成四条：出自曾居 Central Asia 的 Turkic nomads、说突厥语、乘 Mongol khanates 崩解留下的权力真空、依赖 artillery 与 cannon · ghazi ideal 把游牧文化的协作价值与为伊斯兰作战的意愿合成一套战士模板 · Tamerlane 自 Samarkand 出发，用重炮建起一个依赖军队的政府，也用火器保护 Silk Roads 陆路，却没留下有效的政治结构，战费最终拖垮经济 · Ismail 只有十四五岁就征服全 Persia，1501 年被拥为 shah · Shah Abbas I（1588–1629）自欧洲进口武器，并靠欧洲人训练部队 · AMSCO 明写它们的初期成功既来自自身军力，也来自被取代政权的虚弱与腐败，而欧洲各国忙于内斗、没有联手压制东面的新强权&#x27;,
         &#x27;Ivan IV（1547–1584）1547 年加冕 tsar，随即东扩，先取 Golden Horde 后裔所据的 Kazan、Astrakhan 与 Siberia 三个 khanate，这一扩张越来越依赖 gunpowder · 为控制毛皮贸易，他准许大地主 Stroganovs 雇 Cossacks 打地方部族与 Siberian khan，夺得 Volga River；有了通往 Caspian Sea 的出海口，Moscow 得以绕开 Crimean Tartars 直接与 Persia 和 Ottoman 通商 · 1639 年俄国人推进到 Pacific Ocean，此后到 Alaska（1741）与 California（1814）；传教士随毛皮商人之后使许多人改信 Eastern Orthodox，本地 shamans 仍有影响 · Mehmed II（1451–1481）1453 年围 Constantinople，三重防御下城墙在炮火中崩塌，用的是一门 26 英尺的铜炮与数门 15 至 22 英尺的炮；城改名 Istanbul，扼守连接 Aegean Sea 与 Black Sea 的 Bosporus Strait · Suleiman I（1520–1566）1526 年席卷 Hungary，1529 年兵临 Vienna · Kangxi（1661–1722）出兵 Taiwan、Mongolia 与 Central Asia 并对 Tibet 设保护，Qianlong（1736–1796）西征并吞 Xinjiang&#x27;,
@@ -4493,8 +4660,8 @@ html, body, button, input, select {
         &#x27;刀与笔都收进宫里之后，剩下的是最难用武力解决的一问：凭什么是你。被统治的人来自不同语言、不同信仰、不同部族，没有一条现成的理由能同时说服他们，而每多用一次武力都在提醒他们答案是「因为我打赢了」。统治者于是改用所有人都看得见、也都认得出的东西来回答。&#x27;,
         &#x27;用神来解释权力，好处是不必逐族说服，一座清真寺或一座宫殿对不识字的人也成立；代价是统治者从此不能对教义的争执置身事外。当「谁的解释算数」被摆上台面，任何一次表态都会同时得罪另一半人——合法性的来源，于是变成帝国退不出的那场争端。&#x27;,
         &#x27;这些仗每打一场，都要额外的兵、额外的粮、额外的现钱，而且都不是一次性的开销：Thirty Years’ War 打了三十年，Ottoman 与 Safavid 断断续续打了一个多世纪。可这些帝国的收入来源在建立之初就已经定死——地里的产出，和穿过自家关卡的商队。要多花，就只能从同一块地上再刮一层。&#x27;,
-        &#x27;这套收入结构决定了它们的眼睛只能盯着两样东西：脚下的地，和穿过自家关卡的商队。可 1500 年之后世界上新增的现钱不在这两处——Unit 2 末环留下的那个只认金银的中国市场，此刻正把白银从海上吸进来。谁的收入不靠海，谁就没有理由去建海军、也没有理由去养一家替国家跑远海的公司；把海面让出去，在当时并不像一个决定，只像一件不必做的事。&#x27;,
-        &#x27;交棒 Unit 4：陆基帝国把全部力气押在同一件事上——把连片的土地变成年年可征的岁入，于是军队、官僚与合法性全都朝内、朝陆地生长，海面对它们只是边界而不是收入。Safavid 没有海军，Mughal 只有一支很小的，Qing 把欧洲人限在一港。海上因此留出一块没人要的空白，而能来填这块空白的，恰恰是收入本来就依赖海路、又刚刚用 Parliament 把征税与募兵之权从国王手里拿走的那一方——把国家的钱押在贸易公司上，对它是唯一算得过账的做法。所以 Unit 4 的主战场移到大洋与大西洋体系，不是因为欧洲人更爱冒险，而是因为陆基帝国的收入结构让它们没有理由出海。&#x27;
+        &#x27;土地税、关税与贸易支持帝国财政，战争也增加了筹资压力，但收入结构不会自动决定一个国家是否出海。奥斯曼舰队在16世纪扩张到地中海和北非；不同国家的海军投入、商业政策与对手均需分别比较。&#x27;,
+        &#x27;交棒 Unit 4：欧洲跨洋扩张发生在既有陆海贸易与国家竞争之中。航海技术、商贸利益、宗教目标和国家支持共同推动远航；欧洲势力进入印度洋后与当地商人及政权竞争、合作，并在美洲建立殖民统治。接下来考察这些联系怎样改变商品流动、人口与劳动制度，而不是假定陆基帝国先把海洋让空。&#x27;
       ] },
 
     { id: &#x27;u3_sub_print&#x27;, kind: &#x27;chain&#x27;, units: [&#x27;u3&#x27;], tier: &#x27;sub&#x27;, chip: &#x27;Print &amp; Knowledge&#x27;,
@@ -4575,22 +4742,22 @@ html, body, button, input, select {
 
     { id: &#x27;u4_main&#x27;, kind: &#x27;chain&#x27;, units: [&#x27;u4&#x27;], tier: &#x27;main&#x27;, chip: &#x27;Maritime Empires&#x27;,
       entryUnit: &#x27;u4&#x27;, from: &#x27;u3_main&#x27;,
-      to: { unit: &#x27;u5&#x27;, chain: &#x27;u5_main&#x27;, summary: &#x27;白银、糖与被强制的劳动把美洲、非洲、欧洲与亚洲锁进同一个能年年清算的循环，而这个循环需要一套长期指派「谁在哪一环干活」的办法，于是位置被写进出生：受洗时定级，除通婚外不能上移。这套秩序同时造出两批必然要撞上它的人——被压在 peninsulares 之下、掌握殖民地财富却拿不到最高职位的 criollos，和被写在最底层、在 Saint-Domingue 一类地方人数远超自由人的被奴役者。下一个时代要推翻的不是抽象的暴政，而是这套按出身分配劳动与官职的秩序。&#x27; },
-      name: &#x27;海上那块空白被填满之后&#x27;,
-      blurb: &#x27;Unit 4 最容易被读成一串探险家的名字，但 AMSCO 的排布是一条收支线：谁的收入依赖海路，谁才出海；出海的人先买通行权而不是买土地；等他们撞上一块没有现成货流可抽的大陆，就必须自己把可卖的东西种出来挖出来，而人手在这一刻被疾病抽空。后面四环讲这个缺口怎么被一步步补上，以及补的办法怎么从临时征发变成写进出生登记的等级。&#x27;,
-      exam: &#x27;Unit 4 Review LEQ 2（economic systems 与 labor systems 的延续与变化）和 LEQ 3（slavery 的变与不变）共用的骨架，也是 Topic 4.4 与 4.8 essential question 的标准答法；2027 起 DBQ 文件跨 1450–2001，本单元常落在 contextualization 与主体第一、二段。最常见失分写法：「Europeans wanted cheap labor, so they brought enslaved Africans to the Americas.」这句把最关键的两步跳掉了，拿不到因果分；要写成「Because European diseases killed more than half the indigenous population within a century, and because the survivors could escape into terrain they knew and kin networks that would hide them, the labor that plantations needed could no longer be taken locally — which is why planters turned to a supply that could be moved across an ocean and could not walk home.」判断标准与前三单元相同：把 because/which 换成 then 后句子还成立，这句就没解释任何东西。&#x27;,
+      to: { unit: &#x27;u5&#x27;, chain: &#x27;u5_main&#x27;, summary: &#x27;跨洋贸易、殖民统治与强迫劳动加深了财富和权力的不平等。西属美洲的血统与出身分类影响地位，但不是统一不变的劳动岗位表。进入 Unit 5，要分别分析克里奥尔精英的政治诉求、被奴役者争取自由等不同目标，并结合思想传播、战争与帝国危机解释各地革命的条件和结果。&#x27; },
+      name: &#x27;跨洋网络如何重塑权力与劳动&#x27;,
+      blurb: &#x27;本单元考察欧洲跨洋扩张怎样进入既有贸易网络、建立殖民统治，并带来疾病、物种、人口和商品的跨区域流动。港口据点、矿山和种植园依赖不同的权力与劳动安排；殖民等级又与财富、出身和法律身份交织。它们形成矛盾与反抗的背景，但不能单独解释后来所有革命。&#x27;,
+      exam: &#x27;教师整理的因果与比较练习：比较矿区 mit’a 与种植园奴隶制，说明法律身份、强制方式、生产需求和地方条件的差异。解释大西洋奴隶贸易时同时考虑殖民扩张、种植园需求、强迫迁移及制度性暴力；疾病是背景之一，不能把贸易增长归结为单一原因。连接 Unit 5 时须区分不同群体的诉求，并用具体条件解释革命。&#x27;,
       stops: [42, 2, 68, 57, 60, 87, 12, 49],
       stopEvents: [&#x27;&#x27;, &#x27;&#x27;, &#x27;68:0&#x27;, &#x27;57:1&#x27;, &#x27;60:0&#x27;, &#x27;&#x27;, &#x27;&#x27;, &#x27;&#x27;],
-      labels: [&#x27;出海的理由只有一种&#x27;, &#x27;买通行权不买土地&#x27;, &#x27;先上岸的是病&#x27;, &#x27;短缺把义务改成强制&#x27;, &#x27;甘蔗把手伸向非洲&#x27;, &#x27;火器换人换出一条回路&#x27;, &#x27;白银把太平洋接上&#x27;, &#x27;血统被写进出生登记&#x27;],
+      labels: [&#x27;商贸、信仰与竞争推动远航&#x27;, &#x27;据点与武力介入既有商路&#x27;, &#x27;先上岸的是病&#x27;, &#x27;短缺把义务改成强制&#x27;, &#x27;甘蔗把手伸向非洲&#x27;, &#x27;火器换人换出一条回路&#x27;, &#x27;白银把太平洋接上&#x27;, &#x27;殖民等级与劳动制度交织&#x27;],
       evidence: [
         &#x27;AMSCO 明写 Portugal 这个小王国东边被 Castile 与 Aragon 夹住，could expand only overseas · Prince Henry the Navigator（1394–1460）是第一位资助航海远征的欧洲君主，目的是找一条全水路的东行航线并寻求非洲黄金；在他手里 Portugal 开始以海路输入被奴役的非洲人，取代原先的陆路奴隶贸易 · Bartholomew Diaz 1488 年绕过 Cape of Good Hope，因怕哗变而折返；Vasco da Gama 1498 年抵达 India · 地中海沿岸的意大利城市垄断了欧洲对亚洲的贸易并借此操纵价格，把 Spain、Portugal 以及后来的 France、England 与 Netherlands 逼去找新航线 · Omani-European rivalry 是 Columbus 去找通往 India 新路的原因之一 · 技术是拼起来的：magnetic compass 出自中国，astrolabe 由 12 世纪的穆斯林航海者改良，lateen sail 用于阿拉伯与印度洋，配上方帆才第一次让船在大洋上逆风改向；再加 cartography、astronomical chart 与对洋流风向的记录 · 人口压力与 primogeniture laws 让财富之家的次子拿不到土地，17 世纪初宗教少数派又在找能容下自己的地方&#x27;,
         &#x27;Portuguese 沿印度洋修起一串堡垒：1507 年 Hormuz、1510 年 Goa、1511 年 Malacca（Malay Peninsula），目的是垄断该区域的香料贸易并对 Malacca 与 Hormuz 之间往来的一切船只发放许可 · 由此形成 trading post empire，靠小据点而非大片领土；印度洋贸易被限定给愿意买通行许可的人 · 1509 年 Battle of Diu，Portuguese 在 Arabian Sea 击败 Gujaratis、Mamluks of Egypt 与 Calicut 的 Zamorin 加上 Venice 支持的联合舰队 · AMSCO 特意对照：印度洋原有的商人历来向控制航道与港口的国家缴税缴费、按宗教与族群关系结网，不用武力保护贸易，某地收费太高就换个地方——Portuguese 带来的是海军优势、宗教热情与从亚洲内部贸易里牟利的决心 · 1498 年 da Gama 的船抵达东非，Portuguese 随后以重炮帆船与堡垒接管 Kilwa、Mombasa 等 Swahili 城邦的贸易，AMSCO 写这次接管把该地区推入一场毁灭性的衰退 · Ming 禁私人海外贸易、毁船坞、限造船尺寸；Japan 1587 年禁基督教礼拜、1630 年代驱逐几乎所有外国人，只留少数荷兰商人在 Nagasaki 港的小岛上&#x27;,
         &#x27;两个半球此前几乎完全隔绝，美洲原住民对欧洲人带来的病菌没有免疫力；AMSCO 明写马匹、火药与金属兵器固然助了征服，但造成绝大多数死亡的是疾病 · conquistadores 如 Hernán Cortés 与 Francisco Pizarro 带来 smallpox，经呼吸道传播；随殖民者上岸的还有昆虫、老鼠等带病动物，measles、influenza、malaria 同样大量致死 · 不到一个世纪，美洲原住民人口仅因疾病就下降五成以上，部分地区损失达九成，AMSCO 称之为人类史上最大的人口灾难之一 · Columbus 第一次航行相信 Hispaniola 遍地是金，实际加勒比金子稀少，他与船员掳走 Taínos 带回西班牙为奴 · 1521 年 Cortés 击垮的是已被 smallpox 削弱的 Aztec，Tenochtitlan 被毁、Mexico City 建在废墟上；Pizarro 俘获 Atahualpa，Inca 照要求以黄金填满一室，1533 年西班牙人仍杀了他，1572 年完成对 Inca 的征服 · 16 世纪初西班牙人设 encomienda 以取得美洲的黄金与资源，encomenderos 强迫原住民为其劳作、换取食物与居所，AMSCO 直言这套强制劳动制度以残酷著称&#x27;,
-        &#x27;黄金没让 conquistadores 发财，Mexico 与 Peru 的白银却救活了局面；用 mercury 把银从矿石里分离出来提高了银矿的利润率 · 到 16 世纪末，Mexico 的 Zacatecas、尤其是今 Peru 安第斯山中的 Potosí 成为兴旺的银矿中心 · 银矿要人，而原住民肯做除最危险之外的一切工作；西班牙当局于是把 Inca 原有的 mit’a——年轻男子须为公共工程服一定劳役——改造成强制体系：村社被迫按比例送出男性人口去矿里做最危险的活，工钱极低 · 1622 年 Vázquez de Espinosa 记 Huancavelica 汞矿于 1570–1571 年因汞矿传闻而建镇，山上有三四千名原住民在矿中劳作，装满矿袋的人还要背着矿石爬上那种空手都难以攀登的绳梯 · 西班牙王室常把土地赏给 conquistadores，地主在其上发展小麦、水果、蔬菜与糖的农业，形成 hacienda system，同样用强制劳动 · José Cuello 指出，几乎就在 1542 年 New Laws 宣布奴役原住民非法的同时，1541–1542 年的 Mixtón War 给了在北部边疆合法保留这一做法的理由，Zacatecas 发现白银更把西属北部的西班牙-原住民关系定型，奴役与 encomienda 在北部 New Spain 一直存活到 18 世纪&#x27;,
+        &#x27;黄金没让 conquistadores 发财，Mexico 与 Peru 的白银却救活了局面；用 mercury 把银从矿石里分离出来提高了银矿的利润率 · 到 16 世纪末，Mexico 的 Zacatecas、尤其是今玻利维亚安第斯山中的 Potosí（波托西，当时属秘鲁总督区） 成为兴旺的银矿中心 · 银矿要人，而原住民肯做除最危险之外的一切工作；西班牙当局于是把 Inca 原有的 mit’a——年轻男子须为公共工程服一定劳役——改造成强制体系：村社被迫按比例送出男性人口去矿里做最危险的活，工钱极低 · 1622 年 Vázquez de Espinosa 记 Huancavelica 汞矿于 1570–1571 年因汞矿传闻而建镇，山上有三四千名原住民在矿中劳作，装满矿袋的人还要背着矿石爬上那种空手都难以攀登的绳梯 · 西班牙王室常把土地赏给 conquistadores，地主在其上发展小麦、水果、蔬菜与糖的农业，形成 hacienda system，同样用强制劳动 · José Cuello 指出，几乎就在 1542 年 New Laws 宣布奴役原住民非法的同时，1541–1542 年的 Mixtón War 给了在北部边疆合法保留这一做法的理由，Zacatecas 发现白银更把西属北部的西班牙-原住民关系定型，奴役与 encomienda 在北部 New Spain 一直存活到 18 世纪&#x27;,
         &#x27;1494 年 Treaty of Tordesillas 把美洲一分为二，Brazil 归 Portugal，其余归 Spain · Spain 与西属美洲靠白银获利，Portugal 帝国押在农业上：Brazil 气候湿热、土地广阔，最适合甘蔗 · 可疾病已经消灭了原住民人口，劳力不足，而被迫下甘蔗地的人还大量逃进无人测绘的Brazil 内陆丛林 · Portuguese 于是从非洲输入被奴役的人，尤其来自 Kongo Kingdom 与 Swahili 海岸诸城 · AMSCO 的 Why Africans 一节把理由并成三条：土地多而使土地生利的劳力少；欧洲人最初强迫原住民下矿下地，却被欧洲疾病成片消灭；幸存的原住民奴隶常能逃脱，因为与欧洲人相比他们更熟悉地形、有可以保护自己的社会网络、且能在本地人口中隐身——反复奴役 Native Americans 的努力宣告失败 · 北美的种植园主招募欧洲 indentured servants 来种烟草，但这些人多半受不了美洲的重体力与气候，而且只须做约七年，熬过契约就成了自由劳动者，因此不被地主视为理想劳工 · 甘蔗种植园被叫作 engenhos，即Portuguese 语的引擎，因劳动条件恶劣，园主每年损失五到一成劳动力 · 糖在欧洲市场的利润把跨大西洋被掳卖的非洲人数量急剧推高；奴隶输入者把九成以上送往加勒比与南美，只有约百分之六去了英属北美；到 19 世纪中叶为止，渡海去美洲的非洲人多于欧洲人 · 西班牙人看到 Portugal 在种植园农业上的成功，回头在加勒比种糖与烟草，糖很快盖过白银成为欧洲各帝国的主要摇钱树&#x27;,
         &#x27;被掳的非洲人先被关进西非的 barracoons，即所谓 slave castles；今日 Ghana 保存着这些 Points of No Return，Senegal 的 Île de Gorée 上还留着 House of Slaves · 横渡大西洋的这一程叫 Middle Passage，因为它是俘虏整段旅程的中间一段；航程通常约六周，一船人可能死掉一半，而在这场从 16 世纪初延续到 19 世纪中叶的贸易里，约一到一成半的非洲俘虏没能活着抵达美洲；许多人在海上起事，多数被镇压 · 这条回路被称作 triangular trade：船把火器一类欧洲制成品运到西非，再把被奴役的非洲人运到美洲，然后装上糖或烟草运回欧洲；糖是美洲最赚钱的货，到 1700 年代，加勒比的糖与朗姆在英国造出巨额财富，法国与荷兰次之 · 非洲一侧不是被动的：沿岸统治者用奴隶向欧洲人换取火药与火炮，从而在与邻村作战时占据军事优势；Dahomey 因袭掠邻村捕人卖给欧洲商人而变强，Oyo 亦然；有些非洲城邦靠卖人致富 · Kongo 的 King Afonso 起初允许在本国进行奴隶贸易，后来看清袭掠无法控制，既不愿把本国精英交出去，也不愿 Kongo 被抽空人口，更看到自己的权威正在被削弱——他的臣民可以绕开他直接拿人换欧洲货，而在欧洲人到来之前他能控制领地内的一切贸易 · 1624 年 Ana Nzinga 成为 south-central Africa 的 Ndongo 之主，为换取保护与终止 Portugal 的掳人袭掠而与 Portugal 结盟并受洗，教父是葡属殖民地总督；同盟破裂后她西走夺取 Matamba，在 Ndongo 煽动叛乱、转与荷兰人结盟，并宣布逃亡的奴隶在 Matamba 可获自由，统治数十年并把 Matamba 建成经济强邦&#x27;,
         &#x27;中国是美洲白银特别热切的买家；白银从今 Mexico 横渡太平洋去东亚，靠的是在 Philippines 停靠的重武装西班牙帆船 galleons · 在 Manila 的贸易站上，欧洲人用白银换丝绸、香料一类奢侈品，甚至换金块；Manila galleons 让白银贸易兴盛起来 · 中国政府随后开始以白银作为主要货币；到 17 世纪初，白银已成为全球经济体系里的支配性力量 · 有专家估计，16 世纪全球经济中的白银总量增至三倍 · 西属美洲的白银流向亚洲，亚洲货物又在大西洋市场被抢购，形成一个新的全球循环 · Commercial Revolution 的四个成因被并列：欧洲海外殖民地的发展、新海路的开通、人口增长，以及部分由人口压力、部分由被开采并投入流通的金银增加所造成的通货膨胀；16 世纪到 17 世纪初的高通胀被称作 Price Revolution · AMSCO 同时写明反面：大量金银流入 Spain 与 China 也带来负面经济后果，流通中的货币量增加引起通胀，而 Spain 的白银引发的通胀又助推了西班牙帝国的衰落&#x27;,
-        &#x27;欧洲移民、被输入的非洲人与被征服的原住民并存，造出一套以种族与血统为准的新社会等级；肤色在美洲乃至所有欧洲殖民地都成了权力与地位的标记，而在西、葡两帝国，种族与族裔背景在此后数百年里以正式方式界定社会地位 · casta system 的顺序是：出生在 Iberian peninsula 的 peninsulares 居顶，其次是生在美洲的欧洲血统者 criollos，再下是混血的 castas——其中 mestizos 在上，mulattoes 次之，zambos 再次，原住民与被奴役的非洲人垫底 · 人在受洗时被划定等级，除通婚外不能上移；处在底层的人要缴更高的税与贡赋，而他们恰恰最负担不起；西班牙人还专门绘制 casta 画来展示这套分类 · 西班牙王室派 viceroys 作为代表治理殖民地，又设 audiencias 即王室法庭供西班牙移民上诉 viceroy 的决定；但欧美之间运输与通信迟缓，王室难以直接控制 New Spain，也就不把心思放在西半球的殖民事务上 · Cortés 一类征服者下令焚毁被视为不洁的原住民书籍，因此以 Nahuatl 写成的原始记载几乎不存，1545 年起西班牙神父 Bernardino de Sahagún 编纂的 Florentine Codex 反倒成为被引用最多的 Aztec 生活史料之一 · AMSCO 记到 1750 年，生在美洲的西班牙血统者已开始鼓噪脱离西班牙王室独立 · 与之并行的是被写在底层的人从未停止的动作：Jamaica 的 Maroon 是逃亡非洲奴隶的后代，他们建起独立聚落，逃奴出身的 Queen Nanny 把全岛的 Maroon 联合起来，1728–1740 与 1795–1796 两度爆发 Maroon wars；1663 年 Virginia 的 Gloucester County Rebellion 里，被奴役的非洲人与白人契约仆役合谋向总督索求自由；1680 年 Pueblo Revolt 中 Pueblo 与 Apache 杀死约四百名西班牙人、驱走其余、毁掉教堂，西班牙人直到 1692 年才重新占领&#x27;
+        &#x27;西属美洲的社会地位受到出身、祖先背景、财富、职业与法律身份的共同影响，peninsulares 与 criollos 的政治机会也不相同。殖民歧视具有实际影响，但 casta 类别随地区、时期和社会情境而变化；18世纪新西班牙的 casta 画呈现等级化的社会想象，不能当作现实中人人遵循的固定身份表。受洗记录可能记载身份分类，却不等于在出生时统一分配终身劳动岗位。矿区的 mit’a、种植园奴隶制与其他劳动关系须分别分析。克里奥尔精英、原住民和被奴役者也有不同的诉求与行动，不能把它们合成一场目的相同的反抗。&#x27;
       ],
       links: [
         &#x27;Portugal 的人少，守不住大片领土——AMSCO 明写它 lacking the workers and the ships necessary for the enforcement of a large trade empire。既然占不起地，它要买的就只能是别人已经在做的生意里的一份抽成权：谁从哪条水道过、谁付多少。&#x27;,
@@ -4599,8 +4766,8 @@ html, body, button, input, select {
         &#x27;mit’a 之所以还转得动，靠的是两个条件：安第斯还剩下能按村社点名的人口，而矿在高原上、逃出去也无处可去。低地热带的甘蔗带这两个条件都不成立——那里的原住民死得更彻底，活下来的又熟悉地形、有能藏住他们的亲族网络、还能混进本地人群里。同一套办法在那里失效。&#x27;,
         &#x27;每年损失五到一成，意味着这不是一次性采购，而是一条必须常年补货的线：今年买的人，几年后要按同样的数目再买一次。常年补货要求非洲一侧有稳定的交货方，而欧洲人手里最能立刻改变当地力量对比、因此最好用来付账的东西，是火器。&#x27;,
         &#x27;这条大西洋回路结算的是货——糖、烟、朗姆。可这些货在亚洲卖不动：AMSCO 明写亚洲人急于用丝绸、瓷器、钢制品换的是白银。欧洲人手里唯一被亚洲市场接受的东西是白银，而白银恰好和糖出自同一批殖民地。于是大西洋这条回路必须再接上一条：从美洲直接横渡太平洋。&#x27;,
-        &#x27;白银让整个体系可以年年清账，也让每一环的产出都被折成同一种价格。可一旦每年的产量与每年的死亡率都成了能算出来的数字，谁去补上死掉的那一批就不能再靠临时抓人回答。西属美洲给出的答案，是把一个人该待的位置写进他的出生。&#x27;,
-        &#x27;交棒 Unit 5：这套等级不是观念的产物，而是那个循环的调度表——它要保证每年补上的劳动力落在固定的位置上，所以它把位置写进受洗登记，让人一出生就被指派好该在哪一环干活。可同一张表也造出两批必然要撞上它的人：一批是被压在 peninsulares 之下、掌握着殖民地财富却拿不到最高职位的 criollos，AMSCO 明写他们到 1750 年已在要求独立；另一批是被写在最底层、在 Saint-Domingue 这类地方人数远超自由人的被奴役者，以及他们已经建起独立聚落、打过两场战争的 Maroon 后代。所以下一个时代的革命不是欧洲新观念飘过来的结果，而是这套按出身分配劳动与官职的秩序被它自己制造出来的人推倒——要反抗的对象，正是本单元造出来的东西。&#x27;
+        &#x27;殖民贸易与财政收益依赖不同地区的劳动。矿区征发和种植园奴隶制等制度与种族化的权力关系相互强化，但具体劳动安排由法律、强制力、地方条件及身份共同塑造，不能由血统类别直接推出一个人的职业。&#x27;,
+        &#x27;交棒 Unit 5：殖民社会中的政治排斥、强迫劳动与不平等提供了不同群体反抗的背景。克里奥尔精英的自治或独立诉求，与被奴役者争取自由并不相同。思想传播、战争、王权危机和地方组织进一步改变行动机会；应按具体革命解释这些条件怎样结合，而不能把革命视为殖民等级自动产生的结果。&#x27;
       ] },
 
     { id: &#x27;u4_sub_silver&#x27;, kind: &#x27;chain&#x27;, units: [&#x27;u4&#x27;], tier: &#x27;sub&#x27;, chip: &#x27;Silver Circuit&#x27;,
@@ -5637,18 +5804,20 @@ html, body, button, input, select {
 
   function goToStop(i) {
     if (!routeMode) return;
+    const previousChainStep = routeMode.i;
+    causalScrollRestore = null;
     const { route } = routeMode;
     routeMode.i = Math.max(0, Math.min(i, route.stops.length - 1));
     // 走过的国家累积点亮:第 0 站到当前站之间的 passThrough 全部并进来
     const visited = new Set();
     for (let k = 0; k &lt;= routeMode.i; k++) {
-      route.stopWindows[k].passThrough.forEach(p =&gt; visited.add(p));
+      // Do not infer visited countries from straight-line geometry.
       const own = findCountryPathForPin(route.stops[k]);
       if (own) visited.add(own);
     }
-    spotlightTrail(route, visited);
+    if (route.kind === &quot;chain&quot;) spotlightTrail(route, visited);
     const num = route.stops[routeMode.i];
-    placeVehicleAt(route, num);
+    // Route vehicles are drawn in the screen-space learning overlay.
     if (route.kind === &#x27;chain&#x27;) {
       renderChainItinerary();
       const declared = route.stopEvents &amp;&amp; route.stopEvents[routeMode.i];
@@ -5657,8 +5826,7 @@ html, body, button, input, select {
         : selectTimelineByPin(num, true);
       if (!selected) selectChainMapAnchor(num);
     } else {
-      renderEventContent(num, pinBadgeColor(num));
-      eventPanel.insertAdjacentHTML(&#x27;afterbegin&#x27;, itineraryHTML());
+      renderTradeItinerary(route);
     }
     eventZone.classList.remove(&#x27;fit-content&#x27;);   // 行程面板占位,别再按 1-2 条事件收窄
     // 商路的站点是横排的,复位到顶就行;链条是竖排骨架(Unit 2→3 有 10 环,整条 1500px 高),
@@ -5667,11 +5835,14 @@ html, body, button, input, select {
     const nowStop = route.kind === &#x27;chain&#x27; ? eventPanel.querySelector(&#x27;.rt-stop.now&#x27;) : null;
     if (nowStop) {
       const offset = nowStop.getBoundingClientRect().top - eventZone.getBoundingClientRect().top;
-      eventZone.scrollTop = Math.max(0, eventZone.scrollTop + offset - 140);   // 留出上一环的箭头
+      const reserved = (eventPanel.querySelector(&quot;.causal-workspace-tabs&quot;)?.getBoundingClientRect().height || 50) + 14;
+      eventZone.scrollTop = Math.max(0, eventZone.scrollTop + offset - reserved);   // 留出上一环的箭头
     } else {
       eventZone.scrollTo({ top: 0, behavior: prefersReducedMotion() ? &#x27;auto&#x27; : &#x27;smooth&#x27; });
     }
     if (routeStepCb) routeStepCb();
+    if (route.kind === &quot;chain&quot;) selectCausalMapStep(route, routeMode.i);
+    else scheduleTradeJourney(route, previousChainStep, routeMode.i);
   }
 
   function renderChainItinerary() {
@@ -5687,27 +5858,22 @@ html, body, button, input, select {
   }
 
   function toggleAutoPlay() {
-    if (!routeMode) return;
-    if (routeMode.playing) { stopAutoPlay(); goToStop(routeMode.i); return; }
-    routeMode.playing = true;
-    // 已经在终点就从头开始,免得点了播放没反应
-    if (routeMode.i &gt;= routeMode.route.stops.length - 1) routeMode.i = -1;
-    routeMode.timer = setInterval(() =&gt; {
-      if (!routeMode) return;
-      if (routeMode.i &gt;= routeMode.route.stops.length - 1) { stopAutoPlay(); goToStop(routeMode.i); return; }
-      goToStop(routeMode.i + 1);
-    }, 7000);
-    goToStop(routeMode.i + 1);
+    if (!routeMode || routeMode.route.kind === &#x27;chain&#x27;) return;
+    toggleTradePlayback();
   }
+
 
   function enterRouteMode(id) {
     const route = allTrails().find(r =&gt; r.id === id);
     if (!route) return;
     clearLocationStudyState();
+    causalWorkspacePanel = route.kind === &#x27;chain&#x27; ? &#x27;chain&#x27; : &#x27;routes&#x27;;
+    if (route.kind !== &#x27;chain&#x27;) { activeLearningView = &#x27;chain&#x27;; activeChainPanel = &#x27;unit&#x27;; eventZone.setAttribute(&#x27;aria-label&#x27;, &#x27;因果链 · 商路与交流&#x27;); }
+    else chainRouteContext = null;
     const restoreTradeContext = route.kind === &#x27;chain&#x27; &amp;&amp; routeMode?.route?.kind !== &#x27;chain&#x27;;
     exitRouteMode(!restoreTradeContext);       // 商路之间替换保持挂起;商路转链条先还原学习上下文
     hideAllRoutes();
-    if (route.kind !== &#x27;chain&#x27; &amp;&amp; typeof suspendFilters === &#x27;function&#x27;) suspendFilters();
+    // Trade exploration keeps the enclosing Unit context.
     deactivateRegion();
     routeMode = { route, i: -1, playing: false, timer: null };
 
@@ -5718,8 +5884,8 @@ html, body, button, input, select {
     const line = document.getElementById(`route-line-${route.id}`);
     if (line) line.classList.add(&#x27;on&#x27;);          // 链条没有连线
     const v = routeVehicle(route);
-    if (v) v.classList.add(&#x27;on&#x27;);
-    fitToPins(stopGroups);
+    if (v &amp;&amp; route.kind !== &quot;chain&quot;) v.classList.add(&#x27;on&#x27;);
+    if (route.kind !== &#x27;chain&#x27;) fitToPins(stopGroups);
     dismissFirstClickHint();
     goToStop(0);
   }
@@ -5732,6 +5898,7 @@ html, body, button, input, select {
 
   function exitRouteMode(quiet) {
     if (!routeMode) return;
+    if (routeMode.route.kind !== &quot;chain&quot;) { resetTradeJourney(); stopFitAnimation(); }
     stopAutoPlay();
     const { route } = routeMode;
     routeMode = null;
@@ -5742,7 +5909,7 @@ html, body, button, input, select {
     clearGlowTimers();
     svg.querySelectorAll(&#x27;.pin-group&#x27;).forEach(g =&gt; g.classList.remove(&#x27;revealed&#x27;));
     if (quiet) return;
-    if (route.kind !== &#x27;chain&#x27; &amp;&amp; typeof restoreFilters === &#x27;function&#x27;) restoreFilters();
+    // No filter suspension was introduced by embedded trade exploration.
     if (activeLearningView === &#x27;map&#x27; &amp;&amp; activeMapMode === &#x27;events&#x27; &amp;&amp; eventPanel.innerHTML.trim()) return;
     eventPanel.classList.remove(&#x27;show&#x27;);
     eventPanel.innerHTML = &#x27;&#x27;;
@@ -5752,6 +5919,7 @@ html, body, button, input, select {
   function itineraryHTML() {
     const { route, i, playing } = routeMode;
     const isChain = route.kind === &#x27;chain&#x27;;
+    if (isChain) return staticChainItineraryHTML(route, i);
     const steps = route.stops.map((num, k) =&gt; {
       const state = k &lt; i ? &#x27;done&#x27; : k === i ? &#x27;now&#x27; : &#x27;todo&#x27;;
       const city = index[num] &amp;&amp; index[num][0] ? index[num][0].city : &#x27;&#x27;;
@@ -5760,7 +5928,7 @@ html, body, button, input, select {
       const conn = (isChain &amp;&amp; k &lt; route.stops.length - 1)
         ? `&lt;div class=&quot;rt-link&quot;&gt;&lt;span class=&quot;rt-arrow&quot;&gt;↓&lt;/span&gt;${route.links[k]}&lt;/div&gt;` : &#x27;&#x27;;
       return `&lt;button type=&quot;button&quot; class=&quot;rt-stop ${state}&quot; data-route-step=&quot;${k}&quot;&gt;`
-        + `&lt;span class=&quot;rt-dot&quot;&gt;&lt;/span&gt;&lt;span class=&quot;rt-num&quot;&gt;${num}&lt;/span&gt;`
+        + `&lt;span class=&quot;rt-dot&quot;&gt;&lt;/span&gt;&lt;span class=&quot;rt-num&quot;&gt;${route.kind === &quot;chain&quot; ? k + 1 : num}&lt;/span&gt;`
         + `&lt;span class=&quot;rt-city&quot;&gt;${label}&lt;/span&gt;&lt;/button&gt;` + conn;
     }).join(&#x27;&#x27;);
     const incomingSeam = chainSeamHTML(route, &#x27;from&#x27;);
@@ -5783,7 +5951,7 @@ html, body, button, input, select {
       &lt;div class=&quot;rt-ctrl&quot;&gt;
         &lt;button type=&quot;button&quot; class=&quot;rt-btn&quot; data-route-action=&quot;prev&quot; ${i &lt;= 0 ? &#x27;disabled&#x27; : &#x27;&#x27;}&gt;← 上一站&lt;/button&gt;
         &lt;button type=&quot;button&quot; class=&quot;rt-btn primary&quot; data-route-action=&quot;next&quot; ${i &gt;= route.stops.length - 1 ? &#x27;disabled&#x27; : &#x27;&#x27;}&gt;下一站 →&lt;/button&gt;
-        &lt;button type=&quot;button&quot; class=&quot;rt-btn&quot; data-route-action=&quot;play&quot;&gt;${playing ? &#x27;⏸ 暂停&#x27; : &#x27;▶ 自动播放&#x27;}&lt;/button&gt;
+        &lt;button type=&quot;button&quot; class=&quot;rt-btn&quot; data-route-action=&quot;play&quot;&gt;${playing ? &#x27;⏸ 暂停&#x27; : (isChain ? &#x27;▶ 播放因果链&#x27; : &#x27;▶ 自动播放&#x27;)}&lt;/button&gt;
         &lt;button type=&quot;button&quot; class=&quot;rt-btn ghost&quot; data-route-action=&quot;exit&quot;&gt;${isChain ? &#x27;退出因果链&#x27; : &#x27;退出商路&#x27;}&lt;/button&gt;
       &lt;/div&gt;
     &lt;/div&gt;`;
@@ -5913,6 +6081,7 @@ html, body, button, input, select {
   }).filter(Boolean);
 
   function startQuiz(mode) {
+    stopFitAnimation(); zoom = 1; panX = 0; panY = 0; applyTransform();
     clearLocationStudyState();
     exitRouteMode(true);
     const pools = quizPools();
@@ -6064,7 +6233,7 @@ html, body, button, input, select {
     const restoreTradeContext = kind === &#x27;chain&#x27; &amp;&amp; routeMode?.route?.kind !== &#x27;chain&#x27;;
     exitRouteMode(!restoreTradeContext);
     quizMode = null;
-    const title = { chain: &#x27;因果链&#x27;, route: &#x27;商路&#x27;, quiz: &#x27;随堂练习&#x27; }[kind];
+    const title = { chain: &#x27;因果链&#x27;, route: &#x27;商路与交流&#x27;, quiz: &#x27;随堂练习&#x27; }[kind];
     let body = &#x27;&#x27;;
     if (kind === &#x27;chain&#x27;) {
       // 主干链和补充链分两组:链条一多,平铺一排学生就分不出哪条是单元的主线
@@ -6082,10 +6251,7 @@ html, body, button, input, select {
       body = group(&#x27;main&#x27;, &#x27;主干链&#x27;, &#x27;var(--ink)&#x27;, &#x27;&#x27;, true)
            + group(&#x27;sub&#x27;, &#x27;补充链&#x27;, &#x27;var(--ink-soft)&#x27;, &#x27; chain-chip-sub&#x27;, false);
     } else if (kind === &#x27;route&#x27;) {
-      body = `&lt;div class=&quot;route-picker&quot;&gt;` + ROUTES.map(r =&gt;
-        `&lt;button type=&quot;button&quot; class=&quot;route-chip&quot; data-route-go=&quot;${r.id}&quot;&gt;`
-        + `&lt;span class=&quot;rc-dot&quot; style=&quot;background:${r.color}&quot;&gt;&lt;/span&gt;${r.name.split(&#x27; · &#x27;)[0]}`
-        + `&lt;span class=&quot;rc-count&quot;&gt;${r.stops.length} 站&lt;/span&gt;&lt;/button&gt;`).join(&#x27;&#x27;) + `&lt;/div&gt;`;
+      body = tradePickerHTML();
     } else {
       const st = quizStats();
       body = `&lt;p class=&quot;qz-stem&quot;&gt;练习遵循 Unit、搜索和主题筛选；不按当前展开的地图地区缩小题库。&lt;/p&gt;&lt;div class=&quot;route-picker&quot;&gt;`
@@ -6099,9 +6265,9 @@ html, body, button, input, select {
     }
     eventEmpty.style.display = &#x27;none&#x27;;
     const returnAction = kind === &#x27;route&#x27;
-      ? `&lt;button type=&quot;button&quot; class=&quot;rt-btn ghost&quot; data-route-picker-action=&quot;events&quot;&gt;返回&lt;/button&gt;`
+      ? `&lt;button type=&quot;button&quot; class=&quot;rt-btn ghost&quot; data-causal-return&gt;返回因果推演&lt;/button&gt;`
       : `&lt;button type=&quot;button&quot; class=&quot;rt-btn ghost&quot; data-quiz-action=&quot;exit&quot;&gt;返回&lt;/button&gt;`;
-    eventPanel.innerHTML = `&lt;div class=&quot;quiz-panel&quot;&gt;&lt;div class=&quot;qz-head&quot;&gt;&lt;div class=&quot;qz-title&quot;&gt;${title}&lt;/div&gt;&lt;/div&gt;`
+    eventPanel.innerHTML = `&lt;div class=&quot;quiz-panel&quot;&gt;${kind === &quot;route&quot; ? causalWorkspaceNavHTML() + causalTradeContextHTML() : &quot;&quot;}&lt;div class=&quot;qz-head&quot;&gt;&lt;div class=&quot;qz-title&quot;&gt;${title}&lt;/div&gt;&lt;/div&gt;`
       + body
       + `&lt;div class=&quot;qz-ctrl&quot;&gt;${returnAction}&lt;/div&gt;&lt;/div&gt;`;
     eventPanel.classList.remove(&#x27;show&#x27;);
@@ -6233,6 +6399,7 @@ html, body, button, input, select {
       &lt;/div&gt;`;
 
     if (answered) {
+      spotlightPin(q.num);
       eventPanel.insertAdjacentHTML(&#x27;beforeend&#x27;, `&lt;div class=&quot;qz-reveal-title&quot;&gt;${q.num} ${q.it.city} 的全部历史事件&lt;/div&gt;`);
       const items = index[q.num] || [];
       eventPanel.insertAdjacentHTML(&#x27;beforeend&#x27;, `&lt;div class=&quot;event-list&quot;&gt;`
@@ -6250,6 +6417,7 @@ html, body, button, input, select {
   }
 
   function showRoutesFor(num) {
+    if (activeLearningView !== &#x27;map&#x27; || activeMapMode !== &#x27;routes&#x27;) return;
     if (routeMode || quizMode) return;   // 练习/商路模式下由各自面板控制,别被点标点打断
     hideAllRoutes();
     (pinToRoutes[num] || []).forEach(route =&gt; {
@@ -6276,15 +6444,17 @@ html, body, button, input, select {
   let activeLearningView = &#x27;chain&#x27;;
   let activeMapMode = &#x27;events&#x27;;
   let activeChainPanel = &#x27;unit&#x27;;
+  let causalWorkspacePanel = &#x27;chain&#x27;, chainRouteContext = null, causalMapRestore = null, causalScrollRestore = null, causalSelectionRevision = 0;
 
-  function chainPanelToggleHTML() {
-    return `&lt;div class=&quot;chain-panel-toggle&quot; role=&quot;group&quot; aria-label=&quot;因果链范围&quot;&gt;`
+  function chainPanelToggleHTML(includeWorkspace = true) {
+    return (includeWorkspace ? causalWorkspaceNavHTML() : &quot;&quot;) + `&lt;div class=&quot;chain-panel-toggle&quot; role=&quot;group&quot; aria-label=&quot;因果链范围&quot;&gt;`
       + `&lt;button type=&quot;button&quot; data-chain-panel-view=&quot;unit&quot; aria-pressed=&quot;${activeChainPanel === &#x27;unit&#x27;}&quot;&gt;当前单元&lt;/button&gt;`
       + `&lt;button type=&quot;button&quot; data-chain-panel-view=&quot;mainline&quot; aria-pressed=&quot;${activeChainPanel === &#x27;mainline&#x27;}&quot;&gt;九单元主线&lt;/button&gt;`
       + `&lt;/div&gt;`;
   }
 
   function renderCourseMainline() {
+    causalWorkspacePanel = &#x27;chain&#x27;; chainRouteContext = null;
     activeChainPanel = &#x27;mainline&#x27;;
     stopAutoPlay();
     const segments = getCourseMainline();
@@ -6387,6 +6557,7 @@ html, body, button, input, select {
   }
 
   function showMapMode(mode) {
+    if (mode === &#x27;routes&#x27;) { openTradeLibrary(); return; }
     if (mode !== &#x27;events&#x27; &amp;&amp; mode !== &#x27;routes&#x27;) return;
     if (quizMode || eventPanel.querySelector(&#x27;.quiz-panel&#x27;)) exitQuiz();
     activeLearningView = &#x27;map&#x27;;
@@ -6412,18 +6583,11 @@ html, body, button, input, select {
     syncMapModeTabs();
   }
 
-  function returnToRoutePicker() {
-    exitRouteMode();
-    activeLearningView = &#x27;map&#x27;;
-    activeMapMode = &#x27;routes&#x27;;
-    dismissFirstClickHint();
-    eventZone.setAttribute(&#x27;aria-label&#x27;, &#x27;地图商路&#x27;);
-    renderPicker(&#x27;route&#x27;);
-    syncLearningTabs();
-    syncMapModeTabs();
-  }
+  function returnToRoutePicker() { openTradeLibrary(); }
+
 
   function showCurrentUnitChain() {
+    causalWorkspacePanel = &#x27;chain&#x27;; chainRouteContext = null;
     activeChainPanel = &#x27;unit&#x27;;
     const unitId = document.getElementById(&#x27;periodFilter&#x27;)?.value || &#x27;u1&#x27;;
     const chainId = chainForUnit(unitId);
@@ -6444,6 +6608,7 @@ html, body, button, input, select {
   }
 
   function openChainBoundary(chainId, boundary) {
+    causalWorkspacePanel = &#x27;chain&#x27;; chainRouteContext = null;
     const chain = chainById.get(chainId);
     if (!chain || chain.kind !== &#x27;chain&#x27; || chain.tier !== &#x27;main&#x27; || !chain.entryUnit) return;
     activeLearningView = &#x27;chain&#x27;;
@@ -6466,6 +6631,7 @@ html, body, button, input, select {
   }
 
   function showPracticeView() {
+    chainRouteContext = null; causalWorkspacePanel = &#x27;chain&#x27;;
     leaveActiveLearningContent();
     activeLearningView = &#x27;practice&#x27;;
     dismissFirstClickHint();
@@ -6476,6 +6642,7 @@ html, body, button, input, select {
   }
 
   function showLearningView(view) {
+    if (view !== &#x27;chain&#x27;) { chainRouteContext = null; causalWorkspacePanel = &#x27;chain&#x27;; }
     if (view === &#x27;practice&#x27;) { showPracticeView(); return; }
     leaveActiveLearningContent();
     activeLearningView = view;
@@ -6497,6 +6664,7 @@ html, body, button, input, select {
   // ↓ 商路模式里这几句要立即执行,必须排在上面三个 const 之后(它们是 const,提前引用会 TDZ 报错)
   // 行程面板的按钮:事件面板是 innerHTML 重铺的,所以走事件委托
   eventPanel.addEventListener(&#x27;click&#x27;, e =&gt; {
+    if (handleCausalWorkspaceClick(e)) return;
     const studyOpen = e.target.closest(&#x27;[data-location-study-open]&#x27;);
     if (studyOpen) {
       openLocationStudyFromEntry(studyOpen, { focusHeading: true });
@@ -6568,7 +6736,7 @@ html, body, button, input, select {
     else if (a === &#x27;next&#x27;) { stopAutoPlay(); goToStop(routeMode.i + 1); }
     else if (a === &#x27;play&#x27;) toggleAutoPlay();
     else if (a === &#x27;exit&#x27;) {
-      if (activeLearningView === &#x27;map&#x27; &amp;&amp; activeMapMode === &#x27;routes&#x27; &amp;&amp; routeMode.route.kind !== &#x27;chain&#x27;) returnToRoutePicker();
+      if (isTradeWorkspace() &amp;&amp; routeMode.route.kind !== &#x27;chain&#x27;) returnToRoutePicker();
       else exitRouteMode();
     }
   });
@@ -7508,7 +7676,8 @@ html, body, button, input, select {
     p.addEventListener(&#x27;keydown&#x27;, e =&gt; {
       if (e.key !== &#x27;Enter&#x27; &amp;&amp; e.key !== &#x27; &#x27;) return;
       e.preventDefault();
-      if (quizMode) { answerRegion(region); return; }   // 练习中:点地块 = 回答区域题
+      if (quizMode) { answerRegion(region); return; }
+      if (activeLearningView === &#x27;practice&#x27;) return;   // 练习中:点地块 = 回答区域题
       if (routeMode) return;                 // 商路模式下地块不响应,退出请用行程面板的按钮
       dismissFirstClickHint(true);
       if (region === activeRegion) deactivateRegion();
@@ -7516,6 +7685,7 @@ html, body, button, input, select {
     });
 
     p.addEventListener(&#x27;mouseenter&#x27;, (e) =&gt; {
+      if (activeLearningView === &#x27;practice&#x27; || routeMode) return;
       if (region !== activeRegion) {
         p.setAttribute(&#x27;fill&#x27;, color);
         p.setAttribute(&#x27;fill-opacity&#x27;, &#x27;0.65&#x27;);
@@ -7526,6 +7696,7 @@ html, body, button, input, select {
     });
     p.addEventListener(&#x27;mousemove&#x27;, positionRegionLabel);
     p.addEventListener(&#x27;mouseleave&#x27;, () =&gt; {
+      if (activeLearningView === &#x27;practice&#x27; || routeMode) return;
       regionLabel.classList.remove(&#x27;show&#x27;);
       if (region !== activeRegion) {
         p.setAttribute(&#x27;fill&#x27;, &#x27;#cec2a4&#x27;);
@@ -7534,7 +7705,8 @@ html, body, button, input, select {
     });
     p.addEventListener(&#x27;click&#x27;, (e) =&gt; {
       e.stopPropagation();
-      if (quizMode) { answerRegion(region); return; }   // 同上
+      if (quizMode) { answerRegion(region); return; }
+      if (activeLearningView === &#x27;practice&#x27;) return;   // 同上
       if (routeMode) return;
       dismissFirstClickHint(true);
       if (region === activeRegion) deactivateRegion();
@@ -7988,7 +8160,7 @@ html, body, button, input, select {
         else if (a === &#x27;next&#x27;) { stopAutoPlay(); goToStop(routeMode ? routeMode.i + 1 : 0); }
         else if (a === &#x27;play&#x27;) toggleAutoPlay();
         else if (a === &#x27;exit&#x27;) {
-          if (activeLearningView === &#x27;map&#x27; &amp;&amp; activeMapMode === &#x27;routes&#x27; &amp;&amp; routeMode?.route?.kind !== &#x27;chain&#x27;) returnToRoutePicker();
+          if (isTradeWorkspace() &amp;&amp; routeMode?.route?.kind !== &#x27;chain&#x27;) returnToRoutePicker();
           else exitRouteMode();
         }
       },
@@ -7997,15 +8169,22 @@ html, body, button, input, select {
       setMapMode: mode =&gt; showMapMode(mode),
       setLearningView: view =&gt; showLearningView(view),
       setChainPanelView,
+      setCausalWorkspace,
+      openRelatedTrade,
+      returnToCausal,
+      takeCausalScrollRestore: () =&gt; { const value = causalScrollRestore; causalScrollRestore = null; return value; },
       openMainlineChain,
       openChainBoundary,
       getLearningState: () =&gt; Object.freeze({
         view: activeLearningView,
         mapMode: activeMapMode,
         chainPanel: activeChainPanel,
+        workspacePanel: causalWorkspacePanel,
+        tradeId: routeMode &amp;&amp; routeMode.route.kind !== &#x27;chain&#x27; ? routeMode.route.id : null,
+        tradeStep: routeMode &amp;&amp; routeMode.route.kind !== &#x27;chain&#x27; ? routeMode.i : null,
         label: eventZone.getAttribute(&#x27;aria-label&#x27;) || &#x27;&#x27;,
-        chainId: routeMode?.route?.kind === &#x27;chain&#x27; ? routeMode.route.id : null,
-        chainStep: routeMode?.route?.kind === &#x27;chain&#x27; ? routeMode.i : null,
+        chainId: routeMode?.route?.kind === &#x27;chain&#x27; ? routeMode.route.id : chainRouteContext?.chainId || null,
+        chainStep: routeMode?.route?.kind === &#x27;chain&#x27; ? routeMode.i : chainRouteContext?.step ?? null,
       }),
       // 随堂练习
       startQuiz: mode =&gt; startQuiz(mode),
@@ -8024,6 +8203,239 @@ html, body, button, input, select {
     apply();
     showLearningView(&#x27;chain&#x27;);
   })();
+
+// Shared by the offline browser bundle and Node geometry tests; pixels throughout.
+function overlap(a,b,gap=8){return a.x&lt;b.x+b.width+gap&amp;&amp;a.x+a.width+gap&gt;b.x&amp;&amp;a.y&lt;b.y+b.height+gap&amp;&amp;a.y+a.height+gap&gt;b.y;}
+function layoutNotes(points,width,height,protectedAreas=[],controls=[]){
+ if(width&lt;620)return null;
+ const markers=points.map(p=&gt;({x:p.x-25,y:p.y-25,width:50,height:50}));
+ const choices=points.map(p=&gt;{
+  const candidates=[{x:p.x+40,y:p.y-p.height/2},{x:p.x-p.width-40,y:p.y-p.height/2}];
+  for(let y=12;y+p.height&lt;=height-12;y+=16)for(let x=12;x+p.width&lt;=width-12;x+=20)candidates.push({x,y});
+  return candidates.map(c=&gt;({...p,...c})).filter(b=&gt;b.x&gt;=12&amp;&amp;b.y&gt;=12&amp;&amp;b.x+b.width&lt;=width-12&amp;&amp;b.y+b.height&lt;=height-12&amp;&amp;[...protectedAreas,...controls,...markers].every(a=&gt;!overlap(a,b,8))).sort((a,b)=&gt;Math.hypot(a.x+a.width/2-p.x,a.y+a.height/2-p.y)-Math.hypot(b.x+b.width/2-p.x,b.y+b.height/2-p.y)).filter((b,i,list)=&gt;list.slice(0,i).every(a=&gt;Math.hypot(a.x-b.x,a.y-b.y)&gt;24)).slice(0,80);
+ });
+ const result=[];let attempts=0;
+ function search(i){if(i===choices.length)return true;if(++attempts&gt;4000)return false;for(const b of choices[i]){if(result.some(a=&gt;overlap(a,b,10)))continue;result.push(b);if(search(i+1))return true;result.pop();}return false;}
+ return search(0)?result:null;
+}
+function layoutNodes(rows,width,height,controls=[]){
+ const placed=[];
+ for(const row of rows){
+  const candidates=[{x:row.x,y:row.y}];
+  for(let r=50;r&lt;=Math.hypot(width,height);r+=26)for(let a=0;a&lt;Math.PI*2;a+=Math.PI/12)candidates.push({x:row.x+r*Math.cos(a),y:row.y+r*Math.sin(a)});
+  for(let y=50;y&lt;=height-26;y+=50)for(let x=26;x&lt;=width-26;x+=50)candidates.push({x,y});
+  const p=candidates.find(p=&gt;p.x&gt;=24&amp;&amp;p.y&gt;=48&amp;&amp;p.x&lt;=width-24&amp;&amp;p.y&lt;=height-24&amp;&amp;placed.every(a=&gt;Math.hypot(a.x-p.x,a.y-p.y)&gt;=48)&amp;&amp;controls.every(c=&gt;!overlap({x:p.x-22,y:p.y-22,width:44,height:44},c,6)));
+  if(p)placed.push({...row,anchorX:row.x,anchorY:row.y,...p});
+ }
+ return placed;
+}
+if(typeof module!==&#x27;undefined&#x27;)module.exports={overlap,layoutNotes,layoutNodes};
+
+// Clock is independent of DOM/camera; cancellation prevents stale arrival cards.
+function createJourneyPlayer({now=()=&gt;performance.now(),request=cb=&gt;requestAnimationFrame(cb),cancel=id=&gt;cancelAnimationFrame(id),onFrame=()=&gt;{},onPhase=()=&gt;{},onArrive=()=&gt;{}}={}){
+ let state={phase:&#x27;idle&#x27;,paused:false,progress:0},frame=null,started=0,elapsed=0,token=0;
+ const snapshot=()=&gt;({...state});
+ function advance(){const total=state.travelMs+state.focusMs;elapsed=Math.min(total,Math.max(0,now()-started));const phase=elapsed&lt;state.travelMs?&#x27;travel&#x27;:elapsed&lt;total?&#x27;focus&#x27;:&#x27;arrived&#x27;;const changed=phase!==state.phase;
+  state={...state,phase,progress:state.travelMs?Math.min(1,elapsed/state.travelMs):1,remainingFocus:Math.max(0,total-elapsed)};
+  if(changed)onPhase(snapshot());onFrame(snapshot());if(phase===&#x27;arrived&#x27;){onArrive(snapshot());return;}
+  const mine=token;frame=request(()=&gt;{frame=null;if(mine===token&amp;&amp;!state.paused)advance();});
+ }
+ function stopFrame(){++token;if(frame!==null)cancel(frame);frame=null;}
+ return{snapshot,start(options){stopFrame();elapsed=0;started=now();state={...options,travelMs:Math.max(0,options.travelMs||0),focusMs:Math.max(0,options.focusMs||0),phase:&#x27;pending&#x27;,paused:false,progress:0};advance();},
+  pause(){if(state.phase===&#x27;idle&#x27;||state.phase===&#x27;arrived&#x27;||state.paused)return false;elapsed=Math.max(0,now()-started);stopFrame();state={...state,paused:true};onFrame(snapshot());return true;},
+  resume(){if(!state.paused)return false;started=now()-elapsed;state={...state,paused:false};onPhase(snapshot());advance();return true;},
+  cancel(){stopFrame();state={phase:&#x27;idle&#x27;,paused:false,progress:0};}
+ };
+}
+function causalStopData(route,step,index){const num=route.stops[step],items=index[num]||[],declared=route.stopEvents?.[step];return{step,num,city:items[0]?.city||String(num),label:route.labels?.[step]||&#x27;&#x27;,evidence:route.evidence?.[step]||&#x27;&#x27;,incomingCause:step&gt;0?route.links?.[step-1]||&#x27;&#x27;:&#x27;&#x27;,event:declared?items.find(it=&gt;it.sourceId===declared)||null:items.length===1?items[0]:null};}
+if(typeof module!==&#x27;undefined&#x27;)module.exports={createJourneyPlayer,causalStopData};
+
+  // Current-chain geography and independent, post-answer practice annotations.
+  const mapNS=&#x27;http://www.w3.org/2000/svg&#x27;;
+  const mapOverlay=document.createElementNS(mapNS,&#x27;svg&#x27;);
+  mapOverlay.classList.add(&#x27;world-route-overlay&#x27;);mapOverlay.setAttribute(&#x27;aria-label&#x27;,&#x27;当前因果链路线&#x27;);
+  const noteLayer=document.createElement(&#x27;div&#x27;);noteLayer.className=&#x27;world-practice-notes&#x27;;
+  const noteRail=document.createElement(&#x27;section&#x27;);noteRail.className=&#x27;world-map-note-rail&#x27;;noteRail.hidden=true;noteRail.setAttribute(&#x27;aria-label&#x27;,&#x27;地图说明&#x27;);
+  stage.append(mapOverlay,noteLayer);stage.closest(&#x27;.map-zone&#x27;).after(noteRail);
+  let redrawQueued=false;
+  function queueMapAnnotations(){if(redrawQueued)return;redrawQueued=true;requestAnimationFrame(()=&gt;{redrawQueued=false;renderMapAnnotations();});}
+  function setMapOverlayVisible(shown){mapOverlay.style.display=shown?&#x27;block&#x27;:&#x27;none&#x27;;mapOverlay.setAttribute(&#x27;aria-hidden&#x27;,String(!shown));}
+  function mapSvg(tag,attrs={},text){const el=document.createElementNS(mapNS,tag);for(const [k,v]of Object.entries(attrs))el.setAttribute(k,v);if(text!==undefined)el.textContent=text;return el;}
+  function localRect(el){const b=el.getBoundingClientRect(),s=stage.getBoundingClientRect();return{x:b.left-s.left,y:b.top-s.top,width:b.width,height:b.height};}
+  function mapPoint(num){const g=stopGroupFor(num),m=zoomLayer.getScreenCTM();if(!g||!m)return null;const p=svg.createSVGPoint();p.x=Number(g.dataset.cx);p.y=Number(g.dataset.cy);const q=p.matrixTransform(m),s=stage.getBoundingClientRect();return{x:q.x-s.left,y:q.y-s.top};}
+  function mapControls(){return[localRect(stage.querySelector(&#x27;.zoom-controls&#x27;)),...[...stage.querySelectorAll(&#x27;.world-causal-hud&#x27;)].filter(h=&gt;!h.hidden).map(localRect)];}
+  function mapNote(title,body,subtitle){const el=document.createElement(&#x27;article&#x27;);el.className=&#x27;world-map-note&#x27;;const h=document.createElement(&#x27;strong&#x27;);h.textContent=title;el.append(h);if(subtitle){const small=document.createElement(&#x27;small&#x27;);small.textContent=subtitle;el.append(small);}const p=document.createElement(&#x27;p&#x27;);p.textContent=body;el.append(p);return el;}
+  function plainMapText(value){const d=document.createElement(&#x27;div&#x27;);d.innerHTML=value||&#x27;&#x27;;return d.textContent.replace(/\s+/g,&#x27; &#x27;).trim();}
+  function renderMapAnnotations(){
+    document.body.classList.toggle(&#x27;world-practice-active&#x27;,activeLearningView===&#x27;practice&#x27;);
+    document.body.classList.toggle(&#x27;world-causal-active&#x27;,activeLearningView===&#x27;chain&#x27;);
+    document.body.classList.remove(&#x27;world-trade-active&#x27;);
+    const width=stage.clientWidth,height=stage.clientHeight;
+    const focusedTradeStep=mapOverlay.contains(document.activeElement)?document.activeElement?.getAttribute(&#x27;data-trade-step&#x27;):null;
+    const focusedStep=mapOverlay.contains(document.activeElement)?document.activeElement?.getAttribute(&#x27;data-causal-step&#x27;):null;
+    delete mapOverlay.dataset.chainId;
+    mapOverlay.replaceChildren();noteLayer.replaceChildren();noteRail.replaceChildren();noteRail.hidden=true;
+    stage.classList.remove(&#x27;focused-causal&#x27;,&#x27;focused-practice&#x27;,&#x27;focused-trade&#x27;);setMapOverlayVisible(false);
+    if(!width||!height)return;
+    mapOverlay.setAttribute(&#x27;viewBox&#x27;,`0 0 ${width} ${height}`);
+    if(activeLearningView===&#x27;chain&#x27;&amp;&amp;routeMode?.route.kind===&#x27;chain&#x27;){
+      resetTradeJourney();
+      drawCausalJourney(routeMode.route,width,height);
+      if(focusedStep!==null)mapOverlay.querySelector(`[data-causal-step=&quot;${focusedStep}&quot;]`)?.focus({preventScroll:true});
+      return;
+    }
+    resetCausalJourney();
+    if(isTradeWorkspace()&amp;&amp;routeMode&amp;&amp;routeMode.route.kind!==&#x27;chain&#x27;){drawTradeMap(routeMode.route,width,height);if(focusedTradeStep!==null)mapOverlay.querySelector(`[data-trade-step=&quot;${focusedTradeStep}&quot;]`)?.focus({preventScroll:true});return;}
+    resetTradeJourney();
+    if(activeLearningView!==&#x27;practice&#x27;||!quizMode?.answered||!quizMode.q)return;
+    stage.classList.add(&#x27;focused-practice&#x27;);
+    const q=quizMode.q,point=mapPoint(q.num);if(!point)return;
+    // Always show only this question&#x27;s anchor, without navigating out of practice.
+    svg.querySelectorAll(&#x27;.pin-group&#x27;).forEach(g=&gt;g.classList.toggle(&#x27;revealed&#x27;,g===stopGroupFor(q.num)));
+    const title=`${q.num} · ${plainMapText(q.it.city)}`,body=plainMapText(q.it.trigHTML),subtitle=`${q.it.yr} · ${q.it.catFull}`;
+    const note=mapNote(title,body,subtitle);noteLayer.append(note);
+    const rect=note.getBoundingClientRect();
+    // Every highlighted country shape is protected, including full bounding boxes.
+    const areas=[...svg.querySelectorAll(&#x27;.region-path&#x27;)].filter(p=&gt;p.getAttribute(&#x27;fill&#x27;)!==&#x27;#cec2a4&#x27;&amp;&amp;Number(p.getAttribute(&#x27;fill-opacity&#x27;))&gt;0).map(localRect);
+    const placed=layoutNotes([{...point,width:rect.width,height:rect.height}],width,height,areas,mapControls());
+    if(!placed){noteLayer.replaceChildren();noteRail.hidden=false;const h=document.createElement(&#x27;div&#x27;);h.className=&#x27;world-note-rail-label&#x27;;h.textContent=&#x27;本题地图说明&#x27;;noteRail.append(h,note);return;}
+    const b=placed[0];note.style.left=b.x+&#x27;px&#x27;;note.style.top=b.y+&#x27;px&#x27;;
+    setMapOverlayVisible(true);
+    const endX=Math.max(b.x,Math.min(point.x,b.x+b.width)),endY=Math.max(b.y,Math.min(point.y,b.y+b.height));
+    mapOverlay.append(mapSvg(&#x27;line&#x27;,{x1:point.x,y1:point.y,x2:endX,y2:endY,class:&#x27;world-geography-tether&#x27;}));
+  }
+  new MutationObserver(queueMapAnnotations).observe(eventPanel,{childList:true,subtree:true,attributes:true,attributeFilter:[&#x27;class&#x27;]});
+  new ResizeObserver(queueMapAnnotations).observe(stage);
+  window.addEventListener(&#x27;world-map-transform&#x27;,queueMapAnnotations);
+  window.addEventListener(&#x27;resize&#x27;,queueMapAnnotations);
+  queueMapAnnotations();
+
+function linksForStep(links,chainId,step){return links.filter(l=&gt;l.chainId===chainId&amp;&amp;l.step===step);}
+function makeCausalBookmark({chainId,step,unit,camera,scrollTop=0,pageScrollTop=null,overview=false}){return Object.freeze({chainId,step,unit,camera:Object.freeze({...camera}),scrollTop:Math.max(0,Number(scrollTop)||0),pageScrollTop:pageScrollTop===null?null:Math.max(0,Number(pageScrollTop)||0),overview:!!overview});}
+if(typeof module!==&#x27;undefined&#x27;)module.exports={linksForStep,makeCausalBookmark};
+
+  function isTradeWorkspace(){return activeLearningView===&#x27;chain&#x27;&amp;&amp;causalWorkspacePanel===&#x27;routes&#x27;;}
+  function causalWorkspaceNavHTML(){return`&lt;div class=&quot;causal-workspace-tabs&quot; role=&quot;group&quot; aria-label=&quot;因果链模块&quot;&gt;&lt;button type=&quot;button&quot; data-causal-workspace=&quot;chain&quot; aria-pressed=&quot;${causalWorkspacePanel===&#x27;chain&#x27;}&quot;&gt;因果推演&lt;/button&gt;&lt;button type=&quot;button&quot; data-causal-workspace=&quot;routes&quot; aria-pressed=&quot;${causalWorkspacePanel===&#x27;routes&#x27;}&quot;&gt;商路与交流&lt;/button&gt;&lt;/div&gt;`;}
+  function hostChainScroll(){try{return window.frameElement?window.parent.document.getElementById(&#x27;home-events&#x27;)?.scrollTop||eventZone.scrollTop:eventZone.scrollTop;}catch{return eventZone.scrollTop;}}
+  function captureCausalBookmark(scrollTop){if(routeMode?.route.kind!==&#x27;chain&#x27;)return chainRouteContext;const c=routeMode.route;return makeCausalBookmark({chainId:c.id,step:routeMode.i,unit:getActivePeriod()||c.entryUnit||c.units?.[0]||&#x27;u1&#x27;,camera:{zoom,panX,panY},scrollTop:scrollTop??hostChainScroll(),pageScrollTop:window.frameElement?null:window.scrollY,overview:causalOverview});}
+  function causalTradeContextHTML(){if(!chainRouteContext)return&#x27;&#x27;;const c=chainById.get(chainRouteContext.chainId);if(!c)return&#x27;&#x27;;const activeRoute=routeMode?.route.kind!==&#x27;chain&#x27;?routeMode?.route.id:null,link=activeRoute?linksForStep(CAUSAL_TRADE_LINKS,c.id,chainRouteContext.step).find(l=&gt;l.routeId===activeRoute):null;
+    const prefix=link?&#x27;来自&#x27;:activeRoute?&#x27;自由浏览 · 返回位置&#x27;:&#x27;已保留&#x27;;
+    return`&lt;div class=&quot;causal-trade-context&quot; data-causal-origin-scroll=&quot;${chainRouteContext.pageScrollTop??&#x27;&#x27;}&quot;&gt;&lt;span&gt;${prefix} Unit ${escapeTimelineText(chainRouteContext.unit.slice(1))} · 第 ${chainRouteContext.step+1} 环&lt;/span&gt;&lt;strong&gt;${escapeTimelineText(c.labels[chainRouteContext.step])}&lt;/strong&gt;${link?`&lt;p&gt;${escapeTimelineText(link.reason)}&lt;/p&gt;`:&#x27;&#x27;}&lt;button type=&quot;button&quot; data-causal-return&gt;← 返回第 ${chainRouteContext.step+1} 环&lt;/button&gt;&lt;/div&gt;`;
+  }
+  function causalRelatedRoutesHTML(route,step){const links=linksForStep(CAUSAL_TRADE_LINKS,route.id,step);if(!links.length)return&#x27;&#x27;;return`&lt;div class=&quot;causal-related-routes&quot;&gt;&lt;div class=&quot;causal-related-label&quot;&gt;用地图理解这一环&lt;/div&gt;${links.map(link=&gt;{const p=TRADE_PROFILES.find(p=&gt;p.id===link.routeId);return`&lt;button type=&quot;button&quot; data-related-route=&quot;${p.id}&quot;&gt;&lt;span&gt;${escapeTimelineText(link.kind)}&lt;/span&gt;&lt;strong&gt;展开${escapeTimelineText(p.name.split(&#x27; · &#x27;)[0])} · ${p.sites.length}站 ↗&lt;/strong&gt;&lt;small&gt;${escapeTimelineText(link.reason)}&lt;/small&gt;&lt;/button&gt;`;}).join(&#x27;&#x27;)}&lt;/div&gt;`;}
+  function openRelatedTrade(routeId,options={}){
+    const route=ROUTES.find(r=&gt;r.id===routeId);if(!route)return false;
+    const bookmark=captureCausalBookmark(options.scrollTop);if(!bookmark)return false;
+    if(!linksForStep(CAUSAL_TRADE_LINKS,bookmark.chainId,bookmark.step).some(l=&gt;l.routeId===routeId))return false;
+    chainRouteContext=bookmark;causalWorkspacePanel=&#x27;routes&#x27;;activeLearningView=&#x27;chain&#x27;;activeChainPanel=&#x27;unit&#x27;;
+    enterRouteMode(routeId);eventZone.setAttribute(&#x27;aria-label&#x27;,&#x27;因果链 · 商路与交流&#x27;);syncLearningTabs();syncMapModeTabs();if(routeStepCb)routeStepCb();return true;
+  }
+  function openTradeLibrary(options={}){
+    const bookmark=captureCausalBookmark(options.scrollTop);if(bookmark)chainRouteContext=bookmark;
+    if(routeMode)exitRouteMode(true);causalWorkspacePanel=&#x27;routes&#x27;;activeLearningView=&#x27;chain&#x27;;activeChainPanel=&#x27;unit&#x27;;
+    mapStudyView.hidden=false;eventZone.setAttribute(&#x27;aria-label&#x27;,&#x27;因果链 · 商路与交流&#x27;);renderPicker(&#x27;route&#x27;);applyCausalCamera({zoom:1,panX:0,panY:0});syncLearningTabs();syncMapModeTabs();queueMapAnnotations();if(routeStepCb)routeStepCb();
+  }
+  function returnToCausal(){const bookmark=chainRouteContext;causalWorkspacePanel=&#x27;chain&#x27;;activeLearningView=&#x27;chain&#x27;;activeChainPanel=&#x27;unit&#x27;;
+    if(!bookmark){showCurrentUnitChain();syncLearningTabs();syncMapModeTabs();return null;}
+    if(routeMode)exitRouteMode(true);chainRouteContext=null;
+    if(typeof setPeriodFilter===&#x27;function&#x27;)setPeriodFilter(bookmark.unit);
+    causalMapRestore=bookmark;enterRouteMode(bookmark.chainId);goToStop(bookmark.step);eventZone.scrollTop=bookmark.scrollTop;causalScrollRestore=bookmark.scrollTop;
+    eventZone.setAttribute(&#x27;aria-label&#x27;,&#x27;Unit 因果链&#x27;);syncLearningTabs();syncMapModeTabs();if(routeStepCb)routeStepCb();if(!window.frameElement&amp;&amp;bookmark.pageScrollTop!==null)requestAnimationFrame(()=&gt;requestAnimationFrame(()=&gt;{if(routeMode?.route.id===bookmark.chainId&amp;&amp;routeMode.i===bookmark.step&amp;&amp;causalWorkspacePanel===&#x27;chain&#x27;)window.scrollTo({top:bookmark.pageScrollTop,behavior:&#x27;instant&#x27;});}));return bookmark;
+  }
+  function setCausalWorkspace(panel,options={}){if(panel===&#x27;routes&#x27;)openTradeLibrary(options);else returnToCausal();}
+  function handleCausalWorkspaceClick(e){const tab=e.target.closest(&#x27;[data-causal-workspace]&#x27;);if(tab){setCausalWorkspace(tab.dataset.causalWorkspace);return true;}const related=e.target.closest(&#x27;[data-related-route]&#x27;);if(related){openRelatedTrade(related.dataset.relatedRoute);return true;}if(e.target.closest(&#x27;[data-causal-return]&#x27;)){returnToCausal();return true;}return false;}
+  function staticChainItineraryHTML(route,i){const esc=escapeTimelineText;
+    return`&lt;div class=&quot;route-panel causal-static-panel&quot;&gt;${causalWorkspaceNavHTML()}&lt;div class=&quot;rt-top&quot;&gt;${chainPanelToggleHTML(false)}&lt;div class=&quot;rt-head&quot;&gt;&lt;div class=&quot;rt-name&quot;&gt;${esc(route.name)}&lt;/div&gt;&lt;div class=&quot;rt-progress&quot;&gt;第 ${i+1} / ${route.stops.length} 环&lt;/div&gt;&lt;/div&gt;${chainSwitcherHTML(route)}&lt;/div&gt;&lt;p class=&quot;causal-click-hint&quot;&gt;点击任意一环，在地图上查看地点、证据与因果解释。&lt;/p&gt;&lt;div class=&quot;rt-stops rt-stops-chain&quot;&gt;${route.stops.map((num,k)=&gt;`&lt;button type=&quot;button&quot; class=&quot;rt-stop ${k&lt;i?&#x27;done&#x27;:k===i?&#x27;now&#x27;:&#x27;todo&#x27;}&quot; data-route-step=&quot;${k}&quot; ${k===i?&#x27;aria-current=&quot;step&quot;&#x27;:&#x27;&#x27;}&gt;&lt;span class=&quot;rt-num&quot;&gt;${k+1}&lt;/span&gt;&lt;span class=&quot;rt-city&quot;&gt;${esc(route.labels[k])}&lt;span class=&quot;rt-sub&quot;&gt;${esc(index[num]?.[0]?.city||&#x27;&#x27;)}&lt;/span&gt;&lt;/span&gt;&lt;/button&gt;${k===i?causalRelatedRoutesHTML(route,i):&#x27;&#x27;}`).join(&#x27;&#x27;)}&lt;/div&gt;${chainSeamHTML(route,&#x27;from&#x27;)}${chainSeamHTML(route,&#x27;to&#x27;)}&lt;details class=&quot;causal-chain-background&quot;&gt;&lt;summary&gt;本链背景与考试提示&lt;/summary&gt;&lt;p&gt;${esc(route.blurb)}&lt;/p&gt;&lt;p&gt;${esc(route.exam)}&lt;/p&gt;&lt;/details&gt;&lt;div class=&quot;rt-ctrl&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;rt-btn&quot; data-route-action=&quot;prev&quot; ${i&lt;=0?&#x27;disabled&#x27;:&#x27;&#x27;}&gt;← 上一环&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;rt-btn primary&quot; data-route-action=&quot;next&quot; ${i&gt;=route.stops.length-1?&#x27;disabled&#x27;:&#x27;&#x27;}&gt;下一环 →&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;`;
+  }
+
+  // Static selection only: no causal playback, moving marker or automatic advance.
+  const causalHud=document.createElement(&#x27;div&#x27;);causalHud.className=&#x27;world-causal-hud&#x27;;causalHud.hidden=true;
+  const causalStatus=document.createElement(&#x27;span&#x27;);causalStatus.setAttribute(&#x27;role&#x27;,&#x27;status&#x27;);
+  const causalOverviewBtn=document.createElement(&#x27;button&#x27;);causalOverviewBtn.type=&#x27;button&#x27;;causalHud.append(causalStatus,causalOverviewBtn);stage.append(causalHud);
+  let causalOverview=false;
+  function applyCausalCamera(camera){stopFitAnimation();zoom=camera.zoom;panX=camera.panX;panY=camera.panY;clampPan();applyTransform();}
+  function focusCausalPlace(num){const pin=pinPos(num);if(!pin)return;let b;try{b=findCountryPathForPin(num)?.getBBox();}catch{}const z=Math.min(3.8,Math.max(1,Math.min(VB_W/Math.max(380,Math.min(900,(b?.width||200)*1.45)),VB_H/Math.max(250,Math.min(650,(b?.height||120)*1.45)))));applyCausalCamera({zoom:z,panX:VB_W/2-pin.x*z,panY:VB_H/2-pin.y*z});}
+  function fitCausalOverview(route){const ps=route.stops.map(pinPos).filter(Boolean);if(!ps.length)return;const xs=ps.map(p=&gt;p.x),ys=ps.map(p=&gt;p.y),l=Math.min(...xs),r=Math.max(...xs),t=Math.min(...ys),b=Math.max(...ys),z=Math.min(8,Math.max(1,Math.min(VB_W/(Math.max(40,r-l)+140),VB_H/(Math.max(40,b-t)+140))));applyCausalCamera({zoom:z,panX:VB_W/2-(l+r)/2*z,panY:VB_H/2-(t+b)/2*z});}
+  function selectCausalMapStep(route,step){const revision=++causalSelectionRevision;requestAnimationFrame(()=&gt;{if(revision!==causalSelectionRevision||activeLearningView!==&#x27;chain&#x27;||causalWorkspacePanel!==&#x27;chain&#x27;||routeMode?.route!==route||routeMode.i!==step)return;stopAutoPlay();if(causalMapRestore&amp;&amp;(causalMapRestore.chainId!==route.id||causalMapRestore.step!==step))causalMapRestore=null;if(causalMapRestore?.chainId===route.id&amp;&amp;causalMapRestore.step===step){causalOverview=causalMapRestore.overview;applyCausalCamera(causalMapRestore.camera);causalMapRestore=null;}else{causalOverview=false;focusCausalPlace(route.stops[step]);}queueMapAnnotations();});}
+  function resetCausalJourney(){causalHud.hidden=true;delete mapOverlay.dataset.causalView;}
+  function setCausalOverview(value){if(routeMode?.route.kind!==&#x27;chain&#x27;)return;causalOverview=!!value;if(causalOverview)fitCausalOverview(routeMode.route);else focusCausalPlace(routeMode.route.stops[routeMode.i]);queueMapAnnotations();}
+  causalOverviewBtn.addEventListener(&#x27;click&#x27;,()=&gt;setCausalOverview(!causalOverview));
+  function causalPopup(route,step,height){const data=causalStopData(route,step,index),note=document.createElement(&#x27;article&#x27;);note.className=&#x27;world-map-note world-causal-popup&#x27;;note.dataset.step=step;note.style.height=Math.max(170,Math.min(340,height-100))+&#x27;px&#x27;;note.style.maxHeight=Math.max(170,height-100)+&#x27;px&#x27;;note.setAttribute(&#x27;aria-label&#x27;,`第 ${step+1} 环地点与事件`);
+    const heading=document.createElement(&#x27;strong&#x27;);heading.textContent=`第 ${step+1} 环 · ${plainMapText(data.city)}`;note.append(heading);const title=document.createElement(&#x27;h3&#x27;);title.textContent=plainMapText(data.label);note.append(title);
+    const short=text=&gt;{const t=plainMapText(text);return t.length&gt;145?t.slice(0,145)+&#x27;…&#x27;:t;};
+    const para=(label,text)=&gt;{if(!text)return;const p=document.createElement(&#x27;p&#x27;),b=document.createElement(&#x27;b&#x27;);b.textContent=label;p.append(b,document.createTextNode(short(text)));note.append(p);};
+    para(&#x27;事件与证据 · &#x27;,data.evidence);para(`${step} → ${step+1} · 为什么发生：`,data.incomingCause);
+    const links=linksForStep(CAUSAL_TRADE_LINKS,route.id,step);if(links.length){const box=document.createElement(&#x27;div&#x27;);box.className=&#x27;causal-popup-routes&#x27;;const h=document.createElement(&#x27;div&#x27;);h.className=&#x27;causal-related-label&#x27;;h.textContent=&#x27;相关商路与交流&#x27;;box.append(h);for(const link of links){const p=TRADE_PROFILES.find(p=&gt;p.id===link.routeId),button=document.createElement(&#x27;button&#x27;);button.type=&#x27;button&#x27;;button.dataset.relatedRoute=p.id;button.textContent=`${p.name.split(&#x27; · &#x27;)[0]} · ${p.sites.length}站 ↗`;button.title=link.reason;button.addEventListener(&#x27;click&#x27;,()=&gt;openRelatedTrade(p.id));box.append(button);}note.append(box);}
+    if(data.evidence.length&gt;145||data.incomingCause.length&gt;145){const d=document.createElement(&#x27;details&#x27;),s=document.createElement(&#x27;summary&#x27;);s.textContent=&#x27;展开完整解释与证据&#x27;;d.append(s);for(const text of [data.evidence,data.incomingCause])if(text){const p=document.createElement(&#x27;p&#x27;);p.textContent=plainMapText(text);d.append(p);}note.append(d);}
+    const next=document.createElement(&#x27;button&#x27;);next.type=&#x27;button&#x27;;next.className=&#x27;world-causal-continue&#x27;;next.textContent=step&lt;route.stops.length-1?&#x27;下一环 →&#x27;:&#x27;返回第一环&#x27;;next.addEventListener(&#x27;click&#x27;,()=&gt;goToStop(step&lt;route.stops.length-1?step+1:0));note.append(next);note.addEventListener(&#x27;wheel&#x27;,e=&gt;e.stopPropagation(),{passive:true});note.addEventListener(&#x27;pointerdown&#x27;,e=&gt;e.stopPropagation());return note;
+  }
+  function drawCausalJourney(route,width,height){stage.classList.add(&#x27;focused-causal&#x27;);setMapOverlayVisible(true);causalHud.hidden=false;mapOverlay.dataset.chainId=route.id;mapOverlay.dataset.causalView=causalOverview?&#x27;overview&#x27;:&#x27;selected&#x27;;causalStatus.textContent=causalOverview?`全链 · ${route.stops.length} 环`:`第 ${routeMode.i+1} / ${route.stops.length} 环`;causalOverviewBtn.textContent=causalOverview?&#x27;聚焦当前环&#x27;:&#x27;查看全链&#x27;;
+    const rows=route.stops.map((num,index)=&gt;{const p=mapPoint(num);return p?{...p,index,num,label:route.labels[index]}:null;}).filter(Boolean),points=layoutNodes(causalOverview?rows:rows.filter(p=&gt;p.index===routeMode.i),width,height,mapControls()),byIndex=new Map(points.map(p=&gt;[p.index,p]));
+    if(causalOverview){const defs=mapSvg(&#x27;defs&#x27;),a=mapSvg(&#x27;marker&#x27;,{id:&#x27;worldCausalArrow&#x27;,viewBox:&#x27;0 0 8 8&#x27;,refX:7,refY:4,markerWidth:6,markerHeight:6,orient:&#x27;auto&#x27;});a.append(mapSvg(&#x27;path&#x27;,{d:&#x27;M1 1 L7 4 L1 7&#x27;,fill:&#x27;none&#x27;,stroke:&#x27;#496f72&#x27;,&#x27;stroke-width&#x27;:1.5}));defs.append(a);mapOverlay.append(defs);for(const p of points){const n=byIndex.get(p.index+1);if(!n)continue;const dx=n.x-p.x,dy=n.y-p.y,d=Math.hypot(dx,dy)||1;mapOverlay.append(mapSvg(&#x27;path&#x27;,{d:`M${p.x+dx/d*24},${p.y+dy/d*24} L${n.x-dx/d*27},${n.y-dy/d*27}`,class:&#x27;world-causal-link&#x27;,&#x27;marker-end&#x27;:&#x27;url(#worldCausalArrow)&#x27;}));}}
+    for(const p of points){if(Math.hypot(p.x-p.anchorX,p.y-p.anchorY)&gt;8)mapOverlay.append(mapSvg(&#x27;line&#x27;,{x1:p.x,y1:p.y,x2:p.anchorX,y2:p.anchorY,class:&#x27;world-geography-tether&#x27;}));const g=mapSvg(&#x27;g&#x27;,{class:`world-causal-node${p.index===routeMode.i?&#x27; is-current&#x27;:&#x27;&#x27;}`,transform:`translate(${p.x} ${p.y})`,role:&#x27;button&#x27;,tabindex:0,&#x27;aria-label&#x27;:`第 ${p.index+1} 环：${plainMapText(p.label)}`,&#x27;aria-pressed&#x27;:String(p.index===routeMode.i),&#x27;data-causal-step&#x27;:p.index});const activate=()=&gt;goToStop(p.index);g.addEventListener(&#x27;click&#x27;,activate);g.addEventListener(&#x27;keydown&#x27;,e=&gt;{if(e.key===&#x27;Enter&#x27;||e.key===&#x27; &#x27;){e.preventDefault();activate();}});g.append(mapSvg(&#x27;circle&#x27;,{r:22,class:&#x27;world-node-ring&#x27;}),mapSvg(&#x27;circle&#x27;,{r:17,class:&#x27;world-node-face&#x27;}),mapSvg(&#x27;text&#x27;,{y:5,&#x27;text-anchor&#x27;:&#x27;middle&#x27;},p.index+1));mapOverlay.append(g);}
+    const current=byIndex.get(routeMode.i);if(current&amp;&amp;!causalOverview){const note=causalPopup(route,routeMode.i,height);noteLayer.append(note);const r=note.getBoundingClientRect(),areas=[...svg.querySelectorAll(&#x27;.spotlight-deep&#x27;)].map(localRect),placed=layoutNotes([{...current,width:r.width,height:r.height}],width,height,areas,mapControls());if(placed){const b=placed[0];note.style.left=b.x+&#x27;px&#x27;;note.style.top=b.y+&#x27;px&#x27;;mapOverlay.append(mapSvg(&#x27;line&#x27;,{x1:current.anchorX,y1:current.anchorY,x2:Math.max(b.x,Math.min(current.x,b.x+b.width)),y2:Math.max(b.y,Math.min(current.y,b.y+b.height)),class:&#x27;world-geography-tether&#x27;}));}else{noteLayer.replaceChildren();noteRail.hidden=false;noteRail.append(note);}}
+  }
+
+function projectTrade(site){return{x:(site.lon+180)/360*1600,y:(90-site.lat)/180*800};}
+function unwrappedTrade(points){if(!points.length)return[];const out=[{...points[0]}];for(const p of points.slice(1)){let x=p.x;const prev=out.at(-1).x;while(x-prev&gt;800)x-=1600;while(x-prev&lt; -800)x+=1600;out.push({...p,x});}return out;}
+function splitTradePath(points){if(!points.length)return[];const out=[[{...points[0]}]];for(let i=1;i&lt;points.length;i++){const a=points[i-1],b=points[i],dx=b.x-a.x;if(Math.abs(dx)&lt;=800){out.at(-1).push({...b});continue;}const bx=b.x+(dx&gt;0?-1600:1600),edge=dx&gt;0?0:1600,t=(edge-a.x)/(bx-a.x),y=a.y+(b.y-a.y)*t;out.at(-1).push({x:edge,y});out.push([{x:edge===0?1600:0,y},{...b}]);}return out;}
+function tradePointAt(points,t){const line=unwrappedTrade(points);if(!line.length)return null;if(line.length===1)return{...line[0]};const lengths=line.slice(1).map((b,i)=&gt;Math.hypot(b.x-line[i].x,b.y-line[i].y)),total=lengths.reduce((a,b)=&gt;a+b,0);let d=Math.max(0,Math.min(1,t))*total;for(let i=0;i&lt;lengths.length;i++){if(d&lt;=lengths[i]||i===lengths.length-1){const k=lengths[i]?d/lengths[i]:0,a=line[i],b=line[i+1],x=a.x+(b.x-a.x)*k;return{x:((x%1600)+1600)%1600,y:a.y+(b.y-a.y)*k};}d-=lengths[i];}return{...points.at(-1)};}
+function layoutTradeLabels(nodes,width,height,protectedRects=[]){const placed=[],over=(a,b)=&gt;a.x&lt;b.x+b.width+5&amp;&amp;a.x+a.width+5&gt;b.x&amp;&amp;a.y&lt;b.y+b.height+5&amp;&amp;a.y+a.height+5&gt;b.y,markers=nodes.map(p=&gt;({x:p.x-22,y:p.y-22,width:44,height:44}));for(const n of nodes){const w=Math.min(180,n.label.length*6+16),h=24,candidates=[];for(const gap of [30,50,80])candidates.push({x:n.x+gap,y:n.y-12},{x:n.x-w-gap,y:n.y-12},{x:n.x-w/2,y:n.y+gap},{x:n.x-w/2,y:n.y-h-gap});const b=candidates.map(c=&gt;({...c,width:w,height:h,label:n.label,index:n.index})).find(b=&gt;b.x&gt;=8&amp;&amp;b.y&gt;=8&amp;&amp;b.x+w&lt;=width-8&amp;&amp;b.y+h&lt;=height-8&amp;&amp;[...markers,...protectedRects,...placed].every(a=&gt;!over(a,b)));if(b)placed.push(b);}return placed;}
+function tradePathBounds(points,step=20,pad=6){const out=[];for(let i=1;i&lt;points.length;i++){const a=points[i-1],b=points[i],n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/step));for(let k=0;k&lt;n;k++){const x1=a.x+(b.x-a.x)*k/n,y1=a.y+(b.y-a.y)*k/n,x2=a.x+(b.x-a.x)*(k+1)/n,y2=a.y+(b.y-a.y)*(k+1)/n;out.push({x:Math.min(x1,x2)-pad,y:Math.min(y1,y2)-pad,width:Math.abs(x2-x1)+2*pad,height:Math.abs(y2-y1)+2*pad});}}return out;}
+if(typeof module!==&#x27;undefined&#x27;)module.exports={projectTrade,splitTradePath,tradePointAt,layoutTradeLabels,tradePathBounds};
+
+  const tradeHud=document.createElement(&#x27;div&#x27;);tradeHud.className=&#x27;world-causal-hud world-trade-hud&#x27;;tradeHud.hidden=true;
+  const tradeStatus=document.createElement(&#x27;span&#x27;);tradeStatus.setAttribute(&#x27;role&#x27;,&#x27;status&#x27;);tradeStatus.setAttribute(&#x27;aria-live&#x27;,&#x27;polite&#x27;);
+  const tradePlay=document.createElement(&#x27;button&#x27;),tradeView=document.createElement(&#x27;button&#x27;);tradePlay.type=tradeView.type=&#x27;button&#x27;;tradeHud.append(tradeStatus,tradePlay,tradeView);stage.append(tradeHud);
+  let tradeOverview=true,tradeResumeAuto=false;
+  function tradeProfile(route){return TRADE_PROFILES.find(p=&gt;p.id===route.id);}
+  function currentTradeMatches(s){return isTradeWorkspace()&amp;&amp;routeMode?.route.kind!==&#x27;chain&#x27;&amp;&amp;routeMode?.route.id===s.chainId&amp;&amp;routeMode.i===s.to;}
+  function tradeBasePoint(point){const m=zoomLayer.getScreenCTM();if(!m)return null;const p=svg.createSVGPoint();p.x=point.x;p.y=point.y;const q=p.matrixTransform(m),b=stage.getBoundingClientRect();return{x:q.x-b.left,y:q.y-b.top};}
+  function tradeLeg(profile,from,to){const low=Math.min(from,to),l=profile.legs[low];if(!l)return[];const points=[projectTrade(profile.sites[low]),...(l.via||[]).map(([lon,lat])=&gt;projectTrade({lon,lat})),projectTrade(profile.sites[low+1])];return from&gt;to?points.reverse():points;}
+  function tradeCountry(site){const point=projectTrade(site),paths=[...svg.querySelectorAll(`.region-path[data-region=&quot;${site.region}&quot;]`)];const hit=paths.find(path=&gt;pathPolys(path).some(poly=&gt;pointInPoly(point.x,point.y,poly)));if(hit)return hit;
+    // Coastal anchors may lie a few pixels beyond the simplified shoreline.
+    let nearest=null,distance=12;for(const path of paths)for(const polygon of pathPolys(path))for(const [x,y]of polygon){const d=Math.hypot(x-point.x,y-point.y);if(d&lt;distance){distance=d;nearest=path;}}return nearest;
+  }
+  function spotlightTradeStops(route,step){const profile=tradeProfile(route);if(!profile)return;[&#x27;asia&#x27;,&#x27;mideast&#x27;,&#x27;europe&#x27;,&#x27;americas&#x27;,&#x27;africa&#x27;].forEach(resetRegionToBaseline);const visited=new Set(profile.sites.slice(0,Math.max(0,step)+1).map(tradeCountry).filter(Boolean));spotlightTrail(route,visited);}
+  function fitTradeNetwork(profile,ms=500){const lines=profile.legs.map((_,i)=&gt;tradeLeg(profile,i,i+1)),points=lines.flat();if(lines.some(p=&gt;splitTradePath(p).length&gt;1)){animateTransform(1,0,0,ms);return;}
+    const xs=points.map(p=&gt;p.x),ys=points.map(p=&gt;p.y),left=Math.min(...xs),right=Math.max(...xs),top=Math.min(...ys),bottom=Math.max(...ys),z=Math.min(4,Math.max(1,Math.min(VB_W/(right-left+190),VB_H/(bottom-top+190))));animateTransform(z,VB_W/2-(left+right)/2*z,VB_H/2-(top+bottom)/2*z,ms);
+  }
+  function fitTradePlace(site){const p=projectTrade(site);animateTransform(3,VB_W/2-p.x*3,VB_H/2-p.y*3,500);}
+  function notifyTradeControls(){if(!routeMode||routeMode.route.kind===&#x27;chain&#x27;)return;renderTradeItinerary(routeMode.route);if(routeStepCb)routeStepCb();}
+  function scheduleTradeAdvance(s){if(!currentTradeMatches(s)||!routeMode.playing)return;if(routeMode.i&gt;=routeMode.route.stops.length-1){stopAutoPlay();notifyTradeControls();return;}routeMode.timer=setTimeout(()=&gt;{if(currentTradeMatches(s)&amp;&amp;routeMode.playing)goToStop(routeMode.i+1);},5500);}
+  const tradePlayer=createJourneyPlayer({onFrame:queueMapAnnotations,onArrive:s=&gt;{if(!currentTradeMatches(s))return;spotlightTradeStops(routeMode.route,s.to);scheduleTradeAdvance(s);queueMapAnnotations();}});
+  function scheduleTradeJourney(route,from,to){requestAnimationFrame(()=&gt;{if(!isTradeWorkspace()||routeMode?.route!==route||routeMode.i!==to)return;if(routeMode.timer){clearTimeout(routeMode.timer);routeMode.timer=null;}
+    const profile=tradeProfile(route);if(from&lt;0){tradeOverview=true;fitTradeNetwork(profile);}else if(!tradeOverview){tradeOverview=true;fitTradeNetwork(profile);}
+    spotlightTradeStops(route,Math.abs(from-to)===1?from:to);
+    tradePlayer.start({chainId:route.id,from,to,travelMs:!prefersReducedMotion()&amp;&amp;from&gt;=0&amp;&amp;Math.abs(from-to)===1?1800:0,focusMs:0});
+  });}
+  function resetTradeJourney(){tradeHud.hidden=true;delete mapOverlay.dataset.tradePhase;delete mapOverlay.dataset.tradeId;if(tradePlayer.snapshot().phase!==&#x27;idle&#x27;)tradePlayer.cancel();}
+  function toggleTradePlayback(){if(!routeMode||routeMode.route.kind===&#x27;chain&#x27;)return;const s=tradePlayer.snapshot();if(routeMode.playing){stopAutoPlay();tradePlayer.pause();notifyTradeControls();queueMapAnnotations();return;}routeMode.playing=true;
+    if(currentTradeMatches(s)&amp;&amp;s.paused)tradePlayer.resume();else if(currentTradeMatches(s)&amp;&amp;s.phase===&#x27;travel&#x27;){}else if(routeMode.i&gt;=routeMode.route.stops.length-1){routeMode.i=-1;goToStop(0);}else goToStop(routeMode.i+1);notifyTradeControls();}
+  tradePlay.addEventListener(&#x27;click&#x27;,()=&gt;{const s=tradePlayer.snapshot();if(!routeMode)return;if(currentTradeMatches(s)&amp;&amp;s.paused){routeMode.playing=tradeResumeAuto;tradePlayer.resume();notifyTradeControls();queueMapAnnotations();}else if(currentTradeMatches(s)&amp;&amp;s.phase===&#x27;travel&#x27;){tradeResumeAuto=routeMode.playing;stopAutoPlay();tradePlayer.pause();notifyTradeControls();queueMapAnnotations();}else toggleTradePlayback();});
+  function setTradeView(overview){if(!routeMode||routeMode.route.kind===&#x27;chain&#x27;)return;stopAutoPlay();tradePlayer.cancel();tradeOverview=overview;const p=tradeProfile(routeMode.route);if(tradeOverview)fitTradeNetwork(p);else fitTradePlace(p.sites[routeMode.i]);spotlightTradeStops(routeMode.route,routeMode.i);tradePlayer.start({chainId:routeMode.route.id,from:-1,to:routeMode.i,travelMs:0,focusMs:0});notifyTradeControls();queueMapAnnotations();}
+  tradeView.addEventListener(&#x27;click&#x27;,()=&gt;setTradeView(!tradeOverview));
+  function tradePickerHTML(){return`&lt;p class=&quot;world-trade-intro&quot;&gt;全部6张交流网络图。可从相关因果环节展开，也可在这里跨单元浏览。&lt;/p&gt;&lt;div class=&quot;world-trade-picker&quot;&gt;`+TRADE_PROFILES.map(p=&gt;`&lt;button type=&quot;button&quot; class=&quot;world-trade-pick&quot; data-route-go=&quot;${p.id}&quot;&gt;&lt;span class=&quot;world-trade-kind&quot;&gt;${escapeTimelineText(p.category)} · ${escapeTimelineText(p.period)}&lt;/span&gt;&lt;strong&gt;${escapeTimelineText(p.name.split(&#x27; · &#x27;)[0])}&lt;/strong&gt;&lt;span class=&quot;world-trade-english&quot;&gt;${escapeTimelineText(p.name.split(&#x27; · &#x27;).slice(1).join(&#x27; · &#x27;))}&lt;/span&gt;&lt;span class=&quot;world-trade-count&quot;&gt;${p.sites.length} 站 · ${p.icon===&#x27;ship&#x27;?&#x27;海上联系&#x27;:&#x27;陆路联系&#x27;}&lt;/span&gt;&lt;/button&gt;`).join(&#x27;&#x27;)+`&lt;/div&gt;&lt;p class=&quot;world-trade-footnote&quot;&gt;线条为教学示意。贸易、强迫迁移、生物交流与朝觐使用不同解释；不能将它们一概视为商品买卖。&lt;/p&gt;`;}
+  function renderTradeItinerary(route){const p=tradeProfile(route),i=routeMode.i,s=p.sites[i],l=i&gt;0?p.legs[i-1]:null,esc=escapeTimelineText;
+    eventPanel.innerHTML=`&lt;div class=&quot;route-panel world-trade-panel&quot;&gt;${causalWorkspaceNavHTML()}${causalTradeContextHTML()}&lt;div class=&quot;rt-top&quot;&gt;&lt;div class=&quot;world-trade-kind&quot;&gt;${esc(p.category)} · ${esc(p.period)}&lt;/div&gt;&lt;h2&gt;${esc(p.name)}&lt;/h2&gt;&lt;div class=&quot;rt-progress&quot;&gt;第 ${i+1} / ${p.sites.length} 站 · ${esc(s.label)}&lt;/div&gt;&lt;details class=&quot;world-trade-switch&quot;&gt;&lt;summary&gt;切换路线&lt;/summary&gt;${tradePickerHTML()}&lt;/details&gt;&lt;/div&gt;&lt;p class=&quot;world-trade-intro&quot;&gt;${esc(p.summary)}&lt;/p&gt;&lt;div class=&quot;rt-stops world-trade-stops&quot;&gt;${p.sites.map((site,k)=&gt;`&lt;button type=&quot;button&quot; class=&quot;rt-stop ${k===i?&#x27;now&#x27;:k&lt;i?&#x27;done&#x27;:&#x27;todo&#x27;}&quot; data-route-step=&quot;${k}&quot; ${k===i?&#x27;aria-current=&quot;step&quot;&#x27;:&#x27;&#x27;}&gt;&lt;span class=&quot;rt-num&quot;&gt;${k+1}&lt;/span&gt;&lt;span&gt;${esc(site.label)}&lt;/span&gt;&lt;/button&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;&lt;section class=&quot;world-trade-current&quot;&gt;&lt;span class=&quot;world-trade-kind&quot;&gt;当前地点&lt;/span&gt;&lt;h3&gt;${esc(s.label)}&lt;/h3&gt;&lt;p&gt;${esc(s.role)}&lt;/p&gt;&lt;p&gt;&lt;b&gt;流动的内容 · &lt;/b&gt;${esc(s.flow)}&lt;/p&gt;&lt;p&gt;&lt;b&gt;历史影响 · &lt;/b&gt;${esc(s.impact)}&lt;/p&gt;${l?`&lt;p&gt;&lt;b&gt;这一段 · &lt;/b&gt;${esc(l.flow)}&lt;/p&gt;&lt;p&gt;${esc(l.mechanism)}&lt;/p&gt;`:&#x27;&#x27;}&lt;/section&gt;&lt;p class=&quot;rt-exam&quot;&gt;&lt;span&gt;思考&lt;/span&gt;${esc(p.exam)}&lt;/p&gt;&lt;p class=&quot;world-trade-footnote&quot;&gt;${esc(p.note)}&lt;/p&gt;&lt;details class=&quot;world-trade-sources&quot;&gt;&lt;summary&gt;资料来源 · 教师整理&lt;/summary&gt;${p.sources.map((url,k)=&gt;`&lt;a href=&quot;${esc(url)}&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer&quot;&gt;参考资料 ${k+1} ↗&lt;/a&gt;`).join(&#x27;&#x27;)}&lt;/details&gt;&lt;div class=&quot;rt-ctrl&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;rt-btn&quot; data-route-action=&quot;prev&quot; ${i&lt;=0?&#x27;disabled&#x27;:&#x27;&#x27;}&gt;← 上一站&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;rt-btn primary&quot; data-route-action=&quot;next&quot; ${i&gt;=p.sites.length-1?&#x27;disabled&#x27;:&#x27;&#x27;}&gt;下一站 →&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;rt-btn&quot; data-route-action=&quot;play&quot;&gt;${routeMode.playing?&#x27;⏸ 暂停&#x27;:&#x27;▶ 播放商路&#x27;}&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;rt-btn ghost&quot; data-route-action=&quot;exit&quot;&gt;切换路线&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;`;
+    eventEmpty.style.display=&#x27;none&#x27;;eventPanel.classList.add(&#x27;show&#x27;);eventZone.classList.remove(&#x27;fit-content&#x27;);
+  }
+  function drawTradeMap(route,width,height){const p=tradeProfile(route),s=tradePlayer.snapshot(),valid=currentTradeMatches(s),moving=valid&amp;&amp;s.phase===&#x27;travel&#x27;,arrived=valid&amp;&amp;s.phase===&#x27;arrived&#x27;;
+    document.body.classList.add(&#x27;world-trade-active&#x27;);stage.classList.add(&#x27;focused-trade&#x27;);setMapOverlayVisible(true);tradeHud.hidden=false;mapOverlay.dataset.tradeId=p.id;mapOverlay.dataset.tradePhase=s.paused?&#x27;paused&#x27;:moving?&#x27;travel&#x27;:arrived?&#x27;arrived&#x27;:&#x27;pending&#x27;;
+    const caption=`${p.category} · ${moving?`${s.from+1} → ${s.to+1} ${s.paused?&#x27;已暂停&#x27;:&#x27;行进中&#x27;}`:`第 ${routeMode.i+1} / ${p.sites.length} 站`}`;if(tradeStatus.textContent!==caption)tradeStatus.textContent=caption;tradePlay.textContent=s.paused?&#x27;继续&#x27;:moving||routeMode.playing?&#x27;暂停&#x27;:&#x27;播放&#x27;;tradeView.textContent=tradeOverview?&#x27;聚焦本站&#x27;:&#x27;路线总览&#x27;;
+    const tradeControls=[...mapControls(),{x:8,y:height-29,width:width-16,height:29}];
+    const rows=p.sites.map((site,index)=&gt;({...tradeBasePoint(projectTrade(site)),index,label:site.label.split(&#x27; · &#x27;)[0]})),points=layoutNodes(rows,width,height,tradeControls),byIndex=new Map(points.map(n=&gt;[n.index,n]));
+    const defs=mapSvg(&#x27;defs&#x27;),arrow=mapSvg(&#x27;marker&#x27;,{id:&#x27;worldTradeArrow&#x27;,viewBox:&#x27;0 0 8 8&#x27;,refX:7,refY:4,markerWidth:6,markerHeight:6,orient:&#x27;auto-start-reverse&#x27;});arrow.append(mapSvg(&#x27;path&#x27;,{d:&#x27;M1 1 L7 4 L1 7&#x27;,fill:&#x27;none&#x27;,stroke:p.color,&#x27;stroke-width&#x27;:1.5}));defs.append(arrow);mapOverlay.append(defs);
+    const routeCorridors=[];
+    for(let k=0;k&lt;p.legs.length;k++){const active=moving&amp;&amp;k===Math.min(s.from,s.to);for(const piece of splitTradePath(tradeLeg(p,k,k+1))){const screen=piece.map(tradeBasePoint),d=screen.map((v,i)=&gt;`${i?&#x27;L&#x27;:&#x27;M&#x27;}${v.x},${v.y}`).join(&#x27; &#x27;),path=mapSvg(&#x27;path&#x27;,{d,class:`world-trade-path${active?&#x27; is-active&#x27;:&#x27;&#x27;}`,stroke:p.color,&#x27;marker-end&#x27;:&#x27;url(#worldTradeArrow)&#x27;,&#x27;marker-mid&#x27;:&#x27;url(#worldTradeArrow)&#x27;});if(p.bidirectional)path.setAttribute(&#x27;marker-start&#x27;,&#x27;url(#worldTradeArrow)&#x27;);mapOverlay.append(path);routeCorridors.push(...tradePathBounds(screen));}}
+    for(const n of points){if(Math.hypot(n.x-n.anchorX,n.y-n.anchorY)&gt;8)mapOverlay.append(mapSvg(&#x27;line&#x27;,{x1:n.x,y1:n.y,x2:n.anchorX,y2:n.anchorY,class:&#x27;world-geography-tether&#x27;}));const g=mapSvg(&#x27;g&#x27;,{class:`world-causal-node world-trade-node${n.index===routeMode.i?&#x27; is-current&#x27;:&#x27;&#x27;}`,transform:`translate(${n.x} ${n.y})`,role:&#x27;button&#x27;,tabindex:0,&#x27;data-trade-step&#x27;:n.index,&#x27;aria-label&#x27;:`第 ${n.index+1} 站：${p.sites[n.index].label}`,&#x27;aria-pressed&#x27;:String(n.index===routeMode.i)});const go=()=&gt;{stopAutoPlay();goToStop(n.index);};g.addEventListener(&#x27;click&#x27;,go);g.addEventListener(&#x27;keydown&#x27;,e=&gt;{if(e.key===&#x27;Enter&#x27;||e.key===&#x27; &#x27;){e.preventDefault();go();}});g.append(mapSvg(&#x27;circle&#x27;,{r:22,class:&#x27;world-node-ring&#x27;}),mapSvg(&#x27;circle&#x27;,{r:17,class:&#x27;world-node-face&#x27;}),mapSvg(&#x27;text&#x27;,{y:5,&#x27;text-anchor&#x27;:&#x27;middle&#x27;},n.index+1));mapOverlay.append(g);}
+    const current=byIndex.get(routeMode.i);if(!current)return;let vehiclePoint=tradeBasePoint(projectTrade(p.sites[routeMode.i]));if(moving)vehiclePoint=tradeBasePoint(tradePointAt(tradeLeg(p,s.from,s.to),s.progress));else vehiclePoint={x:current.x,y:current.y-34};
+    const icon=PIXEL_ICONS[p.icon],vehicle=mapSvg(&#x27;g&#x27;,{class:&#x27;world-trade-vehicle&#x27;,transform:`translate(${vehiclePoint.x} ${vehiclePoint.y})`,role:&#x27;img&#x27;,&#x27;aria-label&#x27;:p.icon===&#x27;ship&#x27;?&#x27;船舶行进标记&#x27;:&#x27;陆路行进标记&#x27;});vehicle.append(mapSvg(&#x27;circle&#x27;,{r:19,fill:&#x27;#fffdf4&#x27;,stroke:p.color,&#x27;stroke-width&#x27;:1.5}),mapSvg(&#x27;image&#x27;,{href:`data:image/png;base64,${icon.data}`,x:-16,y:-16,width:32,height:32}));mapOverlay.append(vehicle);
+    let placedRect=null;const protectedAreas=[...[...svg.querySelectorAll(&#x27;.spotlight-deep&#x27;)].map(localRect),...routeCorridors];
+    if(arrived){const site=p.sites[routeMode.i],note=mapNote(`${routeMode.i+1} · ${site.label}`,site.flow+&#x27; &#x27;+site.impact,site.role);note.classList.add(&#x27;world-trade-popup&#x27;);note.dataset.tradeStop=routeMode.i;note.addEventListener(&#x27;wheel&#x27;,e=&gt;e.stopPropagation(),{passive:true});note.addEventListener(&#x27;pointerdown&#x27;,e=&gt;e.stopPropagation());const next=document.createElement(&#x27;button&#x27;);next.type=&#x27;button&#x27;;next.className=&#x27;world-causal-continue&#x27;;next.textContent=routeMode.i&lt;p.sites.length-1?&#x27;下一站 →&#x27;:&#x27;重新播放&#x27;;next.addEventListener(&#x27;click&#x27;,()=&gt;{stopAutoPlay();if(routeMode.i&lt;p.sites.length-1)goToStop(routeMode.i+1);else{routeMode.i=-1;goToStop(0);}});note.append(next);if(chainRouteContext){const back=document.createElement(&#x27;button&#x27;);back.type=&#x27;button&#x27;;back.className=&#x27;causal-return-link&#x27;;back.textContent=`← 返回第 ${chainRouteContext.step+1} 环`;back.addEventListener(&#x27;click&#x27;,returnToCausal);note.append(back);}noteLayer.append(note);const r=note.getBoundingClientRect(),markers=points.filter(n=&gt;n.index!==current.index).map(n=&gt;({x:n.x-24,y:n.y-24,width:48,height:48}));const boxes=layoutNotes([{...current,width:r.width,height:r.height}],width,height,[...protectedAreas,...markers,{x:vehiclePoint.x-21,y:vehiclePoint.y-21,width:42,height:42}],tradeControls);if(boxes){placedRect=boxes[0];note.style.left=placedRect.x+&#x27;px&#x27;;note.style.top=placedRect.y+&#x27;px&#x27;;mapOverlay.append(mapSvg(&#x27;line&#x27;,{x1:current.anchorX,y1:current.anchorY,x2:Math.max(placedRect.x,Math.min(current.x,placedRect.x+r.width)),y2:Math.max(placedRect.y,Math.min(current.y,placedRect.y+r.height)),class:&#x27;world-geography-tether&#x27;}));}else{noteLayer.replaceChildren();noteRail.hidden=false;noteRail.append(note);}}
+    const labels=layoutTradeLabels(points,width,height,[...tradeControls,...protectedAreas,{x:vehiclePoint.x-21,y:vehiclePoint.y-21,width:42,height:42},...(placedRect?[placedRect]:[])]);for(const b of labels){const group=mapSvg(&#x27;g&#x27;,{class:&#x27;world-trade-place-label&#x27;,&#x27;pointer-events&#x27;:&#x27;none&#x27;});group.append(mapSvg(&#x27;rect&#x27;,{x:b.x,y:b.y,width:b.width,height:b.height,rx:5,fill:&#x27;#fffdf3&#x27;,opacity:.95}),mapSvg(&#x27;text&#x27;,{x:b.x+8,y:b.y+16,fill:&#x27;#365b58&#x27;,&#x27;font-size&#x27;:10},b.label));mapOverlay.append(group);}
+    mapOverlay.append(mapSvg(&#x27;text&#x27;,{x:12,y:height-12,class:&#x27;world-route-caption&#x27;},p.id===&#x27;galleon&#x27;?&#x27;示意 · 太平洋在左右两侧接续&#x27;:`示意 · ${p.bidirectional?&#x27;双向交流&#x27;:&#x27;按箭头方向&#x27;}`));
+  }
 
 })();
 &lt;/script&gt;
@@ -10973,6 +11385,12 @@ P('apwh-u9-seoul-hybrid-culture-exports-soft-power','Korean producers combined l
     const study = doc.querySelector('#mapStudyView');
     const wrap = worldMapFrame.closest('.home-map-wrap');
     const split = worldMapFrame.closest('.map-events-split');
+    if (study && styleEmbeddedMap.observedStudy !== study) {
+      styleEmbeddedMap.observer?.disconnect();
+      styleEmbeddedMap.observedStudy = study;
+      styleEmbeddedMap.observer = new ResizeObserver(styleEmbeddedMap);
+      styleEmbeddedMap.observer.observe(study);
+    }
     if (study && wrap && split) {
       const height = Math.ceil(study.getBoundingClientRect().height);
       worldMapFrame.style.height = height + 'px';
@@ -10990,6 +11408,11 @@ P('apwh-u9-seoul-hybrid-culture-exports-soft-power','Korean producers combined l
     if (!doc) return;
     const api = worldMapFrame.contentWindow.__mapFilter;
     const state = api?.getLearningState?.();
+    const causalKey = state?.view === 'chain' ? JSON.stringify([state.workspacePanel, state.chainId, state.chainStep, state.tradeId, state.tradeStep, state.chainPanel]) : '';
+    const keepCausalScroll = !!causalKey && homeEvents.dataset.causalRenderKey === causalKey;
+    const savedCausalScroll = homeEvents.scrollTop;
+    const causalScroll = state?.view === 'chain' ? api.takeCausalScrollRestore?.() ?? null : null;
+    homeEvents.dataset.causalRenderKey = causalKey;
     const studyState = api?.getLocationStudyUiState?.();
     renderHostStudyDirectory();
     const pendingRestore = studyState?.pendingRestore;
@@ -11026,13 +11449,13 @@ P('apwh-u9-seoul-hybrid-culture-exports-soft-power','Korean producers combined l
     }
     renderHomeStudyBookends();
     if (homeEvents.innerHTML.trim()) {
-      homeEvents.scrollTop = studyRestore ? studyRestore.scrollTop : 0;
+      homeEvents.scrollTop = causalScroll !== null ? causalScroll : keepCausalScroll ? savedCausalScroll : studyRestore ? studyRestore.scrollTop : 0;
       // 因果链的骨架比右栏高得多(Unit 2→3 有 10 环),每步都复位到顶会把"当前这一环"留在屏幕外。
       // 与 world-map.html 的 goToStop 同一处理:滚到当前环,直接写 scrollTop(不用 smooth)。
-      const nowStop = !studyRestore && homeEvents.querySelector('.rt-stops-chain .rt-stop.now');
+      const nowStop = !studyRestore && causalScroll === null && !keepCausalScroll && homeEvents.querySelector('.rt-stops-chain .rt-stop.now');
       if (nowStop) {
         const offset = nowStop.getBoundingClientRect().top - homeEvents.getBoundingClientRect().top;
-        homeEvents.scrollTop = Math.max(0, offset - 140);
+        homeEvents.scrollTop = Math.max(0, offset - (homeEvents.querySelector(".causal-workspace-tabs")?.getBoundingClientRect().height || 50) - 14);
       }
       // 窄屏(上下叠)时轻轻滚到事件;宽屏(左右并排)事件就在旁边,不用滚
       if (window.matchMedia('(max-width: 720px)').matches) {
@@ -11132,6 +11555,11 @@ P('apwh-u9-seoul-hybrid-culture-exports-soft-power','Korean producers combined l
         }
         return;
       }
+      const workspace = e.target.closest('[data-causal-workspace]');
+      if (workspace) { win.__mapFilter.setCausalWorkspace(workspace.dataset.causalWorkspace, {scrollTop: homeEvents.scrollTop}); syncHomeEvents(); return; }
+      const relatedRoute = e.target.closest('[data-related-route]');
+      if (relatedRoute) { win.__mapFilter.openRelatedTrade(relatedRoute.dataset.relatedRoute, {scrollTop: homeEvents.scrollTop}); syncHomeEvents(); return; }
+      if (e.target.closest('[data-causal-return]')) { win.__mapFilter.returnToCausal(); syncHomeEvents(); return; }
       const chainPanelView = e.target.closest('[data-chain-panel-view]');
       if (chainPanelView && win.__mapFilter.setChainPanelView) {
         win.__mapFilter.setChainPanelView(chainPanelView.dataset.chainPanelView);

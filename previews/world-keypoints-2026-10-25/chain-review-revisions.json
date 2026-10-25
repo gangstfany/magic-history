@@ -1,0 +1,128 @@
+{
+  "sources": [
+    "https://www.metmuseum.org/essays/the-age-of-suleyman-the-magnificent-r-1520-1566",
+    "https://smarthistory.org/francisco-clapera-casta/",
+    "https://whc.unesco.org/en/list/420/"
+  ],
+  "edits": [
+    {
+      "chain": "u3_main",
+      "field": "to",
+      "index": null,
+      "old": "陆基帝国把全部力气押在同一件事上——把连片的土地变成年年可征的岁入，于是它们的军队、官僚与合法性全都朝内、朝陆地生长，海面对它们只是边界不是收入；Safavid 没有海军，Mughal 只有一支很小的，Ming 与 Qing 把欧洲人限在 Guangzhou 一港。海上因此留出一块没人要的空白，只能由收入本来就依赖海路的一方去填，Unit 4 的主战场也就随之移到大洋与大西洋体系。",
+      "new": "Unit 3 展示陆基帝国如何组织领土、军队与财政，但“陆基”不等于退出海洋：奥斯曼也发展强大海军，各国的陆海战略随条件与时期而异。Unit 4 转向欧洲跨洋扩张，以及它们怎样进入既有印度洋网络、连接美洲与其他地区。海上竞争与陆上建国相互交织，并非前者替代后者的统一过程。"
+    },
+    {
+      "chain": "u3_main",
+      "field": "blurb",
+      "index": null,
+      "old": "Unit 3 常被读成「五个帝国各介绍一遍」，但五个帝国是在同一道题上被反复考的：火器让征服的速度远远快过治理的速度，于是每一个帝国都在同一段时间里被迫补同一批工具——领薪官僚、被驯化的军事贵族、用石头和经文铸出来的合法性。这些工具让帝国立住了，也把它绑死了：合法性一旦挂在宗教上，统治者就退不出宗教争端；收入一旦挂在土地和陆路上，它就没有理由去看海。要回答的问题是：为什么这些帝国在 1450 年后同时成型，又在 1750 年前后同时把主动权让给了海上。",
+      "new": "本单元比较陆基帝国怎样运用火器、官僚、地方精英和宗教来扩张与治理，并考察军费、税收和内部冲突带来的压力。各国采用的办法与结果并不一致；奥斯曼等帝国同时拥有重要海上力量。比较时要说明某项制度在什么条件下发挥作用，避免把所有帝国写成同步兴起、同步衰落的一条线。"
+    },
+    {
+      "chain": "u3_main",
+      "field": "labels",
+      "index": 7,
+      "old": "陆上的赢家输给海上",
+      "new": "陆海竞争出现不同轨迹"
+    },
+    {
+      "chain": "u3_main",
+      "field": "links",
+      "index": 6,
+      "old": "这套收入结构决定了它们的眼睛只能盯着两样东西：脚下的地，和穿过自家关卡的商队。可 1500 年之后世界上新增的现钱不在这两处——Unit 2 末环留下的那个只认金银的中国市场，此刻正把白银从海上吸进来。谁的收入不靠海，谁就没有理由去建海军、也没有理由去养一家替国家跑远海的公司；把海面让出去，在当时并不像一个决定，只像一件不必做的事。",
+      "new": "土地税、关税与贸易支持帝国财政，战争也增加了筹资压力，但收入结构不会自动决定一个国家是否出海。奥斯曼舰队在16世纪扩张到地中海和北非；不同国家的海军投入、商业政策与对手均需分别比较。"
+    },
+    {
+      "chain": "u3_main",
+      "field": "links",
+      "index": 7,
+      "old": "交棒 Unit 4：陆基帝国把全部力气押在同一件事上——把连片的土地变成年年可征的岁入，于是军队、官僚与合法性全都朝内、朝陆地生长，海面对它们只是边界而不是收入。Safavid 没有海军，Mughal 只有一支很小的，Qing 把欧洲人限在一港。海上因此留出一块没人要的空白，而能来填这块空白的，恰恰是收入本来就依赖海路、又刚刚用 Parliament 把征税与募兵之权从国王手里拿走的那一方——把国家的钱押在贸易公司上，对它是唯一算得过账的做法。所以 Unit 4 的主战场移到大洋与大西洋体系，不是因为欧洲人更爱冒险，而是因为陆基帝国的收入结构让它们没有理由出海。",
+      "new": "交棒 Unit 4：欧洲跨洋扩张发生在既有陆海贸易与国家竞争之中。航海技术、商贸利益、宗教目标和国家支持共同推动远航；欧洲势力进入印度洋后与当地商人及政权竞争、合作，并在美洲建立殖民统治。接下来考察这些联系怎样改变商品流动、人口与劳动制度，而不是假定陆基帝国先把海洋让空。"
+    },
+    {
+      "chain": "u3_main",
+      "field": "exam",
+      "index": null,
+      "old": "Unit 3 Review 里 LEQ 2（changes in government 如何造成权力集中）与 LEQ 3/4（南亚与西南亚、俄国与中国的陆基帝国是否以相似方式发展）共用的骨架，也是 Topic 3.4 essential question 的标准答法。2027 起 DBQ 文件跨 1450–2001，Unit 3 常落在 contextualization 与第一段，取第一环与末环两句即可。最常见失分写法：「The Ottomans used gunpowder, and then they conquered Constantinople, and then they built a bureaucracy, and then they declined.」四个 and then 只排了顺序；改成「Because cannon reduced a siege from a season of starvation to a matter of days, conquest outran administration — which is why every one of these empires had to invent a salaried officialdom after, not before, it had already swallowed a multiethnic territory.」判断标准与 U1、U2 相同：把 which/because 换成 then 后句子还成立，这句就没解释任何东西。",
+      "new": "教师整理的比较与因果练习：选择两个帝国，分别说明火器、财政、官僚或合法性如何影响统治，再用具体差异限制结论。区分时间先后与因果关系，也避免“每个帝国都如此”的概括。陆基与海上力量可同时存在，衰落与扩张需标明地区和时期。"
+    },
+    {
+      "chain": "u4_main",
+      "field": "to",
+      "index": null,
+      "old": "白银、糖与被强制的劳动把美洲、非洲、欧洲与亚洲锁进同一个能年年清算的循环，而这个循环需要一套长期指派「谁在哪一环干活」的办法，于是位置被写进出生：受洗时定级，除通婚外不能上移。这套秩序同时造出两批必然要撞上它的人——被压在 peninsulares 之下、掌握殖民地财富却拿不到最高职位的 criollos，和被写在最底层、在 Saint-Domingue 一类地方人数远超自由人的被奴役者。下一个时代要推翻的不是抽象的暴政，而是这套按出身分配劳动与官职的秩序。",
+      "new": "跨洋贸易、殖民统治与强迫劳动加深了财富和权力的不平等。西属美洲的血统与出身分类影响地位，但不是统一不变的劳动岗位表。进入 Unit 5，要分别分析克里奥尔精英的政治诉求、被奴役者争取自由等不同目标，并结合思想传播、战争与帝国危机解释各地革命的条件和结果。"
+    },
+    {
+      "chain": "u4_main",
+      "field": "name",
+      "index": null,
+      "old": "海上那块空白被填满之后",
+      "new": "跨洋网络如何重塑权力与劳动"
+    },
+    {
+      "chain": "u4_main",
+      "field": "blurb",
+      "index": null,
+      "old": "Unit 4 最容易被读成一串探险家的名字，但 AMSCO 的排布是一条收支线：谁的收入依赖海路，谁才出海；出海的人先买通行权而不是买土地；等他们撞上一块没有现成货流可抽的大陆，就必须自己把可卖的东西种出来挖出来，而人手在这一刻被疾病抽空。后面四环讲这个缺口怎么被一步步补上，以及补的办法怎么从临时征发变成写进出生登记的等级。",
+      "new": "本单元考察欧洲跨洋扩张怎样进入既有贸易网络、建立殖民统治，并带来疾病、物种、人口和商品的跨区域流动。港口据点、矿山和种植园依赖不同的权力与劳动安排；殖民等级又与财富、出身和法律身份交织。它们形成矛盾与反抗的背景，但不能单独解释后来所有革命。"
+    },
+    {
+      "chain": "u4_main",
+      "field": "labels",
+      "index": 0,
+      "old": "出海的理由只有一种",
+      "new": "商贸、信仰与竞争推动远航"
+    },
+    {
+      "chain": "u4_main",
+      "field": "labels",
+      "index": 1,
+      "old": "买通行权不买土地",
+      "new": "据点与武力介入既有商路"
+    },
+    {
+      "chain": "u4_main",
+      "field": "labels",
+      "index": 7,
+      "old": "血统被写进出生登记",
+      "new": "殖民等级与劳动制度交织"
+    },
+    {
+      "chain": "u4_main",
+      "field": "evidence",
+      "index": 3,
+      "old": "黄金没让 conquistadores 发财，Mexico 与 Peru 的白银却救活了局面；用 mercury 把银从矿石里分离出来提高了银矿的利润率 · 到 16 世纪末，Mexico 的 Zacatecas、尤其是今 Peru 安第斯山中的 Potosí 成为兴旺的银矿中心 · 银矿要人，而原住民肯做除最危险之外的一切工作；西班牙当局于是把 Inca 原有的 mit’a——年轻男子须为公共工程服一定劳役——改造成强制体系：村社被迫按比例送出男性人口去矿里做最危险的活，工钱极低 · 1622 年 Vázquez de Espinosa 记 Huancavelica 汞矿于 1570–1571 年因汞矿传闻而建镇，山上有三四千名原住民在矿中劳作，装满矿袋的人还要背着矿石爬上那种空手都难以攀登的绳梯 · 西班牙王室常把土地赏给 conquistadores，地主在其上发展小麦、水果、蔬菜与糖的农业，形成 hacienda system，同样用强制劳动 · José Cuello 指出，几乎就在 1542 年 New Laws 宣布奴役原住民非法的同时，1541–1542 年的 Mixtón War 给了在北部边疆合法保留这一做法的理由，Zacatecas 发现白银更把西属北部的西班牙-原住民关系定型，奴役与 encomienda 在北部 New Spain 一直存活到 18 世纪",
+      "new": "黄金没让 conquistadores 发财，Mexico 与 Peru 的白银却救活了局面；用 mercury 把银从矿石里分离出来提高了银矿的利润率 · 到 16 世纪末，Mexico 的 Zacatecas、尤其是今玻利维亚安第斯山中的 Potosí（波托西，当时属秘鲁总督区） 成为兴旺的银矿中心 · 银矿要人，而原住民肯做除最危险之外的一切工作；西班牙当局于是把 Inca 原有的 mit’a——年轻男子须为公共工程服一定劳役——改造成强制体系：村社被迫按比例送出男性人口去矿里做最危险的活，工钱极低 · 1622 年 Vázquez de Espinosa 记 Huancavelica 汞矿于 1570–1571 年因汞矿传闻而建镇，山上有三四千名原住民在矿中劳作，装满矿袋的人还要背着矿石爬上那种空手都难以攀登的绳梯 · 西班牙王室常把土地赏给 conquistadores，地主在其上发展小麦、水果、蔬菜与糖的农业，形成 hacienda system，同样用强制劳动 · José Cuello 指出，几乎就在 1542 年 New Laws 宣布奴役原住民非法的同时，1541–1542 年的 Mixtón War 给了在北部边疆合法保留这一做法的理由，Zacatecas 发现白银更把西属北部的西班牙-原住民关系定型，奴役与 encomienda 在北部 New Spain 一直存活到 18 世纪"
+    },
+    {
+      "chain": "u4_main",
+      "field": "evidence",
+      "index": 7,
+      "old": "欧洲移民、被输入的非洲人与被征服的原住民并存，造出一套以种族与血统为准的新社会等级；肤色在美洲乃至所有欧洲殖民地都成了权力与地位的标记，而在西、葡两帝国，种族与族裔背景在此后数百年里以正式方式界定社会地位 · casta system 的顺序是：出生在 Iberian peninsula 的 peninsulares 居顶，其次是生在美洲的欧洲血统者 criollos，再下是混血的 castas——其中 mestizos 在上，mulattoes 次之，zambos 再次，原住民与被奴役的非洲人垫底 · 人在受洗时被划定等级，除通婚外不能上移；处在底层的人要缴更高的税与贡赋，而他们恰恰最负担不起；西班牙人还专门绘制 casta 画来展示这套分类 · 西班牙王室派 viceroys 作为代表治理殖民地，又设 audiencias 即王室法庭供西班牙移民上诉 viceroy 的决定；但欧美之间运输与通信迟缓，王室难以直接控制 New Spain，也就不把心思放在西半球的殖民事务上 · Cortés 一类征服者下令焚毁被视为不洁的原住民书籍，因此以 Nahuatl 写成的原始记载几乎不存，1545 年起西班牙神父 Bernardino de Sahagún 编纂的 Florentine Codex 反倒成为被引用最多的 Aztec 生活史料之一 · AMSCO 记到 1750 年，生在美洲的西班牙血统者已开始鼓噪脱离西班牙王室独立 · 与之并行的是被写在底层的人从未停止的动作：Jamaica 的 Maroon 是逃亡非洲奴隶的后代，他们建起独立聚落，逃奴出身的 Queen Nanny 把全岛的 Maroon 联合起来，1728–1740 与 1795–1796 两度爆发 Maroon wars；1663 年 Virginia 的 Gloucester County Rebellion 里，被奴役的非洲人与白人契约仆役合谋向总督索求自由；1680 年 Pueblo Revolt 中 Pueblo 与 Apache 杀死约四百名西班牙人、驱走其余、毁掉教堂，西班牙人直到 1692 年才重新占领",
+      "new": "西属美洲的社会地位受到出身、祖先背景、财富、职业与法律身份的共同影响，peninsulares 与 criollos 的政治机会也不相同。殖民歧视具有实际影响，但 casta 类别随地区、时期和社会情境而变化；18世纪新西班牙的 casta 画呈现等级化的社会想象，不能当作现实中人人遵循的固定身份表。受洗记录可能记载身份分类，却不等于在出生时统一分配终身劳动岗位。矿区的 mit’a、种植园奴隶制与其他劳动关系须分别分析。克里奥尔精英、原住民和被奴役者也有不同的诉求与行动，不能把它们合成一场目的相同的反抗。"
+    },
+    {
+      "chain": "u4_main",
+      "field": "links",
+      "index": 6,
+      "old": "白银让整个体系可以年年清账，也让每一环的产出都被折成同一种价格。可一旦每年的产量与每年的死亡率都成了能算出来的数字，谁去补上死掉的那一批就不能再靠临时抓人回答。西属美洲给出的答案，是把一个人该待的位置写进他的出生。",
+      "new": "殖民贸易与财政收益依赖不同地区的劳动。矿区征发和种植园奴隶制等制度与种族化的权力关系相互强化，但具体劳动安排由法律、强制力、地方条件及身份共同塑造，不能由血统类别直接推出一个人的职业。"
+    },
+    {
+      "chain": "u4_main",
+      "field": "links",
+      "index": 7,
+      "old": "交棒 Unit 5：这套等级不是观念的产物，而是那个循环的调度表——它要保证每年补上的劳动力落在固定的位置上，所以它把位置写进受洗登记，让人一出生就被指派好该在哪一环干活。可同一张表也造出两批必然要撞上它的人：一批是被压在 peninsulares 之下、掌握着殖民地财富却拿不到最高职位的 criollos，AMSCO 明写他们到 1750 年已在要求独立；另一批是被写在最底层、在 Saint-Domingue 这类地方人数远超自由人的被奴役者，以及他们已经建起独立聚落、打过两场战争的 Maroon 后代。所以下一个时代的革命不是欧洲新观念飘过来的结果，而是这套按出身分配劳动与官职的秩序被它自己制造出来的人推倒——要反抗的对象，正是本单元造出来的东西。",
+      "new": "交棒 Unit 5：殖民社会中的政治排斥、强迫劳动与不平等提供了不同群体反抗的背景。克里奥尔精英的自治或独立诉求，与被奴役者争取自由并不相同。思想传播、战争、王权危机和地方组织进一步改变行动机会；应按具体革命解释这些条件怎样结合，而不能把革命视为殖民等级自动产生的结果。"
+    },
+    {
+      "chain": "u4_main",
+      "field": "exam",
+      "index": null,
+      "old": "Unit 4 Review LEQ 2（economic systems 与 labor systems 的延续与变化）和 LEQ 3（slavery 的变与不变）共用的骨架，也是 Topic 4.4 与 4.8 essential question 的标准答法；2027 起 DBQ 文件跨 1450–2001，本单元常落在 contextualization 与主体第一、二段。最常见失分写法：「Europeans wanted cheap labor, so they brought enslaved Africans to the Americas.」这句把最关键的两步跳掉了，拿不到因果分；要写成「Because European diseases killed more than half the indigenous population within a century, and because the survivors could escape into terrain they knew and kin networks that would hide them, the labor that plantations needed could no longer be taken locally — which is why planters turned to a supply that could be moved across an ocean and could not walk home.」判断标准与前三单元相同：把 because/which 换成 then 后句子还成立，这句就没解释任何东西。",
+      "new": "教师整理的因果与比较练习：比较矿区 mit’a 与种植园奴隶制，说明法律身份、强制方式、生产需求和地方条件的差异。解释大西洋奴隶贸易时同时考虑殖民扩张、种植园需求、强迫迁移及制度性暴力；疾病是背景之一，不能把贸易增长归结为单一原因。连接 Unit 5 时须区分不同群体的诉求，并用具体条件解释革命。"
+    }
+  ]
+}
