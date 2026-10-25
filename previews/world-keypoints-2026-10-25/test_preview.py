@@ -1,0 +1,38 @@
+from pathlib import Path
+import html, re, unittest, json
+
+HERE = Path(__file__).resolve().parent
+SOURCE = HERE / 'source-map-snapshot.html'
+
+def world(text):
+    return html.unescape(re.search(r'id="worldMapFrame"[^>]*srcdoc="([^"]*)"', text).group(1))
+
+class PreviewTests(unittest.TestCase):
+    def test_nine_revised_units_keep_every_original_id(self):
+        before = world(SOURCE.read_text())
+        after = world((HERE / 'index.html').read_text())
+        scripts = lambda t: [s for s in re.findall(r'<script[^>]*>([\s\S]*?)</script>', t) if re.search(r'function publishUnit\dLocationStudy', s)]
+        self.assertEqual(len(scripts(before)), 9)
+        self.assertEqual(len(scripts(after)), 9)
+        original=json.loads((HERE/'content-audit-data.json').read_text())
+        corrected=json.loads((HERE/'content-corrected.json').read_text())
+        for u,v in zip(original,corrected):
+            self.assertTrue({r['id'] for r in u['records']} <= {r['id'] for r in v['records']})
+            for r in v['records']:
+                self.assertIn(r['id'],after)
+
+    def test_complete_reading_and_collapsible_cards(self):
+        text = (HERE / 'index.html').read_text()
+        w = world(text)
+        self.assertIn('data-preview-number', w)
+        self.assertIn('data-preview-section', w)
+        self.assertIn('locationStudyState.expandedStudyId === id ? null : id', w)
+        self.assertNotIn('locationStudyState.expandedStudyId = records[0].id;', w)
+        detail = w.split('function studyDetailHTML(record, api)')[1].split('function renderLocationStudy')[0]
+        self.assertNotIn('studyDisclosureHTML(', detail)
+        for label in ['Region', 'Summary', 'Why It Matters', 'Use It on the Exam', 'Key Terms', 'Evidence', 'Connections', 'People']:
+            self.assertIn(label, detail)
+        self.assertIn('backLocationStudyConnection', w)
+
+if __name__ == '__main__':
+    unittest.main()

@@ -1,0 +1,243 @@
+{
+  "date": "2026-10-25",
+  "originalCount": 231,
+  "correctedCount": 240,
+  "newIds": [
+    "apwh-u1-hangzhou-confucian-bureaucracy-culture",
+    "apwh-u2-kilwa-crop-diffusion-environments",
+    "apwh-u3-wittenberg-protestant-reformation",
+    "apwh-u3-trent-catholic-reform-trent",
+    "apwh-u3-punjab-nanak-sikh-community",
+    "apwh-u5-glasgow-smith-market-capitalism",
+    "apwh-u5-london-companies-finance-global-enterprise",
+    "apwh-u5-london-socialism-marx-labor-responses",
+    "apwh-u6-london-imperial-ideologies-missions"
+  ],
+  "changes": [
+    {
+      "issue": 4,
+      "id": "apwh-u3-tokugawa-confucian-sakoku-hierarchy",
+      "fields": [
+        "evidence"
+      ]
+    },
+    {
+      "issue": 5,
+      "id": "apwh-u4-manila-galleon-route",
+      "fields": [
+        "summary",
+        "evidence"
+      ]
+    },
+    {
+      "issue": 6,
+      "id": "apwh-u9-amritsar-high-yield-seeds-input-package",
+      "fields": [
+        "summary"
+      ]
+    },
+    {
+      "issue": 9,
+      "id": "apwh-u6-san-francisco-chinese-migration-community",
+      "fields": [
+        "summary",
+        "evidence"
+      ]
+    },
+    {
+      "issue": 11,
+      "id": "apwh-u3-russia-orthodox-tsardom-boyars-new-capital",
+      "fields": [
+        "topicCodes"
+      ]
+    },
+    {
+      "issue": 11,
+      "id": "apwh-u3-ming-qing-manchu-confucian-ethnic-hierarchy",
+      "fields": [
+        "topicCodes"
+      ]
+    },
+    {
+      "issue": 11,
+      "id": "apwh-u3-tokugawa-confucian-sakoku-hierarchy",
+      "fields": [
+        "topicCodes"
+      ]
+    },
+    {
+      "issue": 11,
+      "id": "apwh-u3-ottoman-sunni-millet-imperial-architecture",
+      "fields": [
+        "topicCodes"
+      ]
+    },
+    {
+      "issue": 11,
+      "id": "apwh-u3-safavid-twelver-shiism-ottoman-rivalry",
+      "fields": [
+        "topicCodes"
+      ]
+    },
+    {
+      "issue": 11,
+      "id": "apwh-u3-mughal-akbar-tolerance-aurangzeb-orthodoxy",
+      "fields": [
+        "topicCodes"
+      ]
+    },
+    {
+      "issue": 12,
+      "id": "apwh-u5-seneca-declaration-sentiments",
+      "fields": [
+        "topicCodes"
+      ]
+    },
+    {
+      "issue": 12,
+      "id": "apwh-u5-seneca-organized-feminism-limits",
+      "fields": [
+        "topicCodes"
+      ]
+    },
+    {
+      "issue": 2,
+      "id": "apwh-u5-manchester-steam-factory-system",
+      "fields": [
+        "topicCodes"
+      ]
+    },
+    {
+      "issue": 2,
+      "id": "apwh-u5-berlin-second-industrial-revolution-power",
+      "fields": [
+        "topicCodes",
+        "evidence"
+      ]
+    },
+    {
+      "issue": 16,
+      "id": "apwh-u1-baghdad-abbasid-knowledge-hub",
+      "fields": [
+        "dateLabel",
+        "startYear",
+        "endYear"
+      ]
+    },
+    {
+      "issue": 17,
+      "id": "apwh-u3-ming-qing-restoration-expansion",
+      "fields": [
+        "dateLabel",
+        "startYear",
+        "endYear"
+      ]
+    },
+    {
+      "issue": 17,
+      "id": "apwh-u3-ming-qing-restoration-expansion",
+      "fields": [
+        "significance"
+      ]
+    },
+    {
+      "issue": 18,
+      "id": "apwh-u6-lagos-treaty-trade-political-control",
+      "fields": [
+        "dateLabel",
+        "startYear",
+        "endYear"
+      ]
+    },
+    {
+      "issue": 18,
+      "id": "apwh-u6-lagos-treaty-trade-political-control",
+      "fields": [
+        "evidence"
+      ]
+    },
+    {
+      "issue": 19,
+      "id": "apwh-u7-cairo-el-alamein-global-routes",
+      "fields": [
+        "dateLabel",
+        "startYear",
+        "endYear"
+      ]
+    },
+    {
+      "issue": 19,
+      "id": "apwh-u7-cairo-el-alamein-global-routes",
+      "fields": [
+        "summary",
+        "keyTerms",
+        "evidence"
+      ]
+    },
+    {
+      "issue": 20,
+      "id": "apwh-u9-paris-voluntary-climate-governance-limits",
+      "fields": [
+        "title",
+        "summary",
+        "significance",
+        "evidence",
+        "examConnection"
+      ]
+    },
+    {
+      "issue": 8,
+      "id": "apwh-u9-geneva-vaccination-smallpox-eradication",
+      "fields": []
+    },
+    {
+      "issue": 8,
+      "id": "apwh-u9-geneva-hiv-treatment-unequal-access",
+      "fields": []
+    },
+    {
+      "issue": 8,
+      "id": "apwh-u9-geneva-polio-ebola-coordination-limits",
+      "fields": []
+    },
+    {
+      "issue": 7,
+      "id": "apwh-u9-paris-universal-rights-global-norm",
+      "fields": []
+    },
+    {
+      "issue": 7,
+      "id": "apwh-u9-paris-kyoto-burden-sharing-debate",
+      "fields": []
+    },
+    {
+      "issue": 3,
+      "id": "apwh-u6-berlin-industrial-rivalry-rationales",
+      "fields": [
+        "examConnection"
+      ]
+    }
+  ],
+  "sources": {
+    "dejima": "https://nagasakidejima.jp/english/history/",
+    "manila": "https://blogs.loc.gov/international-collections/2021/10/negotiating-empire-part-i-from-magellan-to-the-founding-of-manila-16th-18th-centuries/",
+    "fao": "https://www.fao.org/4/Y1743E/Y1743E03.htm",
+    "climate": "https://unfccc.int/process/the-convention/history-of-the-convention",
+    "paris": "https://unfccc.int/process-and-meetings/the-paris-agreement",
+    "who": "https://www.who.int/news-room/spotlight/history-of-vaccination/a-brief-history-of-vaccination",
+    "polio": "https://polioeradication.org/about-polio/history-of-polio/",
+    "migration": "https://www.loc.gov/classroom-materials/immigration/chinese/struggling-for-work/",
+    "india": "https://www.mea.gov.in/indian-foreign-policy.htm",
+    "baghdad": "https://www.metmuseum.org/ja/essays/the-art-of-the-abbasid-period-750-1258",
+    "qing": "https://www.harvard-yenching.org/sites/default/files/featurefiles/Jia%20Jianfei_Whose%20Xinjiang.pdf",
+    "lagos": "https://nigeriaembassy.org.vn/history-of-nigeria/",
+    "alamein": "https://www.nam.ac.uk/explore/battle-alamein",
+    "reformation": "https://mediengeschichte.dnb.de/DBSMZBN/Content/DE/Buchdruck/04-buchdruck-und-reformation.html",
+    "trent": "https://www.cabinet.ox.ac.uk/catholic-reform",
+    "sikh": "https://smarthistory.org/origins-and-development-of-sikh-faith-the-gurus/",
+    "smith": "https://www.gla.ac.uk/explore/adamsmith300/lifeworkandlegacy/keyworks/wealthofnations/",
+    "marx": "https://www.loc.gov/item/12010343/",
+    "darwin": "https://americanhistory.si.edu/explore/exhibitions/everybody/citizens/eugenics"
+  },
+  "ced": "https://apcentral.collegeboard.org/media/pdf/ap-world-history-modern-course-and-exam-description-effective-fall-2026.pdf"
+}
