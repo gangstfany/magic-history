@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-const file = new URL('../apwh.html', import.meta.url);
+const file = new URL('../index.html', import.meta.url);
 
 test('World History study directory uses a collapsed native disclosure and live status', async () => {
   const html = await readFile(file, 'utf8');

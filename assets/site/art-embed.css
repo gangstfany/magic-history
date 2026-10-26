@@ -1,8 +1,0 @@
-/* The Art workspace keeps its own map/detail dimensions in map-ui.css.
-   Let the embedding page follow their natural height, including the toolbar. */
-body.is-embedded {
-  display:block;
-  height:auto!important;
-  min-height:0!important;
-  overflow:visible!important;
-}

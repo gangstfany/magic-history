@@ -2166,13 +2166,13 @@ async function verifyStandalone(
 }
 
 async function selectArtAndFrame(page, useKeyboard = false) {
-  const artPill = page.locator('button.course-choice[data-course="art"]');
+  const artPill = page.locator('.subj-pill[data-subj="art"]');
   if (useKeyboard) {
     await artPill.focus();
     const semantics = await artPill.evaluate((element) => {
       const style = getComputedStyle(element);
       return {
-        role: element.tagName === 'BUTTON' ? 'button' : element.getAttribute('role'),
+        role: element.getAttribute('role'),
         tabIndex: element.tabIndex,
         ariaPressed: element.getAttribute('aria-pressed'),
         outlineStyle: style.outlineStyle,
@@ -2187,17 +2187,22 @@ async function selectArtAndFrame(page, useKeyboard = false) {
     await page.keyboard.press('Enter');
     assert.equal(await artPill.getAttribute('aria-pressed'), 'true');
     assert.equal(
-      await page.evaluate(() => document.activeElement?.dataset?.course),
+      await page.evaluate(() => document.activeElement?.dataset?.subj),
       'art',
     );
   } else {
     await artPill.click();
   }
-  assert.equal((await page.locator('#courseTitle').textContent()).trim(), '艺术史');
-  const iframe = page.locator('iframe.course-frame[data-course="art"]');
+  const caption = page.locator('#homeMapCaption');
+  await caption.waitFor({ state: 'visible' });
+  assert.equal(
+    (await caption.textContent()).trim(),
+    '180 AP works · Units 1-6 · filter, compare and study',
+  );
+  const iframe = page.locator('#artMapFrame');
   await iframe.waitFor({ state: 'visible' });
   await page.waitForFunction(() => (
-    document.querySelector('iframe.course-frame[data-course="art"]')?.contentDocument?.querySelector('#markerLayer .site-marker')
+    document.querySelector('#artMapFrame')?.contentDocument?.querySelector('#markerLayer .site-marker')
   ));
   const frame = page.frames().find((candidate) => candidate.url().includes('art-history-map.html'));
   assert.ok(frame, 'Art iframe was not attached');
@@ -2214,9 +2219,9 @@ async function verifyEmbedded(browser, baseUrl, viewport, full) {
     const errors = installErrorCollection(page, `embedded ${viewport.width}x${viewport.height}`);
     await mockRemoteImages(page);
     await page.goto(`${baseUrl}/index.html`, { waitUntil: 'load' });
-    await page.locator('#courses').scrollIntoViewIfNeeded();
+    await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => (
-      document.querySelector('iframe.course-frame[data-course="world"]')?.contentDocument?.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
+      document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
     ));
     const worldFrame = page.frames().find((candidate) => candidate.url().includes('world-map.html'));
     assert.ok(worldFrame, 'World iframe was not attached');
@@ -2226,7 +2231,7 @@ async function verifyEmbedded(browser, baseUrl, viewport, full) {
     await assertInitialHierarchy(frame);
     let metrics = await assertCommonLayout(frame, 'embedded', viewport);
     const host = await page.evaluate(() => {
-      const wrap = document.querySelector('iframe.course-frame[data-course="art"]');
+      const wrap = document.querySelector('.map-card[data-subject="art"] .home-map-wrap');
       const rect = wrap.getBoundingClientRect();
       return {
         wrapHeight: rect.height,
@@ -2235,9 +2240,28 @@ async function verifyEmbedded(browser, baseUrl, viewport, full) {
       };
     });
     assert.ok(host.horizontalOverflow <= 1);
-    const childHeight = await frame.locator('body').evaluate(element => element.getBoundingClientRect().height);
-    assert.ok(Math.abs(host.wrapHeight - Math.ceil(childHeight)) <= 1, `content-sized module host ${host.wrapHeight}`);
-    assert.ok(metrics.pageScroll <= 1, 'Art content fits the shell-owned page scroll');
+    const shortStacked = metrics.stacked && viewport.height <= 520;
+    const shortTwoColumn = !metrics.stacked
+      && viewport.width <= 900
+      && viewport.height <= 520;
+    if (shortStacked) {
+      assert.ok(Math.abs(host.wrapHeight - 960) <= 1, `stacked short host height ${host.wrapHeight}`);
+      assert.ok(host.pageScroll > 0, 'homepage should own stacked short scrolling');
+      assert.ok(metrics.pageScroll <= 1, 'stacked short child should not page-scroll');
+      assert.equal(metrics.bodyOverflowY, 'hidden');
+    } else if (shortTwoColumn) {
+      assert.ok(Math.abs(host.wrapHeight - 520) <= 1, `two-column short host height ${host.wrapHeight}`);
+      assert.ok(host.pageScroll > 0, 'homepage should own two-column short scrolling');
+      assert.ok(metrics.pageScroll <= 1, 'two-column short child should not page-scroll');
+      assert.equal(metrics.bodyOverflowY, 'hidden');
+    } else if (viewport.width <= 900) {
+      const approved = Math.min(720, viewport.height * 0.78);
+      assert.ok(Math.abs(host.wrapHeight - approved) <= 1, `approved host height ${host.wrapHeight}`);
+      if (metrics.stacked) {
+        assert.ok(metrics.pageScroll > 0, 'stacked portrait content should remain reachable by child scroll');
+        assert.equal(metrics.bodyOverflowY, 'auto');
+      }
+    }
     assert.equal(await iframe.getAttribute('aria-hidden'), 'false');
     let u3RegionBranches = null;
     if (full) {
@@ -3285,9 +3309,9 @@ async function verifyU3Embedded(browser, baseUrl) {
       imageRequests.set(url, (imageRequests.get(url) || 0) + 1);
     });
     await page.goto(`${baseUrl}/index.html`, { waitUntil: 'load' });
-    await page.locator('#courses').scrollIntoViewIfNeeded();
+    await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => (
-      document.querySelector('iframe.course-frame[data-course="world"]')?.contentDocument?.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
+      document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
     ));
     const { frame } = await selectArtAndFrame(page, true);
     const works = await verifyU3Works(page, frame, imageRequests, 'embedded');
@@ -3353,9 +3377,9 @@ async function verifyU4Embedded(browser, baseUrl, privateMode = false) {
       `${baseUrl}/index.html${privateMode ? '?privateMedia=1' : ''}`,
       { waitUntil: 'load' },
     );
-    await page.locator('#courses').scrollIntoViewIfNeeded();
+    await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => (
-      document.querySelector('iframe.course-frame[data-course="world"]')?.contentDocument?.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
+      document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
     ));
     const { frame } = await selectArtAndFrame(page, true);
     const regions = await verifyU4RegionBranches(frame, label);
@@ -3647,7 +3671,7 @@ async function verifyU5Works(
       if (mode === 'embedded') {
         // The image trigger can scroll the parent page toward the iframe's lower
         // portion. Real portrait images place the modal close near its top.
-        await page.locator('iframe.course-frame[data-course="art"]').evaluate(element => {
+        await page.locator('#artMapFrame').evaluate(element => {
           element.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'instant' });
         });
       }
@@ -3777,9 +3801,9 @@ async function verifyU5Page(browser, baseUrl, viewport, mode, privateMode = fals
         `${baseUrl}/index.html${privateMode ? '?privateMedia=1' : ''}`,
         { waitUntil: 'load' },
       );
-      await page.locator('#courses').scrollIntoViewIfNeeded();
+      await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
       await page.waitForFunction(() => (
-        document.querySelector('iframe.course-frame[data-course="world"]')?.contentDocument?.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
+        document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
       ));
       ({ frame } = await selectArtAndFrame(page, true));
     }
@@ -3930,9 +3954,9 @@ async function verifyU1Embedded(browser, baseUrl) {
       imageRequests.set(url, (imageRequests.get(url) || 0) + 1);
     });
     await page.goto(`${baseUrl}/index.html`, { waitUntil: 'load' });
-    await page.locator('#courses').scrollIntoViewIfNeeded();
+    await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => (
-      document.querySelector('iframe.course-frame[data-course="world"]')?.contentDocument?.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
+      document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
     ));
     const { frame } = await selectArtAndFrame(page, true);
     const works = await verifyU1Works(page, frame, imageRequests, 'embedded');
@@ -3969,9 +3993,9 @@ async function verifyImportedWorksEmbedded(browser, baseUrl) {
     const imageRequests = [];
     await mockRemoteImages(page, (url) => imageRequests.push(url));
     await page.goto(`${baseUrl}/index.html`, { waitUntil: 'load' });
-    await page.locator('#courses').scrollIntoViewIfNeeded();
+    await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => (
-      document.querySelector('iframe.course-frame[data-course="world"]')?.contentDocument?.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
+      document.querySelector('#worldMapFrame')?.contentDocument?.querySelector('.map-zone')
     ));
     const { frame } = await selectArtAndFrame(page, true);
     const works = await verifyNineImportedWorks(page, frame, imageRequests, 'embedded');
@@ -4047,7 +4071,7 @@ async function verifyU6SmokeCase(browser, baseUrl, viewport, works) {
       await waitForArt(frame);
     } else {
       await page.goto(`${baseUrl}/index.html`, { waitUntil: 'load' });
-      await page.locator('#courses').scrollIntoViewIfNeeded();
+      await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
       ({ frame } = await selectArtAndFrame(page, true));
     }
     await frame.locator('#unitFilter').selectOption('6');

@@ -75,7 +75,7 @@ panel_css = (HERE / 'trade-panels.css').read_text()
 shared_panel_style = '<style id="world-panel-styles">' + panel_css + '</style>'
 world = replace_once(world, '</head>', shared_panel_style + '</head>')
 (ROOT / 'world-map.html').write_text(world)
-result = (HERE / 'workspace.template.html').read_text()
+result = (ROOT / 'src/site/index.template.html').read_text()
 result = replace_once(result, '</head>', '<style id="world-card-styles">' + css + '</style>' + shared_panel_style + '</head>')
 old = '''if (win.__mapFilter.toggleLocationStudy(studyId)) {
           syncHomeEvents();
@@ -107,5 +107,5 @@ document.getElementById('home-events').addEventListener('click', event => {
 </script></body>''')
 from integrate_causal_workspace import integrate_causal_host
 result = integrate_causal_host(result)
-(ROOT / 'apwh.html').write_text(result)
-print(f'Built {ROOT / "apwh.html"} ({len(result.encode()):,} bytes)')
+(ROOT / 'index.html').write_text(result)
+print(f'Built {ROOT / "index.html"} ({len(result.encode()):,} bytes)')

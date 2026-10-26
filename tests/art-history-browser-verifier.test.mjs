@@ -1125,7 +1125,7 @@ test('U5 local request accounting normalizes browser URLs and preserves window a
   const source = await readFile(VERIFIER_URL, 'utf8');
   const traversal = source.slice(source.indexOf('async function verifyU5Works'),
     source.indexOf('async function verifyU5Page'));
-  assert.match(traversal, /mode === 'embedded'[\s\S]*course-frame[\s\S]*scrollIntoView[\s\S]*dialogClose/,
+  assert.match(traversal, /mode === 'embedded'[\s\S]*artMapFrame[\s\S]*scrollIntoView[\s\S]*dialogClose/,
     'embedded modal close aligns the parent iframe before the normal pointer action');
 });
 
@@ -2263,8 +2263,7 @@ test('integration copy targets the complete 180-work Units 1-6 map', async () =>
     readFile(ART_MAP_URL, 'utf8'),
   ]);
 
-  assert.match(homepage, /assets\/site\/shell.mjs/);
-  assert.match(homepage, /艺术史/);
+  assert.match(homepage, /180 AP works · Units 1-6 · filter, compare and study/);
   assert.match(artMap, /AP 艺术史互动地图 · Units 1-6/);
   assert.match(
     artMap,
@@ -2290,18 +2289,35 @@ test('full and focused legacy browser paths all use the 180-work Units 1-6 relea
   }
 });
 
-test('copy integration preserves World identity inside its independent course entry', async () => {
-  const workspace = await readFile(new URL('../apwh.html', import.meta.url), 'utf8');
-  const shell = await readFile(HOMEPAGE_URL, 'utf8');
-  assert.match(workspace, /History World Map/);
-  assert.match(workspace, /hostApi\?\.getMapCounts\?\.\(\)/);
-  assert.match(workspace, /\$\{counts\.regions\} regions · \$\{counts\.events\} source events · \$\{counts\.pins\} pins · \$\{counts\.routes\} trade routes/);
-  const frame = elementAttributes(workspace, 'iframe', 'worldMapFrame');
-  assert.equal(frame.src, 'world-map.html');
-  assert.equal(frame.loading, 'eager');
-  assert.equal(frame.title, 'Interactive world history map');
-  assert.doesNotMatch(workspace, /artMapFrame/);
-  assert.doesNotMatch(shell, /__mapFilter/);
+test('copy integration preserves World History identity, source-backed caption and iframe dimensions', async () => {
+  const homepage = await readFile(HOMEPAGE_URL, 'utf8');
+
+  assert.match(homepage, /History World Map/);
+  assert.match(homepage, /hostApi\?\.getMapCounts\?\.\(\)/);
+  assert.match(homepage, /\$\{counts\.regions\} regions · \$\{counts\.events\} source events · \$\{counts\.pins\} pins · \$\{counts\.routes\} trade routes/);
+  assert.doesNotMatch(homepage, /234 events · 104 pins/);
+  const worldFrame = elementAttributes(homepage, 'iframe', 'worldMapFrame');
+  const artFrame = elementAttributes(homepage, 'iframe', 'artMapFrame');
+  assert.equal(worldFrame.src, 'world-map.html');
+  assert.equal(worldFrame.title, 'Interactive world history map');
+  assert.equal(worldFrame.loading, 'lazy');
+  assert.equal(worldFrame['aria-hidden'], 'false');
+  assert.deepEqual(
+    new Set(String(worldFrame.class).split(/\s+/)),
+    new Set(['subject-map-frame', 'active']),
+  );
+  assert.equal(artFrame.src, 'art-history-map.html?embed=1');
+  assert.equal(artFrame.title, 'Interactive AP art history map');
+  assert.equal(artFrame.loading, 'lazy');
+  assert.equal(artFrame.hidden, true);
+  assert.equal(artFrame['aria-hidden'], 'true');
+  assert.deepEqual(
+    new Set(String(artFrame.class).split(/\s+/)),
+    new Set(['subject-map-frame']),
+  );
+  const frameRule = cssDeclarations(homepage, '.subject-map-frame');
+  assert.equal(frameRule.width, '100%');
+  assert.equal(frameRule.height, '100%');
 });
 
 test('responsive browser modes reject console warnings by default', async () => {

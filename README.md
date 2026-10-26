@@ -1,55 +1,48 @@
 # Magic History
 
-本分支 `feature/modular-site-shell` 将公共首页与课程工作区分开。统一访问根目录 `index.html`，在首页选择课程；各课程也可以独立打开。
+**正式网站入口只有根目录的 `index.html`。**
 
-## 查看
+当前世界史协作分支：`course/apwh`。完整首页包含 Today’s Pick、最新世界史学习卡、因果链、商路与练习，并保留艺术史和账号入口。美国史已有独立地图，可从首页 US History 入口打开；其他尚未完成的学科仍明确标注。
+
+## 查看网站
+
+在仓库根目录启动本地 HTTP 服务：
 
 ```sh
 python3 -m http.server 8021 --bind 127.0.0.1
 ```
 
-打开 `http://127.0.0.1:8021/`。课程深链接使用 `#course=world`、`#course=us`、`#course=euro`、`#course=art`。切换课程保留已打开页面及其筛选和学习状态；刷新页面后重新加载课程。
+打开 `http://127.0.0.1:8021/`。协作者可以拉取 `course/apwh` 后按同样方式查看；部署后则直接访问正式网址。页面和数据通过HTTP加载，不需要安装前端框架或运行npm构建。
 
-| 模块 | 入口 | 源码与责任 |
-| --- | --- | --- |
-| 公共外壳 | `index.html` | `src/site/index.template.html`、`assets/site/shell.css`、`shell.mjs`；品牌、公共导航、课程切换、账号入口 |
-| 世界史 | `apwh.html` | `src/apwh/workspace.template.html`、`src/apwh/`；Today’s Pick、筛选、学习卡、因果链、商路、练习与时间线 |
-| 世界史底层地图 | `world-map.html` | 世界史内部使用，保留原独立地图链接 |
-| 美国史 | `apush-map.html` | 美国史现有页面及 `data/apush-*`，不复制到公共壳 |
-| 艺术史 | `art-history-map.html` | 艺术史现有页面与资源；`assets/site/art-embed.css` 仅处理自然高度的嵌入布局 |
-| 欧洲史 | 尚未上线 | 首页明确显示准备中；待有真实内容后注册入口 |
-| 账号 | `assets/auth/`、`auth-callback.html` | 各课程共用；独立维护分支 `feature/account-auth` |
+## 文件用途
 
-首页不读取课程内部 DOM、学习 API 或内容数据。世界史的学习卡、地图同步逻辑只存在于世界史工作区，其他课程不会受到其筛选或样式影响。网站仍使用静态文件，无需安装前端框架。
+| 位置 | 用途 |
+| --- | --- |
+| `index.html` | 正式完整首页，由构建命令生成 |
+| `world-map.html` | 审查后的世界史地图模块，由构建命令生成；首页自动载入 |
+| `art-history-map.html` / `apush-map.html` | 各学科已有模块，保留独立实现 |
+| `src/site/index.template.html` | 完整首页模板；修改首页从这里开始 |
+| `src/apwh/` | 世界史源码、修订数据、样式、基线和测试 |
+| `scripts/build-site.py` | 统一生成正式首页和世界史模块 |
+| `assets/` | 共享界面、账号及静态资源 |
+| `data/` | 其他学科与历史数据契约；世界史当前修订源见 `src/apwh/content-corrected.json` |
+| `previews/world-keypoints-2026-10-25/` | 历史审查记录；旧页面链接会转回正式入口 |
+| `docs/` / `tests/` | 设计、来源、部署说明和回归验证 |
 
-## 构建与检查
+`magic-history-map-keypoints.html` 是兼容旧链接的跳转页。`src/apwh/source-map-snapshot.html` 是只读构建基线，不是网站入口。
+
+## 修改与构建
 
 ```sh
-# 只构建公共外壳，不依赖世界史内容
-python3 scripts/build-shell.py
-# 只构建世界史，不写公共首页
-python3 src/apwh/build.py
-# 一起构建完整发布目录
 python3 scripts/build-site.py
-
-node --test tests/site-*.test.mjs tests/account*.test.mjs tests/apwh-*.test.mjs tests/homepage*.test.mjs tests/canonical-site-entry.test.mjs
+node --test tests/canonical-site-entry.test.mjs
 node --test src/apwh/test-*.cjs
 (cd src/apwh && python3 -m unittest test_corrections.py test_preview.py)
 node src/apwh/verify-content.cjs
 ```
 
-生成的 `index.html`、`apwh.html`、`world-map.html` 一同提交。不要直接编辑生成页面。
+构建后的 `index.html`、`world-map.html` 一同提交，静态托管可直接发布。不要直接编辑生成结果，重新构建会覆盖它们。
 
-## 接入新课程
+Today’s Pick 是每天轮换的历史推荐，未声称事件发生于当天月日。学习卡包括教师整理内容，保留来源与内容边界说明。
 
-在 `assets/site/modules.mjs` 注册课程入口。入口支持 `?embed=1`，并加入一个桥接脚本：
-
-```html
-<script type="module" src="assets/site/module-bridge.mjs" data-course="euro"></script>
-```
-
-页面可以自行隐藏重复的标题与返回导航，但应保持独立打开时可用。让嵌入页面使用内容自然高度，避免 body 或外层容器 `min-height:100vh` 造成高度循环。桥接脚本只上报课程标识和高度；父页面核对 origin、窗口来源及数据范围，不跨页面调用课程学习方法。
-
-每次修改课程入口的嵌入契约时，更新 `courseURL` 中的 `moduleRelease`，避免浏览器继续使用不含桥接脚本的旧 HTML。正常课程内容维护仍在自己的源码中进行。
-
-完整设计见 `docs/superpowers/specs/2026-10-26-modular-site-shell-design.md`，验收记录见 `docs/modular-site-shell-verification-2026-10-26.md`。部署见 `docs/deployment.md`，分工见 `BRANCHES.md`。
+发布方法见 [部署说明](docs/deployment.md)。分支历史见 [分支说明](BRANCHES.md)。

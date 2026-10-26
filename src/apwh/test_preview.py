@@ -10,7 +10,7 @@ def world(text):
 
 class PreviewTests(unittest.TestCase):
     def test_trade_panel_styles_are_shared_with_the_host(self):
-        document = (ROOT / 'apwh.html').read_text()
+        document = (ROOT / 'index.html').read_text()
         host_head = document.split('</head>', 1)[0]
         map_head = (ROOT/'world-map.html').read_text().split('</head>', 1)[0]
         selector = r'<style id="world-panel-styles">([\s\S]*?)</style>'
@@ -38,7 +38,7 @@ class PreviewTests(unittest.TestCase):
                 self.assertIn(r['id'],after)
 
     def test_complete_reading_and_collapsible_cards(self):
-        text = (ROOT / 'apwh.html').read_text()
+        text = (ROOT / 'index.html').read_text()
         w = (ROOT/'world-map.html').read_text()
         self.assertIn('data-preview-number', w)
         self.assertIn('data-preview-section', w)
