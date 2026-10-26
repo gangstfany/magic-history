@@ -79,11 +79,11 @@ export async function runRealMediaVerification() {
           await page.goto(`${server.baseUrl}/${viewport.mode === 'embedded' ? 'index.html' : 'art-history-map.html'}`);
           let frame = page;
           if (viewport.mode === 'embedded') {
-            await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
-            await page.locator('.subj-pill[data-subj="art"]').focus();
+            await page.locator('#courses').scrollIntoViewIfNeeded();
+            await page.locator('button.course-choice[data-course="art"]').focus();
             await page.keyboard.press('Enter');
-            await page.locator('#artMapFrame').waitFor({ state: 'visible' });
-            await page.waitForFunction(() => document.querySelector('#artMapFrame')?.contentDocument?.querySelector('#markerLayer .site-marker'));
+            await page.locator('iframe.course-frame[data-course="art"]').waitFor({ state: 'visible' });
+            await page.waitForFunction(() => document.querySelector('iframe.course-frame[data-course="art"]')?.contentDocument?.querySelector('#markerLayer .site-marker'));
             frame = page.frames().find(candidate => candidate.url().includes('art-history-map.html'));
           }
           await frame.locator('#markerLayer .site-marker').first().waitFor();

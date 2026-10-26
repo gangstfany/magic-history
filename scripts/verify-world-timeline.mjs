@@ -9,7 +9,7 @@ import { runInNewContext } from 'node:vm';
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PAGE_FILE = join(PROJECT_ROOT, 'world-map.html');
-const HOME_PAGE_FILE = join(PROJECT_ROOT, 'index.html');
+const HOME_PAGE_FILE = join(PROJECT_ROOT, 'apwh.html');
 const SOURCE_ID_BASELINE_FILE = join(PROJECT_ROOT, 'scripts', 'world-source-id-baseline.json');
 const MIME_TYPES = Object.freeze({
   '.css': 'text/css; charset=utf-8',
@@ -646,7 +646,7 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
   const pageLogicStart = '<script>\n(function () {';
   for (const [label, source] of [
     ['world-map.html', worldMapSource],
-    ['index.html', homePageSource],
+    ['apwh.html', homePageSource],
   ]) {
     for (const unit of [4, 5, 6, 7, 8, 9]) {
       const registeredScriptTag = `<script src="data/apwh-u${unit}-location-study.js"></script>`;
@@ -663,19 +663,19 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
   assert.ok(worldMapSource.indexOf(unit5ScriptTag) < worldMapSource.indexOf(unit6ScriptTag),
     'world-map.html must load Unit 6 location-study data after the Unit 5 data script');
   assert.ok(homePageSource.indexOf(unit5ScriptTag) < homePageSource.indexOf(unit6ScriptTag),
-    'index.html must load Unit 6 location-study data after the Unit 5 data script');
+    'apwh.html must load Unit 6 location-study data after the Unit 5 data script');
   assert.ok(worldMapSource.indexOf(unit6ScriptTag) < worldMapSource.indexOf(unit7ScriptTag),
     'world-map.html must load Unit 7 location-study data after the Unit 6 data script');
   assert.ok(homePageSource.indexOf(unit6ScriptTag) < homePageSource.indexOf(unit7ScriptTag),
-    'index.html must load Unit 7 location-study data after the Unit 6 data script');
+    'apwh.html must load Unit 7 location-study data after the Unit 6 data script');
   assert.ok(worldMapSource.indexOf(unit7ScriptTag) < worldMapSource.indexOf(unit8ScriptTag),
     'world-map.html must load Unit 8 location-study data after the Unit 7 data script');
   assert.ok(homePageSource.indexOf(unit7ScriptTag) < homePageSource.indexOf(unit8ScriptTag),
-    'index.html must load Unit 8 location-study data after the Unit 7 data script');
+    'apwh.html must load Unit 8 location-study data after the Unit 7 data script');
   assert.ok(worldMapSource.indexOf(unit8ScriptTag) < worldMapSource.indexOf(unit9ScriptTag),
     'world-map.html must load Unit 9 location-study data after the Unit 8 data script');
   assert.ok(homePageSource.indexOf(unit8ScriptTag) < homePageSource.indexOf(unit9ScriptTag),
-    'index.html must load Unit 9 location-study data after the Unit 8 data script');
+    'apwh.html must load Unit 9 location-study data after the Unit 8 data script');
 
   const expectedLocationRegistry = `const LOCATION_STUDY_GLOBAL_BY_UNIT = Object.freeze({
     u1: 'APWH_U1_LOCATION_STUDY',
@@ -704,7 +704,7 @@ function verifyLocationStudyRendererRegistrationSources(worldMapSource, homePage
   assert.equal(extractRegistry(worldMapSource, 'LOCATION_STUDY_GLOBAL_BY_UNIT'), expectedLocationRegistry,
     'world-map.html must expose the exact Unit 1–9 location-study registry');
   assert.equal(extractRegistry(homePageSource, 'HOME_STUDY_GLOBAL_BY_UNIT'), expectedHomeRegistry,
-    'index.html must expose the exact Unit 1–9 location-study registry');
+    'apwh.html must expose the exact Unit 1–9 location-study registry');
 }
 
 async function importFirst(candidates) {
@@ -8353,7 +8353,7 @@ async function verifyLearningShell(page, port) {
 }
 
 async function verifyHomeLearningShell(page, port) {
-  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`http://127.0.0.1:${port}/apwh.html`, { waitUntil: 'domcontentloaded' });
   const frame = page.frameLocator('#worldMapFrame');
   await frame.locator('body').waitFor();
   await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter);
@@ -8992,62 +8992,26 @@ async function verifyHomeLearningShell(page, port) {
   await page.waitForFunction(() =>
     document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter?.getLearningState().view === 'chain');
 
+  // Cross-course ownership now belongs to the public shell, not the World page.
   for (const viewport of [{ width: 1100, height: 850 }, { width: 700, height: 900 }]) {
-    await page.setViewportSize(viewport);
-    await waitForEmbeddedWorldLayout(page, {
-      viewportWidth: viewport.width,
-      mapZoneHeight: viewport.width <= 900 ? 300 : 500,
-      timeout: 4_000,
-    });
-    const sourceLayout = await frame.locator('body').evaluate(() => {
-      const map = document.querySelector('.map-zone').getBoundingClientRect();
-      const dock = document.querySelector('#worldTimelineDock').getBoundingClientRect();
-      return { mapBottom: map.bottom, dockTop: dock.top, dockBottom: dock.bottom, viewportHeight: document.documentElement.clientHeight };
-    });
-    assert.ok(sourceLayout.dockTop >= sourceLayout.mapBottom - 1,
-      `${viewport.width}px host: source visual order must place Timeline Dock after Map`);
-    assert.ok(sourceLayout.dockBottom <= sourceLayout.viewportHeight + 1,
-      `${viewport.width}px host: Timeline Dock must fit within the visible iframe viewport: ${JSON.stringify(sourceLayout)}`);
-    const iframeBox = await page.locator('#worldMapFrame').boundingBox();
-    const panelBox = await page.locator('#home-events').boundingBox();
-    assert.ok(iframeBox && panelBox && (viewport.width > 1050
-      ? panelBox.x >= iframeBox.x + iframeBox.width - 1
-      : panelBox.y >= iframeBox.y + iframeBox.height - 1),
-    `${viewport.width}px host: contextual panel must follow the Map and Timeline region`);
-  }
-  for (const viewport of [{ width: 1100, height: 850 }, { width: 700, height: 900 }]) {
-    await page.setViewportSize(viewport);
-    await page.locator('[data-subj="art"]').click();
-    assert.equal(await themeToggle.getAttribute('aria-expanded'), 'false',
-      `${viewport.width}px host: leaving World must collapse World-only theme controls`);
-    assert.equal(await themePanel.isVisible(), false,
-      `${viewport.width}px host: other subjects must not display World-only theme controls`);
-    const artSizing = await page.locator('.map-card').evaluate(card => ({
-      subject: card.dataset.subject,
-      splitInline: card.querySelector('.map-events-split').style.height,
-      wrapInline: card.querySelector('.home-map-wrap').style.height,
-      panelInline: card.querySelector('.home-events').style.height,
-    }));
-    assert.deepEqual(artSizing, { subject: 'art', splitInline: '', wrapInline: '', panelInline: '' },
-      `${viewport.width}px host: Art must not inherit World-only inline sizing`);
-    await page.locator('[data-subj="us"]').click();
-    const compactSizing = await page.locator('.map-card').evaluate(card => ({
-      subject: card.dataset.subject,
-      splitInline: card.querySelector('.map-events-split').style.height,
-      wrapInline: card.querySelector('.home-map-wrap').style.height,
-      panelInline: card.querySelector('.home-events').style.height,
-    }));
-    assert.deepEqual(compactSizing, { subject: 'us', splitInline: '', wrapInline: '', panelInline: '' },
-      `${viewport.width}px host: compact subjects must not inherit World-only inline sizing`);
-    await page.locator('[data-subj="world"]').click();
-    assert.equal(await themeToggle.getAttribute('aria-expanded'), 'false',
-      `${viewport.width}px host: returning to World must start with compact theme controls`);
-    const worldDock = await frame.locator('#worldTimelineDock').evaluate(node => ({
-      bottom: node.getBoundingClientRect().bottom,
-      viewportHeight: document.documentElement.clientHeight,
-    }));
-    assert.ok(worldDock.bottom <= worldDock.viewportHeight + 1,
-      `${viewport.width}px host: returning to World must recalculate a visible Timeline Dock`);
+    const shell = await page.context().newPage();
+    try {
+      await shell.setViewportSize(viewport);
+      await shell.goto(`http://127.0.0.1:${port}/index.html`);
+      const world = shell.frameLocator('iframe.course-frame[data-course="world"]');
+      await world.locator('#hostPeriod option[value="u2"]').waitFor({state:'attached'});
+      await world.locator('#hostPeriod').selectOption('u2');
+      for (const id of ['art','us']) {
+        await shell.locator(`button.course-choice[data-course="${id}"]`).click();
+        await shell.locator(`iframe.course-frame[data-course="${id}"]`).waitFor({state:'visible'});
+        assert.equal(await shell.locator('iframe.course-frame[data-course="world"]').getAttribute('aria-hidden'),'true');
+        assert.equal(await world.locator('#hostPeriod').inputValue(),'u2','inactive World state is retained');
+      }
+      await shell.locator('button.course-choice[data-course="world"]').click();
+      await shell.locator('iframe.course-frame[data-course="world"]').waitFor({state:'visible'});
+      assert.equal(await world.locator('#hostPeriod').inputValue(),'u2','returning to World preserves the selected Unit');
+      assert.equal(await shell.locator('iframe.course-frame:not([hidden])').count(),1,'only one module is visible');
+    } finally { await shell.close(); }
   }
   await page.setViewportSize({ width: 700, height: 900 });
   const narrowHostGeometry = await page.evaluate(() => ({
@@ -9387,7 +9351,7 @@ async function verifyUnit9StandaloneAmritsarSmoke(page, port) {
 }
 
 async function verifyUnit8HomepageBerlinSmoke(page, port) {
-  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle' });
+  await page.goto(`http://127.0.0.1:${port}/apwh.html`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => document.querySelector('#worldMapFrame')?.contentWindow?.__mapFilter);
   const frame = page.frameLocator('#worldMapFrame');
   await page.locator('.map-card-head [data-learning-view="map"]').click();

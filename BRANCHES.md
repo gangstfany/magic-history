@@ -1,21 +1,18 @@
-# Canonical branches and ownership
+# 分支与模块责任
 
-As of 2026-10-26, `course/apwh` owns the integrated World History release. The complete website entry is the root `index.html`, generated with `scripts/build-site.py` from `src/site/index.template.html` and `src/apwh/`. Historical preview URLs redirect to the canonical entry. See the root README for current workflow and `docs/apwh-branch-consolidation-2026-10-25.md` for branch history and recovery.
+2026-10-26 模块拆分候选分支：`feature/modular-site-shell`。该分支提供可一起预览与部署的完整目录；此次不自动合并 `main`、`shared/site` 或课程分支。
 
-`main` is protected integration / release history. Do not automatically merge this reorganization into main.
-
-| Branch | Responsibility |
+| 分支 | 责任 |
 | --- | --- |
-| `shared/site` | Shared site shell, account UI/service, callback, vendor SDK, `assets/map-ui.css`, global navigation and iframe sizing coordination |
-| `course/apwh` | `world-map.html`, World study directory / host behavior, `data/apwh-u1-location-study.js` through U9, World tests and verification |
-| `course/art-history` | `art-history-map.html`, Art assets/data/content/source ledgers, Art tests and verification |
+| `main` | 已审查的整合与正式发布历史 |
+| `shared/site` | 公共网站外壳：首页、导航、课程注册表、嵌入契约和共享样式 |
+| `feature/account-auth` | 登录、注册、密码恢复、Google 登录及验证回调的独立维护 |
+| `course/apwh` | 世界史内容与工作区；本次拆分候选使用 `src/apwh/` → `apwh.html` / `world-map.html` |
+| `course/art-history` | 艺术史页面、资源与内容验证 |
+| `feature/apush-all-periods-timeline-dock` | 协作者的美国史现有维护分支，保持其开发历史 |
 
-Both course branches start at the same shared/site commit; they are siblings, not ancestors of each other. Open the shared PR first. After it is reviewed and integrated, open independent course PRs against the appropriate updated main. Resolve shared changes once, and coordinate the course-specific `index.html` hunks (World host behavior versus Art 250-work caption). Preserve both assertion sets in any integrated tests; do not skip tests to resolve conflicts.
+欧洲史暂无课程实现，先保留注册位置，不为占位内容额外创建空分支。
 
-`index.html` is a shared host: coordinate edits across courses instead of copying the whole file. `assets/map-ui.css` is shared; a course needing a changed selector must review its impact on the other embedded and standalone pages. Do not merge whole course branches into each other merely to obtain a shared fix. Prefer a reviewed shared change and propagate it deliberately.
+模块边界以源码和入口文件为准；Git 分支保留共同基础文件。未来同步某个模块时，只提交/同步它负责的改动，不整条覆盖其他课程分支。公共首页由 `scripts/build-shell.py` 构建；世界史由 `src/apwh/build.py` 独立构建。完整发布目录可运行 `scripts/build-site.py` 生成。
 
-Key Terms is not a separate page: its renderer is `studyDetailHTML` in `world-map.html`, and its content is in the APWH U1–U9 location-study data. The UI handoff document records a historical `4756151` extraction; course features described there do not all ship on shared/site by itself.
-
-All old local and remote refs remain retained as historical references, not canonical collaboration targets. In particular `feature/ap-art-history-u6` retains its dirty working tree and pending/private images; those uncommitted files and `.private-media` are not published by this extraction. No source working tree or real index is staged or reset.
-
-APUSH's existing `feature/apush-all-periods-timeline-dock` remains unchanged. Do not overwrite or cross-merge its implementation as part of this work. APUSH may reference shared UI patterns through a separately reviewed adaptation.
+本次保留其他工作树、私人媒体和未提交的艺术史工作，不改动其他分支的内容。世界史旧分支恢复标签记录在 `docs/apwh-branch-consolidation-2026-10-25.md`。

@@ -1,11 +1,11 @@
 # AP World History
 
-仓库 `gangstfany/magic-history`，统一分支 `course/apwh`。
+世界史课程维护分支为 `course/apwh`；本次模块拆分在 `feature/modular-site-shell` 验收，尚未合并回其他分支。
 
-**查看最新版：根目录 `index.html`。** Today’s Pick 和全部已整合世界史功能现在共用完整首页。首页自动加载 `world-map.html`，不再需要选择预览文件。
+本分支中，公共首页是 `index.html`，独立世界史工作区是 `apwh.html`。从首页选择世界史会嵌入同一工作区，包含 Today’s Pick、学习卡、因果链、商路、练习及时间线。底层地图 `world-map.html` 由工作区载入。
 
-本地启动、源码位置和构建命令见 [README](README.md)。世界史修改源位于 `src/apwh/`，首页修改源位于 `src/site/index.template.html`。
+世界史界面修改源：`src/apwh/workspace.template.html`；内容与地图源码：`src/apwh/`。运行 `python3 src/apwh/build.py` 只生成 `apwh.html` 和 `world-map.html`，不会改动公共首页。
 
-原 `previews/world-keypoints-2026-10-25/index.html` 和 `magic-history-map-keypoints.html` 会转到正式首页；审查记录仍保留。
+公共壳源码属于 `src/site/` 和 `assets/site/`。课程间的切换、公共导航与账号按钮在壳中维护；不要再把世界史学习逻辑加回公共首页。
 
-[2026-10-25分支合并归档](docs/apwh-branch-consolidation-2026-10-25.md)保留旧分支的恢复方法；该文描述的是当日状态，网站入口以本文件和根README为准。
+旧预览链接仍转回正式首页，审查与恢复记录保留。完整命令见根目录 README。

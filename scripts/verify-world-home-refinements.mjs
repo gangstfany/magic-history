@@ -13,7 +13,7 @@ async function check(name, test) {
 }
 async function home(width) {
   const page = await browser.newPage({ viewport:{ width,height:900 }, reducedMotion:'reduce' });
-  await page.goto(`${server.baseUrl}/index.html`);
+  await page.goto(`${server.baseUrl}/apwh.html`);
   await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
   await page.waitForFunction(() => document.querySelector('#worldMapFrame').contentWindow.__mapFilter);
   await page.waitForFunction(() => document.querySelector('#hostPeriod').options.length > 0);
@@ -125,20 +125,17 @@ try {
       await page.locator('#hostStudyDirectory summary').click();
       await page.locator('#hostPeriod').selectOption('');
       assert.match(await page.locator('#hostStudyLabel').innerText(),/unit\/location entries.*unique places/);
-      assert.match(await page.locator('[data-lang="en"]').getAttribute('aria-label'),/coming soon/i);
-      assert.match(await page.locator('#mapComingSoon p').innerText(),/Art History/);
     } finally { await page.close(); }
   });
-  for (const width of [1440,390]) await check(`${width} hidden subject invoker focus handoff`, async () => {
-    const page = await home(width);
+  for (const width of [1440,390]) await check(`${width} public course keyboard selection`, async () => {
+    const page = await browser.newPage({viewport:{width,height:900}});
     try {
-      await page.locator('.navlinks [data-view="subjects"]').click();
-      await page.locator('.subject-item[data-subject="art"]').focus();
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(500);
-      assert.equal(await page.evaluate(() => document.activeElement.matches('.subj-pill[data-subj="art"]')),true);
-      const rect=await page.locator('.subj-pill[data-subj="art"]').evaluate(e=>{ const r=e.getBoundingClientRect(); return {top:r.top,bottom:r.bottom,height:innerHeight}; });
-      assert.ok(rect.top>=0 && rect.bottom<=rect.height,`focused subject pill is visible: ${JSON.stringify(rect)}`);
+      await page.goto(`${server.baseUrl}/index.html`);
+      const choice=page.locator('button.course-choice[data-course="art"]');
+      await choice.focus(); await page.keyboard.press('Enter');
+      await page.waitForFunction(() => document.querySelector('#courseTitle').textContent === '艺术史');
+      assert.equal(await choice.getAttribute('aria-pressed'),'true');
+      assert.equal(await page.evaluate(() => document.activeElement.dataset.course),'art');
     } finally { await page.close(); }
   });
   for (const review of [false,true]) await check(`single-event ${review ? 'review' : 'filtered'} term options`, async () => {
@@ -251,31 +248,22 @@ try {
     } finally { await page.close(); }
   });
   for (const width of [1440,390]) {
-    await check(`${width} late World load preserves active Art host sizing`, async () => {
-      const page = await home(width);
+    await check(`${width} late World message preserves active Art sizing`, async () => {
+      const page = await browser.newPage({viewport:{width,height:900}});
       try {
-        await page.locator('[data-subj="art"]').click();
-        await page.frameLocator('#artMapFrame').locator('.site-marker').first().waitFor();
-        await page.waitForFunction(() => {
-          const frame = document.querySelector('#artMapFrame');
-          return frame.closest('.home-map-wrap').style.height !== '';
+        await page.goto(`${server.baseUrl}/index.html`);
+        await page.locator('button.course-choice[data-course="art"]').click();
+        const art=page.locator('iframe.course-frame[data-course="art"]');
+        await page.waitForFunction(() => document.querySelector('iframe.course-frame[data-course="art"]')?.style.height !== '');
+        const before=await art.evaluate(frame=>frame.getBoundingClientRect().height);
+        await page.evaluate(() => {
+          const world=document.querySelector('iframe.course-frame[data-course="world"]');
+          window.dispatchEvent(new MessageEvent('message',{origin:location.origin,source:world.contentWindow,data:{type:'magic-history:module',course:'world',height:900}}));
         });
-        await page.evaluate(() => document.querySelector('#worldMapFrame').dispatchEvent(new Event('load')));
-        const metrics = await page.evaluate(() => {
-          const frame = document.querySelector('#artMapFrame'), doc = frame.contentDocument;
-          const wrap = frame.closest('.home-map-wrap');
-          return {
-            inline: wrap.style.height,
-            actual: wrap.getBoundingClientRect().height,
-            expected: Math.ceil(doc.querySelector('.filter-toolbar').getBoundingClientRect().height
-              + doc.querySelector('.art-workspace').getBoundingClientRect().height),
-          };
-        });
-        assert.notEqual(metrics.inline, '', 'late World callback cannot clear Art sizing');
-        assert.ok(Math.abs(metrics.actual - metrics.expected) <= 1, JSON.stringify(metrics));
-        await page.locator('[data-subj="world"]').click();
-        await page.waitForFunction(() => document.querySelector('.map-card').dataset.subject === 'world');
-        assert.equal(await page.locator('#artMapFrame').getAttribute('aria-hidden'), 'true');
+        assert.equal(await art.evaluate(frame=>frame.getBoundingClientRect().height),before);
+        await page.locator('button.course-choice[data-course="world"]').click();
+        await page.waitForFunction(() => document.querySelector('#courseTitle').textContent === '世界史');
+        assert.equal(await art.getAttribute('aria-hidden'),'true');
       } finally { await page.close(); }
     });
   }

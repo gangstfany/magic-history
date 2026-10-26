@@ -9,7 +9,7 @@ try {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto(`${server.baseUrl}/index.html`);
+    await page.goto(`${server.baseUrl}/apwh.html`);
     await page.locator('#home-map-embed').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelector('#hostPeriod').options.length > 0);
     const directory = page.locator('#hostStudyDirectory');

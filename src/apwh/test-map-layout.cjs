@@ -27,6 +27,6 @@ test('all authored chains have collision-free nodes at mobile and desktop sizes'
  }
 });
 test('both generated bundles parse, no eagle added, reviewed content retained',()=>{
- for(const file of ['world-map.html','index.html']){const text=fs.readFileSync(path.join(__dirname,'../..',file),'utf8');for(const m of text.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(m[1]);}
+ for(const file of ['world-map.html','apwh.html','index.html']){const text=fs.readFileSync(path.join(__dirname,'../..',file),'utf8');for(const m of text.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(m[1]);}
  assert.ok(!source.includes('noto-eagle'));assert.ok(source.includes("activeLearningView!=='practice'||!quizMode?.answered"));assert.ok(source.includes('world-map-note-rail'));assert.ok(source.includes('world-practice-active .world-timeline-dock'));
 });
