@@ -5,6 +5,7 @@
 | Branch | Responsibility |
 | --- | --- |
 | `shared/site` | Shared site shell, account UI/service, callback, vendor SDK, `assets/map-ui.css`, global navigation and iframe sizing coordination |
+| `feature/account-auth` | Dedicated account-module maintenance, based on `shared/site`; see README for login entry, module files and integration instructions |
 | `course/world-history` | `world-map.html`, World study directory / host behavior, `data/apwh-u1-location-study.js` through U9, World tests and verification |
 | `course/art-history` | `art-history-map.html`, Art assets/data/content/source ledgers, Art tests and verification |
 
