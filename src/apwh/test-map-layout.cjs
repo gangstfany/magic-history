@@ -12,7 +12,7 @@ test('coincident chain steps stay separate, retain order and actual anchors',()=
  nodes.forEach((n,i)=>{assert.equal(n.index,i);assert.equal(n.anchorX,250);assert.equal(n.anchorY,150);assert.ok(n.x>=24&&n.x<=476&&n.y>=48&&n.y<=276);nodes.slice(i+1).forEach(m=>assert.ok(Math.hypot(n.x-m.x,n.y-m.y)>=48));assert.ok(!overlap({x:n.x-22,y:n.y-22,width:44,height:44},{x:420,y:0,width:80,height:178},6));});
 });
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
-const source=fs.readFileSync(path.join(__dirname,'world-map.html'),'utf8');
+const source=fs.readFileSync(path.join(__dirname,'../../world-map.html'),'utf8');
 test('all authored chains have collision-free nodes at mobile and desktop sizes',()=>{
  const chains=vm.runInNewContext(source.match(/const CHAINS = ([\s\S]*?\n  \]);/)[1]);
  const pins=new Map([...source.matchAll(/<g\b([^>]*class="pin-group"[^>]*)>([\s\S]*?)<\/g>/g)].map(m=>[Number(m[2].match(/<text[^>]*>(\d+)<\/text>/)?.[1]),{x:Number(m[1].match(/data-cx="([^"]+)"/)[1]),y:Number(m[1].match(/data-cy="([^"]+)"/)[1])}]));
@@ -27,6 +27,6 @@ test('all authored chains have collision-free nodes at mobile and desktop sizes'
  }
 });
 test('both generated bundles parse, no eagle added, reviewed content retained',()=>{
- for(const file of ['world-map.html','index.html']){const text=fs.readFileSync(path.join(__dirname,file),'utf8');for(const m of text.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(m[1]);}
+ for(const file of ['world-map.html','index.html']){const text=fs.readFileSync(path.join(__dirname,'../..',file),'utf8');for(const m of text.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(m[1]);}
  assert.ok(!source.includes('noto-eagle'));assert.ok(source.includes("activeLearningView!=='practice'||!quizMode?.answered"));assert.ok(source.includes('world-map-note-rail'));assert.ok(source.includes('world-practice-active .world-timeline-dock'));
 });

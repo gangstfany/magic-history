@@ -2,6 +2,7 @@ from pathlib import Path
 import html, re, json
 
 HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
 SOURCE = HERE / 'source-map-snapshot.html'
 source = SOURCE.read_text()
 match = re.search(r'(id="worldMapFrame"[^>]*srcdoc=")([^"]*)(")', source)
@@ -73,11 +74,9 @@ world = enhance_maps(world)
 panel_css = (HERE / 'trade-panels.css').read_text()
 shared_panel_style = '<style id="world-panel-styles">' + panel_css + '</style>'
 world = replace_once(world, '</head>', shared_panel_style + '</head>')
-(HERE / 'world-map.html').write_text(world)
-result = source[:match.start(2)] + html.escape(world, quote=True) + source[match.end(2):]
-result = result.replace('</head>', '<style>' + css + '</style>' + shared_panel_style + '</head>', 1)
-result = result.replace('Magic History · 世界史原版地图与卡片离线预览 · U1–U9 · 可直接切换单元、选择地点、展开卡片 · 内容快照 2026-10-21', '本地整改预览 · 世界史精选复习卡 · 240 个知识点（保留原231张，新增9张）· 非完整考纲的替代品 · 2026-10-25 · 未发布')
-result = result.replace('Magic History · 原版地图与 Keypoint 卡片 · 离线版', '世界史 Keypoints · 美国史框架预览')
+(ROOT / 'world-map.html').write_text(world)
+result = (ROOT / 'src/site/index.template.html').read_text()
+result = replace_once(result, '</head>', '<style id="world-card-styles">' + css + '</style>' + shared_panel_style + '</head>')
 old = '''if (win.__mapFilter.toggleLocationStudy(studyId)) {
           syncHomeEvents();
           homeEvents.querySelector(`[data-study-event="${CSS.escape(studyId)}"]`)?.focus();
@@ -108,5 +107,5 @@ document.getElementById('home-events').addEventListener('click', event => {
 </script></body>''')
 from integrate_causal_workspace import integrate_causal_host
 result = integrate_causal_host(result)
-(HERE / 'index.html').write_text(result)
-print(f'Built {HERE / "index.html"} ({len(result.encode()):,} bytes)')
+(ROOT / 'index.html').write_text(result)
+print(f'Built {ROOT / "index.html"} ({len(result.encode()):,} bytes)')

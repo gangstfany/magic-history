@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const world = fs.readFileSync(path.join(__dirname, 'world-map.html'), 'utf8');
+const world = fs.readFileSync(path.join(__dirname, '../../world-map.html'), 'utf8');
 const context = vm.createContext({});
 const scripts = [...world.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
 for (const script of scripts.filter(s => /function publishUnit\dLocationStudy/.test(s))) vm.runInContext(script, context);

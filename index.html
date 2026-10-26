@@ -694,7 +694,7 @@ nav.topnav {
   .hero-copy { padding: 6px 18px 4px; }
   .hero-copy p { font-size: 13px; }
   /* 分栏改叠放的规则移到单独的 900px 断点(见上面),这里不再重复 */
-  .today-pick { max-width: none; margin: 16px 18px 0; }
+  .today-pick { width: calc(100% - 36px); max-width: none; margin: 16px 18px 0; }
   #view-subjects, #view-teacher, #view-about { padding-left: 0; padding-right: 0; }
   .back-link { left: 12px; }
 }
@@ -702,7 +702,107 @@ nav.topnav {
 <link rel="stylesheet" href="assets/map-ui.css">
 <link rel="stylesheet" href="assets/auth/account.css">
 <script type="module" src="assets/auth/account-bootstrap.mjs"></script>
-</head>
+<style id="world-card-styles">/* Same reader in the embedded map and the host panel. Original map styles stay intact. */
+:is(.home-events, .event-panel) .location-study-view {font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;color:#302a24;overflow-wrap:anywhere;}
+:is(.home-events, .event-panel) .location-study-list {display:block;}
+:is(.home-events, .event-panel) .location-study-item {margin:22px 0;padding:0 0 20px;border:0;border-bottom:1px solid #e7dcc6;border-radius:0;background:#fffdf8;box-shadow:none;overflow:visible;}
+:is(.home-events, .event-panel) .location-study-toggle {position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:9px;width:100%;min-height:44px;padding:0 32px 4px 0;text-align:left;background:transparent;border:0;cursor:pointer;}
+:is(.home-events, .event-panel) .location-study-toggle:hover,:is(.home-events, .event-panel) .location-study-toggle[aria-expanded=true] {background:transparent;}
+:is(.home-events, .event-panel) .preview-identity {order:0;display:grid;place-items:center;min-width:24px;height:24px;padding:0 5px;background:#597f8b;color:#fff;border-radius:50%;font-size:12px;font-weight:700;line-height:1;}
+:is(.home-events, .event-panel) .location-study-name {order:1;margin:0;color:#4b271c;font-size:19px!important;font-weight:800!important;line-height:1.35!important;letter-spacing:0;}
+:is(.home-events, .event-panel) .location-study-date {order:2;margin:0;color:#756c5e;font-size:12px;font-weight:600;line-height:1.6;}
+:is(.home-events, .event-panel) .preview-expander {position:absolute;top:0;right:-8px;display:grid;place-items:center;width:44px;height:44px;color:#756c5e;font-size:22px;font-weight:400;}
+:is(.home-events, .event-panel) .location-study-toggle:focus-visible {outline:3px solid #28708a;outline-offset:4px;border-radius:3px;}
+:is(.home-events, .event-panel) .preview-reading {padding:15px 0 0;border:0;background:transparent;box-shadow:none;}
+:is(.home-events, .event-panel) .preview-tags {display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;}
+:is(.home-events, .event-panel) .location-study-theme {display:inline-flex;align-items:center;min-height:25px;padding:3px 10px;border:1px solid var(--study-theme-color);border-radius:99px;background:color-mix(in srgb,var(--study-theme-color) 14%,white);color:#302a24;font-size:12px;font-weight:700;}
+:is(.home-events, .event-panel) .location-study-exam-skills-block {display:grid;gap:5px;margin:8px 0 15px;}
+:is(.home-events, .event-panel) .location-study-exam-skills-label {font-size:11px;font-weight:700;color:#756c5e;text-transform:uppercase;letter-spacing:.05em;}
+:is(.home-events, .event-panel) .location-study-exam-skills {display:flex;gap:5px;flex-wrap:wrap;}
+:is(.home-events, .event-panel) .location-study-exam-skill {font-size:12px;line-height:1.5;background:#f5f1e8;border:0;color:#5d574d;border-radius:5px;padding:3px 7px;}
+:is(.home-events, .event-panel) .preview-section {margin:20px 0 0;padding:0;border:0;background:transparent;}
+:is(.home-events, .event-panel) .preview-section h3 {margin:0 0 8px;font-size:13.5px;line-height:1.55;font-weight:750;color:#4b271c;}
+:is(.home-events, .event-panel) .preview-section p {margin:0;padding:11px 12px;border:0;border-radius:7px;background:#f7f0df;color:#514c43;font-size:13.5px;font-weight:500!important;line-height:1.75!important;}
+:is(.home-events, .event-panel) .preview-section:first-of-type p {background:transparent;padding:0;color:#756c5e;}
+:is(.home-events, .event-panel) .preview-section ul {margin:0;padding-left:20px;}
+:is(.home-events, .event-panel) .preview-section li {padding:0 0 6px;background:transparent;border:0;color:#514c43;font-size:13.5px;font-weight:500!important;line-height:1.75!important;}
+:is(.home-events, .event-panel) .location-study-connection-group {margin:12px 0;}
+:is(.home-events, .event-panel) .location-study-connection-group h4 {margin:0 0 7px;font-size:12px;color:#756c5e;}
+:is(.home-events, .event-panel) .location-study-connection {width:100%;min-height:44px;padding:11px 12px;background:#f7f0df;border:1px solid #e7dcc6;border-radius:8px;box-shadow:none;cursor:pointer;text-align:left;}
+:is(.home-events, .event-panel) .location-study-connection strong {font-size:13px;color:#426b78;line-height:1.5;}
+:is(.home-events, .event-panel) .location-study-connection span {display:block;margin-top:5px;font-size:12.5px;color:#635b50;line-height:1.65;}
+:is(.home-events, .event-panel) .location-study-back {max-width:100%;white-space:normal;text-align:left;min-height:44px;font-size:12px;}
+:is(.home-events, .event-panel) .location-study-title {font-size:21px;line-height:1.35;color:#4b271c;margin:12px 0 8px;}
+:is(.home-events, .event-panel) .location-study-unit-card {background:#f8f3e7;border-radius:8px;box-shadow:none;margin:12px 0;}
+:is(.home-events, .event-panel) .location-study-unit-card summary {min-height:44px;}
+.home-events {background:#fffdf8;}
+.offline-note {font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+.preview-lens {order:3;color:#426b78;font-size:12px;line-height:1.5;font-weight:700;}
+.preview-authorship {font-size:11px!important;line-height:1.5!important;color:#756c5e;padding:5px 0;}
+@media(max-width:720px){
+ :is(.home-events, .event-panel) .location-study-name {font-size:18px!important;}
+ .home-events {min-width:0!important;width:100%!important;}
+ :is(.home-events, .event-panel) .preview-section p {padding:10px;}
+ :is(.home-events, .event-panel) .location-study-unit-title {font-size:14px;}
+}
+</style><style id="world-panel-styles">/* Shared by the embedded event panel and the mirrored host panel. */
+.world-trade-picker {display:grid;gap:10px;margin:14px 0;min-width:0;}
+.world-trade-pick {appearance:none;-webkit-appearance:none;box-sizing:border-box;display:grid;gap:4px;width:100%;min-width:0;max-width:100%;min-height:100px;margin:0;padding:13px 15px;text-align:left;cursor:pointer;border:1px solid var(--line,#ded8c8);border-radius:12px;background:#fffdf8;color:var(--ink,#302a24);font-family:inherit;font-size:13px;font-weight:400;line-height:1.55;box-shadow:0 1px 2px #211f1c06;overflow-wrap:anywhere;transition:border-color .15s,background-color .15s;}
+.world-trade-pick:hover {border-color:#b7aa91;background:#f8f3e8;}
+.world-trade-pick:focus-visible {outline:2px solid var(--terracotta,#c9714f);outline-offset:2px;}
+.world-trade-pick strong {display:block;margin:1px 0;font-size:15px;font-weight:650;line-height:1.5;}
+.world-trade-pick span {display:block;}
+.world-trade-english {font-size:12px;color:var(--ink-soft,#6b6456);font-weight:400;}
+.world-trade-kind {display:block;color:var(--ink-soft,#766b59);font-family:inherit;font-size:11px;font-weight:500;line-height:1.55;letter-spacing:0;}
+.world-trade-count {font-size:11px;color:var(--ink-soft,#766b59);margin-top:3px;}
+.world-trade-intro {font-family:inherit;font-size:13px;font-weight:400;line-height:1.8;color:var(--ink-soft,#6b6456);margin:12px 0;}
+.world-trade-footnote {font-family:inherit;font-size:11px;font-weight:400;line-height:1.75;color:var(--ink-soft,#807865);margin:14px 0;}
+.world-trade-panel {font-family:inherit;font-size:13px;color:var(--ink,#302a24);}
+.world-trade-panel h2 {margin:5px 0 8px;font-size:18px;font-weight:650;line-height:1.5;}
+.world-trade-panel .rt-progress {font-size:12px;font-weight:500;line-height:1.65;}
+.world-trade-switch {margin-top:12px;}
+.world-trade-switch summary,.world-trade-sources summary {cursor:pointer;color:var(--ink-soft,#6b6456);font-family:inherit;font-size:12px;font-weight:500;line-height:1.65;}
+.world-trade-switch .world-trade-picker {padding-block:8px;}
+.world-trade-stops {display:flex;flex-wrap:wrap;gap:7px;margin:18px 0;}
+.world-trade-stops .rt-stop {margin:0;min-height:40px;gap:8px;font-family:inherit;font-size:12px;font-weight:500;line-height:1.55;}
+.world-trade-current {background:#f6f1e5;border:1px solid var(--line,#dfdcc9);border-radius:12px;padding:15px;}
+.world-trade-current h3 {font-size:16px;font-weight:650;line-height:1.5;margin:5px 0 8px;color:var(--ink,#302a24);}
+.world-trade-current p {font-family:inherit;font-size:13px;font-weight:400;line-height:1.8;margin:9px 0;}
+.world-trade-current b {font-weight:600;}
+.world-trade-sources {margin:15px 0;}
+.world-trade-sources a {display:block;color:var(--terracotta,#a2593a);font-size:12px;line-height:1.6;padding:5px 0;}
+@media(max-width:600px){.world-trade-pick {padding:12px 14px;}.world-trade-panel h2 {font-size:17px;}}
+/* The causal module contains both reasoning steps and their geographical examples. */
+.causal-workspace-tabs {display:flex;gap:5px;padding:4px;border:1px solid var(--line,#ded8c8);background:#f4f0e5;border-radius:11px;margin:0 0 13px;}
+.causal-workspace-tabs button {appearance:none;flex:1;min-width:0;min-height:38px;padding:8px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink-soft,#6b6456);font-family:inherit;font-size:13px;font-weight:600;line-height:1.5;cursor:pointer;}
+.causal-workspace-tabs button[aria-pressed="true"] {background:var(--ink,#302a24);color:#fffdf8;}
+.causal-workspace-tabs button:focus-visible,.causal-related-routes button:focus-visible,.causal-return-link:focus-visible {outline:2px solid var(--terracotta,#c9714f);outline-offset:2px;}
+.causal-click-hint {font-size:12px;line-height:1.7;color:var(--ink-soft,#6b6456);margin:12px 0;}
+.causal-static-panel .rt-name {font-size:17px;line-height:1.5;}
+.causal-static-panel .rt-stops-chain {gap:8px;}
+.causal-static-panel .rt-stops-chain .rt-stop {width:100%;min-height:48px;text-align:left;gap:10px;line-height:1.6;}
+.causal-static-panel .rt-sub {display:block;font-size:11px;font-weight:400;line-height:1.5;}
+.causal-related-routes {margin:0 0 14px;padding:10px 12px;background:#f0f2e8;border:1px solid #d9dfcd;border-radius:10px;}
+.causal-related-label {font-size:11px;font-weight:600;line-height:1.6;color:#6f785c;margin-bottom:6px;}
+.causal-related-routes button {appearance:none;display:grid;width:100%;gap:2px;text-align:left;border:1px solid #d4dbc9;border-radius:8px;background:#fffdf8;padding:9px 11px;margin-top:6px;font-family:inherit;cursor:pointer;}
+.causal-related-routes button span {color:#7c7766;font-size:10px;font-weight:400;}
+.causal-related-routes button strong {color:#365b58;font-size:12px;font-weight:600;line-height:1.6;}
+.causal-popup-routes {margin-top:12px;padding-top:10px;border-top:1px solid #ded8c8;}
+.causal-popup-routes button {appearance:none;display:block;width:100%;min-height:38px;text-align:left;margin:5px 0;padding:7px 10px;border:1px solid #ccd7c4;border-radius:7px;background:#f0f4ea;color:#365b58;font-family:inherit;font-size:12px;font-weight:600;line-height:1.5;cursor:pointer;}
+.causal-trade-context {margin:8px 0 14px;padding:10px 12px;border-left:3px solid var(--terracotta,#c9714f);background:#f6f1e5;border-radius:0 8px 8px 0;}
+.causal-trade-context span {display:block;font-size:11px;color:var(--ink-soft,#6b6456);line-height:1.6;}
+.causal-trade-context strong {display:block;font-size:13px;line-height:1.6;font-weight:600;margin:3px 0;}
+.causal-trade-context button,.causal-return-link {appearance:none;display:block;border:0;padding:6px 0;background:transparent;color:var(--terracotta,#a2593a);font-family:inherit;font-size:12px;font-weight:600;line-height:1.6;cursor:pointer;}
+.causal-chain-background {margin:18px 0 12px;color:var(--ink-soft,#6b6456);font-size:12px;line-height:1.8;}
+.causal-chain-background summary {cursor:pointer;font-weight:600;}
+.home-events .map-panel-tabs,#mapPanelTabs {display:none!important;}
+.causal-static-panel .rt-top,.world-trade-panel .rt-top {position:static!important;}
+.causal-static-panel>.causal-workspace-tabs,.world-trade-panel>.causal-workspace-tabs {position:sticky;top:0;z-index:8;}
+.world-trade-panel>.causal-trade-context {position:sticky;top:55px;z-index:7;}
+.world-causal-active .region-path {transition:none!important;}
+.causal-related-routes small {display:block;color:var(--ink-soft,#6b6456);font-size:11px;font-weight:400;line-height:1.65;margin-top:3px;}
+.causal-trade-context p {font-size:11px;font-weight:400;line-height:1.65;color:var(--ink-soft,#6b6456);margin:4px 0;}
+</style></head>
 <body>
 <div class="frame">
   <div class="card">
@@ -745,7 +845,7 @@ nav.topnav {
       <div class="subject-switcher" id="subjectSwitcher">
         <span class="subj-pill active" data-subj="world" style="--pdot:var(--gold)" role="button" tabindex="0" aria-pressed="true"><span class="dot"></span>World History</span>
         <span class="subj-pill" data-subj="euro" style="--pdot:var(--sage)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Euro History <span class="soon">soon</span></span>
-        <span class="subj-pill" data-subj="us" style="--pdot:var(--pink)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>US History <span class="soon">soon</span></span>
+        <span class="subj-pill" data-subj="us" style="--pdot:var(--pink)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>US History <span class="soon">独立页面</span></span>
         <span class="subj-pill" data-subj="geo" style="--pdot:var(--blue)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Human Geo <span class="soon">soon</span></span>
         <span class="subj-pill" data-subj="art" style="--pdot:var(--terracotta)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Art History</span>
       </div>
@@ -782,7 +882,7 @@ nav.topnav {
         </div>
         <div class="map-events-split">
           <div class="home-map-wrap" id="home-map-embed">
-            <iframe id="worldMapFrame" class="subject-map-frame active" src="world-map.html" title="Interactive world history map" loading="lazy" aria-hidden="false"></iframe>
+            <iframe id="worldMapFrame" class="subject-map-frame active" src="world-map.html" title="Interactive world history map" loading="eager" aria-hidden="false"></iframe>
             <iframe id="artMapFrame" class="subject-map-frame" src="art-history-map.html?embed=1" title="Interactive AP art history map" loading="lazy" hidden aria-hidden="true"></iframe>
             <div class="map-overlay map-skeleton" id="mapSkeleton">
               <div class="sk-label" id="skLabel">正在加载地图…</div>
@@ -793,7 +893,8 @@ nav.topnav {
             <div class="map-overlay map-coming-soon" id="mapComingSoon">
               <div class="cs-badge">✦</div>
               <h3 id="csTitle">Coming soon</h3>
-              <p>这一科的互动地图正在制作中,很快就来。World History 和 Art History 已经可以直接用。</p>
+              <p id="comingSoonDescription">这一科的互动地图正在制作中,很快就来。World History 和 Art History 已经可以直接用。</p>
+              <a id="apushStandaloneLink" href="apush-map.html" hidden>打开美国史独立地图 →</a>
             </div>
           </div>
           <!-- 右侧事件面板:点左边地图的数字标点,该站事件在这里完整显示 -->
@@ -807,7 +908,7 @@ nav.topnav {
       <div class="features">
         <div class="feature">
           <h2>AMSCO-sourced</h2>
-          <p>每一条历史事件都能查到教材原文页码,不是编的。</p>
+          <p>保留教材线索与补充来源，教师整理的学习内容会明确标注。</p>
         </div>
         <div class="feature">
           <h2>Teacher-ready</h2>
@@ -815,7 +916,7 @@ nav.topnav {
         </div>
         <div class="feature feature-clickable" data-goto="subjects">
           <h2>More subjects coming</h2>
-          <p>Euro History、US History、Human Geography 正在路上,World History 已经可以直接用。</p>
+          <p>World History 与 Art History 可在本站切换，US History 提供独立地图入口；其他学科正在制作。</p>
         </div>
         <div class="feature">
           <h2>CED-aligned categories</h2>
@@ -1147,6 +1248,12 @@ nav.topnav {
     const study = doc.querySelector('#mapStudyView');
     const wrap = worldMapFrame.closest('.home-map-wrap');
     const split = worldMapFrame.closest('.map-events-split');
+    if (study && styleEmbeddedMap.observedStudy !== study) {
+      styleEmbeddedMap.observer?.disconnect();
+      styleEmbeddedMap.observedStudy = study;
+      styleEmbeddedMap.observer = new ResizeObserver(styleEmbeddedMap);
+      styleEmbeddedMap.observer.observe(study);
+    }
     if (study && wrap && split) {
       const height = Math.ceil(study.getBoundingClientRect().height);
       worldMapFrame.style.height = height + 'px';
@@ -1164,6 +1271,11 @@ nav.topnav {
     if (!doc) return;
     const api = worldMapFrame.contentWindow.__mapFilter;
     const state = api?.getLearningState?.();
+    const causalKey = state?.view === 'chain' ? JSON.stringify([state.workspacePanel, state.chainId, state.chainStep, state.tradeId, state.tradeStep, state.chainPanel]) : '';
+    const keepCausalScroll = !!causalKey && homeEvents.dataset.causalRenderKey === causalKey;
+    const savedCausalScroll = homeEvents.scrollTop;
+    const causalScroll = state?.view === 'chain' ? api.takeCausalScrollRestore?.() ?? null : null;
+    homeEvents.dataset.causalRenderKey = causalKey;
     const studyState = api?.getLocationStudyUiState?.();
     renderHostStudyDirectory();
     const pendingRestore = studyState?.pendingRestore;
@@ -1200,13 +1312,13 @@ nav.topnav {
     }
     renderHomeStudyBookends();
     if (homeEvents.innerHTML.trim()) {
-      homeEvents.scrollTop = studyRestore ? studyRestore.scrollTop : 0;
+      homeEvents.scrollTop = causalScroll !== null ? causalScroll : keepCausalScroll ? savedCausalScroll : studyRestore ? studyRestore.scrollTop : 0;
       // 因果链的骨架比右栏高得多(Unit 2→3 有 10 环),每步都复位到顶会把"当前这一环"留在屏幕外。
       // 与 world-map.html 的 goToStop 同一处理:滚到当前环,直接写 scrollTop(不用 smooth)。
-      const nowStop = !studyRestore && homeEvents.querySelector('.rt-stops-chain .rt-stop.now');
+      const nowStop = !studyRestore && causalScroll === null && !keepCausalScroll && homeEvents.querySelector('.rt-stops-chain .rt-stop.now');
       if (nowStop) {
         const offset = nowStop.getBoundingClientRect().top - homeEvents.getBoundingClientRect().top;
-        homeEvents.scrollTop = Math.max(0, offset - 140);
+        homeEvents.scrollTop = Math.max(0, offset - (homeEvents.querySelector(".causal-workspace-tabs")?.getBoundingClientRect().height || 50) - 14);
       }
       // 窄屏(上下叠)时轻轻滚到事件;宽屏(左右并排)事件就在旁边,不用滚
       if (window.matchMedia('(max-width: 720px)').matches) {
@@ -1290,9 +1402,11 @@ nav.topnav {
       const studyToggle = e.target.closest('[data-study-event]');
       if (studyToggle && win.__mapFilter.toggleLocationStudy) {
         const studyId = studyToggle.dataset.studyEvent;
+        const savedScroll = homeEvents.scrollTop;
         if (win.__mapFilter.toggleLocationStudy(studyId)) {
           syncHomeEvents();
-          homeEvents.querySelector(`[data-study-event="${CSS.escape(studyId)}"]`)?.focus();
+          homeEvents.scrollTop = savedScroll;
+          homeEvents.querySelector(`[data-study-event="${CSS.escape(studyId)}"]`)?.focus({preventScroll:true});
         }
         return;
       }
@@ -1304,6 +1418,11 @@ nav.topnav {
         }
         return;
       }
+      const workspace = e.target.closest('[data-causal-workspace]');
+      if (workspace) { win.__mapFilter.setCausalWorkspace(workspace.dataset.causalWorkspace, {scrollTop: homeEvents.scrollTop}); syncHomeEvents(); return; }
+      const relatedRoute = e.target.closest('[data-related-route]');
+      if (relatedRoute) { win.__mapFilter.openRelatedTrade(relatedRoute.dataset.relatedRoute, {scrollTop: homeEvents.scrollTop}); syncHomeEvents(); return; }
+      if (e.target.closest('[data-causal-return]')) { win.__mapFilter.returnToCausal(); syncHomeEvents(); return; }
       const chainPanelView = e.target.closest('[data-chain-panel-view]');
       if (chainPanelView && win.__mapFilter.setChainPanelView) {
         win.__mapFilter.setChainPanelView(chainPanelView.dataset.chainPanelView);
@@ -1527,7 +1646,7 @@ nav.topnav {
     }
     // 地图重载后原来的筛选状态已经没了,这边的控件一起复位,免得界面显示"Period 2"但地图是全量
     searchInput.value = ''; clearBtn.hidden = true; countBox.textContent = '';
-    periodSel.value = '';
+    periodSel.value = api.getState().period;
     // 地图那边一改筛选就重铺结果列表,这边跟着把它镜像到右侧事件面板;
     // 同时把两个下拉回同步到地图的真实状态 —— 状态若被程序改动(如 reset),控件不会显示成过期值。
     // 用户输入时不抢写输入框；但学习视图内部为跨地点跳转暂时清除/恢复筛选时，
@@ -1752,6 +1871,8 @@ nav.topnav {
     if (!s) return;
     if (selectedSubject === 'world' && hostApi) commitHostSearch();
     selectedSubject = key;
+    document.getElementById('apushStandaloneLink').hidden = key !== 'us';
+    document.getElementById('comingSoonDescription').textContent = key === 'us' ? '美国史独立地图已可打开，保留其自己的时期、事件和练习界面。' : '这一科的互动地图正在制作中。World History 和 Art History 已经可以直接用。';
     // Art's measured toolbar + canvas must not leak into World/placeholder sizing.
     if (key !== 'art' && artMapFrame) {
       artMapFrame.closest('.home-map-wrap').style.height = '';
@@ -1832,5 +1953,13 @@ nav.topnav {
     });
 })();
 </script>
-</body>
+<script>
+document.getElementById('home-events').addEventListener('click', event => {
+  if (!event.target.closest('[data-preview-directory]')) return;
+  const directory = document.getElementById('hostStudyDirectory');
+  directory.open = true;
+  directory.querySelector('summary').focus({preventScroll:true});
+  directory.scrollIntoView({block:'nearest', behavior:'auto'});
+});
+</script></body>
 </html>

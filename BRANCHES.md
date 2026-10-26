@@ -1,6 +1,6 @@
 # Canonical branches and ownership
 
-As of 2026-10-25, `course/apwh` consolidates the World History branches. The current reviewed World History entry is `previews/world-keypoints-2026-10-25/index.html` (with a self-contained build). See `docs/apwh-branch-consolidation-2026-10-25.md` for ancestry, archives and recovery.
+As of 2026-10-26, `course/apwh` owns the integrated World History release. The complete website entry is the root `index.html`, generated with `scripts/build-site.py` from `src/site/index.template.html` and `src/apwh/`. Historical preview URLs redirect to the canonical entry. See the root README for current workflow and `docs/apwh-branch-consolidation-2026-10-25.md` for branch history and recovery.
 
 `main` is protected integration / release history. Do not automatically merge this reorganization into main.
 

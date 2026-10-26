@@ -1,13 +1,5 @@
-# World History 地图与 Keypoint 卡片预览
+# 世界史预览入口已归并
 
-本目录的 `magic-history-map-keypoints.html` 是单文件预览，保留地点目录、左侧地图、右侧学习卡片及 U1–U9 的交互。打开时默认选中 Unit 1 的 Inca Empire · Cusco。
+原世界史预览现已接入完整首页，请使用根目录 `index.html`。旧 `magic-history-map-keypoints.html` 链接会自动跳转。
 
-## 给协作者
-
-1. 在 GitHub 打开 `magic-history-map-keypoints.html`。
-2. 点击文件右上角 **Download raw file** 下载。
-3. 用 Chrome、Safari 或 Edge 打开下载的 HTML 文件。
-
-无需另外下载 JS、CSS 或地图文件，也无需启动服务器。GitHub 的文件浏览页面仅显示源码，不会运行网页。
-
-此文件为 2026-10-21 的内容快照，包含 231 个 keypoint。后续源文件修改不会自动更新此预览；该文件仅导出世界史地图与卡片，不包含账号登录和艺术史功能。
+世界史源码与修订数据位于 `src/apwh/`，构建命令为 `python3 scripts/build-site.py`。历史预览的审查记录位于 `previews/world-keypoints-2026-10-25/`。

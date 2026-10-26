@@ -2,6 +2,7 @@ from pathlib import Path
 import html, re, unittest, json
 
 HERE = Path(__file__).resolve().parent
+ROOT=HERE.parents[1]
 SOURCE = HERE / 'source-map-snapshot.html'
 
 def world(text):
@@ -9,9 +10,9 @@ def world(text):
 
 class PreviewTests(unittest.TestCase):
     def test_trade_panel_styles_are_shared_with_the_host(self):
-        document = (HERE / 'index.html').read_text()
+        document = (ROOT / 'index.html').read_text()
         host_head = document.split('</head>', 1)[0]
-        map_head = world(document).split('</head>', 1)[0]
+        map_head = (ROOT/'world-map.html').read_text().split('</head>', 1)[0]
         selector = r'<style id="world-panel-styles">([\s\S]*?)</style>'
         host_css = re.search(selector, host_head)
         map_css = re.search(selector, map_head)
@@ -25,7 +26,7 @@ class PreviewTests(unittest.TestCase):
 
     def test_nine_revised_units_keep_every_original_id(self):
         before = world(SOURCE.read_text())
-        after = world((HERE / 'index.html').read_text())
+        after = (ROOT/'world-map.html').read_text()
         scripts = lambda t: [s for s in re.findall(r'<script[^>]*>([\s\S]*?)</script>', t) if re.search(r'function publishUnit\dLocationStudy', s)]
         self.assertEqual(len(scripts(before)), 9)
         self.assertEqual(len(scripts(after)), 9)
@@ -37,8 +38,8 @@ class PreviewTests(unittest.TestCase):
                 self.assertIn(r['id'],after)
 
     def test_complete_reading_and_collapsible_cards(self):
-        text = (HERE / 'index.html').read_text()
-        w = world(text)
+        text = (ROOT / 'index.html').read_text()
+        w = (ROOT/'world-map.html').read_text()
         self.assertIn('data-preview-number', w)
         self.assertIn('data-preview-section', w)
         self.assertIn('locationStudyState.expandedStudyId === id ? null : id', w)

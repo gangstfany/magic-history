@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const read=name=>fs.readFileSync(`${__dirname}/${name}`,'utf8');
+const read=name=>fs.readFileSync(`${__dirname}/${name==='world-map.html'?'../../':''}${name}`,'utf8');
 function fn(source,name){const start=source.indexOf(`function ${name}(`);assert.ok(start>=0,name);const end=source.indexOf('\n  function ',start+10);return source.slice(start,end<0?undefined:end).trim();}
 function restoreHarness(step,flush=true){
   const frames=[],camera=[],route={id:'u2_main',kind:'chain',stops:[1,2,3]},bookmark={chainId:'u2_main',step,unit:'u2',camera:{zoom:2,panX:34,panY:56},overview:true,scrollTop:317,pageScrollTop:510};
