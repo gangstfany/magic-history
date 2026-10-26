@@ -18,13 +18,18 @@
     document.body.classList.toggle('world-practice-active',activeLearningView==='practice');
     document.body.classList.toggle('world-causal-active',activeLearningView==='chain');
     document.body.classList.remove('world-trade-active');
+    document.body.classList.toggle('world-causal-dock-active',activeLearningView==='chain'&&causalWorkspacePanel==='chain'&&isCausalDockRoute(routeMode?.route));
+    rememberCausalDockScroll();
     const width=stage.clientWidth,height=stage.clientHeight;
     const focusedTradeStep=mapOverlay.contains(document.activeElement)?document.activeElement?.getAttribute('data-trade-step'):null;
     const focusedStep=mapOverlay.contains(document.activeElement)?document.activeElement?.getAttribute('data-causal-step'):null;
     delete mapOverlay.dataset.chainId;
-    mapOverlay.replaceChildren();noteLayer.replaceChildren();noteRail.replaceChildren();noteRail.hidden=true;
+    mapOverlay.replaceChildren();
+    if(!retainCausalDockPopup())noteLayer.replaceChildren();
+    noteRail.replaceChildren();noteRail.hidden=true;
     stage.classList.remove('focused-causal','focused-practice','focused-trade');setMapOverlayVisible(false);
     if(!width||!height)return;
+    refocusCausalDockAfterResize(width,height);
     mapOverlay.setAttribute('viewBox',`0 0 ${width} ${height}`);
     if(activeLearningView==='chain'&&routeMode?.route.kind==='chain'){
       resetTradeJourney();

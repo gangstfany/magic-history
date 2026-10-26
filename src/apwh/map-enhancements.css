@@ -42,3 +42,20 @@
 .world-trade-path {fill:none;stroke-width:2;stroke-dasharray:7 5;opacity:.55;pointer-events:none;}
 .world-trade-path.is-active {stroke-width:4;stroke-dasharray:none;opacity:1;}
 .world-trade-popup {width:264px;pointer-events:auto;}
+
+/* Causal-chain dock: stable in-map card with a separate scrolling reading body. */
+.world-causal-dock-active .map-zone {min-height:420px;}
+.world-causal-dock-popup {display:flex;flex-direction:column;overflow:hidden;padding:12px 14px;max-width:none;}
+.world-causal-dock-popup>header,.world-causal-dock-popup>footer {flex:0 0 auto;}
+.world-causal-dock-popup>header h3 {font-size:14px;line-height:1.45;margin:4px 0 8px;}
+.world-causal-dock-body {touch-action:pan-y;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:3px;}
+.world-causal-dock-body:focus-visible {outline:2px solid #315f62;outline-offset:-2px;}
+.world-causal-dock-body p {margin:6px 0;font-size:12px;line-height:1.65;}
+.world-causal-dock-popup>footer {border-top:1px solid #dedacb;margin-top:8px;padding-top:8px;}
+.world-causal-dock-popup .world-causal-continue {margin:0;min-height:44px;width:100%;}
+.world-causal-dock-popup[data-dock=bottom] {padding:9px 12px;}
+.world-causal-dock-popup[data-dock=bottom]>header h3 {font-size:13px;margin:3px 0 5px;}
+.world-causal-dock-popup[data-dock=bottom]>footer {padding-top:6px;margin-top:6px;}
+.world-causal-dock-body>details {margin:0;}
+.world-causal-dock-body>details>summary {margin:0 0 5px;padding:2px 0;min-height:28px;}
+.world-causal-dock-body>details[open]+.world-causal-dock-preview {display:none;}

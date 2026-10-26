@@ -38,7 +38,7 @@ def enhance_maps(world):
     world=world[:begin]+"    } else if (kind === 'route') {\n      body = tradePickerHTML();\n"+world[end:]
     from integrate_causal_workspace import integrate_causal_workspace
     world = integrate_causal_workspace(world)
-    code=(HERE/'map-layout.cjs').read_text()+'\n'+(HERE/'causal-journey.cjs').read_text()+'\n'+(HERE/'map-enhancements.js').read_text()+'\n'+(HERE/'causal-links.cjs').read_text()+'\n'+(HERE/'causal-workspace.js').read_text()+'\n'+(HERE/'causal-map.js').read_text()+'\n'+(HERE/'trade-geometry.cjs').read_text()+'\n'+(HERE/'trade-map.js').read_text()
+    code=(HERE/'map-layout.cjs').read_text()+'\n'+(HERE/'causal-card-dock.cjs').read_text()+'\n'+(HERE/'causal-journey.cjs').read_text()+'\n'+(HERE/'map-enhancements.js').read_text()+'\n'+(HERE/'causal-links.cjs').read_text()+'\n'+(HERE/'causal-workspace.js').read_text()+'\n'+(HERE/'causal-map.js').read_text()+'\n'+(HERE/'trade-geometry.cjs').read_text()+'\n'+(HERE/'trade-map.js').read_text()
     marker='\n})();\n</script>\n</body>'
     once(marker,'\n'+code+marker)
     once('</head>','<style>\n'+(HERE/'map-enhancements.css').read_text()+'\n</style></head>')
